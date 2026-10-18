@@ -152,7 +152,7 @@
 
 .legend {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
   gap: var(--space-1) var(--space-3);
   list-style: none;
   margin: 0;
@@ -160,24 +160,30 @@
 }
 
 .legend li {
-  display: flex;
+  display: grid;
+  grid-template-columns: 3rem 1fr;
   align-items: baseline;
-  gap: var(--space-2);
+  column-gap: var(--space-2);
   padding: var(--space-1) var(--space-2);
   border-left: 3px solid transparent;
-  border-radius: var(--radius-s);
   font-size: 0.875rem;
 }
 
+/* The abbreviation spans both lines; the name and count stack beside it, so
+   two columns fit the landscape panel without wrapping. */
 .legend strong {
-  min-width: 2rem;
+  grid-row: span 2;
   font-size: 1rem;
+  white-space: nowrap;
+}
+
+.legend span {
+  white-space: nowrap;
 }
 
 .steps {
-  margin-left: auto;
   color: var(--text-muted);
-  white-space: nowrap;
+  font-size: 0.8125rem;
 }
 
 /* Feedback rows differ by mark and border style, not colour alone. */
