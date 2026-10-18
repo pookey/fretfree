@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router';
 import { AchievementUnlocks } from '../components/achievements/AchievementToast';
+import { InstallHint } from './InstallHint';
 import { NAV_ITEMS } from './nav';
 import { useSizeClass } from './size-class';
 import { StreakBadge } from './StreakBadge';
@@ -43,6 +44,7 @@ export function AppShell() {
         </nav>
       )}
       <main className={styles.main}>
+        <InstallHint />
         <Outlet />
       </main>
       <AchievementUnlocks />
