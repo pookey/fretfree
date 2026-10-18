@@ -25,7 +25,8 @@ const deps = (over: Partial<Parameters<typeof SessionRunner.start>[0]> = {}) => 
   scheduler: createScheduler({ enableFuzz: false }),
   settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 500 },
   skills: SKILLS,
-  drills: DRILLS,
+  // These tests answer as D1; D2 has its own runner test in its drill folder.
+  drills: DRILLS.filter((d) => d.id === 'name-the-note'),
   now: () => clock,
   maxItems: 12,
   ...over,
