@@ -348,11 +348,12 @@ export class SessionRunner {
     return this.current;
   }
 
-  async answer(answer: unknown, responseMs: number): Promise<AnswerResult> {
+  async answer(answer: unknown, elapsedMs: number): Promise<AnswerResult> {
     // A prompt already on screen can still be answered once the time budget runs out.
     const cur = this.current?.index === this.index ? this.current : this.currentPrompt();
     if (!cur) throw new Error('No active prompt');
     const { entry, drill, prompt } = cur;
+    const responseMs = drill.gradedResponseMs?.(prompt, answer, elapsedMs) ?? elapsedMs;
     const now = this.now();
     const result = drill.check(prompt, answer);
     const rating = gradeAnswer(

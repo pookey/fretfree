@@ -76,6 +76,12 @@ export interface DrillType<P = unknown, A = unknown> {
     feedback: DrillFeedback<A>,
     tuning: Tuning,
   ): { expected: Position[]; given: Position[] };
+  /**
+   * The response time to grade and log, from the time to the answer. A
+   * multi-target drill grades completion time per target, so the usual
+   * speed targets apply (design §3.2). Defaults to the time itself.
+   */
+  gradedResponseMs?(prompt: P, answer: A, elapsedMs: number): number;
   /** The concept an item is keyed by in the confusion matrix (e.g. its pitch class). */
   conceptOf(item: Item, ctx: Pick<DrillContext, 'tuning' | 'accidentalPref'>): string | null;
   render: FC<DrillRenderProps<P, A>>;
