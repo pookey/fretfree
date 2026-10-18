@@ -11,6 +11,7 @@ const STEPS = [
   'Reading music',
   'How long is a session?',
   'Tap the lit dots',
+  'Already play a bit?',
 ];
 
 const choice = (page: Page) => page.getByTestId('onboarding-choice');
@@ -79,8 +80,10 @@ test.describe('M1-06 onboarding', () => {
     await pick(page, /15 minutes/);
     await next(page);
 
-    // Calibration (M1-07) has its own spec.
+    // Calibration (M1-07) and the placement test (M2-09) have their own specs.
     await expectStep(page, 6);
+    await choice(page).getByRole('button', { name: 'Skip this step' }).click();
+    await expectStep(page, 7);
     await choice(page).getByRole('button', { name: 'Skip this step' }).click();
 
     await expect(page).toHaveURL(/\/$/);

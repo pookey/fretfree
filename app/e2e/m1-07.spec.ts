@@ -5,7 +5,9 @@ import { expectNoHorizontalOverflow, firstLaunch, freshStart } from './helpers';
 // trimmed median tap time becomes the baseline for every speed target.
 
 const TRIALS = 16;
-const ONBOARDING_STEPS = 6;
+const ONBOARDING_STEPS = 7;
+// Calibration is step 6; the placement test (M2-09) follows it.
+const CALIBRATION_STEP = 6;
 
 // The page clock is paused during a run, so tap times don't depend on how busy
 // the machine is. Each dot lights within the longest pause (foreperiodMs.max),
@@ -58,11 +60,13 @@ test.describe('M1-07 latency calibration', () => {
   }, info) => {
     await firstLaunch(page);
     await page.getByRole('button', { name: 'Get started' }).click();
-    for (let n = 1; n < ONBOARDING_STEPS; n++)
+    for (let n = 1; n < CALIBRATION_STEP; n++)
       await page.getByRole('button', { name: 'Skip this step' }).click();
 
     await expect(page.getByRole('heading', { name: 'Tap the lit dots', level: 1 })).toBeVisible();
-    await expect(page.getByTestId('onboarding-progress')).toHaveText('Step 6 of 6');
+    await expect(page.getByTestId('onboarding-progress')).toHaveText(
+      `Step ${CALIBRATION_STEP} of ${ONBOARDING_STEPS}`,
+    );
     await expect(page.getByText(/Tap each dot as soon as it lights up: 16 dots/)).toBeVisible();
     await expect(calibrationNeck(page).getByTestId('marker-target')).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
@@ -81,6 +85,7 @@ test.describe('M1-07 latency calibration', () => {
     const ms = await runCalibration(page);
     await expectNoHorizontalOverflow(page);
     await choice.getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: 'Skip this step' }).click();
     await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 
     await expectStoredBaseline(page, `${ms} ms`);
