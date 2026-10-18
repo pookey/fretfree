@@ -135,7 +135,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Acceptance:**
   - XP per answer is weighted toward learning value. Due reviews and new items earn more than over-practised stable cards. There is a small fluent bonus. Wrong answers earn base XP.
   - XP from a card decays if the card has already been drilled today.
-  - All weights live in `engine/config.ts` (append a `gamification` block).
+  - All weights live in `engine/config/gamification.ts`.
   - Property-style tests show that grinding a stable card can never out-earn doing due reviews.
 
 ### M1-09 · Streak engine: daily goal, freezes, weekend amulet, repair
@@ -411,7 +411,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ### M2-11 · Focused sessions ("Practise this now", "Quiz me on this")
 - **Status:** todo
 - **Deps:** M1-17
-- **Owns:** `app/src/session/runner.ts` (hotspot), `app/src/session/focus.ts`, `app/e2e/m2-11.spec.ts`
+- **Owns:** `app/src/session/runner.ts` (hotspot), `app/src/session/focus.ts`, `app/e2e/m2-11.spec.ts`, `app/e2e/helpers/focus.ts`, `app/e2e/d1-session.spec.ts`, `app/e2e/smoke.spec.ts`
 - **Acceptance:**
   - The runner accepts a skill or item filter. Focused sessions still use FSRS ordering and interleave within the focus.
   - The "Quiz me on this" buttons in Explore and Learn use it.
@@ -735,7 +735,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - A metronome on the Tone.js Transport with per-meter accent patterns (simple, compound, and odd groupings such as 3+2 or 2+2+3), tempo changes, count-in, and the ability to drop beats (the fade-the-click API used by D31).
   - Tap onset capture (pointer and key) on the audio clock, plus an `OnsetSource` interface with a mic implementation (energy/spectral-flux onset detection in an AudioWorklet, reusing the M5 mic plumbing once it exists) and a fake source for tests.
   - Latency compensation: `AudioContext.outputLatency` plus a tap-to-click calibration (about 10 s). The result is stored in settings and applied to every onset.
-  - A pure `gradeTiming(offsetsMs, cfg)` maps "on time within ±30–50 ms" (configurable in `engine/config.ts`) to Again/Hard/Good/Easy, consistent with design §3.2.
+  - A pure `gradeTiming(offsetsMs, cfg)` maps "on time within ±30–50 ms" (configurable in `engine/config/<area>.ts`) to Again/Hard/Good/Easy, consistent with design §3.2.
   - Pure logic has ≥90% unit coverage, and the onset detector is tested on synthetic signals. Shared with M6-08 (F4/D20). Document the API in a header comment.
 
 ### M8-02 · [contract] Notation renderer (VexFlow)
