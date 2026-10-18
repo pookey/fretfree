@@ -14,6 +14,11 @@ const OTHER_SKILLS = [
   'C1.octaves-gb-shift',
   'C1.double-octaves',
   'C1.every-octave',
+  'C3.thirds',
+  'C3.fourths-fifths',
+  'C3.sevenths',
+  'C3.sixths',
+  'C3.seconds',
 ];
 
 /**
