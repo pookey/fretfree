@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, firstLaunch } from './helpers';
+import { skipInstallTip } from './helpers/install';
 
 // Onboarding (design §4): first launch routes here, every step is skippable,
 // and choices persist to settings and gamification.
@@ -33,6 +34,9 @@ const readsTab = (page: Page) =>
 async function next(page: Page) {
   await choice(page).getByRole('button', { name: 'Continue' }).click();
 }
+
+// The install step (M1-29) has its own spec.
+test.beforeEach(({ page }) => skipInstallTip(page));
 
 test.describe('M1-06 onboarding', () => {
   test('first launch completes onboarding and keeps the choices @smoke', async ({ page }, info) => {

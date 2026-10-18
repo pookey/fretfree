@@ -28,8 +28,6 @@ async function expectControlled(page: Page): Promise<void> {
   await expect.poll(() => swState(page)).toContain('"controlled":true');
 }
 
-const installHint = (page: Page) => page.getByRole('complementary', { name: 'Install FretFree' });
-
 test.describe('M1-19 offline', () => {
   test('a full session runs offline after the first load', async ({ page, context }) => {
     await firstVisit(page);
@@ -90,48 +88,5 @@ test.describe('M1-19 offline', () => {
     const note = await targetNote(page);
     await answer(page, note);
     await expect(page.getByTestId('feedback-correct')).toBeVisible();
-  });
-});
-
-test.describe('M1-19 install hint', () => {
-  test('Safari shows how to add FretFree to the home screen @smoke', async ({ page }, info) => {
-    await freshStart(page);
-    const hint = installHint(page);
-    await expect(hint).toBeVisible();
-    const ipad = info.project.name !== 'iphone-smoke';
-    await expect(hint).toHaveAttribute('data-platform', ipad ? 'ipad' : 'iphone');
-    await expect(hint).toContainText('Add to Home Screen');
-    // The hint sits in the page flow, so the main action stays reachable.
-    await page.getByTestId('start-session').click({ trial: true });
-
-    await hint.getByRole('button', { name: 'Not now' }).click();
-    await expect(hint).toHaveCount(0);
-    await page.reload();
-    await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
-    await expect(hint).toHaveCount(0);
-  });
-
-  test('stays hidden in standalone mode', async ({ page }) => {
-    // A home-screen launch on iPadOS sets navigator.standalone.
-    await page.addInitScript(() => {
-      Object.defineProperty(Navigator.prototype, 'standalone', { get: () => true });
-    });
-    await freshStart(page);
-    for (const section of ['Learn', 'Progress', 'Today']) {
-      await page
-        .getByRole('navigation', { name: 'Sections' })
-        .getByRole('link', { name: section })
-        .click();
-      await expect(page.getByRole('heading', { name: section, level: 1 })).toBeVisible();
-      await expect(installHint(page)).toHaveCount(0);
-    }
-  });
-
-  test('does not interrupt a session', async ({ page }) => {
-    await freshStart(page);
-    await expect(installHint(page)).toBeVisible();
-    await page.getByTestId('start-session').click();
-    await expect(page.getByTestId('session')).toBeVisible();
-    await expect(installHint(page)).toHaveCount(0);
   });
 });

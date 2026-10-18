@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, firstLaunch } from './helpers';
+import { skipInstallTip } from './helpers/install';
 
 // The reading step of onboarding (design §4): two multi-select questions,
 // what the learner already reads and what they want to learn to read.
@@ -17,6 +18,9 @@ async function openReadingStep(page: Page) {
     await choice(page).getByRole('button', { name: 'Skip this step' }).click();
   await expect(page.getByRole('heading', { name: 'Reading music', level: 1 })).toBeVisible();
 }
+
+// The install step (M1-29) has its own spec.
+test.beforeEach(({ page }) => skipInstallTip(page));
 
 test.describe('M1-26 reading question', () => {
   test('picks several notations to read and to learn, and keeps them @smoke', async ({ page }) => {

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, firstLaunch, freshStart } from './helpers';
+import { skipInstallTip } from './helpers/install';
 
 // Latency calibration (design §3.2, §4 step 5): tap the lit dot, and the
 // trimmed median tap time becomes the baseline for every speed target.
@@ -45,6 +46,9 @@ async function expectStoredBaseline(page: Page, text: string) {
   await page.goto('/settings');
   await expect(page.getByRole('main').getByTestId('latency-baseline')).toHaveText(text);
 }
+
+// The install step (M1-29) has its own spec.
+test.beforeEach(({ page }) => skipInstallTip(page));
 
 test.describe('M1-07 latency calibration', () => {
   // A 16-dot run is many steps; leave room for a loaded machine.
