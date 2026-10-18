@@ -27,6 +27,7 @@ import {
   type SkillStatus,
 } from '../engine';
 import type { CardKind, GamificationEvent } from '../engine/gamification';
+import { orderFrontier } from '../engine/frontier';
 import type { AnyDrillType, DrillCheck, DrillSounds } from '../drills/types';
 import {
   allCards,
@@ -163,15 +164,19 @@ export class SessionRunner {
       const skill = deps.skills.find((s) => s.id === item.skillId);
       return deps.drills.some((d) => skill?.drillTypes.includes(d.id) && d.canTest(item));
     };
-    const frontier: Item[] = [];
     const frontierSkills = new Set<string>();
+    const frontierInOrder: Skill[] = [];
     for (const skill of deps.skills) {
       const status = deriveStatus(skill, statuses, statuses.get(skill.id));
       statuses.set(skill.id, status);
       if (!isFrontier(status)) continue;
       frontierSkills.add(skill.id);
-      frontier.push(...skill.items().filter(servable));
+      frontierInOrder.push(skill);
     }
+    // The goal profile reorders frontier skills (design §3.3 step 2).
+    const frontier: Item[] = orderFrontier(frontierInOrder, deps.settings.goal).flatMap((skill) =>
+      skill.items().filter(servable),
+    );
     const tuning = getTuning(deps.settings.tuning);
     const drillFor = (skillId: string) => {
       const skill = deps.skills.find((s) => s.id === skillId);
