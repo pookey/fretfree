@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, firstLaunch, noteName } from './helpers';
+import { skipInstallTip } from './helpers/install';
 
 // M2-09: the placement test (design §3.4, §4 step 6). An adaptive probe of
 // F1, F2, C2 and C3 (every topic a drill can serve) at the end of onboarding
@@ -137,6 +138,9 @@ async function stored(page: Page) {
     };
   });
 }
+
+// The install step (M1-29) has its own spec.
+test.beforeEach(({ page }) => skipInstallTip(page));
 
 test.describe('M2-09 placement test', () => {
   test('an expert answers fluently and their skills are seeded as known', async ({
