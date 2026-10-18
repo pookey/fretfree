@@ -83,6 +83,8 @@ export interface Settings {
   accidentalPref: 'sharp' | 'flat';
   soundOn: boolean;
   volume: number;
+  /** When onboarding was finished or skipped (design §4); `null` before first launch. */
+  onboardedAt: Date | null;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -96,6 +98,7 @@ export const DEFAULT_SETTINGS: Settings = {
   accidentalPref: 'sharp',
   soundOn: true,
   volume: 0.8,
+  onboardedAt: null,
 };
 
 // --- Item IDs -------------------------------------------------------------

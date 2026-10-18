@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { ordered, type Ordered } from '../registry';
 
 export interface OnboardingStepProps {
@@ -8,17 +8,21 @@ export interface OnboardingStepProps {
 
 /**
  * What every `onboarding/steps/<id>.tsx` file exports. Every step can be
- * skipped: onboarding never blocks practice.
+ * skipped: onboarding never blocks practice. At regular-wide the flow shows
+ * `title` and `explanation` on the left and `Step` (the choice) on the right.
  */
 export interface OnboardingStep extends Ordered {
   title: string;
+  /** Why we ask, in a sentence or two. */
+  explanation: ReactNode;
+  /** The choice. It persists what the learner picks, then calls `onNext`. */
   Step: ComponentType<OnboardingStepProps>;
   skippable: true;
 }
 
 /**
  * The first-launch steps, in `order`. One file per step: each
- * `steps/<id>.tsx` is registered automatically. M1-06 builds the flow.
+ * `steps/<id>.tsx` is registered automatically.
  */
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = ordered(
   import.meta.glob<OnboardingStep>(['./steps/*.tsx', '!./steps/*.test.tsx'], { eager: true }),
