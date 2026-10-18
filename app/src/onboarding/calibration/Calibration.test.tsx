@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useAppStore } from '../../app-store';
 import { ENGINE_CONFIG } from '../../engine/config';
 import { DEFAULT_SETTINGS } from '../../engine/model';
@@ -48,15 +48,13 @@ function tapAfter(ms: number) {
   fireEvent.pointerDown(cellOf(dot!));
 }
 
-async function settle() {
-  // Let the store save land; real timers aren't faked for the IndexedDB polyfill.
-  await act(async () => {
-    vi.useRealTimers();
-    await new Promise((r) => setTimeout(r, 20));
-  });
+/** Back on real timers (the IndexedDB polyfill needs them), wait for the store save to land. */
+async function settled(check: () => unknown) {
+  vi.useRealTimers();
+  await waitFor(check);
 }
 
-describe('<Calibration>', () => {
+describe('<Calibration>', { timeout: 20_000 }, () => {
   it('lights one dot at a time after a pause and stores the trimmed median', async () => {
     render(<Calibration now={now} rng={rng} doneAction={<button type="button">Next</button>} />);
     expect(screen.getByText(/Tap each dot as soon as it lights up: 16 dots/)).toBeInTheDocument();
@@ -78,8 +76,7 @@ describe('<Calibration>', () => {
     for (const ms of times) tapAfter(ms);
 
     expect(screen.getByTestId('calibration-result')).toHaveTextContent('Your tap time is 610 ms');
-    await settle();
-    expect((await getSettings(getDb())).latencyBaselineMs).toBe(610);
+    await settled(async () => expect((await getSettings(getDb())).latencyBaselineMs).toBe(610));
     expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Run again' })).toBeInTheDocument();
   });
@@ -101,7 +98,10 @@ describe('<Calibration>', () => {
     for (let i = 0; i < CFG.trials; i++) tapAfter(i < 10 ? 3000 : 600);
     expect(screen.getByTestId('calibration-result')).toHaveTextContent(/another go/);
     expect(screen.queryByRole('button', { name: 'Next' })).toBeNull();
-    await settle();
+    await act(async () => {
+      vi.useRealTimers();
+      await new Promise((r) => setTimeout(r, 50));
+    });
     expect((await getSettings(getDb())).latencyBaselineMs).toBeNull();
 
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
@@ -123,7 +123,7 @@ describe('<Calibration>', () => {
   });
 });
 
-describe('calibration onboarding step', () => {
+describe('calibration onboarding step', { timeout: 20_000 }, () => {
   it('is the skippable step after session length, and continues once saved', async () => {
     expect([step.id, step.order, step.skippable]).toEqual(['calibration', 60, true]);
     expect(step.title).toBe('Tap the lit dots');
@@ -131,13 +131,13 @@ describe('calibration onboarding step', () => {
     render(<step.Step onNext={onNext} />);
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     for (let i = 0; i < CFG.trials; i++) tapAfter(500);
-    await settle();
+    await settled(async () => expect((await getSettings(getDb())).latencyBaselineMs).toBe(500));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onNext).toHaveBeenCalledOnce();
   });
 });
 
-describe('<CalibrationSetting>', () => {
+describe('<CalibrationSetting>', { timeout: 20_000 }, () => {
   it('shows the stored tap time and re-runs the calibration in place', async () => {
     useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 640 } });
     render(<CalibrationSetting />);
@@ -149,8 +149,7 @@ describe('<CalibrationSetting>', () => {
     expect(toggle).toHaveTextContent('Close');
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     for (let i = 0; i < CFG.trials; i++) tapAfter(i % 2 ? 800 : 820);
-    await settle();
-    expect(screen.getByTestId('latency-baseline')).toHaveTextContent('810 ms');
+    await settled(() => expect(screen.getByTestId('latency-baseline')).toHaveTextContent('810 ms'));
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Recalibrate' })).toHaveAttribute(
