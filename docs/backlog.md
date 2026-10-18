@@ -180,7 +180,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The copy celebrates competence ("you now know string 6 to fret 12").
 
 ### M1-13 · First achievements
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-02
 - **Design:** §3.7 achievements
 - **Owns:** `app/src/engine/gamification/achievements/**`, `app/src/screens/progress/panels/achievements.tsx`, `app/e2e/m1-13.spec.ts`
