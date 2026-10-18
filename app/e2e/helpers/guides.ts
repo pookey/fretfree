@@ -10,6 +10,10 @@ const OTHER_SKILLS = [
   'C2.all-notes',
   'F3.markers',
   'F3.repeat-12',
+  'C1.octaves',
+  'C1.octaves-gb-shift',
+  'C1.double-octaves',
+  'C1.every-octave',
 ];
 
 /**
