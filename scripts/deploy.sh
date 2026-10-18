@@ -37,7 +37,10 @@ aws s3 sync app/dist/assets "s3://$bucket/assets" \
   --cache-control "public, max-age=31536000, immutable" --only-show-errors
 
 log "Uploading entry files (no-cache)"
-aws s3 sync app/dist "s3://$bucket" --exclude "assets/*" --exclude "*.webmanifest" \
+# Always copy, never sync: sync skips a same-size file when the bucket's copy is
+# newer, so deploying a build made before the last deploy kept the old
+# index.html, and the stale-file pass then deleted the bundle it referenced.
+aws s3 cp app/dist "s3://$bucket" --recursive --exclude "assets/*" --exclude "*.webmanifest" \
   --cache-control "no-cache" --only-show-errors
 aws s3 cp app/dist/manifest.webmanifest "s3://$bucket/manifest.webmanifest" \
   --content-type "application/manifest+json" --cache-control "no-cache" --only-show-errors
