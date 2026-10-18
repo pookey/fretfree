@@ -25,7 +25,7 @@ afterEach(async () => {
   await db.delete();
 });
 
-async function start(maxItems = 12) {
+async function start(maxItems = 16) {
   const deps = {
     db,
     scheduler,
@@ -89,9 +89,9 @@ describe('CelebrationTracker', () => {
   it('celebrates a first session: XP, combo, improved items, learned today', async () => {
     const { runner, tracker } = await start();
     const combos = await play(runner, tracker, 300);
-    // Four guided worked examples hold the combo at 0, then eight fast recalls count up.
-    expect(combos).toEqual([0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8]);
-    expect(tracker.combo).toBe(8);
+    // Four guided worked examples hold the combo at 0, then twelve fast recalls count up.
+    expect(combos).toEqual([0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(tracker.combo).toBe(12);
 
     const summary = await runner.finish();
     const c = await tracker.finish(summary);
@@ -99,11 +99,11 @@ describe('CelebrationTracker', () => {
     expect(summary.xp).toBeGreaterThan(0);
     expect(c.xp).toBe(summary.xp);
     expect(c).toMatchObject({
-      answered: 12,
+      answered: 16,
       accuracy: 1,
       newItems: 4,
       itemsImproved: 4,
-      bestCombo: 8,
+      bestCombo: 12,
       perfect: true,
       // Nothing to beat yet.
       personalBest: null,
@@ -130,7 +130,7 @@ describe('CelebrationTracker', () => {
     // new items are learned, not yet known.
     expect(c.competence).toEqual([
       expect.objectContaining({ kind: 'reach', string: 6, toFret: 5 }),
-      expect.objectContaining({ kind: 'learned', string: 6, toFret: 8 }),
+      expect.objectContaining({ kind: 'learned', string: 6, toFret: 10 }),
     ]);
   });
 

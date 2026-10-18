@@ -50,8 +50,8 @@ function correctAnswer(prompt: unknown): string {
 
 describe('SessionRunner', () => {
   it('runs a first session of new items with guided worked examples', async () => {
-    const r = await SessionRunner.start(deps({ skills: NOTE_SKILLS }));
-    expect(r.length).toBe(12);
+    const r = await SessionRunner.start(deps({ skills: NOTE_SKILLS, maxItems: 16 }));
+    expect(r.length).toBe(16);
     const first = r.currentPrompt()!;
     expect(first.entry.kind).toBe('new');
     expect(first.entry.guided).toBe(true);
@@ -73,10 +73,10 @@ describe('SessionRunner', () => {
     }
     expect(r.currentPrompt()).toBeNull();
     const summary = await r.finish();
-    expect(summary).toMatchObject({ itemsSeen: 12, correct: 12, accuracy: 1, newItems: 4 });
+    expect(summary).toMatchObject({ itemsSeen: 16, correct: 16, accuracy: 1, newItems: 4 });
     expect(await r.finish()).toBe(summary);
     expect(await allCards(db)).toHaveLength(4);
-    expect(await reviewCount(db)).toBe(12);
+    expect(await reviewCount(db)).toBe(16);
     const states = await getSkillStates(db);
     expect(states.get('F2.string6-naturals')?.status).toBe('practising');
   });
@@ -208,23 +208,23 @@ describe('SessionRunner gamification', () => {
     (await getEvents(db, { type: 'answer' })) as unknown as (AnswerEvent & { at: Date })[];
 
   it('awards decaying XP across new-block reps and logs every answer', async () => {
-    const r = await SessionRunner.start(deps());
+    const r = await SessionRunner.start(deps({ maxItems: 16 }));
     const xp: number[] = [];
     while (!r.isOver) {
       const res = await r.answer(correctAnswer(r.currentPrompt()!.prompt), 3000);
       xp.push(res.xp);
       r.next();
     }
-    // 4 new items × 3 reps. Guided first reps cap at Hard (10 XP), later reps
-    // are answered slowly (Hard) and decay: 10 → 5 → 3.
-    expect(xp).toEqual([10, 10, 10, 10, 5, 5, 5, 5, 3, 3, 3, 3]);
+    // 4 new items × (worked example + 3 reps). Guided first reps cap at Hard
+    // (10 XP), later reps are answered slowly (Hard) and decay: 10 → 5 → 3 → 1.
+    expect(xp).toEqual([10, 10, 10, 10, 5, 5, 5, 5, 3, 3, 3, 3, 1, 1, 1, 1]);
     const events = await answerEvents();
     expect(events.map((e) => e.xp)).toEqual(xp);
     expect(events.every((e) => e.kind === 'new')).toBe(true);
     const summary = await r.finish();
-    expect(summary.xp).toBe(72);
-    expect((await getGamification(db)).xpTotal).toBe(72);
-    expect((await getDailyProgress(db, toLocalDate(clock))).xp).toBe(72);
+    expect(summary.xp).toBe(76);
+    expect((await getGamification(db)).xpTotal).toBe(76);
+    expect((await getDailyProgress(db, toLocalDate(clock))).xp).toBe(76);
   });
 
   it('pays a retried miss half, under the kind of its first appearance', async () => {

@@ -5,7 +5,7 @@ export const session = {
   reviewShare: 0.7,
   /** New items are introduced in blocked groups of this size (3–5). */
   newBlockSize: 4,
-  /** Each new item gets this many guided reps before interleaving. */
+  /** After its worked example, each new item gets this many reps (3–5), fading to independent. */
   newBlockReps: 3,
   /** A wrong answer is retried this many items later. */
   retryGap: 3,
