@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS, SKILLS, createScheduler } from '../../engine';
 import { FretworkDB } from '../../storage';
+import { createDrillPicker } from '../../session/drill-picker';
 import { SessionRunner } from '../../session/runner';
 import { DRILLS } from '../registry';
 import { D6_ID, type D6Prompt } from './logic';
@@ -68,6 +69,17 @@ async function start(maxItems = 8) {
 }
 
 describe('D6 in a session', () => {
+  it('is the drill the picker chooses for every C3 tap item', () => {
+    const picker = createDrillPicker(SKILLS, DRILLS);
+    const items = C3_SKILLS.flatMap((s) => s.items()).filter((i) => i.id.startsWith('interval:'));
+    expect(items.length).toBeGreaterThan(20);
+    for (const item of items) {
+      expect(picker.pick(item)?.id, item.id).toBe(D6_ID);
+      // Even after D6 served it last: no other drill tests the tap direction.
+      expect(picker.pick(item, D6_ID)?.id, item.id).toBe(D6_ID);
+    }
+  });
+
   it('serves C3 shapes as guided worked examples, then grades taps', async () => {
     const r = await start();
     const first = r.currentPrompt()!;
