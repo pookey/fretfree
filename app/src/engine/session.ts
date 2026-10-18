@@ -4,7 +4,8 @@ import type { Scheduler } from './scheduler';
 
 /** Design §3.3: the session builder pipeline. */
 
-export type EntryKind = 'review' | 'new' | 'retry';
+/** `stretch`: a not-yet-stable frontier card that tops up a session (§3.7). */
+export type EntryKind = 'review' | 'new' | 'retry' | 'stretch';
 
 export interface SessionEntry {
   itemId: string;

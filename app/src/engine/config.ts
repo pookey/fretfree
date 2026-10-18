@@ -77,6 +77,14 @@ export const ENGINE_CONFIG = {
        */
       speedDemon: { medianMs: 1200, minAnswers: 30, minAccuracy: 0.9 },
     },
+    /** Daily-goal minutes (design §3.7 engine wiring). */
+    daily: {
+      /**
+       * Session time counts toward the daily goal answer by answer. A gap
+       * longer than this (the learner walked away) counts only up to it.
+       */
+      maxGapSeconds: 60,
+    },
   },
 } as const;
 
