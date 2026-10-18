@@ -38,6 +38,10 @@ export default defineConfig({
     sourcemap: true,
   },
   test: {
+    // The persistent transform cache keys on file content, so an unchanged
+    // module that uses import.meta.glob (the registries) keeps a stale file
+    // list after new siblings land. The quality gate must never see that.
+    fsModuleCache: false,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
