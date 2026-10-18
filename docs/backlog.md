@@ -452,7 +452,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Uses the whole neck on iPad, plus "Quiz me on this".
 
 ### M2-13 · Per-user FSRS parameter refit
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-17
 - **Design:** research/02 rule 1
 - **Owns:** `app/src/engine/refit.ts`, `app/src/engine/refit.test.ts`, `app/src/engine/scheduler.ts`
