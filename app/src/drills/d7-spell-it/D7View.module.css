@@ -1,0 +1,347 @@
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.subject {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 800;
+}
+
+.prompt {
+  margin: 0;
+  max-width: 44rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.hint {
+  margin: 0;
+  min-height: 1.5em;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* The slots: one per note, the tonic or root first. */
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.slotItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  font-size: 1.75rem;
+  font-weight: 750;
+}
+
+.slot[data-state='given'] {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+
+.slot[data-state='empty'] {
+  border-style: dashed;
+}
+
+.slot[data-state='current'] {
+  border-style: dashed;
+  border-color: var(--tone);
+  border-width: 3px;
+}
+
+.ghost {
+  color: var(--text-muted);
+  opacity: 0.6;
+  font-weight: 500;
+}
+
+/* Feedback differs by mark and border style, not colour alone. */
+.slot[data-verdict='correct'] {
+  border-color: var(--correct);
+}
+
+.slot[data-verdict='enharmonic'] {
+  border-color: var(--accent);
+  border-style: dotted;
+  border-width: 3px;
+}
+
+.slot[data-verdict='wrong'] {
+  border-color: var(--wrong);
+  border-style: dashed;
+  border-width: 3px;
+}
+
+.mark {
+  position: absolute;
+  top: 0.125rem;
+  right: 0.375rem;
+  font-size: 1rem;
+}
+
+.slot[data-verdict='correct'] .mark {
+  color: var(--correct);
+}
+
+.slot[data-verdict='enharmonic'] .mark {
+  color: var(--accent);
+}
+
+.slot[data-verdict='wrong'] .mark {
+  color: var(--wrong);
+}
+
+.expected {
+  color: var(--correct);
+  font-weight: 750;
+}
+
+.expected::before {
+  content: '→ ';
+}
+
+.label {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.step {
+  position: absolute;
+  top: 1.75rem;
+  left: calc(-1 * var(--space-2) / 2 - 0.4rem);
+  width: 0.8rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  z-index: 1;
+}
+
+.explanation {
+  max-width: 44rem;
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-6);
+  border-left: 3px solid var(--wrong);
+  background: var(--bg-raised);
+  border-radius: var(--radius-s);
+  line-height: 1.45;
+}
+
+.explanation li + li {
+  margin-top: var(--space-2);
+}
+
+/* The note grid: a column per letter A–G, a row per accidental. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(3.5rem, 4.5rem));
+  gap: var(--space-2);
+}
+
+.degrees,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.choice {
+  min-width: 3.5rem;
+  min-height: 3.5rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  font-size: 1.375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    transform 0.08s;
+}
+
+.choice:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .choice:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.choice:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.choice[data-state='correct'] {
+  background: var(--correct);
+  border-color: var(--correct);
+  color: #fff;
+  opacity: 1;
+}
+
+.choice[data-state='wrong'] {
+  background: var(--wrong);
+  border-color: var(--wrong);
+  color: #fff;
+  opacity: 1;
+}
+
+.choice[data-state='expected'] {
+  border-color: var(--correct);
+  border-style: dashed;
+  opacity: 1;
+}
+
+.primary,
+.secondary {
+  min-height: 3rem;
+  min-width: 7rem;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-m);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary {
+  border: none;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.secondary {
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* The context panel: the scale recipe or chord formula (design §7). */
+.context {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  padding: var(--space-4);
+  align-self: start;
+}
+
+.context h2 {
+  margin: 0 0 var(--space-3);
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.context p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .top {
+  gap: var(--space-2);
+}
+
+.drill[data-size-class='compact'] .subject {
+  font-size: 1.5rem;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1rem;
+}
+
+.drill[data-size-class='compact'] .slots {
+  gap: var(--space-1);
+}
+
+.drill[data-size-class='compact'] .slot {
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.125rem;
+  border-radius: var(--radius-s);
+}
+
+.drill[data-size-class='compact'] .step {
+  top: 1rem;
+  left: calc(-1 * var(--space-1) / 2 - 0.4rem);
+}
+
+.drill[data-size-class='compact'] .mark {
+  top: -0.125rem;
+  right: 0.125rem;
+  font-size: 0.75rem;
+}
+
+.drill[data-size-class='compact'] .grid {
+  grid-template-columns: repeat(7, minmax(2.75rem, 1fr));
+  gap: var(--space-1);
+  width: 100%;
+  max-width: 24rem;
+}
+
+.drill[data-size-class='compact'] .choice {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .explanation {
+  font-size: 0.875rem;
+  padding-left: var(--space-5);
+}
