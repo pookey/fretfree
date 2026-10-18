@@ -1,9 +1,12 @@
 import type { Grade } from 'ts-fsrs';
 import {
   ENGINE_CONFIG,
+  blockBoundary,
+  blockGuideLevel,
   buildSession,
   deriveStatus,
   gradeAnswer,
+  inLearningStep,
   initialScope,
   isFrontier,
   isMastered,
@@ -50,6 +53,7 @@ import {
   stretchEntries,
   xpKindOf,
 } from './gamification-bridge';
+import { createDrillPicker, factOf, type DrillPicker } from './drill-picker';
 
 /**
  * Runs one practice session end to end: plans it with the session builder,
@@ -57,6 +61,12 @@ import {
  * schedules with FSRS and persists every answer (design §3). Each answer
  * also earns XP and daily-goal minutes, and finishing settles the streak
  * (design §3.7, via `gamification-bridge.ts`).
+ *
+ * The session lasts its time budget (§3.3). A card that FSRS puts in a
+ * learning step due before the budget ends comes back once it is due, after
+ * any new block in progress. A queue that runs dry early is planned again
+ * from what is left: cards that came due, unseen frontier items, then
+ * stretch items.
  */
 
 export interface RunnerDeps {
@@ -111,6 +121,32 @@ export interface SessionSummary {
 
 const DEFAULT_GUIDE: GuideLevel = 3;
 
+/**
+ * Plans entries from the cards as they stand at `at`, for `minutes` of
+ * practice. Items in `seen` (already served this session) are never stretch items.
+ */
+type Planner = (
+  at: Date,
+  minutes: number,
+  cards: readonly CardRecord[],
+  seen: ReadonlySet<string>,
+  maxItems?: number,
+) => SessionEntry[];
+
+/** The drill that last served each item more than one drill can serve, from the review log. */
+async function lastDrills(
+  db: FretworkDB,
+  cards: readonly CardRecord[],
+  picker: DrillPicker,
+): Promise<Map<string, string>> {
+  const ids = cards
+    .filter((c) => picker.candidates({ id: c.itemId, skillId: c.skillId }).length > 1)
+    .map((c) => c.itemId);
+  if (ids.length === 0) return new Map();
+  const logs = await db.reviewLogs.where('itemId').anyOf(ids).sortBy('at');
+  return new Map(logs.map((l) => [l.itemId, l.drillType]));
+}
+
 export class SessionRunner {
   private queue: SessionEntry[];
   private index = 0;
@@ -131,25 +167,41 @@ export class SessionRunner {
   private readonly targets;
   private readonly guides: SessionGuides;
   private finished: SessionSummary | null = null;
+  /** Items in an FSRS learning step, waiting until they are due again. */
+  private readonly steps = new Map<string, { entry: SessionEntry; due: Date }>();
+  /** The drill that last served each item, so the picker can vary it. */
+  private readonly lastDrill: Map<string, string>;
 
   private constructor(
     private readonly deps: RunnerDeps,
-    plan: SessionEntry[],
+    private readonly planner: Planner,
+    private readonly picker: DrillPicker,
     cards: CardRecord[],
     private readonly skillStates: Map<string, SkillStateRecord>,
     private readonly sessionLogId: number,
+    lastDrill: Map<string, string>,
   ) {
-    this.queue = plan;
     this.cards = new Map(cards.map((c) => [c.itemId, c]));
     this.startedAt = this.now();
     this.lastTick = this.startedAt;
-    for (const e of plan) {
+    this.lastDrill = lastDrill;
+    this.queue = [];
+    this.adopt(
+      planner(this.startedAt, deps.settings.sessionMinutes, cards, new Set(), deps.maxItems),
+    );
+    this.targets = speedTargets(deps.settings.latencyBaselineMs);
+    this.guides = new SessionGuides(this.targets);
+  }
+
+  /** Append planned entries, noting the XP kind each item first appears as. */
+  private adopt(entries: readonly SessionEntry[]): void {
+    for (const e of entries) {
       if (e.kind !== 'retry' && !this.kinds.has(e.itemId)) {
         this.kinds.set(e.itemId, xpKindOf(e.kind));
       }
+      this.steps.delete(e.itemId);
     }
-    this.targets = speedTargets(deps.settings.latencyBaselineMs);
-    this.guides = new SessionGuides(this.targets);
+    this.queue.push(...entries);
   }
 
   static async start(deps: RunnerDeps): Promise<SessionRunner> {
@@ -163,10 +215,7 @@ export class SessionRunner {
       [...states.values()].map((s) => [s.skillId, s.status]),
     );
     // Skills may list items whose drill isn't built yet; plan only what a drill can test.
-    const servable = (item: Item) => {
-      const skill = deps.skills.find((s) => s.id === item.skillId);
-      return deps.drills.some((d) => skill?.drillTypes.includes(d.id) && d.canTest(item));
-    };
+    const picker = createDrillPicker(deps.skills, deps.drills);
     const frontierSkills = new Set<string>();
     const frontierInOrder: Skill[] = [];
     for (const skill of deps.skills) {
@@ -178,47 +227,48 @@ export class SessionRunner {
     }
     // The goal profile reorders frontier skills (design §3.3 step 2).
     const frontier: Item[] = orderFrontier(frontierInOrder, deps.settings.goal).flatMap((skill) =>
-      skill.items().filter(servable),
+      skill.items().filter((i) => picker.canServe(i)),
     );
     const tuning = getTuning(deps.settings.tuning);
-    const drillFor = (skillId: string) => {
-      const skill = deps.skills.find((s) => s.id === skillId);
-      return deps.drills.find((d) => skill?.drillTypes.includes(d.id));
-    };
-    const servableCards = cards.filter((c) => servable({ id: c.itemId, skillId: c.skillId }));
-    const plan = buildSession({
-      now,
-      minutes: deps.settings.sessionMinutes,
-      cards: servableCards,
-      frontier,
-      scheduler: deps.scheduler,
-      confusions,
-      conceptOf: (itemId) => {
-        const card = cards.find((c) => c.itemId === itemId);
-        const drill = card ? drillFor(card.skillId) : undefined;
-        return drill && card
-          ? drill.conceptOf(
-              { id: itemId, skillId: card.skillId },
-              { tuning, accidentalPref: deps.settings.accidentalPref },
-            )
-          : null;
-      },
-      ...(deps.maxItems !== undefined ? { maxItems: deps.maxItems } : {}),
-    });
-    // The due and new queue ran dry: top up with stretch items, never stable ones (§3.7).
-    const total = deps.maxItems ?? sessionLength(deps.settings.sessionMinutes);
-    plan.push(
-      ...stretchEntries({
-        cards: servableCards,
-        frontierSkills,
-        planned: new Set(plan.map((e) => e.itemId)),
+    const ctx = { tuning, accidentalPref: deps.settings.accidentalPref };
+
+    const planner: Planner = (at, minutes, known, seen, maxItems) => {
+      const servable = known.filter((c) => picker.canServe({ id: c.itemId, skillId: c.skillId }));
+      const skillOf = new Map(servable.map((c) => [c.itemId, c.skillId]));
+      const plan = buildSession({
+        now: at,
+        minutes,
+        cards: servable,
+        frontier,
         scheduler: deps.scheduler,
-        now,
-        count: total - plan.length,
-      }),
-    );
+        confusions,
+        conceptOf: (itemId) => {
+          const skillId = skillOf.get(itemId);
+          if (skillId === undefined) return null;
+          const item = { id: itemId, skillId };
+          return picker.pick(item)?.conceptOf(item, ctx) ?? null;
+        },
+        factOf: (item) => factOf(item, tuning),
+        ...(maxItems !== undefined ? { maxItems } : {}),
+      });
+      // The due and new queue ran dry: top up with stretch items, never stable ones (§3.7).
+      const total = maxItems ?? sessionLength(minutes);
+      plan.push(
+        ...stretchEntries({
+          cards: servable,
+          frontierSkills,
+          planned: new Set([...seen, ...plan.map((e) => e.itemId)]),
+          scheduler: deps.scheduler,
+          now: at,
+          count: total - plan.length,
+        }),
+      );
+      return plan;
+    };
+
     const logId = await startSessionLog(deps.db, now);
-    return new SessionRunner(deps, plan, cards, states, logId);
+    const lastDrill = await lastDrills(deps.db, cards, picker);
+    return new SessionRunner(deps, planner, picker, cards, states, logId, lastDrill);
   }
 
   private now(): Date {
@@ -243,16 +293,22 @@ export class SessionRunner {
 
   /** The time budget is spent or the queue is exhausted. */
   get isOver(): boolean {
-    const budgetMs = this.deps.settings.sessionMinutes * 60_000;
-    return (
-      this.index >= this.queue.length || this.now().getTime() - this.startedAt.getTime() >= budgetMs
-    );
+    return this.index >= this.queue.length || this.remainingMs === 0;
+  }
+
+  /** When the time budget runs out. */
+  get endsAt(): Date {
+    return new Date(this.startedAt.getTime() + this.deps.settings.sessionMinutes * 60_000);
+  }
+
+  /** Time left in the budget, never negative. */
+  get remainingMs(): number {
+    return Math.max(0, this.endsAt.getTime() - this.now().getTime());
   }
 
   private drillFor(entry: SessionEntry): AnyDrillType {
-    const skill = this.deps.skills.find((s) => s.id === entry.skillId);
     const item = { id: entry.itemId, skillId: entry.skillId };
-    const drill = this.deps.drills.find((d) => skill?.drillTypes.includes(d.id) && d.canTest(item));
+    const drill = this.picker.pick(item, this.lastDrill.get(item.id));
     if (!drill) throw new Error(`No drill can test ${entry.itemId}`);
     return drill;
   }
@@ -280,9 +336,14 @@ export class SessionRunner {
         rng: this.deps.rng ?? Math.random,
       },
     );
+    const skillLevel = this.skillStates.get(entry.skillId)?.guideLevel ?? DEFAULT_GUIDE;
+    // The skill's level is live: `SessionGuides` fades and restores it per answer.
+    // New-block reps fade from the worked example's full guides down to it.
     const guideLevel = entry.guided
       ? 3
-      : (this.skillStates.get(entry.skillId)?.guideLevel ?? DEFAULT_GUIDE);
+      : entry.rep !== undefined
+        ? blockGuideLevel(entry.rep, ENGINE_CONFIG.session.newBlockReps, skillLevel)
+        : skillLevel;
     this.current = { index: this.index, entry, drill, prompt, guideLevel };
     return this.current;
   }
@@ -308,6 +369,7 @@ export class SessionRunner {
       now,
     );
     this.cards.set(item.id, card);
+    this.lastDrill.set(item.id, drill.id);
 
     const minutes = this.tick(now);
     const db = this.deps.db;
@@ -380,6 +442,17 @@ export class SessionRunner {
     this.answered++;
     if (result.correct) this.correct++;
     else this.queue = scheduleRetry(this.queue, this.index);
+    // A learning step due before the budget ends comes back this session,
+    // unless the item is already queued again (a later rep or a retry).
+    const queued = this.queue.slice(this.index + 1).some((e) => e.itemId === item.id);
+    if (!queued && inLearningStep(card, this.endsAt)) {
+      this.steps.set(item.id, {
+        entry: { itemId: item.id, skillId: item.skillId, kind: 'review', guided: false },
+        due: card.fsrs.due,
+      });
+    } else {
+      this.steps.delete(item.id);
+    }
 
     return {
       result,
@@ -404,6 +477,27 @@ export class SessionRunner {
 
   next(): void {
     this.index++;
+    if (this.remainingMs === 0) return;
+    const now = this.now();
+    this.serveDueSteps(now);
+    // Time is left but the plan ran out: plan again from what is left. A
+    // fixed-length session (`maxItems`) ends with its plan.
+    if (this.index >= this.queue.length && this.deps.maxItems === undefined) {
+      const minutes = this.remainingMs / 60_000;
+      const seen = new Set(this.queue.map((e) => e.itemId));
+      this.adopt(this.planner(now, minutes, [...this.cards.values()], seen));
+    }
+  }
+
+  /** Learning steps that have come due go next, after any new block in progress. */
+  private serveDueSteps(now: Date): void {
+    const due = [...this.steps.values()]
+      .filter((s) => s.due.getTime() <= now.getTime())
+      .sort((a, b) => a.due.getTime() - b.due.getTime());
+    if (due.length === 0) return;
+    const at = blockBoundary(this.queue, this.index);
+    for (const { entry } of due) this.steps.delete(entry.itemId);
+    this.queue.splice(at, 0, ...due.map((s) => s.entry));
   }
 
   /** Close the session: update skill guide levels and mastery, and the session log. */
