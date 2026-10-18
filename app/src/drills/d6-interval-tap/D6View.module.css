@@ -1,0 +1,98 @@
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+  justify-content: space-between;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.prompt {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.prompt strong {
+  color: var(--tone);
+}
+
+.explain {
+  margin: 0;
+  min-height: 1.5em;
+  max-width: 48rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.neckArea {
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+/* Scope "shape": only the shape's upper string is live (design §7). The
+   neck's hit cells tile each string's row, so filling them dims the row. */
+.neckArea[data-live-string='1'] :global(rect[data-cell]:not([data-cell^='s1f'])),
+.neckArea[data-live-string='2'] :global(rect[data-cell]:not([data-cell^='s2f'])),
+.neckArea[data-live-string='3'] :global(rect[data-cell]:not([data-cell^='s3f'])),
+.neckArea[data-live-string='4'] :global(rect[data-cell]:not([data-cell^='s4f'])),
+.neckArea[data-live-string='5'] :global(rect[data-cell]:not([data-cell^='s5f'])),
+.neckArea[data-live-string='6'] :global(rect[data-cell]:not([data-cell^='s6f'])) {
+  fill: var(--dim);
+  cursor: default;
+}
+
+/* The context panel: the interval's size and the G–B rule, fading with guides. */
+.context {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  padding: var(--space-4);
+  align-self: start;
+}
+
+.context h2 {
+  margin: 0 0 var(--space-2);
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.context p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-3);
+  justify-content: flex-start;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+/* Best-effort iPhone: keep the zoomed neck within short landscape viewports. */
+.drill[data-size-class='compact'] .neckArea svg {
+  max-height: calc(100dvh - 9rem);
+}
