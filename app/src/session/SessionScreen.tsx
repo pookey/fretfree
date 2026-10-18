@@ -177,21 +177,21 @@ export function SessionScreen() {
   // The context panel follows guide fading: less at lower levels, hidden at 0.
   // On compact the drill places it as usual and the screen styles it as a sheet.
   const showContext = helpOpen && guideLevel > 0;
+  // A drill may bring its own panel contents; the rest get the alphabet.
+  const Panel = current?.drill.contextPanel;
   const aside = showContext ? (
     <aside className={styles.context} aria-label="Context" data-testid="context-panel">
-      <h2>Musical alphabet</h2>
-      <ol className={styles.alphabet}>
-        {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((n) => (
-          <li key={n} data-half-step-after={n === 'B' || n === 'E' ? 'true' : undefined}>
-            {n}
-          </li>
-        ))}
-      </ol>
-      {guideLevel >= 2 && (
-        <p>
-          No sharp between <strong>B–C</strong> and <strong>E–F</strong>: they are a half step
-          apart. Every other pair is a whole step.
-        </p>
+      {current && Panel ? (
+        <Panel
+          prompt={current.prompt}
+          guideLevel={guideLevel}
+          guided={current.entry.guided}
+          handedness={settings.handedness}
+          tuning={getTuning(settings.tuning)}
+          feedback={feedback}
+        />
+      ) : (
+        <AlphabetPanel guideLevel={guideLevel} />
       )}
     </aside>
   ) : null;
@@ -282,6 +282,28 @@ export function SessionScreen() {
         </section>
       </div>
     </main>
+  );
+}
+
+/** The default context panel: the musical alphabet and its half steps. */
+function AlphabetPanel({ guideLevel }: { guideLevel: GuideLevel }) {
+  return (
+    <>
+      <h2>Musical alphabet</h2>
+      <ol className={styles.alphabet}>
+        {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((n) => (
+          <li key={n} data-half-step-after={n === 'B' || n === 'E' ? 'true' : undefined}>
+            {n}
+          </li>
+        ))}
+      </ol>
+      {guideLevel >= 2 && (
+        <p>
+          No sharp between <strong>B–C</strong> and <strong>E–F</strong>: they are a half step
+          apart. Every other pair is a whole step.
+        </p>
+      )}
+    </>
   );
 }
 

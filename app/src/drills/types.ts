@@ -55,6 +55,16 @@ export interface DrillRenderProps<P, A> {
   aside?: ReactNode;
 }
 
+/** What a drill's own context panel is drawn from (design §7 session context panel). */
+export interface DrillContextPanelProps<P, A> {
+  prompt: P;
+  guideLevel: GuideLevel;
+  guided: boolean;
+  handedness: Handedness;
+  tuning: Tuning;
+  feedback: DrillFeedback<A> | null;
+}
+
 export interface DrillSounds {
   expected: string[];
   given?: string[];
@@ -90,6 +100,12 @@ export interface DrillType<P = unknown, A = unknown> {
   /** The concept an item is keyed by in the confusion matrix (e.g. its pitch class). */
   conceptOf(item: Item, ctx: Pick<DrillContext, 'tuning' | 'accidentalPref'>): string | null;
   render: FC<DrillRenderProps<P, A>>;
+  /**
+   * The contents of the session's context panel for this drill. The session
+   * wraps it in the panel, which it hides at guide level 0 (design §3.5);
+   * without one, the panel shows the musical alphabet.
+   */
+  contextPanel?: FC<DrillContextPanelProps<P, A>>;
 }
 
 /** A drill with its generic parameters erased, as stored in the registry. */
