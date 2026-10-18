@@ -345,7 +345,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - RTL tests for the step (multi-select, both, neither, skip) and an e2e test (`@smoke`) on the onboarding flow.
 
 ### M1-24 · M1 milestone QA
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-01, M1-02, M1-03, M1-04, M1-05, M1-06, M1-07, M1-08, M1-09, M1-10, M1-11, M1-12, M1-13, M1-14, M1-15, M1-16, M1-17, M1-18, M1-19, M1-20, M1-22, M1-25, M1-26
 - **Design:** §11 M1 definition of done
 - **Owns:** `docs/progress.md`, `app/e2e/m1-24.spec.ts`
