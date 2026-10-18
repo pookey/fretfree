@@ -1,0 +1,64 @@
+/* Design tokens — dark first (design §7 visual design). Colour-blind-safe
+   highlights use the Okabe–Ito palette. */
+:root {
+  color-scheme: dark light;
+  --bg: #14110f;
+  --bg-raised: #1f1a17;
+  --bg-sunken: #0e0c0a;
+  --surface: #2a231f;
+  --border: #3a312b;
+  --text: #f3ece6;
+  --text-muted: #b4a79c;
+  --accent: #e69f00; /* orange: roots, primary actions */
+  --accent-text: #1a1206;
+  --tone: #56b4e9; /* sky blue: chord tones, target highlight */
+  --correct: #009e73; /* bluish green */
+  --wrong: #d55e00; /* vermillion */
+  --streak: #ff9600;
+  --wood: #4a2f22;
+  --wood-dark: #3a2419;
+  --fret-wire: #c9c3bb;
+  --string: #ddd3c4;
+  --inlay: #e8dfd2;
+  --dim: rgb(14 12 10 / 0.55);
+
+  --radius-s: 0.5rem;
+  --radius-m: 0.875rem;
+  --radius-l: 1.25rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --tap: 44px;
+  --sidebar-w: 15rem;
+  --sidebar-w-collapsed: 4.5rem;
+  --context-w: 20rem;
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --font-display:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'SF Pro Display', system-ui, sans-serif;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #faf6f1;
+    --bg-raised: #ffffff;
+    --bg-sunken: #efe8df;
+    --surface: #f2ebe3;
+    --border: #ddd2c6;
+    --text: #1d1713;
+    --text-muted: #6b5d52;
+    --accent: #b86e00;
+    --accent-text: #ffffff;
+    --tone: #0072b2;
+    --correct: #007a59;
+    --wrong: #b84f00;
+    --dim: rgb(250 246 241 / 0.6);
+  }
+}

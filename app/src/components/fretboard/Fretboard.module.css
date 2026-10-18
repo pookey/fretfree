@@ -1,0 +1,140 @@
+.neck {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.wood {
+  fill: var(--wood);
+  stroke: var(--wood-dark);
+  stroke-width: 2;
+}
+
+.inlay {
+  fill: var(--inlay);
+  opacity: 0.55;
+}
+
+.nut {
+  fill: #efe6d6;
+}
+
+.wire {
+  stroke: var(--fret-wire);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.string {
+  stroke: var(--string);
+  opacity: 0.9;
+}
+
+.dim {
+  fill: var(--dim);
+  pointer-events: none;
+}
+
+.fretNumber,
+.stringName {
+  fill: var(--text-muted);
+  font-size: 15px;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.stringName {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.marker {
+  pointer-events: none;
+}
+
+.marker text {
+  font-size: 17px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: #10141a;
+}
+
+.target circle {
+  fill: var(--tone);
+  stroke: #fff;
+  stroke-width: 3;
+  animation: pulse 1.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.root rect {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.tone circle {
+  fill: var(--tone);
+}
+
+.ghost circle {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+
+.correct circle {
+  fill: var(--correct);
+  stroke: #fff;
+  stroke-width: 3;
+  animation: flash 0.35s ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.correct text,
+.wrong text {
+  fill: #fff;
+}
+
+.wrong rect {
+  fill: var(--wrong);
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.hit {
+  fill: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.hit:focus-visible {
+  fill: rgb(86 180 233 / 0.25);
+  stroke: var(--tone);
+  stroke-width: 2;
+}
+
+@media (hover: hover) {
+  .hit[role='button']:hover {
+    fill: rgb(255 255 255 / 0.07);
+  }
+}
+
+@keyframes pulse {
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes flash {
+  from {
+    transform: scale(1.4);
+  }
+}
