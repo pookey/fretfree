@@ -149,6 +149,7 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
     expect(screen.getByTestId('summary-learning')).toHaveTextContent('14');
     expect(screen.getByTestId('summary-stable')).toHaveTextContent('0');
     expect(screen.getByTestId('summary-improved')).toHaveTextContent('14');
+    expect(screen.queryByTestId('summary-stable-total')).toBeNull();
     expect(screen.getByTestId('summary-progress')).toHaveTextContent(
       "14 items learning. They become stable as you recall them over the next few days; today's items come back Tuesday.",
     );
@@ -168,6 +169,8 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
     });
     expect(screen.getByTestId('summary-learning')).toHaveTextContent('12');
     expect(screen.getByTestId('summary-stable')).toHaveTextContent('3');
+    // Every stable item is new today: the tile says it all.
+    expect(screen.queryByTestId('summary-stable-total')).toBeNull();
     expect(screen.getByTestId('summary-progress')).toHaveTextContent(
       /^12 items learning, 3 of them newly stable\. The rest become stable .* today's items come back tomorrow\.$/,
     );
@@ -186,6 +189,11 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
     });
     expect(screen.getByTestId('summary-learning')).toHaveTextContent('8');
     expect(screen.getByTestId('summary-stable')).toHaveTextContent('0');
+    // The tile's 0 sits next to how many are stable in all.
+    expect(screen.getByTestId('summary-stable-total')).toHaveTextContent('8');
+    expect(screen.getByTestId('summary-stable-total').parentElement).toHaveTextContent(
+      /^8 stable · \d+ stronger$/,
+    );
     expect(screen.getByTestId('summary-progress')).toHaveTextContent(
       "8 items are stable. Each recall stretches the gap, and today's items come back on 3 November.",
     );

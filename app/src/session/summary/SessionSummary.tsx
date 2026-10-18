@@ -129,6 +129,12 @@ export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryP
             <dt>Became stable</dt>
             <dd data-testid="summary-stable">{c.progress.becameStable}</dd>
             <dd className={styles.statDetail}>
+              {/* Already-stable items reviewed today, so a 0 here isn't read as none. */}
+              {c.progress.stable > c.progress.becameStable && (
+                <>
+                  <span data-testid="summary-stable-total">{c.progress.stable}</span> stable ·{' '}
+                </>
+              )}
               <span data-testid="summary-improved">{c.itemsImproved}</span> stronger
             </dd>
           </div>
