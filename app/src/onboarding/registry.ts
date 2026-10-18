@@ -20,6 +20,8 @@ export interface OnboardingStep extends Ordered {
   skippable: true;
   /** Whether the step applies on this device (e.g. only where the app can be installed). Default: yes. */
   available?(): boolean;
+  /** False for a step that asks nothing (e.g. install), so the welcome's question count leaves it out. */
+  question?: false;
 }
 
 /**

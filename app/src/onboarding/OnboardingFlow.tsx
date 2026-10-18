@@ -99,8 +99,9 @@ export function OnboardingFlow({
             data-testid="onboarding-choice"
           >
             <p className={styles.lead}>
-              {steps.length} quick questions so your practice fits you. It takes under 3 minutes,
-              and you can skip any of them or change them later in Progress.
+              {steps.filter((s) => s.question !== false).length} quick questions so your practice
+              fits you. It takes under 3 minutes, and you can skip any of them or change them later
+              in Progress.
             </p>
             <button
               type="button"

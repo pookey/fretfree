@@ -22,6 +22,8 @@ export const id = 'install';
 export const order = 0;
 export const title = 'Install FretFree';
 export const skippable = true;
+// Not a question, so the welcome screen's count leaves it out.
+export const question = false;
 export const explanation = (
   <>
     <p>Added to your Home Screen, FretFree works like an app:</p>

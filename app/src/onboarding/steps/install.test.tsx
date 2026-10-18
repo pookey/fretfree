@@ -105,6 +105,19 @@ describe('<OnboardingFlow> with steps that do not apply', () => {
     ),
   });
 
+  it('counts only the questions on the welcome screen', () => {
+    render(
+      <OnboardingFlow
+        steps={[{ ...step('install'), question: false }, step('goal'), step('daily')]}
+        onDone={() => {}}
+      />,
+    );
+    expect(screen.getByText(/2 quick questions/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Get started' }));
+    expect(screen.getByTestId('onboarding-progress')).toHaveTextContent('Step 1 of 3');
+    expect(install.question).toBe(false);
+  });
+
   it('leaves them out of the flow and the count', () => {
     render(
       <OnboardingFlow
