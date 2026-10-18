@@ -90,7 +90,7 @@ Each signed-in user has one record set on the server. Every change to it takes t
 2. computes `merge(stored, incoming)`, and skips the record if the result equals the stored version (`canonical()`);
 3. otherwise writes it **atomically with a new sequence number**, conditioned on nothing having changed since step 1, and retries from step 1 on a conflict (see Server notes).
 
-Pushing the same batch twice changes nothing (idempotence). The reply is `{ ok: true }`. The client then calls `acknowledgePushed(records)`, which drops each outbox entry whose `updatedAt` is no newer than the pushed version. A change made during the push keeps its entry for the next push.
+Pushing the same batch twice changes nothing (idempotence). The server writes a push in chunks (Server notes) and replies `{ ok: true }` only once every chunk has committed. The client then calls `acknowledgePushed(records)`, which drops each outbox entry whose `updatedAt` is no newer than the pushed version. A change made during the push keeps its entry for the next push.
 
 ### Pull
 
@@ -111,7 +111,7 @@ Push the outbox in batches, then pull to the end, then push whatever the pull qu
 
 ### Server notes (M7-03)
 
-- The table is partitioned by user ID, taken from the JWT and never from the body. A record's sort key is `table#id`, and a GSI on the sequence number serves pulls.
+- The table is partitioned by user ID, taken from the JWT and never from the body. A record's sort key is `table#id`. Pulls are served by a **local secondary index** on the sequence number (partition key user ID, sort key `seq`), queried with `ConsistentRead: true`. Don't use a GSI: GSIs replicate asynchronously and can't be read consistently. A pull could then see seq 11 before seq 10 has arrived, move its cursor past 10 and never fetch that record. That is the same gap the atomic write closes.
 - **Sequence numbers and writes commit together, in order.** A separate atomic counter is not enough, for two reasons:
   - *Cursor gap.* Push A takes seq 10 and push B takes seq 11, but B commits first. A pull in between returns 11 and moves the cursor past 10, so that device never pulls A's record.
   - *Lost update.* Two concurrent pushes of the same record both load the stored version and each write their own merge. The later write drops the other's change.
@@ -120,7 +120,7 @@ Push the outbox in batches, then pull to the end, then push whatever the pull qu
   1. update the per-user counter item from `S` to `S + k`, conditioned on it still being `S`;
   2. put each changed record with its new seq (`S + 1` … `S + k`), conditioned on its stored seq being the one read in step 1, or on `attribute_not_exists` for a new record.
 
-  A push batch can go in one transaction: the counter plus up to 99 records. On `TransactionCanceledException` (a `ConditionalCheckFailed` or a conflict), re-read and re-merge, then retry. The counter condition serialises each user's writes, so commit order equals sequence order, and a pull that reads `seq > cursor` can never skip a record. Contention is per user only, which is small.
+  One transaction holds the counter plus at most 99 records, so the server splits a push (up to 500 records) into chunks of up to 99. Each chunk is its own counter-conditioned transaction. The reply is `ok` only after every chunk has committed. If a later chunk fails, the client keeps its outbox and re-pushes the whole batch, which is safe: merges are idempotent, so the chunks that already committed change nothing the second time. On `TransactionCanceledException` (a `ConditionalCheckFailed` or a conflict), re-read and re-merge, then retry. The counter condition serialises each user's writes, so commit order equals sequence order, and a pull that reads `seq > cursor` can never skip a record. Contention is per user only, which is small.
 - Optionally, a pull serves records only up to the counter value read when the pull began. That gives each page a consistent end even while pushes land.
 - The server never trusts client timestamps for authorisation. It only uses them to merge.
 - `DELETE /account` removes every record and the counter.
