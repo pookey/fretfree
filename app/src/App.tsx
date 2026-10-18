@@ -2,8 +2,10 @@ import { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { useAppStore } from './app-store';
 import { guardLoader, ROUTES, type RouteModule } from './routes/registry';
+import { installStreakSettle } from './session/gamification-bridge';
 import { AppShell } from './shell/AppShell';
 import { UpdateToast } from './shell/UpdateToast';
+import { getDb } from './storage';
 
 const toRoute = ({ path, element, guard }: RouteModule) =>
   guard ? { path, element, loader: guardLoader(guard) } : { path, element };
@@ -29,6 +31,8 @@ export function App() {
   useEffect(() => {
     void load();
   }, [load]);
+  // Settle missed days on open and on return to the foreground (design §3.7).
+  useEffect(() => installStreakSettle(getDb()), []);
   return (
     <>
       <RouterProvider router={router} />
