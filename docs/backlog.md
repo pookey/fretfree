@@ -254,7 +254,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - A Lighthouse PWA/a11y check runs locally (documented and scripted) and passes.
 
 ### M1-20 · Compact (iPhone) polish
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-04
 - **Design:** §7 (iPhone best-effort)
 - **Owns:** `app/src/shell/size-class.ts`, `app/src/shell/ScreenLayout.tsx`, `app/e2e/m1-20.spec.ts`
