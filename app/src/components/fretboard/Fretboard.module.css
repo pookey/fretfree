@@ -47,9 +47,16 @@
   pointer-events: none;
 }
 
+/* The names sit on the wood, which doesn't change with the theme, so they use
+   a neck token, not page text. A wood halo keeps the string line out of the
+   glyphs (4.5:1, Fretboard.contrast.test.ts). */
 .stringName {
+  fill: var(--inlay);
   font-weight: 600;
-  opacity: 0.8;
+  stroke: var(--wood);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  paint-order: stroke;
 }
 
 .marker {
@@ -84,9 +91,10 @@
 
 .ghost circle {
   fill: none;
-  stroke: var(--text-muted);
+  stroke: var(--inlay);
   stroke-width: 2;
   stroke-dasharray: 4 4;
+  opacity: 0.7;
 }
 
 .correct circle {
