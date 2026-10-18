@@ -286,6 +286,19 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - No other text on the neck reveals the answer in an unguided prompt. In particular, the string-name label at the nut is hidden for the target's string when the target is at fret 0 or 12.
   - RTL tests cover guide levels 0–3 × guided/unguided/feedback. An e2e test (`m1-25.spec.ts`, tagged `@smoke`) checks that after the worked example, the unguided prompt for a fresh learner doesn't show the answer on the neck.
 
+### M1-27 · [hotfix] D3: say "note", and answer by tapping the neck
+- **Status:** todo
+- **Deps:** none
+- **Design:** §6 D3, research/02 (retrieval in the target context)
+- **Owns:** `app/src/drills/d3-note-wheel/**`, `app/e2e/m1-27.spec.ts`, `docs/design/app-design.md`
+- **Acceptance:**
+  - User feedback: "it's saying what 'letter' is before C — why 'letter' rather than 'note'?" The F1 musical-alphabet prompts say "letter" so they aren't confused with half steps (the note after C could be C♯), but a learner reads it as jargon. Reword every learner-facing "letter" in D3 (prompt, worked example, context-panel copy, the note wheel's aria-label) in terms of notes and the musical alphabet, e.g. "The note before C in the musical alphabet?" and "2 notes after E in the musical alphabet?". Step prompts ("A whole step above E?") are unchanged. Internal identifiers (`letter:` item IDs, `D3Kind`) stay.
+  - User feedback: "clicking on the fretboard should be the same as pressing the letters, as that's the actual skill we're trying to teach." The D3 neck becomes an answer surface (`onTapCell`). Tapping any cell whose pitch class is the expected answer counts as that answer, with the same grading, response time and FSRS path as a button. A wrong tap is graded wrong, and feedback marks the tapped cell as `wrong` and the expected cells as `correct`. The note buttons and the A–G keyboard path stay.
+  - Natural-only (`letter`) items still accept a tap on the natural's cell only. Tapping a sharp/flat cell is wrong.
+  - Nothing on the neck reveals the answer in an unguided prompt (M1-25): only the start marker is labelled, and tap targets carry no note names in their accessible labels before answering.
+  - Neck cells stay ≥44pt on iPad. The prompt copy tells the learner they can tap the neck or a button.
+  - Design §6 D3 records both changes. Unit tests cover the new wording and tap → answer mapping. An e2e test (`m1-27.spec.ts`, iPad projects, happy path tagged `@smoke`) answers one prompt by tapping the neck.
+
 ### M1-26 · Reading question: what you can read, and what you want to learn
 - **Status:** done
 - **Deps:** none
