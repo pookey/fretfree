@@ -5,9 +5,10 @@ import { focusSession } from './helpers/focus';
 // M1-24: the M1 definition of done (design §11). A learner's first week, on
 // a mocked clock: onboarding → three daily sessions → streak 3, a due-review
 // session and a filled-in heatmap; a goal and weekend-amulet change from
-// Settings mid-week holds the streak over a weekend. Then a screenshot pass of
-// every screen, which also runs against production:
-//   E2E_BASE_URL=https://fretfree.app ../scripts/e2e-slot.sh playwright test m1-24 --grep @screens
+// Settings mid-week holds the streak over a weekend; a double session repairs
+// a broken streak. Then a screenshot pass of every screen. The @smoke tests
+// also run against production, on every profile:
+//   E2E_BASE_URL=https://fretfree.app ../scripts/e2e-slot.sh playwright test e2e/m1-24.spec.ts
 
 // A fixed zone, so local dates (and the weekend) don't depend on the machine.
 test.use({ timezoneId: 'Europe/London' });
@@ -171,9 +172,9 @@ test.describe('M1-24 the first week', () => {
     expect(await map(page).getByTestId('heat-tile').count()).toBeGreaterThan(tilesAfterDay1);
 
     // Mid-week, from Settings: a 10-minute goal and the weekend amulet.
-    const practice = page.getByRole('region', { name: 'Settings' }).getByRole('group', {
-      name: 'Practice',
-    });
+    await page.getByRole('link', { name: 'Settings' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
+    const practice = page.getByRole('main').getByRole('group', { name: 'Practice' });
     await practice.getByRole('combobox', { name: 'Daily goal' }).selectOption('10');
     await practice.getByRole('checkbox', { name: 'Weekend amulet' }).click();
     await expect(practice.getByRole('checkbox', { name: 'Weekend amulet' })).toBeChecked();
@@ -260,7 +261,9 @@ test.describe('M1-24 screenshot pass', () => {
       ['07', '/learn', 'Learn'],
       ['08', '/explore', 'Explore'],
       ['09', '/progress', 'Progress'],
-      ['10', '/about', 'About FretFree'],
+      ['10', '/settings', 'Settings'],
+      ['11', '/about', 'About FretFree'],
+      ['12', '/privacy', 'Privacy'],
     ] as const) {
       await page.goto(path);
       await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
