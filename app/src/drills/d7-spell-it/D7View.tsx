@@ -7,6 +7,7 @@ import {
   d7Blanks,
   d7Explain,
   d7Guides,
+  d7Hint,
   d7KeyAction,
   d7Task,
   d7Verdicts,
@@ -164,10 +165,7 @@ export function D7View({
     );
   });
 
-  const hint =
-    prompt.kind === 'chord'
-      ? 'Root, 3rd, 5th, 7th: skip a letter each time.'
-      : 'Each letter A–G once, in order.';
+  const hint = d7Hint(prompt);
 
   const context = aside ? (
     <aside className={styles.context} aria-label="Context" data-testid="context-panel">

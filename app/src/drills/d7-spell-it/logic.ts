@@ -13,6 +13,7 @@ import {
   compareSpelling,
   degreeOrdinal,
   isPracticalMajorKey,
+  isPracticalSpelling,
   majorScale,
   spellChord,
   type ChordKind,
@@ -141,7 +142,8 @@ function parse(item: Item): Omit<D7Prompt, 'itemId' | 'choices' | 'degreeChoices
     };
   }
   const chord = parseSpellChordItemId(item.id);
-  if (chord) {
+  // Roots whose spelling needs a double sharp or flat (Fb minor: Fb Abb Cb) aren't asked.
+  if (chord && isPracticalSpelling(spellChord(chord.root, chord.chord))) {
     const formula = chordFormula(chord.chord);
     return {
       kind: 'chord',
@@ -198,16 +200,22 @@ function gridSort(notes: Iterable<string>): string[] {
   return [...new Set(notes)].sort((a, b) => rank(a) - rank(b));
 }
 
+/** A letter with flat, natural and sharp: `C` → `Cb C C#`. */
+function letterColumn(letter: string): string[] {
+  return [`${letter}b`, letter, `${letter}#`];
+}
+
 /**
  * The note buttons. Every level includes the answers (a double flat in a
- * dim7 too), so the grid never hides the right spelling.
+ * dim7 too), so the grid never hides the right spelling. Scope 0 offers each
+ * answer's letter with ♭, ♮ and ♯ and its enharmonic twins, so even a
+ * one-note degree card asks for both the letter (C, not B♯) and the
+ * accidental (C, not C♯ or C♭); scope 1 offers every letter.
  */
 export function d7Choices(blanks: readonly string[], scopeLevel: number): string[] {
   const level = Math.max(D7_SCOPE.minLevel, Math.min(D7_SCOPE.maxLevel, scopeLevel));
-  if (level >= 1) {
-    return gridSort([...LETTERS.flatMap((l) => [`${l}b`, l, `${l}#`]), ...blanks]);
-  }
-  return gridSort(blanks.flatMap((n) => [n, ...enharmonicTwins(n)]));
+  if (level >= 1) return gridSort([...LETTERS.flatMap(letterColumn), ...blanks]);
+  return gridSort(blanks.flatMap((n) => [n, ...letterColumn(letterOf(n)), ...enharmonicTwins(n)]));
 }
 
 export function d7MakePrompt(item: Item, ctx: DrillContext): D7Prompt {
@@ -325,11 +333,36 @@ export function d7Explain(prompt: D7Prompt, answer: D7Answer): string[] {
   if (enharmonic) {
     lines.push(
       prompt.kind === 'chord'
-        ? 'Chord tones are spelled by letter: root, 3rd, 5th and 7th skip a letter each time, whatever accidental that needs.'
+        ? chordRule(prompt)
         : 'A major key uses each letter A–G exactly once, in order, whatever accidental that needs.',
     );
   }
   return lines;
+}
+
+/** True for chords stacked in 3rds (1 3 5 7, any accidentals): each tone skips a letter. */
+function isStackedThirds(prompt: D7Prompt): boolean {
+  return prompt.slots.every((s) => /^[b#]*[1357]$/.test(s.label));
+}
+
+/** Why a chord is spelled on its letters, after an enharmonic slip. */
+function chordRule(prompt: D7Prompt): string {
+  if (isStackedThirds(prompt)) {
+    return 'Chord tones are spelled by letter: root, 3rd, 5th and 7th skip a letter each time, whatever accidental that needs.';
+  }
+  // Sus and add chords don't stack 3rds (Csus4 = C F G): read the letter off each number.
+  const map = prompt.slots
+    .map((s) => `${s.label.replace(/[b#]/g, '')} → ${letterOf(s.note)}`)
+    .join(', ');
+  return `Chord tones are spelled by letter: each sits on the letter its number names, counting the root as 1 (${map}), whatever accidental that needs.`;
+}
+
+/** The hint under the task (guide level 2+). It names the rule, never the answer. */
+export function d7Hint(prompt: D7Prompt): string {
+  if (prompt.kind !== 'chord') return 'Each letter A–G once, in order.';
+  return isStackedThirds(prompt)
+    ? 'Root, 3rd, 5th, 7th: skip a letter each time.'
+    : 'Each tone sits on the letter its number names, counting the root as 1.';
 }
 
 /** The worked-example line for the first, guided rep of a new item (rule 8). */

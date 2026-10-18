@@ -15,6 +15,7 @@ import {
   d7Explain,
   d7GradedResponseMs,
   d7Guides,
+  d7Hint,
   d7KeyAction,
   d7MakePrompt,
   d7Sounds,
@@ -52,7 +53,16 @@ describe('D7 items', () => {
     }
     expect(d7CanTest(item('degree-of:7@F#'))).toBe(true);
     // No double-sharp keys, no degree 1 (the tonic is given), nothing else.
-    for (const id of ['spell-key:G#', 'degree:6@D#', 'degree:1@C', 'note@s6f5', 'nope']) {
+    for (const id of [
+      'spell-key:G#',
+      'degree:6@D#',
+      'degree:1@C',
+      // Chords whose spelling needs a double flat: Fb Abb Cb, C Eb Gb Bbb.
+      'spell-chord:minor@Fb',
+      'spell-chord:dim7@C',
+      'note@s6f5',
+      'nope',
+    ]) {
       expect(d7CanTest(item(id)), id).toBe(false);
     }
     expect(() => prompt('spell-key:G#')).toThrow(/cannot test/);
@@ -114,26 +124,29 @@ describe('D7 prompts', () => {
     expect(d7Task(q)).toBe('E♯ is which degree of F♯ major?');
   });
 
-  it('offers the answers and their enharmonic twins at scope 0', () => {
+  it("offers each answer's letter ♭ ♮ ♯ and its enharmonic twins at scope 0", () => {
     const p = prompt('spell-key:F#');
-    // Grid order: A–G, flat → sharp.
-    expect(p.choices).toEqual([
-      'Ab',
-      'A#',
-      'Bb',
-      'B',
-      'Cb',
-      'C#',
-      'Db',
-      'D#',
-      'Eb',
-      'E#',
-      'F',
-      'G#',
-    ]);
-    // Every answer and every twin: F for E#, Cb for B.
+    // Grid order: A–G, flat → sharp. Twins: F for E#, Cb for B.
+    expect(p.choices).toEqual('Ab A A# Bb B B# Cb C C# Db D D# Eb E E# F Gb G G#'.split(' '));
     for (const n of d7Blanks(p)) expect(p.choices).toContain(n);
-    expect(p.choices).toContain('F');
+  });
+
+  it('makes a one-note degree card choose both the letter and the accidental', () => {
+    // "The 6th of E♭?": C, not B♯ (letter), and not C♭ or C♯ (accidental).
+    expect(prompt('degree:6@Eb').choices).toEqual(['B#', 'Cb', 'C', 'C#']);
+    expect(prompt('degree:3@E').choices).toEqual(['Ab', 'Gb', 'G', 'G#']);
+  });
+
+  it('never leaves a blank whose letter column has a single button, for any C4 item', () => {
+    for (const i of C4_ITEMS) {
+      const p = d7MakePrompt(i, ctx({ scopeLevel: 0 }));
+      // Degree-of cards answer with degree buttons, not notes.
+      if (p.kind === 'degree-of') continue;
+      for (const n of d7Blanks(p)) {
+        const column = p.choices.filter((c) => c.charAt(0) === n.charAt(0));
+        expect(column.length, `${i.id} ${n}`).toBeGreaterThanOrEqual(3);
+      }
+    }
   });
 
   it('offers every letter flat, natural and sharp at scope 1, plus any double accidental needed', () => {
@@ -142,7 +155,7 @@ describe('D7 prompts', () => {
     expect(p.choices.slice(0, 3)).toEqual(['Ab', 'A', 'A#']);
     expect(d7Choices(['Eb', 'Gb', 'Bbb'], 5)).toContain('Bbb');
     expect(d7Choices(['Eb', 'Gb', 'Bbb'], 5)).toHaveLength(22);
-    expect(d7Choices(['D'], -1)).toEqual(['D']);
+    expect(d7Choices(['D'], -1)).toEqual(['Db', 'D', 'D#']);
     expect(D7_SCOPE).toEqual({ minLevel: 0, maxLevel: 1 });
   });
 
@@ -220,6 +233,30 @@ describe('D7 grading', () => {
     ]);
     const add9 = prompt('spell-chord:add9@C');
     expect(d7Explain(add9, notes('E G Eb'))[0]).toMatch(/^E♭ isn't the 9th of Cadd9: it's D/);
+  });
+
+  it('explains sus and add chords by the letter each number names, not by skipping letters', () => {
+    const sus4 = prompt('spell-chord:sus4@C');
+    expect(d7Check(sus4, notes('F G')).correct).toBe(true);
+    expect(d7Explain(sus4, notes('E# G'))).toEqual([
+      'Right pitch, wrong letter: E♯ sounds like F, but the 4th of Csus4 sits on F (count letters up from C: C D E F).',
+      'Chord tones are spelled by letter: each sits on the letter its number names, counting the root as 1 (1 → C, 4 → F, 5 → G), whatever accidental that needs.',
+    ]);
+    const add9 = prompt('spell-chord:add9@D');
+    expect(d7Explain(add9, notes('F# A Fb'))[1]).toContain('(1 → D, 3 → F, 5 → A, 9 → E)');
+  });
+
+  it('hints the spelling rule for keys, stacked chords, and sus/add chords', () => {
+    expect(d7Hint(prompt('spell-key:F#'))).toBe('Each letter A–G once, in order.');
+    expect(d7Hint(prompt('degree:6@Eb'))).toBe('Each letter A–G once, in order.');
+    expect(d7Hint(prompt('spell-chord:m7b5@B'))).toBe(
+      'Root, 3rd, 5th, 7th: skip a letter each time.',
+    );
+    for (const id of ['spell-chord:sus2@D', 'spell-chord:sus4@C', 'spell-chord:add9@G']) {
+      expect(d7Hint(prompt(id))).toBe(
+        'Each tone sits on the letter its number names, counting the root as 1.',
+      );
+    }
   });
 
   it('grades a one-note degree answer', () => {
