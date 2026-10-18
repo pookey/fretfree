@@ -446,7 +446,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ## M3: Chords and CAGED
 
 ### M3-01 · [contract] Scale, chord and CAGED theory v2
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **Owns:** `app/src/theory/chords.ts`, `app/src/theory/scales.ts`, `app/src/theory/shapes.ts`, `app/src/theory/*.test.ts`
 - **Acceptance:**
