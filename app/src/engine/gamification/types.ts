@@ -117,6 +117,10 @@ export interface StreakRepairedEvent {
   type: 'streak-repaired';
   date: LocalDate;
   streak: number;
+  /** Set when the repair alone carried the streak past a milestone (7, 30, 100, 365). */
+  milestone?: number;
+  /** A freeze was earned for a multiple of 7 crossed only by the repair. */
+  freezeEarned?: boolean;
 }
 
 export interface AchievementUnlockedEvent {
