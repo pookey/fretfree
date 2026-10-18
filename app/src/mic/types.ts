@@ -87,6 +87,8 @@ export interface PitchSource {
    * permission is requested only when the learner enables mic mode).
    *
    * Idempotent while `starting` or `running`. Rejects with a `PitchSourceError`.
+   * If `stop()` is called before it settles, it resolves (even if the driver
+   * failed) without the source running: check `state` after awaiting it.
    */
   start(): Promise<void>;
   /** Stops listening and releases the microphone. Ends any sounding note. Idempotent. */
@@ -106,9 +108,18 @@ export interface PitchSource {
  * so the real detector (getUserMedia + AudioWorklet) and the fake behave alike.
  */
 export interface PitchDriver {
-  /** Starts producing frames through `emit`; resolves once running. May reject with a `PitchSourceError`. */
+  /**
+   * Starts producing frames through `emit`; resolves once running. May reject
+   * with a `PitchSourceError`. `createPitchSource` calls it synchronously from
+   * `PitchSource.start()` (so it runs inside the user gesture) and never calls
+   * it again until the previous call has settled and, if it resolved, `stop()`
+   * has been called.
+   */
   start(emit: (frame: PitchFrame) => void): Promise<void>;
-  /** Stops producing frames and releases the device. */
+  /**
+   * Stops producing frames and releases the device. Called only after a
+   * `start()` resolved, never while one is pending or after one rejected.
+   */
   stop(): void;
 }
 

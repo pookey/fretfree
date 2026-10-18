@@ -191,6 +191,59 @@ describe('createNoteTracker', () => {
     expect(t.flush()).toEqual([]);
   });
 
+  it('does not split a sustained note on an octave glitch', () => {
+    const t = createNoteTracker();
+    const input = [
+      ...frames(A2, 0, 180),
+      { frequency: 2 * A2, clarity: 0.98, at: 200 },
+      ...frames(A2, 220, 300),
+      { frequency: 2 * A2, clarity: 0.98, at: 320 },
+      { frequency: 2 * A2, clarity: 0.98, at: 340 },
+      ...frames(A2, 360, 400),
+    ];
+    const events = feed(t, input);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ type: 'note', note: { midi: 45, startedAt: 0 } });
+    expect(feed(t, frames(0, 420, 480, 20, 0))).toEqual([
+      { type: 'note-end', end: expect.objectContaining({ endedAt: 400 }) as unknown as NoteEnd },
+    ]);
+  });
+
+  it('ends a note when a challenger becomes stable within the dropout window', () => {
+    const t = createNoteTracker({ dropoutMs: 200 });
+    feed(t, frames(A2, 0, 100));
+    const c3 = midiToFrequency(48);
+    expect(feed(t, frames(c3, 120, 180))).toEqual([]);
+    expect(t.push({ frequency: c3, clarity: 0.98, at: 200 })).toEqual([
+      { type: 'note-end', end: expect.objectContaining({ endedAt: 100 }) as unknown as NoteEnd },
+      { type: 'note', note: expect.objectContaining({ midi: 48, startedAt: 120, stableAt: 200 }) },
+    ]);
+  });
+
+  it('replaces a challenger that changes pitch', () => {
+    const t = createNoteTracker({ dropoutMs: 200 });
+    feed(t, frames(A2, 0, 100));
+    feed(t, frames(midiToFrequency(48), 120, 160));
+    expect(feed(t, frames(midiToFrequency(50), 180, 240))).toEqual([]);
+    expect(t.push({ frequency: midiToFrequency(50), clarity: 0.98, at: 260 })).toEqual([
+      { type: 'note-end', end: expect.objectContaining({ endedAt: 100 }) as unknown as NoteEnd },
+      { type: 'note', note: expect.objectContaining({ midi: 50, startedAt: 180 }) },
+    ]);
+  });
+
+  it('drops a stale challenger when the note ends in silence', () => {
+    const t = createNoteTracker();
+    feed(t, frames(A2, 0, 100));
+    feed(t, [{ frequency: midiToFrequency(48), clarity: 0.98, at: 120 }]);
+    expect(feed(t, frames(0, 140, 180, 20, 0))).toEqual([
+      { type: 'note-end', end: expect.objectContaining({ endedAt: 100 }) as unknown as NoteEnd },
+    ]);
+    // C3 starts afresh rather than continuing from 120.
+    expect(feed(t, frames(midiToFrequency(48), 200, 280))[0]).toMatchObject({
+      note: { midi: 48, startedAt: 200 },
+    });
+  });
+
   it('accepts custom options', () => {
     const t = createNoteTracker({ minStableMs: 200, minClarity: 0.5 });
     expect(feed(t, frames(A2, 0, 180, 20, 0.6))).toEqual([]);
@@ -199,27 +252,125 @@ describe('createNoteTracker', () => {
 });
 
 describe('createPitchSource', () => {
+  /** A driver whose starts settle when the test says; `resolve`/`reject` act on the latest start. */
   function controllableDriver() {
-    let emit: ((f: PitchFrame) => void) | null = null;
-    let resolve: () => void = () => undefined;
-    let reject: (e: unknown) => void = () => undefined;
+    const calls: {
+      emit: (f: PitchFrame) => void;
+      resolve: () => void;
+      reject: (e: unknown) => void;
+    }[] = [];
+    const log: string[] = [];
     const driver = {
-      start: vi.fn((e: (f: PitchFrame) => void) => {
-        emit = e;
-        return new Promise<void>((res, rej) => {
-          resolve = res;
-          reject = rej;
+      start: vi.fn((emit: (f: PitchFrame) => void) => {
+        log.push(`start${calls.length}`);
+        return new Promise<void>((resolve, reject) => {
+          calls.push({ emit, resolve, reject });
         });
       }),
-      stop: vi.fn(),
+      stop: vi.fn(() => {
+        log.push('stop');
+      }),
     } satisfies PitchDriver;
+    const call = (i?: number) => calls[i ?? calls.length - 1];
     return {
       driver,
-      emit: (f: PitchFrame) => emit?.(f),
-      resolve: () => resolve(),
-      reject: (e: unknown) => reject(e),
+      log,
+      emit: (f: PitchFrame, i?: number) => call(i)?.emit(f),
+      resolve: (i?: number) => call(i)?.resolve(),
+      reject: (e: unknown, i?: number) => call(i)?.reject(e),
     };
   }
+
+  const flushMicrotasks = () => new Promise<void>((r) => setTimeout(r, 0));
+
+  it('calls the driver synchronously, inside the user gesture', () => {
+    const c = controllableDriver();
+    const source = createPitchSource(c.driver);
+    void source.start();
+    expect(c.driver.start).toHaveBeenCalledTimes(1);
+  });
+
+  it('restarting while a cancelled start is pending never stops the live session', async () => {
+    const c = controllableDriver();
+    const source = createPitchSource(c.driver);
+    const seen = vi.fn();
+    source.onFrame(seen);
+    const first = source.start();
+    source.stop();
+    const second = source.start();
+    expect(source.state).toBe('starting');
+    // The second driver start waits for the first to settle.
+    expect(c.driver.start).toHaveBeenCalledTimes(1);
+    c.resolve(0);
+    await first;
+    await flushMicrotasks();
+    expect(c.log).toEqual(['start0', 'stop', 'start1']);
+    c.resolve(1);
+    await second;
+    expect(source.state).toBe('running');
+    expect(c.driver.stop).toHaveBeenCalledTimes(1);
+    c.emit({ frequency: A2, clarity: 1, at: 0 }, 1);
+    c.emit({ frequency: A2, clarity: 1, at: 0 }, 0);
+    expect(seen).toHaveBeenCalledTimes(1);
+  });
+
+  it('restarts cleanly when the cancelled start fails', async () => {
+    const c = controllableDriver();
+    const source = createPitchSource(c.driver);
+    const first = source.start();
+    source.stop();
+    const second = source.start();
+    c.reject(new PitchSourceError('denied'), 0);
+    await expect(first).resolves.toBeUndefined();
+    await flushMicrotasks();
+    expect(c.log).toEqual(['start0', 'start1']);
+    expect(source.state).toBe('starting');
+    expect(source.error).toBeNull();
+    c.resolve(1);
+    await second;
+    expect(source.state).toBe('running');
+    expect(c.driver.stop).not.toHaveBeenCalled();
+  });
+
+  it('reports a failure of the restarted start', async () => {
+    const c = controllableDriver();
+    const source = createPitchSource(c.driver);
+    void source.start();
+    source.stop();
+    const second = source.start();
+    c.resolve(0);
+    await flushMicrotasks();
+    c.reject(new PitchSourceError('no-device'), 1);
+    await expect(second).rejects.toMatchObject({ reason: 'no-device' });
+    expect(source.state).toBe('error');
+  });
+
+  it('skips a queued start that was itself cancelled', async () => {
+    const c = controllableDriver();
+    const source = createPitchSource(c.driver);
+    void source.start();
+    source.stop();
+    const second = source.start();
+    source.stop();
+    c.resolve(0);
+    await second;
+    await flushMicrotasks();
+    expect(c.log).toEqual(['start0', 'stop']);
+    expect(source.state).toBe('idle');
+  });
+
+  it('wraps a driver that throws synchronously', async () => {
+    const source = createPitchSource({
+      start: () => {
+        throw new Error('no AudioWorklet');
+      },
+      stop: () => undefined,
+    });
+    await expect(source.start()).rejects.toMatchObject({
+      reason: 'failed',
+      message: 'no AudioWorklet',
+    });
+  });
 
   it('moves idle → starting → running → idle and reports state changes', async () => {
     const c = controllableDriver();
