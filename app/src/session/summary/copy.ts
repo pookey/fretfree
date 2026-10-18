@@ -1,5 +1,5 @@
-import type { GamificationEvent } from '../../engine/gamification';
-import type { Celebration, CompetenceLine } from './celebrations';
+import { dayOfWeek, parseLocalDate, type GamificationEvent } from '../../engine/gamification';
+import type { Celebration, CompetenceLine, SessionProgress } from './celebrations';
 
 /**
  * Summary-screen copy. It names what the learner can now do, and frames
@@ -49,6 +49,70 @@ export function personalBestText(pb: { medianMs: number; previousMs: number }): 
 /** Design §3.3 step 5 and research/02 rule 11: explain why spacing works. */
 export const SPACING_COPY =
   "Come back tomorrow. Spacing practice out feels harder than cramming, and that's exactly why it sticks: each recall after a gap makes the memory last longer.";
+
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+/** "tomorrow", a weekday within the week ahead, else a date like "3 November". */
+export function reviewDayText(next: NonNullable<SessionProgress['nextReview']>): string {
+  if (next.inDays <= 1) return 'tomorrow';
+  if (next.inDays < 7) return WEEKDAYS[dayOfWeek(next.date)] as string;
+  const p = parseLocalDate(next.date);
+  return p ? `${p.day} ${MONTHS[p.month - 1] as string}` : next.date;
+}
+
+function items(n: number): string {
+  return `${n} item${n === 1 ? '' : 's'}`;
+}
+
+/**
+ * Today's items on the Learn map's scale, with the retention forecast
+ * (research/02 rules 11 and 15): "14 items learning. They become stable as
+ * you recall them over the next few days; your next review is Tuesday."
+ * Never framed as a loss. Null when nothing was answered.
+ */
+export function progressText(p: SessionProgress): string | null {
+  if (!p.nextReview) return null;
+  const when = `your next review is ${reviewDayText(p.nextReview)}.`;
+  const { learning: n, stable: s, becameStable: b } = p;
+  if (n === 0) return `One correct recall starts an item learning, and ${when}`;
+  const rest = n - s;
+  if (rest === 0) {
+    const lead =
+      b === n
+        ? `${items(n)} became stable today.`
+        : `${items(n)} ${n === 1 ? 'is' : 'are'} stable${b > 0 ? `, ${b} of them new today` : ''}.`;
+    return `${lead} Each recall stretches the gap, and ${when}`;
+  }
+  const stableNote =
+    s === 0
+      ? ''
+      : b === s
+        ? `, ${s} of them newly stable`
+        : `, ${s} of them stable${b > 0 ? ` (${b} new today)` : ''}`;
+  const subject =
+    s === 0
+      ? rest === 1
+        ? 'It becomes'
+        : 'They become'
+      : rest === 1
+        ? 'The other one becomes'
+        : 'The rest become';
+  return `${items(n)} learning${stableNote}. ${subject} stable as you recall ${rest === 1 ? 'it' : 'them'} over the next few days; ${when}`;
+}
 
 function lowerFirst(s: string): string {
   return s.charAt(0).toLowerCase() + s.slice(1);
