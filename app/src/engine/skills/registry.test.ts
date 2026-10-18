@@ -22,6 +22,7 @@ describe('skill registry', () => {
       'C1.octaves',
       'C1.octaves-gb-shift',
       'C1.double-octaves',
+      'C1.every-octave',
       'C2.all-notes',
       'C3.thirds',
       'C3.fourths-fifths',
