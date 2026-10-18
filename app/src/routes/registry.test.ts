@@ -17,6 +17,7 @@ describe('route registry', () => {
       ['/explore', 'shell'],
       ['/learn', 'shell'],
       ['/onboarding', 'fullscreen'],
+      ['/placement', 'fullscreen'],
       ['/privacy', 'shell'],
       ['/progress', 'shell'],
       ['/session', 'fullscreen'],

@@ -1,0 +1,14 @@
+/* The retake page (M2-15) reuses the onboarding layout; its links look like
+   the onboarding buttons. */
+.back {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}

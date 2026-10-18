@@ -10,13 +10,7 @@ import {
   type PlacementState,
   type ProbeOutcome,
 } from './algorithm';
-import {
-  isPlacementLog,
-  knownSkillState,
-  probeReview,
-  savePlacement,
-  type ProbeLog,
-} from './save';
+import { isPlacementLog, knownSkillState, probeReview, savePlacement, type ProbeLog } from './save';
 
 const NOW = new Date('2026-10-18T09:00:00Z');
 const DAY = 86_400_000;

@@ -1,5 +1,6 @@
 import { liveQuery } from 'dexie';
 import { useEffect, useId, useState, type ReactNode } from 'react';
+import { Link } from 'react-router';
 import { useAppStore } from '../../app-store';
 import { playNotes, unlockAudio } from '../../audio/audio';
 import type { Settings } from '../../engine';
@@ -13,6 +14,7 @@ import {
   type DailyGoalMinutes,
   type GamificationRecord,
 } from '../../storage';
+import { ENGINE_CONFIG } from '../../engine/config';
 import { TUNINGS } from '../../theory';
 import { DeveloperTools } from './DeveloperTools';
 import styles from '../screens.module.css';
@@ -160,6 +162,24 @@ function PracticeSettings({ settings, update }: SettingsProps) {
   );
 }
 
+function PlacementSettings() {
+  const hint = useId();
+  return (
+    <Group title="Placement test">
+      <Hint id={hint}>
+        Already play a bit? A {Math.round(ENGINE_CONFIG.placement.budgetMs / 60_000)}-minute test
+        skips material you already know, including topics added since you started. It can’t
+        make you lose progress.
+      </Hint>
+      <div className={local.actions}>
+        <Link to="/placement" className={styles.secondaryButton} aria-describedby={hint}>
+          Retake the placement test
+        </Link>
+      </div>
+    </Group>
+  );
+}
+
 function SoundSettings({ settings, update }: SettingsProps) {
   const percent = Math.round(settings.volume * 100);
   const testNote = () => {
@@ -261,7 +281,8 @@ interface SettingsProps {
 
 /**
  * The settings cards (design §4, §9): everything onboarding asked, plus
- * sound, the weekend amulet and a calibration re-run. Every change saves at
+ * sound, the weekend amulet, and re-runs of the calibration and the
+ * placement test. Every change saves at
  * once. None of them can switch off spacing or retrieval (research/02 rule 16).
  * Development builds add a Developer card (`DeveloperTools`); production has none.
  */
@@ -272,6 +293,7 @@ export function SettingsGroups() {
     <div className={local.settings}>
       <GuitarSettings settings={settings} update={update} />
       <PracticeSettings settings={settings} update={update} />
+      <PlacementSettings />
       <SoundSettings settings={settings} update={update} />
       <ReadingSettings settings={settings} update={update} />
       <GuideSettings settings={settings} update={update} />

@@ -38,8 +38,24 @@ afterEach(async () => {
 describe('<SettingsGroups>', () => {
   it('groups the settings into titled cards', () => {
     renderPanel();
-    for (const name of ['Your guitar', 'Practice', 'Sound', 'Reading music', 'Guides and timing'])
+    for (const name of [
+      'Your guitar',
+      'Practice',
+      'Placement test',
+      'Sound',
+      'Reading music',
+      'Guides and timing',
+    ])
       expect(group(name)).toBeInTheDocument();
+  });
+
+  it('offers the placement test again, and says it can’t lose progress', () => {
+    renderPanel();
+    const card = within(group('Placement test'));
+    const link = card.getByRole('link', { name: 'Retake the placement test' });
+    expect(link).toHaveAttribute('href', '/placement');
+    expect(link).toHaveAccessibleDescription(/skips material you already know/);
+    expect(link).toHaveAccessibleDescription(/can.t make you lose progress/);
   });
 
   it('saves handedness, tuning and the accidental preference', async () => {
