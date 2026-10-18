@@ -240,7 +240,7 @@ interface DrillType<P = unknown, A = unknown> {
 |---|---|---|---|---|
 | D1 | Name the highlighted note | choice (7–12 note buttons) | F2, C2 | M1 |
 | D2 | Find the note (one string, region, or all) | tap the neck | F2, C1, C2 | M1 |
-| D3 | Note-wheel steps ("a whole step above E") | choice | F1 | M1 |
+| D3 | Note-wheel steps ("a whole step above E", "the note after C in the musical alphabet") | choice or tap the neck | F1 | M1 |
 | D4 | Octave finder | tap | C1 | M2 |
 | D5 | Interval: name it from two dots | choice | C3 | M2 |
 | D6 | Interval: tap the M3/P5/b7 from a root | tap | C3 | M2 |
@@ -270,6 +270,12 @@ interface DrillType<P = unknown, A = unknown> {
 | D30 | Hear the meter: 3/4 vs 4/4 vs 6/8 vs 12/8 (later 5/4, 7/8) | choice | T4, T7 | M8 |
 | D31 | Accent and strum in meter: strum with the correct accents; the click fades out (guidance fading) | tap / mic onset | T5 | M8 |
 | D32 | Simple or compound? How many felt beats? | choice | T2 | M8 |
+
+**D3 wording and input:**
+
+- **Say "note", not "letter".** Musical-alphabet prompts read "The note before C in the musical alphabet?" and "2 notes after E in the musical alphabet?". Learners read "letter" as jargon, and "in the musical alphabet" keeps these apart from half steps (the note after C there is D, not C♯). Step prompts ("A whole step above E?") are unchanged.
+- **The neck is an answer surface.** Finding the note on the neck is the skill, so tapping any cell whose pitch class is the answer counts as that answer. It goes through the same grading, response time and FSRS path as a button. A wrong tap marks the tapped cell as wrong. The answer is marked correct on the low E string, where the step is drawn, and on the tapped string nearest the tap. Musical-alphabet items accept only the natural, so a sharp or flat cell is wrong. The note buttons and the A–G keys stay.
+- Before an unguided answer, only the starting note is labelled on the neck, and the tap targets' accessible labels name a string and fret but never a note (M1-25).
 
 **Mic constraint:** pitch identifies the pitch, not the string. Mic drills therefore do one of three things:
 
