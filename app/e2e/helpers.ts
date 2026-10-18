@@ -35,8 +35,8 @@ export async function expectNoHorizontalOverflow(page: Page): Promise<void> {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
-export async function freshStart(page: Page, path = '/'): Promise<void> {
-  await page.goto(path);
+/** Delete every IndexedDB database on the page's origin. */
+export async function wipeData(page: Page): Promise<void> {
   await page.evaluate(async () => {
     const dbs = await indexedDB.databases();
     await Promise.all(
@@ -49,5 +49,20 @@ export async function freshStart(page: Page, path = '/'): Promise<void> {
       ),
     );
   });
-  await page.reload();
+}
+
+/** A first launch with no data. Onboarding opens at `/`. */
+export async function firstLaunch(page: Page): Promise<void> {
+  await page.goto('/');
+  await wipeData(page);
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/onboarding$/);
+}
+
+/** A first launch with onboarding skipped, then `path`. */
+export async function freshStart(page: Page, path = '/'): Promise<void> {
+  await firstLaunch(page);
+  await page.getByRole('button', { name: 'Skip setup' }).click();
+  await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
+  if (path !== '/') await page.goto(path);
 }

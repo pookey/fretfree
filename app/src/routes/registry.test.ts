@@ -15,6 +15,7 @@ describe('route registry', () => {
       ['/', 'shell'],
       ['/explore', 'shell'],
       ['/learn', 'shell'],
+      ['/onboarding', 'fullscreen'],
       ['/progress', 'shell'],
       ['/session', 'fullscreen'],
     ]);
@@ -56,6 +57,11 @@ describe('route registry', () => {
     expect(() =>
       collectRoutes({ './a.route.tsx': route('/a', { guard: '/elsewhere' as never }) }),
     ).toThrow('./a.route.tsx: `guard` must be a function');
+  });
+
+  it('guards Today with the first-launch check', () => {
+    expect(ROUTES.find((r) => r.path === '/')?.guard).toBeTypeOf('function');
+    expect(ROUTES.find((r) => r.path === '/onboarding')?.guard).toBeUndefined();
   });
 });
 
