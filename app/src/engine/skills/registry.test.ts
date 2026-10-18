@@ -19,6 +19,9 @@ describe('skill registry', () => {
       'F2.string5-naturals',
       'F3.markers',
       'F3.repeat-12',
+      'C1.octaves',
+      'C1.octaves-gb-shift',
+      'C1.double-octaves',
       'C2.all-notes',
     ]);
     expect(getSkill('nope')).toBeUndefined();

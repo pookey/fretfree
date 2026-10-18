@@ -12,6 +12,7 @@ const PENDING: Record<string, readonly ItemRef['kind'][]> = {
   'find-the-note': ['find'],
   'note-wheel': ['step', 'letter'],
   'fret-landmarks': ['marker', 'find-marker', 'repeat'],
+  'octave-finder': ['octave'],
 };
 
 describe('drill registry', () => {
