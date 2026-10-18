@@ -18,11 +18,13 @@ import {
   isLearned,
   isPerfect,
   nextCombo,
+  sessionProgress,
   sessionSpeedMs,
   stringReach,
   type Snapshot,
   type TalliedAnswer,
 } from './celebrations';
+import { toLocalDate } from '../../engine/gamification';
 
 const CFG = ENGINE_CONFIG.gamification.celebrations;
 const T0 = new Date('2026-10-18T09:00:00Z');
@@ -330,6 +332,85 @@ describe('isPerfect', () => {
   });
 });
 
+describe('sessionProgress', () => {
+  const today = toLocalDate(T0);
+  const inDays = (days: number) => toLocalDate(new Date(T0.getTime() + days * DAY));
+  /** A card due `days` from T0. */
+  const due = (c: CardRecord, days: number): CardRecord => ({
+    ...c,
+    fsrs: { ...c.fsrs, due: new Date(T0.getTime() + days * DAY) },
+  });
+
+  it('counts a first session as learning, with nothing stable yet', () => {
+    const after = cards(
+      due(sameDay(s6(0), 2.3), 2),
+      due(sameDay(s6(1), 2.3), 3),
+      // A miss: its latest review was Again, so it isn't learning.
+      due(card(s6(3), 0.3, State.Relearning, T0), 0),
+    );
+    const p = sessionProgress(
+      new Map(),
+      after,
+      [
+        ans({ itemId: s6(0) }),
+        ans({ itemId: s6(1) }),
+        ans({ itemId: s6(3), rating: Rating.Again }),
+      ],
+      today,
+    );
+    // The miss's learning step later today waits for tomorrow's session.
+    expect(p).toEqual({
+      learning: 2,
+      stable: 0,
+      becameStable: 0,
+      nextReview: { date: inDays(1), inDays: 1 },
+    });
+  });
+
+  it('uses the last answer per item, and the earliest later day for the forecast', () => {
+    const after = cards(due(sameDay(s6(0), 2.3), 2), due(sameDay(s6(1), 2.3), 4));
+    const p = sessionProgress(
+      new Map(),
+      after,
+      [
+        ans({ itemId: s6(0), rating: Rating.Again, correct: false }),
+        ans({ itemId: s6(0) }),
+        ans({ itemId: s6(1) }),
+        ans({ itemId: s6(1), rating: Rating.Again, correct: false }),
+      ],
+      today,
+    );
+    expect(p.learning).toBe(1);
+    expect(p.nextReview).toEqual({ date: inDays(2), inDays: 2 });
+  });
+
+  it('counts items that became stable this session apart from ones already stable', () => {
+    const before = cards(card(s6(0), 3), card(s6(1), 20));
+    const after = cards(due(card(s6(0), 9), 9), due(card(s6(1), 30), 30), due(card(s6(3), 3), 3));
+    const p = sessionProgress(
+      before,
+      after,
+      [ans({ itemId: s6(0) }), ans({ itemId: s6(1) }), ans({ itemId: s6(3) })],
+      today,
+    );
+    expect(p).toEqual({
+      learning: 3,
+      stable: 2,
+      becameStable: 1,
+      nextReview: { date: inDays(3), inDays: 3 },
+    });
+  });
+
+  it('has no forecast when nothing was answered or carded', () => {
+    expect(sessionProgress(new Map(), new Map(), [ans()], today)).toEqual({
+      learning: 0,
+      stable: 0,
+      becameStable: 0,
+      nextReview: null,
+    });
+  });
+});
+
 describe('buildCelebration', () => {
   const summary = { itemsSeen: 10, accuracy: 0.9, newItems: 2 };
   const fast = Array.from({ length: 8 }, () => ans({ responseMs: 800 }));
@@ -348,6 +429,13 @@ describe('buildCelebration', () => {
     expect(c).toEqual({
       answered: 10,
       accuracy: 0.9,
+      // Stability 3 → 9 days crosses stable; its next review is tomorrow at the earliest.
+      progress: {
+        learning: 1,
+        stable: 1,
+        becameStable: 1,
+        nextReview: { date: toLocalDate(new Date(T0.getTime() + DAY)), inDays: 1 },
+      },
       newItems: 2,
       xp: 84,
       itemsImproved: 1,

@@ -6,6 +6,7 @@ import type { D1Prompt } from '../../drills/d1-name-the-note/logic';
 import { D2_ID, type D2Prompt } from '../../drills/d2-find-the-note/logic';
 import { FretworkDB } from '../../storage';
 import { SessionRunner, type CurrentPrompt } from '../runner';
+import { latestOutcomes, progressBySkill } from '../../engine/progress';
 import { CelebrationTracker } from './tracker';
 
 let db: FretworkDB;
@@ -115,6 +116,21 @@ describe('CelebrationTracker', () => {
     ]);
     expect(c.confetti).toBe(false);
     expect(await tracker.finish({ itemsSeen: 0, accuracy: 0, newItems: 0, xp: 0 })).toBe(c);
+  });
+
+  it('counts learning and stable the way Learn does, with a forecast past today', async () => {
+    const { runner, tracker } = await start();
+    await play(runner, tracker, 1500, [6]);
+    const c = await tracker.finish(await runner.finish());
+    // Learn's numbers for the same cards (engine/progress.ts over the review logs).
+    const [cards, logs] = await Promise.all([db.cards.toArray(), db.reviewLogs.toArray()]);
+    const learn = [...progressBySkill(cards, latestOutcomes(logs)).values()];
+    expect(c.progress.learning).toBe(learn.reduce((n, p) => n + p.learning, 0));
+    expect(c.progress.stable).toBe(learn.reduce((n, p) => n + p.stable, 0));
+    expect(c.progress.learning).toBeGreaterThan(0);
+    // A first session can't make an item stable at an ordinary speed.
+    expect(c.progress).toMatchObject({ stable: 0, becameStable: 0 });
+    expect(c.progress.nextReview?.inDays).toBeGreaterThanOrEqual(1);
   });
 
   it('calls items known once they are recalled on a later day', async () => {

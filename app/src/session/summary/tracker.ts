@@ -91,6 +91,7 @@ export class CelebrationTracker {
       before: this.before,
       after: await snapshot(this.deps.db),
       previousBestMs: this.previousBestMs,
+      now: (this.deps.now ?? (() => new Date()))(),
       milestones: [...streakMilestones(summary.events ?? []), ...milestones],
       ...(this.deps.config ? { config: this.deps.config } : {}),
     });

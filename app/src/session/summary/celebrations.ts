@@ -1,4 +1,4 @@
-import { State, type Grade } from 'ts-fsrs';
+import { Rating, State, type Grade } from 'ts-fsrs';
 import {
   ENGINE_CONFIG,
   median,
@@ -9,7 +9,14 @@ import {
   type Skill,
   type SkillStatus,
 } from '../../engine';
-import { daysBetween, toLocalDate } from '../../engine/gamification';
+import {
+  addDays,
+  compareLocalDates,
+  daysBetween,
+  toLocalDate,
+  type LocalDate,
+} from '../../engine/gamification';
+import { isLearning, isStable } from '../../engine/progress';
 import type { SessionSummary } from '../runner';
 
 /**
@@ -67,9 +74,30 @@ export interface PersonalBest {
   previousMs: number;
 }
 
+/**
+ * Where the session's items stand on the Learn map's scale (engine/progress.ts),
+ * kept apart from today's accuracy so a strong score next to a 0% stable ring
+ * reads as two different things (research/02 rules 11 and 15).
+ */
+export interface SessionProgress {
+  /** Items answered this session that are learning now. Stable ones count too, as on Learn. */
+  learning: number;
+  /** Of those, items that are stable now. */
+  stable: number;
+  /** Items that became stable during this session. */
+  becameStable: number;
+  /**
+   * The retention forecast: the first day after today on which one of the
+   * session's items is due. A learning step due later today counts as
+   * tomorrow, the next daily session. Null when nothing was answered.
+   */
+  nextReview: { date: LocalDate; inDays: number } | null;
+}
+
 export interface Celebration {
   answered: number;
   accuracy: number;
+  progress: SessionProgress;
   newItems: number;
   xp: number;
   itemsImproved: number;
@@ -121,6 +149,50 @@ export function improvedItems(
     if (card.fsrs.stability > (before.get(itemId)?.fsrs.stability ?? 0)) out.push(itemId);
   }
   return out;
+}
+
+// --- Learning and stable -----------------------------------------------
+
+/**
+ * The session's items on the learning / stable scale. An item's latest review
+ * is its last answer here (every answer, guided too, writes a review log), so
+ * this matches what Learn shows for the same items.
+ */
+export function sessionProgress(
+  before: ReadonlyMap<string, CardRecord>,
+  after: ReadonlyMap<string, CardRecord>,
+  answers: readonly TalliedAnswer[],
+  today: LocalDate,
+): SessionProgress {
+  const out: SessionProgress = { learning: 0, stable: 0, becameStable: 0, nextReview: null };
+  const tomorrow = addDays(today, 1);
+  let next: LocalDate | null = null;
+  for (const [itemId, last] of lastAnswers(answers)) {
+    const card = after.get(itemId);
+    if (!card) continue;
+    const stable = isStable(card);
+    if (stable || isLearning(card, last.rating !== Rating.Again)) out.learning += 1;
+    if (stable) out.stable += 1;
+    const was = before.get(itemId);
+    if (stable && !(was && isStable(was))) out.becameStable += 1;
+    const dueDay = toLocalDate(card.fsrs.due);
+    const day = compareLocalDates(dueDay, tomorrow) < 0 ? tomorrow : dueDay;
+    if (next === null || compareLocalDates(day, next) < 0) next = day;
+  }
+  if (next !== null) out.nextReview = { date: next, inDays: daysBetween(today, next) };
+  return out;
+}
+
+/** The session's local day, from its latest review, when no `now` is given. */
+function sessionDay(
+  after: ReadonlyMap<string, CardRecord>,
+  answers: readonly TalliedAnswer[],
+): LocalDate {
+  let latest = 0;
+  for (const a of answers) {
+    latest = Math.max(latest, after.get(a.itemId)?.lastReviewedAt?.getTime() ?? 0);
+  }
+  return toLocalDate(new Date(latest));
 }
 
 // --- Competence ----------------------------------------------------------
@@ -324,6 +396,8 @@ export interface CelebrationInput {
   after: Snapshot;
   /** Best median speed of earlier sessions (`bestPastSpeedMs`). */
   previousBestMs: number | null;
+  /** When the session finished; without it, its latest review stands in. */
+  now?: Date;
   /** Milestones decided elsewhere (streaks, achievements). */
   milestones?: readonly string[];
   config?: CelebrationConfig;
@@ -341,6 +415,12 @@ export function buildCelebration(input: CelebrationInput): Celebration {
   return {
     answered: input.summary.itemsSeen,
     accuracy: input.summary.accuracy,
+    progress: sessionProgress(
+      input.before.cards,
+      input.after.cards,
+      input.answers,
+      input.now ? toLocalDate(input.now) : sessionDay(input.after.cards, input.answers),
+    ),
     newItems: input.summary.newItems,
     xp: input.xp,
     itemsImproved: improvedItems(input.before.cards, input.after.cards, input.answers).length,
