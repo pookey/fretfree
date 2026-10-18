@@ -30,7 +30,7 @@ Topic IDs (F1, C6, I1, …) refer to the curriculum map in research/03.
 4. **Sound, sight and name together.** Each answer plays the pitch and shows its name and position.
 5. **Fade the training wheels.** Visual guides (dots, labels, inlays, highlighted roots) fade as competence grows.
 6. **Use the real guitar.** An optional mic mode turns screen knowledge into playing.
-7. **Honest motivation.** Show visible competence (heatmaps, retention forecasts) and use forgiving streaks. No leaderboards, no loss-aversion dark patterns.
+7. **Duolingo-style motivation that serves learning.** A user decision (2026-10-18). Use streaks, a daily goal, XP, achievements and celebratory moments to build a daily habit. Every reward is wired to the behaviours the evidence supports: a short daily session, doing due reviews, and genuine mastery. Nothing rewards grinding easy items or punishes mistakes. See §3.7.
 8. **Local-first and private.** No account needed. Everything works offline. Data stays on the device, with export/import.
 
 ## 2. Platform and tech decision
@@ -146,6 +146,38 @@ SessionLog{ id, startedAt, endedAt, itemsSeen, accuracy }
 - Export and import as JSON.
 - Schema versioning via Dexie migrations from day one.
 
+### 3.7 Gamification (Duolingo-style, evidence-guarded)
+
+The user wants a Duolingo-style habit loop. The research (research/02 §8) says gamification gives small positive effects. Expected tangible rewards and leaderboards can backfire, and causal evidence for streaks is thin. Streaks **do** align with what spacing research favours: short, daily, distributed practice. So we adopt the Duolingo mechanics and point them at learning-positive behaviour.
+
+| Mechanic | Design | Guardrail (why) |
+|---|---|---|
+| **Daily goal** | Picked at onboarding: Casual 5 / Regular 10 / Serious 15 / Intense 20 minutes, or an XP equivalent. A progress ring sits on Today and in the sidebar. | The default is short. Spacing beats cramming. |
+| **Streak** 🔥 | Meeting the daily goal extends the streak. Show a flame, a counter, a calendar and milestone celebrations (7, 30, 100, 365 days). | The qualifying bar is the daily goal, not "open the app", so a streak always means real practice. |
+| **Streak freezes** | Earn 1 freeze per 7-day streak, hold up to 2, and use them automatically on a missed day. A **weekend amulet** setting skips Saturday and Sunday. **Streak repair** lets you restore a broken streak within 48 hours by doing a double session. | Forgiving by design. Loss aversion is a strong motivator, but harsh breaks cause people to quit (SDT). |
+| **XP** | XP per answered item, **weighted toward learning value**. A due review or new item scores more than over-practising an already-stable card. Correct-and-fluent answers earn a small bonus. Wrong answers still earn base XP for attempting. XP from a given card decays if it's already been drilled today. | No incentive to grind easy items or avoid hard ones. Errors are part of learning (desirable difficulties, the 85% band). |
+| **No hearts or lives** | Deliberately left out. | Duolingo's hearts punish mistakes, which conflicts with adaptive difficulty at an 80–90% success rate and with retrieval at the edge of competence. |
+| **Session celebrations** | Lesson-complete screen with XP, a combo counter for consecutive correct answers, "perfect session" and "new personal best speed" moments, and confetti for milestones. Respect reduced motion. | Celebrate competence ("you now know string 5 to fret 12"), not just activity. |
+| **Achievements** | Badges tied to **mastery milestones**: "String 6 master", "Whole neck", "All 5 CAGED shapes of G", "Speed demon (median <1.2s)", "Ear: I–V–vi–IV", plus streak milestones. | Informational, competence-signalling rewards don't undermine intrinsic motivation the way controlling ones do (Deci et al. 1999). |
+| **Daily quests** | 3 small rotating quests, e.g. "clear all due reviews", "10 fluent answers on strings 3–4", "try a mic drill". Completing them gives bonus XP or a chest. | Quests nudge toward weak areas and interleaving. |
+| **Mastery map** | The fretboard heatmap and skill rings "fill in" over time, which is the long-term progression view. | Visible competence is the strongest and safest motivator. |
+| **Reminders** | A streak-at-risk reminder at the user's chosen time. On an installed iPadOS PWA this needs Web Push, which needs a small backend, so it **ships with the sync milestone**. Until then, use in-app nudges and a badge count. | Opt-in, with at most one per day. |
+| **Leagues / leaderboards** | Weekly leagues (Duolingo-style) are **opt-in only** and need the sync backend, so they're deferred to M7. They're off by default. | Leaderboards can lower motivation for many learners (Hanus & Fox 2015). Make them a choice. |
+
+Engine wiring:
+
+- The session builder still decides *what* to practise. Gamification only affects *how much* and *how often*.
+- Meeting the daily goal never requires drilling non-due, stable cards. When the due and new queue runs dry, top it up with interleaved "stretch" items from the frontier.
+- Every gamification event is logged locally, so we can later check whether streak length correlates with retention.
+
+Data model additions:
+
+```ts
+Gamification { dailyGoalMinutes, xpTotal, streakCurrent, streakLongest, lastGoalMetDate, freezesHeld, weekendAmulet, streakRepairDeadline? }
+DailyProgress { date, xp, minutes, goalMet, freezeUsed, questsCompleted[] }
+Achievement { id, unlockedAt }
+```
+
 ## 4. Personalisation (instead of "learning styles")
 
 Onboarding takes under 3 minutes, and every step is skippable:
@@ -254,8 +286,10 @@ There are 4 sections: **Today**, **Learn**, **Explore** and **Progress**. Settin
 
 ### Today
 
+- A **streak flame and counter**, plus the **daily-goal ring**. These are the hero of the screen, Duolingo-style.
 - One big **"Start session (10 min)"** button.
-- Shows the due count, new items queued, and a forgiving streak (2 freeze days a week).
+- Daily quests, the due count, new items queued, and freezes held.
+- The iPad sidebar always shows the streak and daily-goal ring.
 - Quick drills: "2-minute fretboard warm-up" and "Ear only (no guitar)".
 
 ### Learn
@@ -356,12 +390,12 @@ There are 4 sections: **Today**, **Learn**, **Explore** and **Progress**. Settin
 | Milestone | Scope | Definition of done |
 |---|---|---|
 | **M0 Foundations** | Repo, tooling, app shell, design tokens, fretboard component and model, engine core (ts-fsrs wrapper, grading, session builder skeleton), Dexie storage, drill plugin interface with D1 as reference, CDK infra, deploy script, orchestration skill | `pnpm verify` is green; a skeleton is live at https://guitar.dwellsee.com |
-| **M1 Fretboard notes MVP** | Onboarding (handedness, goal, time, latency calibration), F1–F3 and C2 via D1, D2 and D3, full session loop, Today, Progress heatmap, guide fading | A real learner can do daily sessions on **iPad** (landscape and portrait), offline, as an installed PWA. The iPhone smoke flow passes. |
+| **M1 Fretboard notes MVP** | Onboarding (handedness, goal, daily goal, latency calibration), F1–F3 and C2 via D1, D2 and D3, full session loop, Today, Progress heatmap, guide fading, **core gamification** (daily goal, streak with freezes, weekend amulet and repair, XP, session celebrations, first achievements) | A real learner can do daily sessions on **iPad** (landscape and portrait), offline, as an installed PWA. The iPhone smoke flow passes. |
 | **M2 Octaves and intervals** | C1, C3 via D4–D6, G–B shift content, confusable pairing, placement test | — |
 | **M3 Chords and CAGED** | C4, C5, C6 via D7–D10, Explore (CAGED visualiser, chord finder), worked examples | — |
 | **M4 Harmony, progressions and ear** | C8–C10, I3, I6 via D11–D15, progression player, audio playback everywhere | — |
 | **M5 Mic mode** | Tuner, D16 and D17, mic onboarding | — |
 | **M6 Intermediate** | C7, I1, I2, I4, I5, I7, D18–D21, rhythm track | — |
-| **M7 Native and sync** (optional) | Capacitor iOS build, haptics, optional account sync | — |
+| **M7 Native and sync** (optional) | Capacitor iOS build, haptics, optional account sync, **Web Push streak reminders**, **opt-in weekly leagues** | — |
 
 Each milestone ships to production when it's done. The orchestration skill (see `.claude/skills/`) drives this roadmap.
