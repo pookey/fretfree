@@ -28,6 +28,7 @@ const OTHER_SKILLS = [
   'C1.octaves',
   'C1.octaves-gb-shift',
   'C1.double-octaves',
+  'C1.every-octave',
   'C3.fourths-fifths',
   'C3.sevenths',
   'C3.sixths',
@@ -132,12 +133,13 @@ async function choose(page: Page, name: string): Promise<void> {
 }
 
 /**
- * Open the session directly: the seeded masteries unlock achievements, and
- * Today's toast for them can cover the start button. The session screen is
- * full screen, outside the shell that shows it.
+ * Open a session focused on C3.thirds ("Practise this now", `?skill=`), so
+ * skills added later can't lead the frontier. Going straight to the route
+ * also skips Today, where the seeded masteries' achievement toast can cover
+ * the start button.
  */
 async function startSession(page: Page): Promise<void> {
-  await page.goto('/session');
+  await page.goto('/session?skill=C3.thirds');
   await expect(page.getByTestId('d5-drill')).toBeVisible();
 }
 
