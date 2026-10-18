@@ -22,8 +22,6 @@ export const id = 'heatmap';
 export const order = 5;
 export const title = 'Mastery map';
 
-const scheduler = createScheduler();
-const retrievability = scheduler.retrievability;
 const EPOCH = new Date(0);
 
 /**
@@ -38,7 +36,13 @@ export function Panel({ revision }: PanelProps) {
     tuning: tuningId,
     latencyBaselineMs,
     accidentalPref,
+    fsrsParams,
   } = useAppStore((s) => s.settings);
+  const fsrsWeights = fsrsParams?.w;
+  const retrievability = useMemo(
+    () => createScheduler({ weights: fsrsWeights }).retrievability,
+    [fsrsWeights],
+  );
   const sizeClass = useSizeClass();
   const [loaded, setLoaded] = useState<{ data: HeatmapData; now: Date } | null>(null);
   const [selected, setSelected] = useState<Position | null>(null);
@@ -68,7 +72,7 @@ export function Panel({ revision }: PanelProps) {
         retrievability,
         tuning,
       }),
-    [loaded, fretRange, targets, tuning],
+    [loaded, fretRange, targets, retrievability, tuning],
   );
   const forecasts = useMemo(
     () =>
@@ -78,7 +82,7 @@ export function Panel({ revision }: PanelProps) {
         retrievability,
         tuning,
       }),
-    [loaded, tuning],
+    [loaded, retrievability, tuning],
   );
   const selectedCell =
     (selected && cells.find((c) => c.string === selected.string && c.fret === selected.fret)) ||

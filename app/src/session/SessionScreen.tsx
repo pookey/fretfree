@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useAppStore } from '../app-store';
 import { playNotes } from '../audio/audio';
@@ -9,6 +9,7 @@ import { useCompactWindowFrets, useSizeClass } from '../shell/size-class';
 import { getDb } from '../storage';
 import { getTuning } from '../theory';
 import { parseFocus } from './focus';
+import { refitIfDue } from './refit-bridge';
 import { SessionRunner, type CurrentPrompt } from './runner';
 import type { Celebration } from './summary/celebrations';
 import { ComboCounter } from './summary/ComboCounter';
@@ -17,7 +18,6 @@ import { CelebrationTracker } from './summary/tracker';
 import { TimeLeft } from './TimeLeft';
 import styles from './SessionScreen.module.css';
 
-const scheduler = createScheduler();
 const AUTO_ADVANCE_MS = 700;
 
 type Phase =
@@ -29,6 +29,9 @@ type Phase =
 /** Full-screen, distraction-free session (design §7 Session). */
 export function SessionScreen() {
   const settings = useAppStore((s) => s.settings);
+  // The learner's refit FSRS weights once there are enough reviews (engine/refit.ts).
+  const fsrsWeights = settings.fsrsParams?.w;
+  const scheduler = useMemo(() => createScheduler({ weights: fsrsWeights }), [fsrsWeights]);
   const loaded = useAppStore((s) => s.loaded);
   const sizeClass = useSizeClass();
   const compactFrets = useCompactWindowFrets();
@@ -55,6 +58,9 @@ export function SessionScreen() {
     if (!runner || !tracker) return;
     const summary = await runner.finish();
     setPhase({ kind: 'summary', celebration: await tracker.finish(summary) });
+    void refitIfDue(getDb(), new Date())
+      .then((next) => next && useAppStore.setState({ settings: next }))
+      .catch((e: unknown) => console.error('Refitting FSRS parameters failed', e));
   }, []);
 
   const showCurrent = useCallback(async () => {
@@ -91,7 +97,7 @@ export function SessionScreen() {
     return () => {
       live = false;
     };
-  }, [loaded, settings, query, showCurrent]);
+  }, [loaded, settings, scheduler, query, showCurrent]);
 
   const advance = useCallback(() => {
     runnerRef.current?.next();
