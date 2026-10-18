@@ -37,7 +37,7 @@ Topic IDs (F1, C6, I1, …) refer to the curriculum map in research/03.
 
 | Concern | Decision | Why |
 |---|---|---|
-| Platform | **PWA** (installable to the home screen), **iPad-first**, with Capacitor for a later App Store build | Targets iPadOS Safari and standalone mode; iPhone also works from the same codebase. Deploys to `guitar.dwellsee.com` immediately. iPadOS Safari supports Web Audio, the mic (getUserMedia), IndexedDB and standalone display. |
+| Platform | **PWA** (installable to the home screen), **iPad-first**, with Capacitor for a later App Store build | Targets iPadOS Safari and standalone mode; iPhone also works from the same codebase. Deploys to `fretfree.app` immediately (previously `guitar.dwellsee.com`, which stays as an alias with a "moved" notice). iPadOS Safari supports Web Audio, the mic (getUserMedia), IndexedDB and standalone display. |
 | UI | **React 19 + TypeScript (strict) + Vite** | Mature ecosystem and familiar to agents. |
 | Styling | CSS modules or vanilla-extract with design tokens; safe-area insets; `prefers-color-scheme` | — |
 | Routing | React Router (or TanStack Router) | — |
@@ -50,7 +50,7 @@ Topic IDs (F1, C6, I1, …) refer to the curriculum map in research/03.
 | Chord diagrams | Our own SVG (svguitar for reference) | Consistent styling with the fretboard |
 | PWA | vite-plugin-pwa (Workbox), full offline precache | — |
 | Testing | Vitest (unit). Playwright: **primary** profiles iPad Pro 11" landscape + portrait and iPad mini landscape (full e2e + visual). **Secondary**: iPhone 15 landscape, smoke e2e only (core flow works, nothing overflows). | iPad first |
-| Infra | **AWS CDK (TypeScript)**, deployed **locally** (`pnpm ship`; no GitHub Actions): S3 (private) + CloudFront (OAC) + ACM + Route53 for `guitar.dwellsee.com` | AWS profile `smartthings-hp`, existing hosted zone `dwellsee.com` (looked up by name) |
+| Infra | **AWS CDK (TypeScript)**, deployed **locally** (`pnpm ship`; no GitHub Actions): S3 (private) + CloudFront (OAC) + ACM + Route53 for `fretfree.app` (alias `guitar.dwellsee.com`, `www` redirect) | AWS profile `smartthings-hp`, hosted zones looked up by name. Optional, context-gated stacks: `FretworkEmail` (SES, eu-west-1) and `FretworkBrand` |
 | Backend | **None for v1.** Optional sync (Cognito plus a small API) is a later milestone. | Keeps v1 simple and private |
 
 ## 3. Learning engine (the core)
@@ -431,7 +431,7 @@ There are 4 sections: **Today**, **Learn**, **Explore** and **Progress**. Settin
 | **M7 Native and sync** (optional) | Capacitor iOS build, haptics, optional account sync, **Web Push streak reminders**, **opt-in weekly leagues** | — |
 | **M8 Reading and meter** (future) | Tracks R and T (research/03), D22–D32, VexFlow notation renderer, metronome and onset-timing engine (§12) | Readers can go from staff to fretboard in open and 5th position at fluent speed. Every learner can identify and count 4/4, 3/4 and 6/8 |
 
-**Deploy continuously, locally.** Every work package merged to `main` ships to production through `pnpm ship`, run on the developer machine: verify → build → deploy to AWS → smoke-test https://guitar.dwellsee.com → push to GitHub. GitHub is only a git remote; there are no GitHub Actions. Milestones group features; they are not release gates. The orchestration skill (see `.claude/skills/`) drives this roadmap.
+**Deploy continuously, locally.** Every work package merged to `main` ships to production through `pnpm ship`, run on the developer machine: verify → build → deploy to AWS → smoke-test https://fretfree.app → push to GitHub. GitHub is only a git remote; there are no GitHub Actions. Milestones group features; they are not release gates. The orchestration skill (see `.claude/skills/`) drives this roadmap.
 
 ## 12. Future: reading notation and time signatures (M8)
 

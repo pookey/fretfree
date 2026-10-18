@@ -5,7 +5,7 @@ You are taking over as the **build agent / project manager** for Fretwork. The p
 ## Where things stand
 
 - **Repo location:** the repo now lives at `…/Projects.nosync.noindex/guitar.nosync`. It was renamed from `guitar` so iCloud Drive skips it: iCloud only honours names that *end* in `.nosync`. Never move it back under a synced name.
-- **Live:** https://guitar.dwellsee.com. `main` is shipped and pushed, and `pnpm verify` is green.
+- **Live:** https://guitar.dwellsee.com (moved to https://fretfree.app later on 2026-10-18; the old name is an alias with a "moved" notice). `main` is shipped and pushed, and `pnpm verify` is green.
 - **Done (23 WPs):** M1-01 to M1-14, M1-16, M1-19, M1-25, M1-26, M2-01, M3-01, M4-01, M5-01 and M6-01. Check `node .claude/skills/fretwork-orchestrator/scripts/backlog.mjs list`. M1-24 (M1 QA) has notes waiting: the M1-19 review should-fixes are in `.orchestrator/notes/M1-24.md`.
 - **In flight at handoff:** none. The previous PM drained all work in progress, so there are no worktrees or orchestrator tabs. Any WP that was mid-flight and not shipped is back to `todo` (its branch `wp/<WP>` may still exist; `spawn.sh` reuses it).
 - **Paused:** `.orchestrator/state.json` has `paused` set ("handoff"). Clear it when you start: `node $O/state.mjs set paused null`.

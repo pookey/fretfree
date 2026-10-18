@@ -2,6 +2,8 @@
 
 ## Current status
 
+**Site moved to https://fretfree.app (2026-10-18).** The infra session deployed it, and the PM landed it (`dc40c1e`..`a7868e4`). guitar.dwellsee.com still serves the same build, with a "moved" notice and an export button, because progress is stored per origin. www.fretfree.app 301s to the apex. Smoke checks all three names. Retiring the old name later means moving it from `SITE_ALIAS_DOMAINS` to `SITE_REDIRECT_DOMAINS`, once learners have had time to export. **Incident during the move:** for about 15–20 minutes production served an `index.html` that pointed to a deleted bundle. `deploy.sh`'s `s3 sync` skipped a same-size entry file whose bucket copy was newer, and the `--delete` pass then removed the bundle it referenced. Fixed in `a7868e4` (entry files are always copied).
+
 **Second shift, first report (2026-10-18, 14:05). 32 work packages live. 9 shipped this shift. Production healthy: smoke passes after every ship.**
 
 Shipped this shift: M2-02 (C1 octave skills), M2-04 (C3 interval-shape skills, with C1 as a soft prerequisite), M9-01 (tab model and `<TabStaff>`), M1-15 (guide fading in-session, blind mode), **M1-27 (user feedback: D3 says "note", and answers by tapping the neck)**, M2-07 (worked-example framework, G–B shift content), M1-17 (multi-drill sessions, in-session learning steps), M1-20 (compact polish: wider neck on short landscape, help as a sheet), M1-22 (settings, sound and About).
@@ -126,7 +128,7 @@ The trust-folder prompt never appeared, because worktrees under the trusted repo
 
 **M7 accounts and sync (filed 2026-10-18, deferred; the packages are `blocked` until these are answered):**
 1. **New AWS services.** Sync needs a second stack, `FretworkSync`, beside `FretworkSite`: Cognito, an HTTP API with Lambda, and DynamoDB. At this scale it should cost cents a month, but it's new spend and new surface. OK to add? *The infra session reports that you want a hosted multi-user version. Please confirm here before M7 is unblocked.*
-2. ~~**Email sender.**~~ **Answered (2026-10-18, via the infra session):** `no-reply@fretfree.app` ("Fret Free"), from the separate `FretworkEmail` stack, which owns the fretfree.app SES identity, DKIM, MAIL FROM and DMARC. SES production access is still your request to make. The app stays on guitar.dwellsee.com for now.
+2. ~~**Email sender.**~~ **Answered (2026-10-18, via the infra session):** `no-reply@fretfree.app` ("Fret Free"), from the separate `FretworkEmail` stack, which owns the fretfree.app SES identity, DKIM, MAIL FROM and DMARC. SES production access is granted in eu-west-1.
 3. **Privacy.** Emails and progress would be stored in AWS us-east-1. Is a short privacy note on the About page enough, or do you want a separate privacy policy page?
 
 ### Answered
