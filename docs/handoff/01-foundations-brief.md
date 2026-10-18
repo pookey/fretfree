@@ -67,11 +67,15 @@ Use sensible cache headers: hashed assets immutable; `index.html` and the servic
   - full e2e tests on the iPad profiles, plus an iPhone smoke test
 - **Audio:** a minimal Tone.js note playback, lazy-loaded and unlocked on first tap.
 
-### 4. Infra, CI/CD and first deploy
+### 4. Infra, local delivery and first deploy
 
 - Deploy the skeleton to **https://guitar.dwellsee.com** with `scripts/deploy.sh` using `AWS_PROFILE=smartthings-hp`.
 - Verify it with `scripts/smoke.sh`: an HTTPS 200, a valid certificate, and the manifest served. This proves the pipeline before the build agent relies on it.
-- Then set up **CI/CD** (see Open-source hygiene): a GitHub OIDC deploy role via CDK, repo secrets/variables via `gh`, and a `.github/workflows` pipeline that verifies and **deploys on every push to `main`**. Prove it with a trivial commit that deploys through CI and passes the smoke test.
+- Then set up **local continuous delivery**:
+  - a `pnpm ship` script (verify → build → deploy via `scripts/deploy.sh` → `scripts/smoke.sh`);
+  - the pre-push hook that runs `pnpm verify`.
+  
+  Prove it by shipping a trivial commit end to end. **No GitHub Actions** (see Open-source hygiene).
 
 ### 5. Backlog
 
@@ -107,7 +111,7 @@ A project skill (plus any helper scripts or templates next to it) that a build a
 
 **Integration:** merge into `main` (rebase or merge), run `pnpm verify` on main, update backlog status, and commit with a clear message.
 
-**Deploy continuously:** every work package merged to `main` goes to production. Pushing `main` triggers the GitHub Actions deploy, and the orchestrator waits for it (`gh run watch`) and then runs `scripts/smoke.sh` against https://guitar.dwellsee.com. If CI deploy is unavailable, fall back to running `scripts/deploy.sh` locally. A failed deploy or smoke test is a stop-the-line event: fix or revert before merging anything else. After each milestone, also run a Playwright screenshot pass on the iPad (primary) and iPhone profiles against production.
+**Deploy continuously (locally):** every work package merged to `main` goes to production. On `main`, the orchestrator runs `pnpm ship` (verify → build → `scripts/deploy.sh` → `scripts/smoke.sh` against https://guitar.dwellsee.com), then pushes `main` to GitHub. Everything runs locally; there are **no GitHub Actions**. A failed verify, deploy or smoke test is a stop-the-line event: fix or revert before merging anything else. After each milestone, also run a Playwright screenshot pass on the iPad (primary) and iPhone profiles against production.
 
 **State and resumability:** keep orchestrator state in `.orchestrator/state.json` (git-ignored), recording active workers, panes, branches and statuses, so a new orchestrator session can resume after a crash or context reset.
 
@@ -133,7 +137,7 @@ A project skill (plus any helper scripts or templates next to it) that a build a
    - what exists
    - how to invoke the orchestration skill
    - the milestone order (M1 → M6)
-   - deployment expectations (continuous: every merge to `main` deploys via CI and is smoke-tested in production; a broken production deploy stops the line)
+   - deployment expectations (continuous and local: every merge to `main` runs `pnpm ship`, which verifies, deploys and smoke-tests production, then pushes; no GitHub Actions; a broken production deploy stops the line)
    - when to stop and ask the user
 2. Start the build agent in a **new sibling Herdr pane** (split your own pane with `--no-focus`, preserving cwd):
    ```bash
@@ -151,15 +155,10 @@ A project skill (plus any helper scripts or templates next to it) that a build a
 - **Put the public domain in config, not code.** The domain `guitar.dwellsee.com` and the profile name may appear in docs and config, but read them in `deploy.sh` from env vars with those defaults, so forks can deploy their own copy.
 - Before each push, run a quick secret scan, e.g. `git diff origin/main..HEAD | grep -E` for 12-digit account IDs, `Z0[0-9A-Z]{10,}` zone IDs, and `AKIA` keys. Make this a check in the orchestration skill's integration step.
 - Add a good public `README.md`: what the app is, the learning-science approach, a link to the live app, how to run and deploy it yourself, and a contributing note.
-- **CI/CD with GitHub Actions, no long-lived secrets.** Deploy frequently:
-  - Every push and PR runs `pnpm verify`.
-  - **Every push to `main` that passes verify deploys to AWS** (build → S3 sync → CloudFront invalidation), then runs the production smoke test.
-  - AWS access uses **GitHub OIDC**. A CDK stack (e.g. `infra/` `CiStack`) creates:
-    - the `token.actions.githubusercontent.com` OIDC provider (none exists in the account yet);
-    - a least-privilege deploy role trusted only by `repo:pookey/fretwork:ref:refs/heads/main`, scoped to this project's bucket, distribution and (if CI runs `cdk deploy`) the CDK bootstrap roles.
-  - Store the role ARN, bucket name and distribution ID as **GitHub Actions secrets or variables** with `gh secret set` / `gh variable set`, never in the repo.
-  - Use a `concurrency` group so deploys never overlap.
-  - `scripts/deploy.sh` stays available for local and manual deploys and first-time bootstrap.
+- **No GitHub Actions — ever.** The GitHub account has no Actions credits. GitHub is used **only as a git remote** (pushing is fine). All linting, type-checking, testing, building and deploying run **locally**:
+  - Do not add `.github/workflows`, GitHub OIDC providers or roles, or GitHub secrets/variables.
+  - Add a local **pre-push git hook** (e.g. `simple-git-hooks` or `lefthook`, installed by `pnpm install`) that runs `pnpm verify`, so nothing unverified reaches GitHub.
+  - Deploys use `scripts/deploy.sh` with the local `smartthings-hp` AWS profile.
 
 ## Principles
 
