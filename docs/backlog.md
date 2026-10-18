@@ -641,6 +641,15 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Lay out prompt, neck, answers and help as one column that uses the height sensibly. Neck cells stay ≥44pt, with no horizontal overflow. Other size classes are unchanged.
   - E2E (`m2-20.spec.ts`, ipad-portrait): the gap between prompt and neck is under a set fraction of the viewport, and the answer controls are in view without scrolling.
 
+### M1-39 · Dev unlock reaches Explore's "Quiz me", and document LAN testing
+- **Status:** todo
+- **Deps:** none
+- **Design:** §3.4, §7 Explore
+- **Owns:** `app/src/screens/explore/views/fretboard-explorer.tsx`, `app/src/screens/explore/views/fretboard-explorer.test.tsx`, `README.md` (development section only)
+- **Acceptance:**
+  - From the M1-36 review: Explore's "Quiz me on this" checks the frontier without the dev "unlock every skill" overlay, so with the switch on it still refuses locked skills. Pass the overlay into that check, as Learn and sessions do. With the switch off, behaviour is unchanged (tested both ways).
+  - README: document trying the app on an iPad against the dev server (`pnpm dev --host`, the LAN URL, the dev-only unlock switch in Settings), next to the existing preview instructions.
+
 ### M1-38 · Copy polish: Learn prerequisites and summary tiles
 - **Status:** todo
 - **Deps:** none
