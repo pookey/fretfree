@@ -263,6 +263,9 @@ export class SessionRunner {
     const tuning = getTuning(deps.settings.tuning);
     const ctx = { tuning, accidentalPref: deps.settings.accidentalPref };
 
+    // The runner updates this map as it serves, so replans key items to their next drill.
+    const lastDrill = await lastDrills(deps.db, cards, picker);
+
     const planner: Planner = (at, minutes, known, seen, maxItems) => {
       const servable = known.filter((c) => serves({ id: c.itemId, skillId: c.skillId }));
       const skillOf = new Map(servable.map((c) => [c.itemId, c.skillId]));
@@ -282,7 +285,8 @@ export class SessionRunner {
         factOf: (item) => factOf(item, tuning),
         drillOf: (itemId) => {
           const skillId = skillOf.get(itemId);
-          return skillId === undefined ? null : (picker.pick({ id: itemId, skillId })?.id ?? null);
+          if (skillId === undefined) return null;
+          return picker.pick({ id: itemId, skillId }, lastDrill.get(itemId))?.id ?? null;
         },
         rng: deps.rng ?? Math.random,
         ...(maxItems !== undefined ? { maxItems } : {}),
@@ -303,7 +307,6 @@ export class SessionRunner {
     };
 
     const logId = await startSessionLog(deps.db, now);
-    const lastDrill = await lastDrills(deps.db, cards, picker);
     return new SessionRunner(deps, planner, picker, cards, states, logId, lastDrill, sandbox);
   }
 
