@@ -48,7 +48,6 @@ type Phase =
   | { kind: 'failed' };
 
 const perfNow = () => performance.now();
-const defaultScheduler = createScheduler();
 
 /**
  * The placement test (design §3.4, §4 step 6): about 3 minutes of adaptive
@@ -59,6 +58,8 @@ const defaultScheduler = createScheduler();
  * `doneAction` shows under the result, and also if saving fails: the step is
  * optional, so the learner can always carry on. While probing, the rest of
  * the page is `inert`, so focus and the screen reader stay in the test.
+ * Unless `scheduler` is given, cards are scheduled with the learner's refit
+ * FSRS weights, as sessions do (a retake can run long after a refit).
  */
 export function PlacementTest({
   doneAction,
@@ -68,7 +69,7 @@ export function PlacementTest({
   skills = SKILLS,
   drills = DRILLS,
   db = getDb(),
-  scheduler = defaultScheduler,
+  scheduler: given,
 }: {
   doneAction?: ReactNode;
   now?: () => number;
@@ -80,6 +81,9 @@ export function PlacementTest({
   scheduler?: Scheduler;
 }) {
   const settings = useAppStore((s) => s.settings);
+  const fsrsWeights = settings.fsrsParams?.w;
+  const fitted = useMemo(() => createScheduler({ weights: fsrsWeights }), [fsrsWeights]);
+  const scheduler = given ?? fitted;
   const sizeClass = useSizeClass();
   const compactFrets = useCompactWindowFrets();
   const headingId = useId();

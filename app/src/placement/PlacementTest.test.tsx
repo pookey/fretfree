@@ -1,8 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { generatorParameters, type Grade } from 'ts-fsrs';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useAppStore } from '../app-store';
 import { getDrill } from '../drills/registry';
-import { DEFAULT_SETTINGS, createScheduler, parseNoteItemId, type Skill } from '../engine';
+import {
+  DEFAULT_SETTINGS,
+  createScheduler,
+  parseNoteItemId,
+  type Scheduler,
+  type Skill,
+} from '../engine';
 import { getSkill } from '../engine/skills';
 import { FretworkDB, getDb, getSkillStates } from '../storage';
 import { noteAt } from '../theory';
@@ -27,17 +34,21 @@ afterEach(async () => {
   await db.delete();
 });
 
-function renderTest() {
+const NOW = new Date('2026-10-18T09:00:00Z');
+
+function renderTest({
+  scheduler = createScheduler({ enableFuzz: false }) as Scheduler | null,
+} = {}) {
   return render(
     <PlacementTest
       doneAction={<button type="button">Continue</button>}
       now={() => t}
-      clock={() => new Date('2026-10-18T09:00:00Z')}
+      clock={() => NOW}
       rng={() => 0.5}
       skills={SKILLS}
       drills={DRILLS}
       db={db}
-      scheduler={createScheduler({ enableFuzz: false })}
+      scheduler={scheduler ?? undefined}
     />,
   );
 }
@@ -201,5 +212,50 @@ describe('the placement onboarding step', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Finish now' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Continue' }));
     expect(onNext).toHaveBeenCalledOnce();
+  });
+  it('reviews existing cards with the learner’s refit FSRS weights', async () => {
+    // Weights unlike the defaults, as a refit (engine/refit.ts) would store them.
+    const w = [...generatorParameters().w];
+    w[8] = w[8]! + 0.6;
+    useAppStore.setState({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        soundOn: false,
+        fsrsParams: {
+          w,
+          accepted: true,
+          reviewCount: 1200,
+          fittedAt: NOW,
+          defaultLogLoss: 0.4,
+          logLoss: 0.3,
+        },
+      },
+    });
+    // The learner already has a month-old card on every item D1 can probe.
+    const month = new Date(NOW.getTime() - 30 * 86_400_000);
+    const own = SKILLS[0]!
+      .items()
+      .filter((i) => i.id.startsWith('note@'))
+      .map((i) => createScheduler().seedKnownCard(i, month, 20));
+    await db.cards.bulkPut(own);
+    // No `scheduler`: the test builds its own from the settings.
+    renderTest({ scheduler: null });
+    fireEvent.click(screen.getByRole('button', { name: 'Start the test' }));
+    const id = screen.getByTestId('placement-probe').dataset.item!;
+    choose(probeNote());
+    expect(await screen.findByTestId('feedback-correct')).toBeInTheDocument();
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Finish now' }));
+    expect(await screen.findByTestId('placement-result')).toBeInTheDocument();
+
+    const [log] = await db.reviewLogs.toArray();
+    const card = own.find((c) => c.itemId === id)!;
+    const fittedReview = createScheduler({ weights: w }).review(
+      card,
+      log!.rating as Grade,
+      log!.at,
+    );
+    const defaultReview = createScheduler().review(card, log!.rating as Grade, log!.at);
+    expect(fittedReview.fsrs.stability).not.toBe(defaultReview.fsrs.stability);
+    expect(await db.cards.get(id)).toEqual(fittedReview);
   });
 });
