@@ -70,7 +70,7 @@ async function play(
 }
 
 describe('CelebrationTracker', () => {
-  it('celebrates a first session: XP, combo, improved items and competence', async () => {
+  it('celebrates a first session: XP, combo, improved items, learned today', async () => {
     const { runner, tracker } = await start();
     const combos = await play(runner, tracker, 300);
     // Four guided worked examples hold the combo at 0, then eight fast recalls count up.
@@ -105,12 +105,30 @@ describe('CelebrationTracker', () => {
       // Nothing to beat yet.
       personalBest: null,
     });
-    // Frets 0, 1, 3 and 5 of string 6 graduated: the run reaches fret 5.
+    // Frets 0, 1, 3 and 5 of string 6 graduated today (fast answers are Easy), but
+    // nothing has been recalled across a gap yet: learned today, not known.
     expect(c.competence).toEqual([
-      expect.objectContaining({ kind: 'reach', string: 6, toFret: 5, complete: false }),
+      expect.objectContaining({ kind: 'learned', string: 6, toFret: 5, complete: false }),
     ]);
     expect(c.confetti).toBe(false);
     expect(await tracker.finish({ itemsSeen: 0, accuracy: 0, newItems: 0 })).toBe(c);
+  });
+
+  it('calls items known once they are recalled on a later day', async () => {
+    const first = await start();
+    await play(first.runner, first.tracker, 300);
+    await first.runner.finish();
+
+    clock = new Date(clock.getTime() + 30 * 86_400_000);
+    const { runner, tracker } = await start();
+    await play(runner, tracker, 300);
+    const c = await tracker.finish(await runner.finish());
+    // Yesterday's four items came back due and were recalled: now known. Today's
+    // new items are learned, not yet known.
+    expect(c.competence).toEqual([
+      expect.objectContaining({ kind: 'reach', string: 6, toFret: 5 }),
+      expect.objectContaining({ kind: 'learned', string: 6, toFret: 8 }),
+    ]);
   });
 
   it('resets the combo on a miss and is not perfect', async () => {

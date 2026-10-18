@@ -109,10 +109,16 @@ export const ENGINE_CONFIG = {
       /** A session's median speed counts for a personal best only over this many correct unguided answers. */
       speedMinAnswers: 5,
       /**
-       * An item counts as known ("you now know string 6 to fret 12") once its
-       * card has graduated to FSRS review with at least this stability.
+       * An item counts as learned once its card has graduated to FSRS review
+       * with at least this stability.
        */
       knownStabilityDays: 1,
+      /**
+       * A learned item counts as known ("you now know string 6 to fret 12")
+       * only once its last successful review came at least this many local
+       * days after it was introduced: recall across a gap, not cramming.
+       */
+      knownAfterGapDays: 1,
     },
   },
   heatmap: {

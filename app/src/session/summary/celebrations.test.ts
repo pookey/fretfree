@@ -3,6 +3,7 @@ import { Rating, State, createEmptyCard } from 'ts-fsrs';
 import {
   ENGINE_CONFIG,
   SKILLS,
+  createScheduler,
   type CardRecord,
   type ReviewLogRecord,
   type Skill,
@@ -14,6 +15,7 @@ import {
   competenceGains,
   improvedItems,
   isKnown,
+  isLearned,
   isPerfect,
   nextCombo,
   sessionSpeedMs,
@@ -31,14 +33,27 @@ const ALL = SKILLS.find((s) => s.id === 'C2.all-notes') as Skill;
 // Natural notes on string 6: E F G A B C D E.
 const S6_FRETS = [0, 1, 3, 5, 7, 8, 10, 12];
 
-function card(itemId: string, stability: number, state: State = State.Review): CardRecord {
+const DAY = 86_400_000;
+
+/** A card introduced two days ago and recalled at T0: recall across a gap. */
+function card(
+  itemId: string,
+  stability: number,
+  state: State = State.Review,
+  createdAt = new Date(T0.getTime() - 2 * DAY),
+): CardRecord {
   return {
     itemId,
     skillId: 'F2.string6-naturals',
     fsrs: { ...createEmptyCard(T0), state, stability },
-    createdAt: T0,
+    createdAt,
     lastReviewedAt: T0,
   };
+}
+
+/** A card introduced and graduated in today's session. */
+function sameDay(itemId: string, stability: number): CardRecord {
+  return card(itemId, stability, State.Review, T0);
 }
 
 function cards(...list: CardRecord[]): Map<string, CardRecord> {
@@ -98,13 +113,37 @@ describe('improvedItems', () => {
   });
 });
 
-describe('isKnown', () => {
+describe('isLearned / isKnown', () => {
   it('needs a graduated review card with enough stability', () => {
     expect(isKnown(undefined, CFG)).toBe(false);
     expect(isKnown(card('x', 5, State.Learning), CFG)).toBe(false);
     expect(isKnown(card('x', 5, State.Relearning), CFG)).toBe(false);
     expect(isKnown(card('x', 0.5), CFG)).toBe(false);
     expect(isKnown(card('x', 1), CFG)).toBe(true);
+    expect(isLearned(card('x', 1), CFG)).toBe(true);
+  });
+
+  it('only calls an item known once it was recalled on a later day than it was introduced', () => {
+    expect(isLearned(sameDay('x', 8), CFG)).toBe(true);
+    expect(isKnown(sameDay('x', 8), CFG)).toBe(false);
+    expect(isKnown({ ...card('x', 8), lastReviewedAt: null }, CFG)).toBe(false);
+    expect(isKnown(card('x', 8, State.Review, new Date(T0.getTime() - DAY)), CFG)).toBe(true);
+    expect(isKnown(sameDay('x', 8), { ...CFG, knownAfterGapDays: 0 })).toBe(true);
+  });
+
+  it('does not treat a first-session Easy answer as known', () => {
+    // ts-fsrs short-term scheduling sends a new card rated Easy straight to Review (~8 days).
+    const scheduler = createScheduler({ enableFuzz: false });
+    const item = { id: s6(0), skillId: STRING6.id };
+    const guided = scheduler.review(scheduler.newCard(item, T0), Rating.Hard, T0);
+    const t1 = new Date(T0.getTime() + 60_000);
+    const easy = scheduler.review(scheduler.review(guided, Rating.Easy, t1), Rating.Easy, t1);
+    expect(easy.fsrs.state).toBe(State.Review);
+    expect(isLearned(easy, CFG)).toBe(true);
+    expect(isKnown(easy, CFG)).toBe(false);
+    // Recalled again two days later: now it is known.
+    const later = scheduler.review(easy, Rating.Good, new Date(T0.getTime() + 2 * DAY));
+    expect(isKnown(later, CFG)).toBe(true);
   });
 });
 
@@ -173,6 +212,48 @@ describe('competenceGains', () => {
     ).toEqual([]);
   });
 
+  it('reports same-day gains as learned, not known, after any known reach', () => {
+    const lines = competenceGains(
+      [STRING6],
+      snap(known([0])),
+      snap([...known([0, 1]), sameDay(s6(3), 8), sameDay(s6(5), 8)]),
+      CFG,
+    );
+    expect(lines).toEqual([
+      expect.objectContaining({ kind: 'reach', string: 6, toFret: 1 }),
+      expect.objectContaining({ kind: 'learned', string: 6, toFret: 5, complete: false }),
+    ]);
+    // Learned already before the session: not news.
+    const learned = [sameDay(s6(0), 8), sameDay(s6(1), 8)];
+    expect(competenceGains([STRING6], snap(learned), snap(learned), CFG)).toEqual([]);
+  });
+
+  it('drops a learned line where another skill already knows the string as far', () => {
+    const s5 = (f: number) => `note@s5f${f}`;
+    const after = snap([card(s5(0), 5), sameDay(s5(1), 5), card(s5(2), 5), card(s5(3), 5)]);
+    // C2 (every note) knows only the open string but has learned to fret 3 today;
+    // F2's string-5 naturals (frets 0, 2, 3) are known to fret 3, so C2's line adds nothing.
+    const lines = competenceGains([ALL, STRING5], snap(), after, CFG);
+    expect(lines.map((l) => (l.kind === 'mastered' ? l : [l.kind, l.skillId, l.toFret]))).toEqual([
+      ['reach', STRING5.id, 3],
+    ]);
+  });
+
+  it('does not celebrate mastery that was crammed into one day', () => {
+    const lines = competenceGains(
+      [STRING6],
+      snap([], [[STRING6.id, 'practising']]),
+      snap(
+        S6_FRETS.map((f) => sameDay(s6(f), 9)),
+        [[STRING6.id, 'mastered']],
+      ),
+      CFG,
+    );
+    expect(lines).toEqual([
+      expect.objectContaining({ kind: 'learned', string: 6, toFret: 12, complete: true }),
+    ]);
+  });
+
   it('keeps the furthest reach per string across skills, strings high to low', () => {
     const s5 = [0, 2, 3].map((f) => card(`note@s5f${f}`, 5));
     const lines = competenceGains(
@@ -231,6 +312,7 @@ describe('bestPastSpeedMs', () => {
     ];
     expect(bestPastSpeedMs(starts, reviews, 2)).toBe(1100);
     expect(bestPastSpeedMs([...starts].reverse(), reviews, 2)).toBe(1100);
+    expect(bestPastSpeedMs(starts, [...reviews].reverse(), 2)).toBe(1100);
     expect(bestPastSpeedMs(starts, reviews, 3)).toBeNull();
     expect(bestPastSpeedMs([], reviews, 1)).toBeNull();
   });
@@ -309,8 +391,17 @@ describe('buildCelebration', () => {
 
     const whole = S6_FRETS.map((f) => card(s6(f), 5));
     expect(buildCelebration({ ...base, after: snap(whole) }).confetti).toBe(true);
+    // The whole string learned in one sitting: copy, but no confetti.
+    const crammed = buildCelebration({
+      ...base,
+      after: snap(S6_FRETS.map((f) => sameDay(s6(f), 8))),
+    });
+    expect(crammed.competence).toEqual([
+      expect.objectContaining({ kind: 'learned', complete: true }),
+    ]);
+    expect(crammed.confetti).toBe(false);
     expect(
-      buildCelebration({ ...base, after: snap([], [[STRING6.id, 'mastered']]) }).confetti,
+      buildCelebration({ ...base, after: snap(whole, [[STRING6.id, 'mastered']]) }).confetti,
     ).toBe(true);
     const streak = buildCelebration({ ...base, after: snap(), milestones: ['7-day streak'] });
     expect(streak).toMatchObject({ confetti: true, milestones: ['7-day streak'] });
