@@ -949,7 +949,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
 A short track for learners who want to read tab. Tab maps straight onto skills Fretwork already teaches (string numbers and fret positions), so the track is small: read tab → find it on the neck, neck → write it as tab, then read short phrases. The same engine applies: items, FSRS, speed grading, interleaving, worked examples and guide fading.
 
 ### M9-01 · [contract] Tab model and `<TabStaff>` component
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** `docs/design/tab-track.md` (this WP writes it), §8
 - **Owns:** `app/src/theory/tab.ts`, `app/src/theory/tab.test.ts`, `app/src/components/tab/**`, `docs/design/tab-track.md`, `app/e2e/m9-01.spec.ts`
