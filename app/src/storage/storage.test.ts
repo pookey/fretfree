@@ -3,7 +3,7 @@ import Dexie from 'dexie';
 import { Rating, State } from 'ts-fsrs';
 import { DEFAULT_SETTINGS } from '../engine/model';
 import { createScheduler } from '../engine/scheduler';
-import { FretworkDB, SCHEMA_VERSION, TABLE_NAMES, getDb } from './db';
+import { FretworkDB, SCHEMA_VERSION, STORE_NAMES, getDb } from './db';
 import { ImportError, exportData, exportToJson, importData, parseExport } from './export-import';
 import {
   allCards,
@@ -55,7 +55,7 @@ function log(itemId: string, at: Date, correct = true) {
 describe('schema', () => {
   it('opens at the current version with every table', () => {
     expect(db.verno).toBe(SCHEMA_VERSION);
-    expect(db.tables.map((t) => t.name).sort()).toEqual([...TABLE_NAMES].sort());
+    expect(db.tables.map((t) => t.name).sort()).toEqual([...STORE_NAMES].sort());
   });
 
   it('exposes a shared app database', () => {
