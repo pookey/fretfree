@@ -1,5 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { F1_SKILLS, expectNoHorizontalOverflow, freshStart, masterSkills } from './helpers';
+import { expectNoHorizontalOverflow, freshStart } from './helpers';
+import {
+  C3_SKILLS,
+  KNOWN_THIRDS_NAMES,
+  SKILLS_BEFORE_C3,
+  seedIntervals,
+  startIntervalSession,
+} from './helpers/intervals';
 
 // M2-06: D6 "Tap the M3/P5/b7 from a root". Any correct position in the
 // active region counts, and G–B shift shapes are drilled among the others.
@@ -20,20 +27,7 @@ const SEMITONES: Record<string, number> = {
   'major 7th': 11,
 };
 
-const NON_C3_SKILLS = [
-  ...F1_SKILLS,
-  'F2.string6-naturals',
-  'F2.string5-naturals',
-  'F3.markers',
-  'F3.repeat-12',
-  'C1.octaves',
-  'C1.octaves-gb-shift',
-  'C1.double-octaves',
-  'C2.all-notes',
-];
-const C3_SKILLS = ['C3.thirds', 'C3.fourths-fifths', 'C3.sevenths', 'C3.sixths', 'C3.seconds'];
-
-/** The G–B shift item, seen longest ago so it leads the session. */
+/** The G–B shift item, seen longest ago at the lowest stability, so it leads the session. */
 const SHIFT_ITEM = 'interval:M3@s3→s2';
 const DUE_ITEMS: [string, string][] = [
   [SHIFT_ITEM, 'C3.thirds'],
@@ -50,6 +44,26 @@ const DUE_ITEMS: [string, string][] = [
   ['interval:P4@s3→s2', 'C3.fourths-fifths'],
   ['interval:P5@s5→s4', 'C3.fourths-fifths'],
 ];
+
+/**
+ * Only D6 reviews: every skill mastered (no new or stretch items), the D6
+ * items above due, and the name-it direction (D5) known and not due.
+ */
+async function seedDueIntervals(page: Page): Promise<void> {
+  await seedIntervals(page, {
+    mastered: [...SKILLS_BEFORE_C3, ...C3_SKILLS],
+    cards: [
+      ...DUE_ITEMS.map(([itemId, skillId], i) => ({
+        itemId,
+        skillId,
+        dueInDays: -1,
+        stability: i === 0 ? 1 : 3,
+        reviewedDaysAgo: 20 - i,
+      })),
+      ...KNOWN_THIRDS_NAMES,
+    ],
+  });
+}
 
 interface Cell {
   string: number;
@@ -73,59 +87,6 @@ async function markerCell(page: Page, style: string): Promise<Cell> {
 async function question(page: Page): Promise<string> {
   await expect(promptText(page)).toBeVisible();
   return (await promptText(page).innerText()).trim();
-}
-
-/** Every C3 skill mastered (no new items) and the D6 items above due now. */
-async function seedDueIntervals(page: Page): Promise<void> {
-  await page.evaluate(
-    async ({ mastered, due }) => {
-      const DAY = 86_400_000;
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const req = indexedDB.open('fretwork');
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-      const tx = db.transaction(['cards', 'skillStates'], 'readwrite');
-      const now = Date.now();
-      due.forEach(([itemId, skillId], i) => {
-        // The first item was reviewed longest ago at the lowest stability, so it comes first.
-        const ago = (20 - i) * DAY;
-        tx.objectStore('cards').put({
-          itemId,
-          skillId,
-          fsrs: {
-            due: new Date(now - DAY),
-            stability: i === 0 ? 1 : 3,
-            difficulty: 5,
-            elapsed_days: 0,
-            scheduled_days: 3,
-            learning_steps: 0,
-            reps: 3,
-            lapses: 0,
-            state: 2,
-            last_review: new Date(now - ago),
-          },
-          createdAt: new Date(now - ago - 3 * DAY),
-          lastReviewedAt: new Date(now - ago),
-        });
-      });
-      for (const skillId of mastered) {
-        tx.objectStore('skillStates').put({
-          skillId,
-          status: 'mastered',
-          guideLevel: 0,
-          rollingAccuracy: 1,
-        });
-      }
-      await new Promise<void>((resolve, reject) => {
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-      db.close();
-    },
-    { mastered: [...NON_C3_SKILLS, ...C3_SKILLS], due: DUE_ITEMS },
-  );
-  await page.reload();
 }
 
 /** The cell a shape-scope prompt asks for: the interval above the root on the named string. */
@@ -155,19 +116,6 @@ async function degreeCells(page: Page): Promise<Cell[]> {
   return out;
 }
 
-/**
- * Start a session from Today. A banner (the install hint) can appear after the
- * reload and push the link down mid-click, so retry until the session opens.
- */
-async function startSession(page: Page): Promise<void> {
-  await expect(async () => {
-    if (!new URL(page.url()).pathname.endsWith('/session')) {
-      await page.getByTestId('start-session').click({ timeout: 2_000 });
-    }
-    await expect(promptText(page)).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 15_000 });
-}
-
 async function expectCorrect(page: Page): Promise<void> {
   await expect(page.getByTestId('feedback-correct')).toBeVisible();
   await expect(page.getByTestId('feedback-correct')).toBeHidden();
@@ -176,8 +124,10 @@ async function expectCorrect(page: Page): Promise<void> {
 test.describe('M2-06 D6 interval tap', () => {
   test('a new shape opens as a worked example, answered on the neck @smoke', async ({ page }) => {
     await freshStart(page);
-    await masterSkills(page, NON_C3_SKILLS);
-    await startSession(page);
+    // Everything before C3 is done, and the name-it direction of the thirds is
+    // known, so the first new block is C3.thirds' tap items (D6).
+    await seedIntervals(page, { mastered: SKILLS_BEFORE_C3, cards: KNOWN_THIRDS_NAMES });
+    await startIntervalSession(page);
 
     await expect(promptText(page)).toHaveText(
       'This is the minor 3rd above the root: string 5, 2 frets toward the nut. Tap it to continue.',
@@ -198,7 +148,7 @@ test.describe('M2-06 D6 interval tap', () => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await seedDueIntervals(page);
-    await startSession(page);
+    await startIntervalSession(page);
 
     await expect(promptText(page)).toHaveText('Tap the major 3rd above the root on string 2');
     await expect(page.getByTestId('d6-explain')).toHaveText('Tap the fret on string 2.');
@@ -246,7 +196,7 @@ test.describe('M2-06 D6 interval tap', () => {
     test.setTimeout(60_000);
     await freshStart(page);
     await seedDueIntervals(page);
-    await startSession(page);
+    await startIntervalSession(page);
 
     // Ten right answers at the shape scope widen it (the 80–90% band, rule 5).
     for (let i = 0; i < 10; i++) {
