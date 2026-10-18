@@ -196,6 +196,29 @@ test.describe('M1-24 the first week', () => {
   });
 });
 
+test.describe('M1-24 streak repair', () => {
+  test('a missed day breaks the streak, and a double session the next day repairs it', async ({
+    page,
+  }, info) => {
+    test.slow();
+    // Monday to Thursday of the second week, so no weekend falls inside.
+    await page.clock.install({ time: new Date(WEEK_START.getTime() + 5 * DAY) });
+    await onboard(page);
+    await practise(page, 5);
+    await openOnDay(page, 6);
+    await practise(page, 5);
+    await expectStreak(page, info, 2);
+
+    // Wednesday is missed with no freeze held: Thursday opens on a broken streak.
+    await openOnDay(page, 8);
+    await expectStreak(page, info, 0);
+
+    // A double session (twice the 5-minute goal) inside 48 hours restores it: 2 + 1.
+    await practise(page, 10);
+    await expectStreak(page, info, 3);
+  });
+});
+
 /** Screenshot the page in both themes, into the test's output folder. */
 async function shoot(page: Page, info: TestInfo, name: string): Promise<void> {
   await expectNoHorizontalOverflow(page);
