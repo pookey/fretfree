@@ -22,10 +22,12 @@ import styles from './D2View.module.css';
 
 interface ViewState {
   prompt: D2Prompt;
-  /** The compact window (design §7 iPhone: about 5 frets, slid by the learner). */
+  /** The compact window (design §7 iPhone: about 5 frets, wider on its side; slid by the learner). */
   win: FretRange;
   /** The keyboard focus cell; null until the first arrow key. */
   focus: Position | null;
+  /** The compact window width it was sized for; rotating the phone resizes it. */
+  frets: number | undefined;
 }
 
 const WIDE: FretRange = { from: 0, to: 15 };
@@ -42,6 +44,7 @@ export function D2View({
   guided,
   handedness,
   sizeClass,
+  compactFrets,
   tuning,
   feedback,
   onAnswer,
@@ -52,13 +55,19 @@ export function D2View({
   const moved = useRef(false);
   const [state, setState] = useState<ViewState>(() => ({
     prompt,
-    win: d2InitialWindow(prompt, guided),
+    win: d2InitialWindow(prompt, guided, compactFrets),
     focus: null,
+    frets: compactFrets,
   }));
-  // A new prompt resets the window and the focus cell.
+  // A new prompt (or a new window width) resets the window and the focus cell.
   let view = state;
-  if (state.prompt !== prompt) {
-    view = { prompt, win: d2InitialWindow(prompt, guided), focus: null };
+  if (state.prompt !== prompt || state.frets !== compactFrets) {
+    view = {
+      prompt,
+      win: d2InitialWindow(prompt, guided, compactFrets),
+      focus: null,
+      frets: compactFrets,
+    };
     setState(view);
   }
 
@@ -68,7 +77,7 @@ export function D2View({
     // Widen the window so both the tapped and the right cell are on screen.
     const nearest = d2NearestTarget(prompt, feedback.answer.fret);
     const frets = [feedback.answer.fret, ...(nearest ? [nearest.fret] : [])];
-    visible = d2SpanWindow(frets, prompt.activeRange);
+    visible = d2SpanWindow(frets, prompt.activeRange, compactFrets);
   } else visible = view.win;
   const navRange = compact ? prompt.activeRange : intersectRange(prompt.activeRange, visible);
 
@@ -222,8 +231,8 @@ export function D2View({
           Frets {visible.from}–{visible.to}
         </p>
       )}
-      {/* iPad portrait: the context panel sits below the neck. */}
-      {sizeClass === 'regular' && aside}
+      {/* iPad portrait: the context panel sits below the neck; compact styles it as a sheet. */}
+      {sizeClass !== 'regular-wide' && aside}
     </div>
   );
 }

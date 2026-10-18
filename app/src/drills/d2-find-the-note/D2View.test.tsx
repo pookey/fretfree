@@ -19,6 +19,7 @@ function view(
     guided?: boolean;
     guideLevel?: GuideLevel;
     sizeClass?: SizeClass;
+    compactFrets?: number;
     handedness?: Handedness;
     feedback?: DrillFeedback<Position> | null;
   } = {},
@@ -30,6 +31,7 @@ function view(
     guided: over.guided ?? false,
     handedness: over.handedness ?? 'right',
     sizeClass: over.sizeClass ?? 'regular-wide',
+    compactFrets: over.compactFrets,
     tuning: STANDARD_TUNING,
     feedback: over.feedback ?? null,
     onAnswer,
@@ -175,6 +177,16 @@ describe('<D2View>', () => {
     view(p, { sizeClass: 'compact', feedback: fb(p, { string: 5, fret: 2 }) });
     expect(neck()).toHaveAttribute('data-fret-from', '2');
     expect(neck()).toHaveAttribute('data-fret-to', '10');
+  });
+
+  it('uses a wider window on a phone on its side, and resizes it on rotation', () => {
+    const p = prompt('find:G@s5');
+    const { rerender, props } = view(p, { sizeClass: 'compact', compactFrets: 10 });
+    expect(screen.getByTestId('d2-window')).toHaveTextContent('Frets 0–9');
+    fireEvent.click(screen.getByRole('button', { name: 'Higher frets' }));
+    expect(screen.getByTestId('d2-window')).toHaveTextContent('Frets 3–12');
+    rerender(<D2View {...props} compactFrets={5} />);
+    expect(screen.getByTestId('d2-window')).toHaveTextContent('Frets 0–4');
   });
 
   it('puts the lower-frets control on the nut side of a left-handed neck', () => {

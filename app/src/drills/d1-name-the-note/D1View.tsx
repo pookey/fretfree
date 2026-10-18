@@ -18,6 +18,7 @@ export function D1View({
   guided,
   handedness,
   sizeClass,
+  compactFrets,
   tuning,
   feedback,
   onAnswer,
@@ -40,7 +41,7 @@ export function D1View({
     return () => window.removeEventListener('keydown', onKey);
   }, [feedback, onAnswer, pref, prompt.choices]);
 
-  const range = neckWindow(sizeClass, prompt.position.fret);
+  const range = neckWindow(sizeClass, prompt.position.fret, compactFrets);
   // The worked example shows full guides (design §3.3 step 2).
   const level = guided ? 3 : guideLevel;
 
@@ -126,8 +127,8 @@ export function D1View({
           label={`Fretboard, string ${prompt.position.string} highlighted`}
         />
       </div>
-      {/* iPad portrait: the context panel sits below the neck. */}
-      {sizeClass === 'regular' && aside}
+      {/* iPad portrait: the context panel sits below the neck; compact styles it as a sheet. */}
+      {sizeClass !== 'regular-wide' && aside}
     </div>
   );
 }

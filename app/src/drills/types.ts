@@ -35,6 +35,8 @@ export interface DrillRenderProps<P, A> {
   guided: boolean;
   handedness: Handedness;
   sizeClass: SizeClass;
+  /** Compact only: the neck window's width in frets (wider on a phone on its side). */
+  compactFrets?: number;
   tuning: Tuning;
   /** Set once the learner has answered; the view shows correct/wrong feedback. */
   feedback: DrillFeedback<A> | null;

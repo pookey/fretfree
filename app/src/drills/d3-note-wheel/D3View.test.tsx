@@ -223,12 +223,14 @@ describe('<D3View>', () => {
     expect(screen.getByRole('button', { name: 'Gb' })).toBeInTheDocument();
   });
 
-  it('places the panel below the neck in portrait and omits it on compact', () => {
-    const { unmount } = renderView(prompt('step:+2@E'), { sizeClass: 'regular' });
-    const panel = screen.getByTestId('context-panel');
-    expect(neck().compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    unmount();
-    renderView(prompt('step:+2@E'), { sizeClass: 'compact' });
+  it('places the panel below the neck in portrait and on compact (where it is a sheet)', () => {
+    for (const sizeClass of ['regular', 'compact'] as const) {
+      const { unmount } = renderView(prompt('step:+2@E'), { sizeClass });
+      const panel = screen.getByTestId('context-panel');
+      expect(neck().compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      unmount();
+    }
+    renderView(prompt('step:+2@E'), { sizeClass: 'compact', withAside: false });
     expect(screen.queryByTestId('context-panel')).toBeNull();
     expect(neck()).toHaveAttribute('data-fret-from', '0');
   });

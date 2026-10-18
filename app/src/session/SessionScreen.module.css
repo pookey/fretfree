@@ -59,6 +59,30 @@
   gap: var(--space-3);
 }
 
+/* Compact: the drill's context panel becomes a bottom sheet over the neck
+   (design §7). The header's help toggle (or Escape) closes it. */
+.screen[data-size-class='compact'] .drillArea aside {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  max-height: 60dvh;
+  overflow-y: auto;
+  border-width: 1px 0 0;
+  border-radius: var(--radius-l) var(--radius-l) 0 0;
+  box-shadow: 0 -10px 30px rgb(0 0 0 / 0.35);
+  padding: var(--space-4) calc(var(--space-5) + var(--safe-right))
+    calc(var(--space-4) + var(--safe-bottom)) calc(var(--space-5) + var(--safe-left));
+  animation: sheet-in 0.2s ease-out;
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
 .drillArea > :first-child {
   flex: 1;
 }

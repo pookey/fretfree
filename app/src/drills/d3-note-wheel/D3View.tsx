@@ -28,6 +28,7 @@ export function D3View({
   guided,
   handedness,
   sizeClass,
+  compactFrets,
   tuning,
   feedback,
   onAnswer,
@@ -55,7 +56,7 @@ export function D3View({
   };
 
   const focus = Math.max(prompt.fromPosition.fret, prompt.expectedPosition.fret);
-  const range = neckWindow(sizeClass, focus);
+  const range = neckWindow(sizeClass, focus, compactFrets);
 
   const level: GuideLevel = guided ? 3 : guideLevel;
   const start: FretMarker = {
@@ -97,7 +98,7 @@ export function D3View({
   const neckLevel: GuideLevel = feedback || guided ? level : (Math.min(level, 1) as GuideLevel);
 
   // The session hands over its context panel only when it should be shown
-  // (help on, guide level > 0, not compact); D3 fills it with the note wheel.
+  // (help on, guide level > 0); D3 fills it with the note wheel.
   const context = aside ? (
     <aside className={styles.context} aria-label="Context" data-testid="context-panel">
       <h2>Note wheel</h2>
@@ -179,8 +180,8 @@ export function D3View({
           label={`Fretboard, ${prompt.from} marked on string ${prompt.fromPosition.string}. Tap the answer on any string.`}
         />
       </div>
-      {/* iPad portrait: the context panel sits below the neck. */}
-      {sizeClass === 'regular' && context}
+      {/* iPad portrait: the context panel sits below the neck; compact styles it as a sheet. */}
+      {sizeClass !== 'regular-wide' && context}
     </div>
   );
 }

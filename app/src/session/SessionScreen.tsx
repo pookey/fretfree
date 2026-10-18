@@ -6,7 +6,7 @@ import { DRILLS } from '../drills/registry';
 import { FOCUS_PARAM, focusedSkills } from '../learn/worked-examples/focus';
 import type { DrillFeedback } from '../drills/types';
 import { SKILLS, createScheduler, type GuideLevel } from '../engine';
-import { useSizeClass } from '../shell/size-class';
+import { useCompactWindowFrets, useSizeClass } from '../shell/size-class';
 import { getDb } from '../storage';
 import { getTuning } from '../theory';
 import { SessionRunner, type CurrentPrompt } from './runner';
@@ -31,6 +31,8 @@ export function SessionScreen() {
   const settings = useAppStore((s) => s.settings);
   const loaded = useAppStore((s) => s.loaded);
   const sizeClass = useSizeClass();
+  const compactFrets = useCompactWindowFrets();
+  const compact = sizeClass === 'compact';
   const navigate = useNavigate();
   const focus = useSearchParams()[0].get(FOCUS_PARAM);
   const runnerRef = useRef<SessionRunner | null>(null);
@@ -40,6 +42,10 @@ export function SessionScreen() {
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
   const [progress, setProgress] = useState({ position: 0, length: 1 });
   const [contextOpen, setContextOpen] = useState(true);
+  // Compact shows the context panel as a sheet over the neck, so it starts closed.
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const helpOpen = compact ? sheetOpen : contextOpen;
+  const setHelpOpen = compact ? setSheetOpen : setContextOpen;
   const [combo, setCombo] = useState(0);
   const [endsAt, setEndsAt] = useState<Date | null>(null);
 
@@ -118,6 +124,15 @@ export function SessionScreen() {
   };
 
   useEffect(() => {
+    if (!compact || !sheetOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSheetOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [compact, sheetOpen]);
+
+  useEffect(() => {
     if (phase.kind !== 'feedback' || phase.feedback.result.correct) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === ' ' || e.key === 'Enter') {
@@ -136,7 +151,8 @@ export function SessionScreen() {
   const Drill = current?.drill.render;
   const guideLevel = (current?.guideLevel ?? 3) as GuideLevel;
   // The context panel follows guide fading: less at lower levels, hidden at 0.
-  const showContext = contextOpen && guideLevel > 0 && sizeClass !== 'compact';
+  // On compact the drill places it as usual and the screen styles it as a sheet.
+  const showContext = helpOpen && guideLevel > 0;
   const aside = showContext ? (
     <aside className={styles.context} aria-label="Context" data-testid="context-panel">
       <h2>Musical alphabet</h2>
@@ -179,16 +195,14 @@ export function SessionScreen() {
         </div>
         {endsAt && <TimeLeft endsAt={endsAt} />}
         <ComboCounter combo={combo} />
-        {sizeClass !== 'compact' && (
-          <button
-            type="button"
-            className={styles.contextToggle}
-            onClick={() => setContextOpen((o) => !o)}
-            aria-pressed={contextOpen}
-          >
-            {contextOpen ? 'Hide help' : 'Show help'}
-          </button>
-        )}
+        <button
+          type="button"
+          className={styles.contextToggle}
+          onClick={() => setHelpOpen((o) => !o)}
+          aria-pressed={helpOpen}
+        >
+          {helpOpen ? 'Hide help' : 'Show help'}
+        </button>
       </header>
 
       <div className={styles.body} data-testid="session">
@@ -200,6 +214,7 @@ export function SessionScreen() {
               guided={current.entry.guided}
               handedness={settings.handedness}
               sizeClass={sizeClass}
+              compactFrets={compactFrets}
               tuning={getTuning(settings.tuning)}
               feedback={feedback}
               onAnswer={(a: unknown) => void onAnswer(a)}
