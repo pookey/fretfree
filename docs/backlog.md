@@ -575,7 +575,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ## M5: Mic mode
 
 ### M5-01 · [contract] Pitch-input API
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **Design:** §9 input
 - **Owns:** `app/src/mic/types.ts`, `app/src/mic/index.ts`
