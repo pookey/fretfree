@@ -502,7 +502,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Ordered-choice spelling of keys and chords. Enharmonic spelling is enforced, with a clear explanation when it's wrong.
 
 ### M3-03 · C5 chord-construction skills
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-01
 - **Owns:** `app/src/engine/skills/c5.ts`, `app/src/engine/skills/c5.test.ts`
 - **Acceptance:**
