@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { NAV_ITEMS, navItems } from '../shell/nav';
-import { collectRoutes, ROUTES, type RouteModule } from './registry';
+import { collectRoutes, guardLoader, ROUTES, type RouteModule } from './registry';
 
 const route = (path: string, extra: Partial<RouteModule> = {}): RouteModule => ({
   path,
@@ -53,5 +53,33 @@ describe('route registry', () => {
     expect(() =>
       collectRoutes({ './a.route.tsx': route('/a'), './b.route.tsx': route('/a') }),
     ).toThrow('./b.route.tsx: path "/a" is already used by ./a.route.tsx');
+    expect(() =>
+      collectRoutes({ './a.route.tsx': route('/a', { guard: '/elsewhere' as never }) }),
+    ).toThrow('./a.route.tsx: `guard` must be a function');
+  });
+});
+
+describe('guardLoader', () => {
+  const load = (guard: Parameters<typeof guardLoader>[0], url = 'http://app.test/') =>
+    guardLoader(guard)({ request: new Request(url), params: {} } as never);
+
+  it('redirects where the guard says', async () => {
+    const res = (await load(async () => '/onboarding')) as Response;
+    expect(res.status).toBe(302);
+    expect(res.headers.get('Location')).toBe('/onboarding');
+  });
+
+  it('renders the route when the guard returns null', async () => {
+    expect(await load(() => null)).toBeNull();
+  });
+
+  it('passes the URL to the guard and never redirects to the page being loaded', async () => {
+    const seen: string[] = [];
+    const result = await load((url) => {
+      seen.push(url.pathname);
+      return url.pathname;
+    }, 'http://app.test/learn');
+    expect(seen).toEqual(['/learn']);
+    expect(result).toBeNull();
   });
 });
