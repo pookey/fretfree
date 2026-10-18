@@ -126,7 +126,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The pure statistics are unit-tested.
 
 ### M1-08 · XP engine
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-02
 - **Design:** §3.7 XP
 - **Owns:** `app/src/engine/gamification/xp.ts`, `app/src/engine/gamification/xp.test.ts`
