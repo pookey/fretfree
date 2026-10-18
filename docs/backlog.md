@@ -398,6 +398,44 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Done (and any primary action) is visible without scrolling on every supported viewport, including the shortest compact landscape. Prefer a compact summary layout at short heights over pinning, and respect `--safe-bottom`.
   - E2E (`m1-33.spec.ts`, iPhone tagged `@smoke`, plus iPad projects): finish a `focusSession` and assert that Done's bounding box lies inside the viewport with `window.scrollY` at 0.
 
+### M1-34 · Learning vs stable: show progress before mastery
+- **Status:** todo
+- **Deps:** none
+- **Design:** §3.4, §3.7 mastery map, §7 Learn, research/02 rules 11 and 15
+- **Owns:** `app/src/engine/progress.ts`, `app/src/engine/progress.test.ts`, `app/src/screens/learn/map-model.ts`, `app/src/screens/learn/map-model.test.ts`, `app/src/screens/learn/MasteryRing.tsx`, `app/src/screens/learn/Learn.module.css`, `app/src/screens/learn/LearnScreen.tsx`, `app/src/screens/learn/LearnScreen.test.tsx`, `app/src/screens/learn/ModuleDetail.tsx`, `app/src/screens/learn/SkillDetail.tsx`, `app/src/screens/learn/SkillDetail.test.tsx`, `app/e2e/m1-34.spec.ts`
+- **Acceptance:**
+  - User-reported (2026-10-18): after a 20-minute daily session and a 96% lesson, every Learn ring still read 0%. The ring only counts *stable* items (FSRS stability ≥ `mastery.stabilityDays`), and same-day reviews can't get there: a new card graded Good sits at ≈2.3 days however often it is repeated that day, and only a first-answer Easy (≈8.3 days) counts at once. That is correct, but it reads as broken and gives no visible competence (rule 15).
+  - A pure `engine/progress.ts` defines **learning**: an item with a card whose most recent review was correct (not Again). It drops out again on a miss, so the count is honest rather than monotonic. Unit-tested, including lapses and seeded placement cards.
+  - The map model carries `learningCount` and a 0–1 `learning` fraction next to `stableCount` and `mastery`, for skills and modules (item-weighted, as now).
+  - The ring shows two layers: a light *learning* arc under the solid *stable* arc. They differ by shape as well as colour (e.g. thinner or hatched vs solid, design rule on markers), and use tokens only. Reduced motion is respected. A module's first session therefore lights its ring.
+  - Copy uses **"Learning · Stable"**, not "learned", so one good session isn't presented as retained (illusion of competence, research/02). Skill meta reads e.g. "18 learning · 0 stable of 26". The spoken label covers both values, e.g. "Neck basics: 69% learning, 0% stable".
+  - Mastery and unlocking are unchanged: they still depend on stable items and speed only (rule 7). This WP changes the display, not the gate.
+  - RTL covers 0/0, learning-only, mixed and mastered rings. E2E (`m1-34.spec.ts`, iPad projects; iPhone tagged `@smoke`): finish a `focusSession`, open Learn, and see a non-zero learning value while stable stays 0.
+
+### M1-35 · Session summary: tie today's score to learning and stable
+- **Status:** todo
+- **Deps:** M1-34
+- **After:** M1-33
+- **Design:** §3.3 step 5, research/02 rules 11 and 15
+- **Owns:** `app/src/session/summary/**`, `app/e2e/m1-35.spec.ts`
+- **Acceptance:**
+  - User-reported (2026-10-18): the session score (e.g. 96%), the Learn ring and mastery were read as one number, so a strong session followed by "0%" felt like progress wasn't being tracked.
+  - The summary names the three separately: today's accuracy, items now *learning* (from `engine/progress.ts`), and items that became *stable*. Copy explains spacing in a line, e.g. "14 items learning. They become stable as you recall them over the next few days; your next review is Tuesday." The next-review date comes from the cards' due dates (a retention forecast, rule 15).
+  - Encouraging and loss-free, consistent with §3.7 and the existing "come back tomorrow" copy. Respects M1-33's compact-landscape layout (Done stays above the fold).
+  - RTL covers a first session (learning > 0, stable 0), a session that stabilises items, and an all-review session. E2E (`m1-35.spec.ts`, iPad projects; iPhone tagged `@smoke`) checks the learning count and next-review line after a `focusSession`.
+
+### M1-36 · Developer-only "unlock every skill" switch
+- **Status:** todo
+- **Deps:** none
+- **Design:** §3.4
+- **Owns:** `app/src/screens/settings/DeveloperTools.tsx`, `app/src/screens/settings/DeveloperTools.test.tsx`, `app/src/screens/settings/SettingsGroups.tsx`, `app/src/screens/learn/map-model.ts`, `app/e2e/m1-36.spec.ts`
+- **Acceptance:**
+  - User request (2026-10-18): the maintainer can't try Chords without about a week of real mastery of Intervals and Keys. Add a switch to try any module now.
+  - It only exists in development builds (`import.meta.env.DEV`). It is tree-shaken out of production, and a test or bundle check proves the production build has no trace of it. It works on an iPad against `pnpm dev` over the LAN.
+  - While on, every skill is treated as frontier, so "Practise this now" and sessions can use it. It is an overlay passed into status derivation (engine stays pure: no clock or storage reads). It **never writes** skill states, cards or review logs, and turning it off restores the real state exactly (tested).
+  - A visible "Developer: all skills unlocked" badge shows while it's on, so screenshots and QA never mistake it for real progress.
+  - E2E (`m1-36.spec.ts`, iPad landscape, dev server): toggle on, start a Chords focus session, toggle off, Chords is locked again.
+
 ## M2: Octaves and intervals
 
 ### M2-01 · [contract] Interval and octave theory
@@ -515,6 +553,31 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Acceptance:**
   - After about 1,000 reviews, FSRS parameters are refit from the local review log (ts-fsrs optimiser or a documented fallback).
   - Parameters persist in settings, and the scheduler uses them. Behaviour is unchanged below the threshold (tested).
+
+### M2-15 · Retake the placement test from Settings
+- **Status:** todo
+- **Deps:** M2-09
+- **Design:** §3.4, §4 step 6
+- **Owns:** `app/src/routes/placement.route.tsx`, `app/src/placement/**`, `app/src/screens/settings/SettingsGroups.tsx`, `app/src/screens/settings/SettingsGroups.test.tsx`, `app/e2e/m2-15.spec.ts`
+- **Acceptance:**
+  - User-reported (2026-10-18): the placement test runs only during onboarding. A learner who skipped it, or took it before C3 and C5 existed, can never use it again, so an experienced player has to grind through gates they could test past.
+  - Settings offers "Retake the placement test". It opens the same adaptive test full-screen and probes every topic in `placement.topics` that now has skills.
+  - Re-taking is safe. `save.ts` already never re-seeds an item with real history; keep that guarantee and test it: a retake never lowers a skill's status, guide level or any card.
+  - Copy explains what it does ("skips material you already know") and that it can't make you lose progress.
+  - E2E (`m2-15.spec.ts`, iPad projects; iPhone tagged `@smoke`): skip placement in onboarding, retake it from Settings, answer fluently, and see the probed skills unlocked or mastered in Learn.
+
+### M2-16 · "Test out" of a locked module
+- **Status:** todo
+- **Deps:** M2-09
+- **After:** M2-15, M1-34
+- **Design:** §3.4, research/02 rule 7
+- **Owns:** `app/src/placement/**`, `app/src/engine/config/placement.ts`, `app/src/screens/learn/ModuleDetail.tsx`, `app/src/screens/learn/Learn.module.css`, `app/e2e/m2-16.spec.ts`
+- **Acceptance:**
+  - User-reported (2026-10-18): Chords needs Intervals and Keys mastered first. That gate is rule 7 and stays, but rule 7 gates on *mastery*, not time served. An experienced player should be able to prove mastery and skip a week of waiting. This is where they hit the wall, so the offer belongs there.
+  - A locked module's detail offers "Already know this? Test out". It runs the placement algorithm scoped to the unmet prerequisites of that module's first skills (for Chords: the C3 and C4 skills `C5.triads` needs). Results are saved through the existing placement save path, so known items are seeded via `seedKnownCard` and probes are logged as placement reviews (rule 17).
+  - **It must actually open the module.** Today `save.ts` marks a known skill mastered only when every probed item has a card and the mastery rule holds, otherwise practising. Practising is not enough for hard prerequisites (`C5.triads` has no `softUnlock`). Also, `placement.topics` doesn't include C4 (keys), so placement can never unlock Chords today. Fix both: probe enough items to justify mastery, or seed the whole skill once its probes are fluent. Add C4 to the probed topics. A unit test shows that a fluent test-out of Chords' prerequisites unlocks `C5.triads`.
+  - A failed or partial test-out never lowers anything. It says what was found, e.g. "Intervals: known. Keys: let's practise those first", and the passed parts still unlock what they can.
+  - E2E (`m2-16.spec.ts`, iPad projects; iPhone tagged `@smoke`): from a fresh profile, test out of Chords' prerequisites fluently, then start a Chords focus session.
 
 ### M2-14 · M2 milestone QA
 - **Status:** todo
