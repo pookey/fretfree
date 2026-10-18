@@ -1,0 +1,167 @@
+import { useEffect } from 'react';
+import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
+import type { GuideLevel } from '../../engine/model';
+import { neckWindow } from '../../shell/size-class';
+import type { DrillRenderProps } from '../types';
+import { IntervalLegend } from './IntervalLegend';
+import {
+  D5_FRETS,
+  d5FeedbackPositions,
+  d5KeyFor,
+  d5KeyToAnswer,
+  d5WorkedExample,
+  type D5Answer,
+  type D5Prompt,
+} from './logic';
+import styles from './D5View.module.css';
+
+/**
+ * D5 view: two dots on the neck (the root as a square, the upper note as a
+ * circle), interval buttons above, and the interval legend in the context
+ * panel (design §6 D5, §7 session).
+ */
+export function D5View({
+  prompt,
+  guideLevel,
+  guided,
+  handedness,
+  sizeClass,
+  tuning,
+  feedback,
+  onAnswer,
+  aside,
+  blindMode = false,
+}: DrillRenderProps<D5Prompt, D5Answer>) {
+  const { choices } = prompt;
+
+  useEffect(() => {
+    if (feedback) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const answer = d5KeyToAnswer(e.key, choices);
+      if (answer) {
+        e.preventDefault();
+        onAnswer(answer);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [feedback, onAnswer, choices]);
+
+  const low = Math.min(prompt.root.fret, prompt.upper.fret);
+  // Focus two frets in, so the compact five-fret window starts at the lower dot.
+  const range = neckWindow(sizeClass, low + 2);
+  // The worked example shows full guides (design §3.3 step 2).
+  const level: GuideLevel = guided ? 3 : guideLevel;
+
+  const root: FretMarker = { ...prompt.root, style: 'root', label: prompt.rootPc };
+  let markers: FretMarker[];
+  if (feedback) {
+    const pos = d5FeedbackPositions(prompt, feedback, tuning);
+    markers = [
+      { ...root, forceLabel: true },
+      ...pos.expected.map((p): FretMarker => ({
+        ...p,
+        style: 'correct',
+        label: prompt.interval,
+        forceLabel: true,
+      })),
+      ...pos.given.map((p): FretMarker => ({
+        ...p,
+        style: 'wrong',
+        label: feedback.answer,
+        forceLabel: true,
+      })),
+    ];
+  } else if (guided) {
+    // Worked example: the first rep of a new item names the interval.
+    markers = [
+      { ...root, forceLabel: true },
+      { ...prompt.upper, style: 'target', label: prompt.interval, forceLabel: true },
+    ];
+  } else {
+    // A recall prompt: the upper dot is a target, so no guide level labels it.
+    markers = [root, { ...prompt.upper, style: 'target' }];
+  }
+
+  // The session hands over its context panel only when it should be shown
+  // (help on, guide level > 0, not compact); D5 fills it with the legend.
+  const context = aside ? (
+    <aside className={styles.context} aria-label="Context" data-testid="context-panel">
+      <h2>Intervals</h2>
+      <IntervalLegend
+        choices={choices}
+        guideLevel={level}
+        {...(feedback
+          ? {
+              expected: prompt.interval,
+              ...(feedback.result.correct ? {} : { given: feedback.answer }),
+            }
+          : {})}
+      />
+    </aside>
+  ) : null;
+
+  return (
+    <div className={styles.drill} data-size-class={sizeClass} data-testid="d5-drill">
+      <div className={styles.upper}>
+        <div className={styles.top}>
+          <p className={styles.prompt} id="drill-prompt">
+            {guided ? (
+              <>
+                {d5WorkedExample(prompt)} Tap <strong>{prompt.interval}</strong> to continue.
+              </>
+            ) : (
+              'Name the interval'
+            )}
+          </p>
+          <p className={styles.hint} data-testid="d5-hint">
+            {!feedback && 'From the square (the lower note) up to the round dot.'}
+          </p>
+          <div className={styles.choices} role="group" aria-labelledby="drill-prompt">
+            {choices.map((c, i) => {
+              const state = !feedback
+                ? undefined
+                : c === feedback.answer
+                  ? feedback.result.correct
+                    ? 'correct'
+                    : 'wrong'
+                  : c === prompt.interval && !feedback.result.correct
+                    ? 'expected'
+                    : undefined;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  className={styles.choice}
+                  data-state={state}
+                  disabled={Boolean(feedback)}
+                  onClick={() => onAnswer(c)}
+                  aria-keyshortcuts={d5KeyFor(i)}
+                >
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {sizeClass === 'regular-wide' && context}
+      </div>
+      <div className={styles.neckArea}>
+        <Fretboard
+          tuning={tuning}
+          fretRange={range}
+          activeRange={{ from: 0, to: D5_FRETS.to }}
+          handedness={handedness}
+          markers={markers}
+          guideLevel={level}
+          blindMode={blindMode}
+          accidentalPref={prompt.pref}
+          label={`Fretboard, root on string ${prompt.root.string} fret ${prompt.root.fret}, second note on string ${prompt.upper.string} fret ${prompt.upper.fret}`}
+        />
+      </div>
+      {/* iPad portrait: the context panel sits below the neck. */}
+      {sizeClass === 'regular' && context}
+    </div>
+  );
+}
