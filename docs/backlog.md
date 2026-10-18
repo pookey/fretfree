@@ -389,7 +389,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m1-32.spec.ts`, all iPad projects; iPhone tagged `@smoke`): with seeded progress, the "12" label's bounding box lies inside the map's container and the viewport.
 
 ### M1-33 · Phone landscape: the session summary's Done is below the fold
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §7 session summary, §7 compact
 - **Owns:** `app/src/session/summary/SessionSummary.tsx`, `app/src/session/summary/SessionSummary.module.css`, `app/src/session/summary/SessionSummary.test.tsx`, `app/e2e/m1-33.spec.ts`
