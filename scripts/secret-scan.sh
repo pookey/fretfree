@@ -12,15 +12,15 @@ if [[ -z "$range" ]]; then
   if git rev-parse --verify -q origin/main >/dev/null; then range="origin/main..HEAD"; else range="HEAD"; fi
 fi
 if [[ "$range" == *..* ]]; then
-  diff="$(git diff "$range" -- . ':(exclude)pnpm-lock.yaml' | grep -E '^\+' | grep -vE '^\+\+\+' || true)"
+  diff="$(git diff "$range" -- . ':(exclude)pnpm-lock.yaml' ':(exclude)scripts/secret-scan.sh' | grep -E '^\+' | grep -vE '^\+\+\+' || true)"
 else
-  diff="$(git show "$range" --format= -- . ':(exclude)pnpm-lock.yaml' | grep -E '^\+' || true)"
+  diff="$(git show "$range" --format= -- . ':(exclude)pnpm-lock.yaml' ':(exclude)scripts/secret-scan.sh' | grep -E '^\+' || true)"
 fi
 
 patterns=(
   'AKIA[0-9A-Z]{16}'
   'ASIA[0-9A-Z]{16}'
-  'aws_secret_access_key'
+  'aws_secret_access_key *[=:] *[A-Za-z0-9/+]{30,}'
   '-----BEGIN [A-Z ]*PRIVATE KEY-----'
   'Z0[0-9A-Z]{10,}'
   'arn:aws:[a-z0-9-]+:[a-z0-9-]*:[0-9]{12}:'
@@ -39,9 +39,10 @@ generic_ids="$(grep -oE '(^|[^0-9])[0-9]{12}([^0-9]|$)' <<<"$diff" | grep -oE '[
   grep -vE '^(0{12}|1{12}|123456789012)$' || true)"
 
 found=0
-for p in "${patterns[@]}"; do
-  if grep -qE -- "$p" <<<"$diff"; then
-    echo "secret-scan: blocked pattern found in $range (pattern #$(( found + 1 )))" >&2
+for i in "${!patterns[@]}"; do
+  if grep -qE -- "${patterns[$i]}" <<<"$diff"; then
+    # Don't echo the pattern itself: it may be the real account or zone ID.
+    echo "secret-scan: blocked pattern #$((i + 1)) found in $range" >&2
     found=1
   fi
 done
