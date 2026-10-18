@@ -32,9 +32,17 @@ fi
 
 pane="$(place_pane "$wt")"
 sleep 1 # let the shell reach its prompt
-herdr agent start "$name" --kind claude --pane "$pane" --timeout 60000 -- --permission-mode auto >/dev/null ||
-  echo "spawn: agent start did not report ready; checking for a trust prompt" >&2
-"$SKILL_DIR/scripts/ensure-ready.sh" "$pane" "$wt" "$name"
+# Under heavy load (a ship running alongside workers) the agent can fail to come
+# up at all, leaving a bare shell. Retry the start once in the same pane.
+for try in 1 2; do
+  herdr agent start "$name" --kind claude --pane "$pane" --timeout 60000 -- --permission-mode auto >/dev/null ||
+    echo "spawn: agent start did not report ready; checking for a trust prompt" >&2
+  rc=0
+  "$SKILL_DIR/scripts/ensure-ready.sh" "$pane" "$wt" "$name" || rc=$?
+  ((rc == 0)) && break
+  [[ $rc == 6 && $try == 1 && "$(agent_status "$pane")" == none ]] || exit $rc
+  echo "spawn: no agent in $pane after timeout; retrying the start" >&2
+done
 
 # Render and send the brief.
 export WP WORKTREE="$wt" BRANCH="$branch" PORT="$port" MAIN_REPO="$MAIN"

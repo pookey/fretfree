@@ -27,5 +27,5 @@ if [[ -f "$REVIEW" ]]; then
 fi
 text="$(render "$SKILL_DIR/templates/$KIND-brief.md")"
 herdr agent prompt "$agent" "$text" >/dev/null
-$STATE worker "$WP" "$(jq -nc --arg f "$field" --argjson n "$attempts" '{status:"fixing"} + {($f): $n}')" >/dev/null
+$STATE worker "$WP" "$(jq -nc --arg f "$field" --argjson n "$attempts" '{status:"fixing", reviewer:null} + {($f): $n}')" >/dev/null
 echo "sent $KIND brief to $agent ($field: $attempts)"
