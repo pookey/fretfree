@@ -59,7 +59,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Unit tests cover registry ordering. The existing e2e suite passes unchanged, and `m1-01.spec.ts` checks that nav is generated from the registry.
 
 ### M1-02 · [contract] Gamification contracts and repository
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **Design:** §3.7
 - **Owns:** `app/src/engine/gamification/types.ts`, `app/src/engine/gamification/index.ts`, `app/src/storage/gamification-repo.ts`, `app/src/storage/gamification-repo.test.ts`
