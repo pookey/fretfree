@@ -1,0 +1,81 @@
+.wheel {
+  display: block;
+  width: 100%;
+  max-width: 16rem;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.ring {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 2;
+}
+
+/* B–C and E–F: a heavy accent arc (shape) as well as a colour. */
+.halfStep {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.badge {
+  fill: var(--accent);
+  font-size: 15px;
+  font-weight: 800;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.note circle {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+
+.note[data-natural] circle {
+  fill: var(--bg-sunken);
+  stroke: var(--text-muted);
+}
+
+.note text {
+  fill: var(--text);
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.note[data-natural] text {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* The starting note: an extra outer ring. */
+.note .startRing {
+  fill: none;
+  stroke: var(--tone);
+  stroke-width: 3;
+}
+
+.note[data-role='start'] circle:not(.startRing) {
+  stroke: var(--tone);
+}
+
+/* Feedback: the answer filled solid, a wrong choice dashed. */
+.note[data-role='expected'] circle {
+  fill: var(--correct);
+  stroke: var(--correct);
+}
+
+.note[data-role='given'] circle {
+  fill: var(--wrong);
+  stroke: var(--text);
+  stroke-dasharray: 3 2;
+}
+
+.note[data-role='expected'] text,
+.note[data-role='given'] text {
+  fill: #fff;
+}

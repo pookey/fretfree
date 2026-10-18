@@ -30,13 +30,16 @@ afterEach(async () => {
   await db.delete();
 });
 
+// F1 items are served by D3; these tests drive D1 prompts.
+const NOTE_SKILLS = SKILLS.filter((s) => s.topic !== 'F1');
+
 function correctAnswer(prompt: unknown): string {
   return (prompt as D1Prompt).expectedPc;
 }
 
 describe('SessionRunner', () => {
   it('runs a first session of new items with guided worked examples', async () => {
-    const r = await SessionRunner.start(deps());
+    const r = await SessionRunner.start(deps({ skills: NOTE_SKILLS }));
     expect(r.length).toBe(12);
     const first = r.currentPrompt()!;
     expect(first.entry.kind).toBe('new');
@@ -151,7 +154,7 @@ describe('SessionRunner', () => {
     const skill = SKILLS.find((s) => s.id === 'F2.string6-naturals')!;
     const find = skill.items().find((i) => i.id.startsWith('find:'))!;
     await db.cards.put(scheduler.seedKnownCard(find, new Date('2026-09-01T09:00:00Z'), 1));
-    const r = await SessionRunner.start(deps({ scheduler, maxItems: 40 }));
+    const r = await SessionRunner.start(deps({ scheduler, skills: NOTE_SKILLS, maxItems: 40 }));
     const planned = Array.from({ length: r.length }, () => {
       const id = r.currentPrompt()!.entry.itemId;
       r.next();

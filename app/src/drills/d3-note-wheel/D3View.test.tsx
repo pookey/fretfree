@@ -1,0 +1,168 @@
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import type { GuideLevel } from '../../engine/model';
+import { STANDARD_TUNING } from '../../theory';
+import type { SizeClass } from '../../shell/size-class';
+import { getDrill } from '../registry';
+import type { DrillFeedback } from '../types';
+import { D3View } from './D3View';
+import { d3Check, d3MakePrompt, type D3Prompt } from './logic';
+
+const prompt = (id: string, accidentalPref: 'sharp' | 'flat' = 'sharp', scopeLevel = 0) =>
+  d3MakePrompt(
+    { id, skillId: 'F1.test' },
+    { tuning: STANDARD_TUNING, accidentalPref, scopeLevel, rng: () => 0 },
+  );
+
+interface Opts {
+  guideLevel?: GuideLevel;
+  guided?: boolean;
+  sizeClass?: SizeClass;
+  feedback?: DrillFeedback<string> | null;
+  withAside?: boolean;
+}
+
+function renderView(p: D3Prompt, opts: Opts = {}) {
+  const onAnswer = vi.fn();
+  const utils = render(
+    <D3View
+      prompt={p}
+      guideLevel={opts.guideLevel ?? 3}
+      guided={opts.guided ?? false}
+      handedness="right"
+      sizeClass={opts.sizeClass ?? 'regular-wide'}
+      tuning={STANDARD_TUNING}
+      feedback={opts.feedback ?? null}
+      onAnswer={onAnswer}
+      aside={opts.withAside === false ? undefined : <aside />}
+    />,
+  );
+  return { onAnswer, ...utils };
+}
+
+const neck = () => screen.getByRole('group', { name: /^Fretboard/ });
+const neckTexts = () =>
+  Array.from(neck().querySelectorAll('text')).map((t) => t.textContent?.trim() ?? '');
+
+describe('<D3View>', () => {
+  it('is registered as the note-wheel drill', () => {
+    expect(getDrill('note-wheel')?.render).toBe(D3View);
+  });
+
+  it('asks the question and answers by button', () => {
+    const { onAnswer } = renderView(prompt('step:+2@E'));
+    expect(screen.getByText('A whole step above E?')).toBeInTheDocument();
+    const group = screen.getByRole('group', { name: 'A whole step above E?' });
+    fireEvent.click(within(group).getByRole('button', { name: 'F#' }));
+    expect(onAnswer).toHaveBeenCalledWith('F#');
+  });
+
+  it('answers from the hardware keyboard: A–G, Shift for sharps', () => {
+    const { onAnswer } = renderView(prompt('step:+2@E'));
+    fireEvent.keyDown(window, { key: 'F', shiftKey: true });
+    fireEvent.keyDown(window, { key: 'g' });
+    fireEvent.keyDown(window, { key: 'f', metaKey: true });
+    fireEvent.keyDown(window, { key: 'z' });
+    expect(onAnswer.mock.calls).toEqual([['F#'], ['G']]);
+  });
+
+  it('ignores the keyboard once answered', () => {
+    const p = prompt('step:+2@E');
+    const { onAnswer } = renderView(p, { feedback: { answer: 'F#', result: d3Check(p, 'F#') } });
+    fireEvent.keyDown(window, { key: 'g' });
+    expect(onAnswer).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'F#' })).toHaveAttribute('data-state', 'correct');
+  });
+
+  it('never shows the answer on the neck before an unguided answer, even at guide level 3', () => {
+    // The letter after G is A, which is also an open-string name.
+    for (const id of ['letter:+1@G', 'step:+2@E', 'step:-1@C', 'letter:-1@F']) {
+      const p = prompt(id);
+      const { unmount } = renderView(p, { guideLevel: 3 });
+      expect(neckTexts(), id).not.toContain(p.expectedPc);
+      expect(neckTexts(), id).toContain(p.from);
+      expect(screen.queryByTestId('marker-target')).toBeNull();
+      expect(neck().getAttribute('aria-label')).not.toContain(p.expectedPc);
+      unmount();
+    }
+  });
+
+  it('shows the answer in the guided worked example', () => {
+    renderView(prompt('letter:+1@G'), { guided: true, guideLevel: 0 });
+    expect(screen.getByText(/The letter after G is A\./)).toBeInTheDocument();
+    expect(neckTexts()).toContain('A');
+  });
+
+  it('shows both positions on the neck after a wrong answer', () => {
+    const p = prompt('step:+2@E');
+    renderView(p, { feedback: { answer: 'G', result: d3Check(p, 'G') } });
+    expect(neckTexts()).toEqual(expect.arrayContaining(['E', 'F#', 'G']));
+    expect(screen.getByRole('button', { name: 'F#' })).toHaveAttribute('data-state', 'expected');
+    expect(screen.getByRole('button', { name: 'G' })).toHaveAttribute('data-state', 'wrong');
+    const wheel = screen.getByTestId('note-wheel');
+    expect(within(wheel).getByTestId('wheel-note-F#')).toHaveAttribute('data-role', 'expected');
+    expect(within(wheel).getByTestId('wheel-note-G')).toHaveAttribute('data-role', 'given');
+  });
+
+  it('fills the context panel with the note wheel, highlighting B–C and E–F', () => {
+    renderView(prompt('step:+1@E'));
+    const panel = screen.getByTestId('context-panel');
+    expect(within(panel).getByTestId('half-step-B-C')).toBeInTheDocument();
+    expect(within(panel).getByTestId('half-step-E-F')).toBeInTheDocument();
+    expect(within(panel).getByTestId('wheel-note-E')).toHaveAttribute('data-role', 'start');
+    // The answer is not marked on the wheel before answering.
+    expect(within(panel).getByTestId('wheel-note-F')).not.toHaveAttribute('data-role');
+    expect(panel).toHaveTextContent(/No sharp between B–C and E–F/);
+  });
+
+  it('fades the context panel with the guide level', () => {
+    const p = prompt('step:+1@E');
+    const { rerender, onAnswer } = renderView(p, { guideLevel: 3 });
+    const at = (guideLevel: GuideLevel, aside: boolean) =>
+      rerender(
+        <D3View
+          prompt={p}
+          guideLevel={guideLevel}
+          guided={false}
+          handedness="right"
+          sizeClass="regular-wide"
+          tuning={STANDARD_TUNING}
+          feedback={null}
+          onAnswer={onAnswer}
+          aside={aside ? <aside /> : undefined}
+        />,
+      );
+    expect(screen.getByTestId('wheel-note-C#')).toHaveTextContent('C#');
+    expect(screen.getByText(/one fret/)).toBeInTheDocument();
+
+    at(2, true);
+    expect(screen.getByTestId('wheel-note-C#')).toHaveTextContent('');
+    expect(screen.getByTestId('half-step-E-F')).toHaveTextContent('½');
+    expect(screen.queryByText(/one fret/)).toBeNull();
+
+    at(1, true);
+    expect(screen.queryByTestId('wheel-note-C#')).toBeNull();
+    expect(screen.getByTestId('half-step-E-F')).toHaveTextContent('');
+    expect(screen.queryByText(/No sharp/)).toBeNull();
+
+    // Level 0 (or help hidden): the session passes no panel at all.
+    at(0, false);
+    expect(screen.queryByTestId('context-panel')).toBeNull();
+  });
+
+  it('spells the wheel with the flat preference', () => {
+    renderView(prompt('step:+2@E', 'flat'));
+    expect(screen.getByTestId('wheel-note-Gb')).toHaveTextContent('Gb');
+    expect(screen.getByRole('button', { name: 'Gb' })).toBeInTheDocument();
+  });
+
+  it('places the panel below the neck in portrait and omits it on compact', () => {
+    const { unmount } = renderView(prompt('step:+2@E'), { sizeClass: 'regular' });
+    const panel = screen.getByTestId('context-panel');
+    expect(neck().compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    unmount();
+    renderView(prompt('step:+2@E'), { sizeClass: 'compact' });
+    expect(screen.queryByTestId('context-panel')).toBeNull();
+    expect(neck()).toHaveAttribute('data-fret-from', '0');
+  });
+});
