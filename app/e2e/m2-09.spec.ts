@@ -2,7 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, firstLaunch, noteName } from './helpers';
 
 // M2-09: the placement test (design §3.4, §4 step 6). An adaptive probe of
-// F1, F2 and C2 at the end of onboarding seeds what the learner already knows.
+// F1, F2, C2 and C3 (every topic a drill can serve) at the end of onboarding
+// seeds what the learner already knows.
 
 // An independent answer key (deliberately not imported from app code).
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
@@ -25,22 +26,25 @@ async function openPlacementStep(page: Page) {
   await expect(page.getByTestId('onboarding-progress')).toHaveText(`Step ${STEPS} of ${STEPS}`);
 }
 
-type Answer = { kind: 'button'; note: string } | { kind: 'cell'; string: number; fret: number };
+type Answer = { kind: 'button'; label: string } | { kind: 'cell'; string: number; fret: number };
 
 /** The right answer to a probe, from its item ID. */
 function solve(itemId: string): Answer {
   const letter = /^letter:([+-]\d+)@([A-G])$/.exec(itemId);
   if (letter) {
     const i = LETTERS.indexOf(letter[2]!) + Number(letter[1]);
-    return { kind: 'button', note: LETTERS[(i + 7) % 7]! };
+    return { kind: 'button', label: LETTERS[(i + 7) % 7]! };
   }
   const step = /^step:([+-]\d+)@([A-G]#?)$/.exec(itemId);
   if (step) {
     const i = CHROMATIC.indexOf(step[2]!) + Number(step[1]);
-    return { kind: 'button', note: CHROMATIC[(i + 12) % 12]! };
+    return { kind: 'button', label: CHROMATIC[(i + 12) % 12]! };
   }
   const note = /^note@s(\d)f(\d+)$/.exec(itemId);
-  if (note) return { kind: 'button', note: noteName(Number(note[1]), Number(note[2])) };
+  if (note) return { kind: 'button', label: noteName(Number(note[1]), Number(note[2])) };
+  // D5 names the interval the two dots make; its buttons are the interval names.
+  const interval = /^interval-name:([mMPT][1-8T])@s\d→s\d$/.exec(itemId);
+  if (interval) return { kind: 'button', label: interval[1]! };
   const find = /^find:([A-G]#?)@s(\d)$/.exec(itemId);
   if (find) {
     const string = Number(find[2]);
@@ -56,7 +60,7 @@ async function answerRight(page: Page, itemId: string) {
   if (a.kind === 'button') {
     await dialog(page)
       .locator('[role="group"][aria-labelledby="drill-prompt"]')
-      .getByRole('button', { name: a.note, exact: true })
+      .getByRole('button', { name: a.label, exact: true })
       .click();
   } else {
     await dialog(page)
@@ -102,7 +106,7 @@ test.describe('M2-09 placement test', () => {
     page,
   }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'The full flow runs on the iPad projects.');
-    // Up to ~25 probes; leave room for a loaded machine.
+    // Up to ~40 probes; leave room for a loaded machine.
     test.setTimeout(120_000);
     await page.clock.install();
     await openPlacementStep(page);
@@ -114,7 +118,7 @@ test.describe('M2-09 placement test', () => {
 
     const result = page.getByTestId('placement-result');
     const seen: string[] = [];
-    for (let n = 0; n < 40 && !(await result.isVisible()); n++) {
+    for (let n = 0; n < 60 && !(await result.isVisible()); n++) {
       const id = (await probe(page).getAttribute('data-item'))!;
       seen.push(id);
       if (n === 0) {
@@ -134,10 +138,10 @@ test.describe('M2-09 placement test', () => {
     await page.clock.resume();
 
     // It probed every topic, a few items each, not every item.
-    for (const kind of [/^letter:/, /^step:/, /^note@/, /^find:/]) {
+    for (const kind of [/^letter:/, /^step:/, /^note@/, /^find:/, /^interval-name:/]) {
       expect(seen.some((id) => kind.test(id))).toBe(true);
     }
-    expect(seen.length).toBeLessThan(30);
+    expect(seen.length).toBeLessThan(45);
 
     await expect(result).toHaveText(/You already know these/);
     await expect(result).toHaveText(new RegExp(`in about ${CHECK_UP_DAYS} days`));
@@ -145,6 +149,7 @@ test.describe('M2-09 placement test', () => {
     await expect(known).toContainText('The musical alphabet');
     await expect(known).toContainText('Natural notes on string 6');
     await expect(known).toContainText('Every note on every string');
+    await expect(known).toContainText('Interval shapes: 3rds');
 
     const db = await stored(page);
     expect(db.stabilities).toEqual([CHECK_UP_DAYS]);
