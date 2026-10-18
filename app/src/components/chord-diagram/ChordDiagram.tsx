@@ -32,7 +32,7 @@ export interface ChordDiagramProps {
   /** Chord name shown above the diagram. Leave it out when the name is the answer (D36). */
   name?: string;
   dotText?: DotText;
-  /** Off draws roots as plain tones, e.g. when the root is the answer. */
+  /** Off draws roots as plain tones without labels, e.g. when the root is the answer. */
   highlightRoots?: boolean;
   /**
    * Fades `label` text and the string names like the neck (design §3.5):
@@ -86,6 +86,8 @@ export function ChordDiagram({
   const textOf = (n: ChordDiagramNote): string | undefined => {
     if (dotText === 'finger') return n.finger === undefined ? undefined : String(n.finger);
     if (dotText === 'none') return undefined;
+    // A hidden root must not be named by its label either ("R", or the note).
+    if (!highlightRoots && n.style === 'root') return undefined;
     if (guideLevel >= 3) return n.label;
     if (guideLevel >= 2 && styleOf(n) === 'root') return n.label;
     return undefined;
@@ -94,6 +96,7 @@ export function ChordDiagram({
     tuning,
     fingers: dotText === 'finger',
     roots: highlightRoots,
+    labelOf: dotText === 'label' ? textOf : undefined,
   });
   const accessibleName = label ?? `${name ?? 'Chord'} diagram: ${description}`;
   const showStringNames = guideLevel >= 2;

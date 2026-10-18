@@ -61,9 +61,9 @@ const FINGERS: Record<string, Finger> = { '1': 1, '2': 2, '3': 3, '4': 4, T: 'T'
 
 /**
  * A voicing from chord-book notation, lowest-pitched string first:
- * `x32010` (C), or `x-10-12-12-12-10` with dashes for frets ≥ 10. Fingers use
- * the same layout (`x32-1-`, where `-`, `x` or `0` means no finger). A note whose pitch
- * class matches `root` is styled as a root.
+ * `x32010` (C), or `x-10-12-12-12-10`, dash-separated, when any fret has two
+ * digits. Fingers use the same layout (`x32010`, where `x` or `0` means no
+ * finger). A note whose pitch class matches `root` is styled as a root.
  */
 export function parseVoicing(
   frets: string,
@@ -89,9 +89,9 @@ export function parseVoicing(
   return { notes };
 }
 
-/** One character per string, or dash-separated when any fret has two digits. */
+/** Dash-separated whenever a dash appears, otherwise one character per string. */
 function tokens(text: string, count: number, what: string): string[] {
-  const out = text.length === count ? [...text] : text.split('-');
+  const out = text.includes('-') ? text.split('-') : [...text];
   if (out.length !== count) {
     throw new RangeError(`Expected ${count} ${what}, got ${out.length} in "${text}"`);
   }
@@ -175,13 +175,26 @@ const FINGER_NAMES: Record<string, string> = {
   T: 'thumb',
 };
 
+/** Spoken names for the degree shapes a fretted dot is drawn with. */
+const STYLE_WORDS: Partial<Record<ChordDotStyle, string>> = {
+  third: '3rd',
+  fifth: '5th',
+  seventh: '7th',
+};
+
 /**
  * The spoken description, low string first: "string 6 muted, string 5 fret 3
- * ring finger root, …". Says only what the diagram shows.
+ * ring finger root, …". Says only what the diagram shows: pass `labelOf` to
+ * read out the dot text the diagram is drawing.
  */
 export function describeVoicing(
   voicing: ChordVoicing,
-  opts: { tuning?: Tuning; fingers?: boolean; roots?: boolean } = {},
+  opts: {
+    tuning?: Tuning;
+    fingers?: boolean;
+    roots?: boolean;
+    labelOf?: (n: ChordDiagramNote) => string | undefined;
+  } = {},
 ): string {
   const tuning = opts.tuning ?? STANDARD_TUNING;
   const byString = new Map(voicing.notes.map((n) => [n.string, n]));
@@ -195,6 +208,10 @@ export function describeVoicing(
         words.push(`${FINGER_NAMES[String(n.finger)]} finger`);
       }
       if (opts.roots !== false && n.style === 'root') words.push('root');
+      const degree = n.fret > 0 && n.style ? STYLE_WORDS[n.style] : undefined;
+      if (degree) words.push(degree);
+      const label = opts.labelOf?.(n);
+      if (label) words.push(`labelled ${label}`);
       return words.join(' ');
     });
   const barres = barresOf(voicing).map(

@@ -14,7 +14,7 @@ const F_BARRE = parseVoicing('133211', { fingers: '134211', root: 'F' });
 
 describe('parseVoicing', () => {
   it('reads chord-book notation low string first, skipping muted strings', () => {
-    const c = parseVoicing('x32010', { fingers: 'x32-1-', root: 'C' });
+    const c = parseVoicing('x32010', { fingers: 'x32010', root: 'C' });
     expect(c.notes).toEqual([
       { string: 5, fret: 3, finger: 3, style: 'root' },
       { string: 4, fret: 2, finger: 2 },
@@ -45,6 +45,17 @@ describe('parseVoicing', () => {
   it('respects the tuning when finding roots', () => {
     const d = parseVoicing('000232', { root: 'D', tuning: DROP_D_TUNING });
     expect(d.notes.filter((n) => n.style === 'root').map((n) => n.string)).toEqual([6, 4, 2]);
+  });
+
+  it('reads any text with a dash as dash-separated, whatever its length', () => {
+    const bass = { id: 'bass', name: 'Bass', notes: ['E1', 'A1', 'D2', 'G2'] };
+    expect(parseVoicing('5-12-x-0', { tuning: bass }).notes).toEqual([
+      { string: 4, fret: 5 },
+      { string: 3, fret: 12 },
+      { string: 1, fret: 0 },
+    ]);
+    // Four characters for four strings, but the dash makes it two frets.
+    expect(() => parseVoicing('5-12', { tuning: bass })).toThrow(/Expected 4 frets, got 2/);
   });
 
   it('rejects the wrong number of strings and bad frets', () => {
@@ -127,11 +138,22 @@ describe('fretWindow', () => {
 
 describe('describeVoicing', () => {
   it('reads every string low to high with fingers, roots and barres', () => {
-    expect(describeVoicing(parseVoicing('x32010', { fingers: 'x32-1-', root: 'C' }))).toBe(
+    expect(describeVoicing(parseVoicing('x32010', { fingers: 'x32010', root: 'C' }))).toBe(
       'string 6 muted, string 5 fret 3 ring finger root, string 4 fret 2 middle finger, ' +
         'string 3 open, string 2 fret 1 index finger root, string 1 open',
     );
     expect(describeVoicing(F_BARRE)).toMatch(/barre at fret 1 from string 6 to string 1$/);
+  });
+
+  it('names the degree shapes and any dot text the diagram draws', () => {
+    const a7 = voicingFromShape(cagedShape('E', 'A', { quality: 'dominant7' }));
+    expect(describeVoicing(a7)).toBe(
+      'string 6 fret 5 root, string 5 fret 7 5th, string 4 fret 5 7th, ' +
+        'string 3 fret 6 3rd, string 2 fret 5 5th, string 1 fret 5 root',
+    );
+    expect(describeVoicing(a7, { labelOf: (n) => n.label })).toMatch(
+      /^string 6 fret 5 root labelled R, string 5 fret 7 5th labelled 5, string 4 fret 5 7th labelled b7,/,
+    );
   });
 
   it('leaves out what the diagram hides', () => {

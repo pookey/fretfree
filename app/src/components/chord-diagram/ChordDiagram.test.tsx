@@ -4,7 +4,7 @@ import { cagedShape } from '../../theory';
 import { ChordDiagram } from './ChordDiagram';
 import { parseVoicing, voicingFromShape } from './model';
 
-const C = parseVoicing('x32010', { fingers: 'x32-1-', root: 'C' });
+const C = parseVoicing('x32010', { fingers: 'x32010', root: 'C' });
 const F = parseVoicing('133211', { fingers: '134211', root: 'F' });
 const A_BARRE = parseVoicing('577655', { fingers: '134211', root: 'A' });
 
@@ -106,6 +106,34 @@ describe('<ChordDiagram>', () => {
     const name = screen.getByRole('img').getAttribute('aria-label')!;
     expect(name).toMatch(/^Chord diagram:/);
     expect(name).not.toMatch(/root/);
+  });
+
+  it('never names a hidden root, not even by its label', () => {
+    const shape = voicingFromShape(cagedShape('E', 'A', { quality: 'dominant7' }));
+    render(<ChordDiagram voicing={shape} dotText="label" highlightRoots={false} guideLevel={3} />);
+    const roots = screen
+      .getAllByTestId('chord-dot')
+      .filter((d) => ['6', '1'].includes(d.getAttribute('data-string')!));
+    expect(attr(roots, 'data-style')).toEqual(['tone', 'tone']);
+    roots.forEach((r) => expect(r.querySelector('text')).toBeNull());
+    expect(screen.queryByText('R')).not.toBeInTheDocument();
+    // The other degrees keep their labels.
+    expect(dot(4)).toHaveTextContent('b7');
+    const name = screen.getByRole('img').getAttribute('aria-label')!;
+    expect(name).not.toMatch(/root|labelled R/);
+    expect(name).toMatch(/string 4 fret 5 7th labelled b7/);
+  });
+
+  it('reads out the degrees and labels it draws', () => {
+    const shape = voicingFromShape(cagedShape('E', 'A', { quality: 'dominant7' }));
+    const { rerender } = render(<ChordDiagram voicing={shape} dotText="label" />);
+    expect(screen.getByRole('img').getAttribute('aria-label')).toMatch(
+      /^Chord diagram: string 6 fret 5 root labelled R, string 5 fret 7 5th labelled 5,/,
+    );
+    rerender(<ChordDiagram voicing={shape} dotText="label" guideLevel={1} />);
+    const faded = screen.getByRole('img').getAttribute('aria-label')!;
+    expect(faded).not.toMatch(/labelled/);
+    expect(faded).toMatch(/string 4 fret 5 7th/);
   });
 
   it('draws degrees with the neck shapes and fades their labels', () => {
