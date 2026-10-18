@@ -9,8 +9,9 @@ describe('screen registries', () => {
     for (const c of TODAY_CARDS) expect(typeof c.Card).toBe('function');
   });
 
-  it('composes Progress from stats, achievements, settings, then data export', () => {
+  it('composes Progress from the mastery map, stats, achievements, settings, then data export', () => {
     expect(PROGRESS_PANELS.map((p) => [p.id, p.title])).toEqual([
+      ['heatmap', 'Mastery map'],
       ['stats', undefined],
       ['achievements', 'Achievements'],
       ['settings', 'Settings'],

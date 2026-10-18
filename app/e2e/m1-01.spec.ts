@@ -51,7 +51,7 @@ test.describe('M1-01 registries', () => {
     const panels = page.locator('[data-progress-panel]');
     expect(
       await panels.evaluateAll((els) => els.map((e) => e.getAttribute('data-progress-panel'))),
-    ).toEqual(['stats', 'achievements', 'settings', 'data']);
+    ).toEqual(['heatmap', 'stats', 'achievements', 'settings', 'data']);
     await expect(page.getByRole('region', { name: 'Settings' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Your data' })).toBeVisible();
 
