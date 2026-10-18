@@ -922,7 +922,7 @@ Notes for whoever picks this up:
 - The scope is accounts and sync. The rest of design §11's M7 (Capacitor build, Web Push reminders, opt-in leagues) builds on this and isn't filed yet.
 
 ### M7-01 · [contract] Sync model and merge rules (pure)
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **Design:** §1 (principle 8), §11 M7
 - **Owns:** `app/src/storage/sync/model.ts`, `app/src/storage/sync/merge.ts`, `app/src/storage/sync/*.test.ts`, `app/src/storage/db.ts` (hotspot: new schema version for IDs, `updatedAt`, tombstones and an outbox)
