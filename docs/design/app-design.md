@@ -1,0 +1,367 @@
+# App design: "Fretwork" (working title)
+
+An **iPad-first** guitar learning app that teaches:
+
+- the fretboard
+- intervals and chords
+- CAGED
+- diatonic harmony and common progressions
+- ear skills
+
+It is built on evidence-based learning science.
+
+> **Device priority (decided 2026-10-18): iPad first.** The iPad's screen can show the whole neck at a usable size, alongside context such as a chord diagram, the key's chords or the CAGED chain. Design, layout and test for iPad (landscape primary, portrait supported, including Split View / Stage Manager widths). iPhone must keep **working** (the compact layout below) but is best-effort. We don't compromise the iPad experience for it.
+
+Inputs:
+
+- [research/01-existing-apps.md](../research/01-existing-apps.md)
+- [research/02-learning-science.md](../research/02-learning-science.md)
+- [research/03-curriculum.md](../research/03-curriculum.md)
+
+Topic IDs (F1, C6, I1, …) refer to the curriculum map in research/03.
+
+---
+
+## 1. Product principles
+
+1. **Practice, not reading.** Every screen in a session asks the learner to answer something. Explanations are short worked examples that lead straight into practice.
+2. **The app decides what to practise; the learner decides what they want.** FSRS scheduling and the adaptive scope are always on. Goals, genre, session length and notation preference are the learner's choice.
+3. **Speed is part of knowing.** A note you have to count up to has not been learned yet. Every answer is timed and graded against a personal target.
+4. **Sound, sight and name together.** Each answer plays the pitch and shows its name and position.
+5. **Fade the training wheels.** Visual guides (dots, labels, inlays, highlighted roots) fade as competence grows.
+6. **Use the real guitar.** An optional mic mode turns screen knowledge into playing.
+7. **Honest motivation.** Show visible competence (heatmaps, retention forecasts) and use forgiving streaks. No leaderboards, no loss-aversion dark patterns.
+8. **Local-first and private.** No account needed. Everything works offline. Data stays on the device, with export/import.
+
+## 2. Platform and tech decision
+
+| Concern | Decision | Why |
+|---|---|---|
+| Platform | **PWA** (installable to the home screen), **iPad-first**, with Capacitor for a later App Store build | Targets iPadOS Safari and standalone mode; iPhone also works from the same codebase. Deploys to `guitar.dwellsee.com` immediately. iPadOS Safari supports Web Audio, the mic (getUserMedia), IndexedDB and standalone display. |
+| UI | **React 19 + TypeScript (strict) + Vite** | Mature ecosystem and familiar to agents. |
+| Styling | CSS modules or vanilla-extract with design tokens; safe-area insets; `prefers-color-scheme` | — |
+| Routing | React Router (or TanStack Router) | — |
+| State | Zustand for UI and session state | — |
+| Storage | **Dexie (IndexedDB)**, local-first | Cards, review log, settings |
+| SRS | **ts-fsrs** (FSRS-6) | Evidence-backed best scheduler |
+| Theory | **tonal** | Notes, intervals, chords, keys, Roman numerals |
+| Audio out | **Tone.js** (a sampled or plucked-string synth) | Note and chord playback |
+| Mic | **pitchy** inside an AudioWorklet, started by a user gesture (an iOS requirement) | MIT-compatible (0BSD) |
+| Chord diagrams | Our own SVG (svguitar for reference) | Consistent styling with the fretboard |
+| PWA | vite-plugin-pwa (Workbox), full offline precache | — |
+| Testing | Vitest (unit). Playwright: **primary** profiles iPad Pro 11" landscape + portrait and iPad mini landscape (full e2e + visual). **Secondary**: iPhone 15 landscape, smoke e2e only (core flow works, nothing overflows). | iPad first |
+| Infra | **AWS CDK (TypeScript)**: S3 (private) + CloudFront (OAC) + ACM + Route53 for `guitar.dwellsee.com` | AWS profile `smartthings-hp`, existing hosted zone `dwellsee.com` (looked up by name) |
+| Backend | **None for v1.** Optional sync (Cognito plus a small API) is a later milestone. | Keeps v1 simple and private |
+
+## 3. Learning engine (the core)
+
+### 3.1 Skills, items and cards
+
+- **Skill**: a node in the curriculum graph, such as `F2.string6-naturals`, `C3.interval-shapes`, `C6.caged-E-shape` or `C8.numerals-major`. Each skill has:
+  - prerequisites (by skill ID)
+  - a mastery rule
+  - a list of item generators
+- **Item**: one atomic, testable fact, with a stable ID. For example:
+  - `note@s6f5` (the note at string 6, fret 5)
+  - `find:G@s5` (find G on string 5)
+  - `interval:M3@root-s6` (the major 3rd from a root on string 6)
+  - `caged:A-shape:root=C` (the A shape with root C)
+  - `numeral:vi@key=D` (the vi chord in D)
+  - `prog:I-V-vi-IV:ear` (recognise I–V–vi–IV by ear)
+- **Card**: the FSRS state of one item for this user. Use bidirectional cards where it makes sense: position→name and name→positions.
+- **Drill type**: an interaction template, such as "tap the position" or "pick the name". A drill type can test items from many skills. Drills are a **plugin interface** (see §6).
+
+### 3.2 Grading: correctness and speed → FSRS rating
+
+```
+wrong                              → Again
+correct, rt > target               → Hard
+correct, fluentTarget < rt ≤ target → Good
+correct, rt ≤ fluentTarget         → Easy
+```
+
+- Targets are per drill type: `target = baseline + Δ`, where baseline comes from a ~20-second tap-latency calibration during onboarding.
+- Defaults: Δ = 2.0s for `target`, 1.0s for `fluentTarget`. All thresholds live in one config so they can be tuned.
+- Any hint use caps the rating at Hard.
+
+### 3.3 The session builder
+
+A session lasts the learner's time budget (5, 10 or 15 minutes), and the learner can stop at any point. A builder pipeline fills it.
+
+**Step 1: Due reviews.** Take the FSRS cards that are due, ordered by lowest retrievability first. Cap them at about 70% of the session.
+
+**Step 2: New items.** Take new items from the **frontier**: skills that are unlocked but not yet mastered.
+- The goal profile changes the order of frontier skills.
+- New items enter as a **short block** of 3–5 reps with a worked example and full guides.
+- After the block they **interleave** with review items.
+
+**Step 3: Confusable pairing.** Deliberately place easily confused pairs near each other, for example:
+- E/F and B/C cells
+- maj vs min triads
+- the C vs A CAGED shapes
+- I–V–vi–IV vs vi–IV–I–V
+
+The engine learns each user's confusion matrix from their wrong answers and uses it to pick pairs.
+
+**Step 4: Adaptive scope (the 80–90% band).** Track rolling accuracy over the last 20 answers per drill type.
+- Above 92%: widen the scope (more frets or strings, fewer guides, more distractors, shorter time limit).
+- Below 75%: narrow the scope.
+
+**Step 5: Session end.** Show a summary with:
+- items that improved
+- a heatmap delta
+- "come back tomorrow" copy explaining why spacing works (desirable difficulty: "it felt hard, and that's why it sticks").
+
+### 3.4 Mastery and unlocking
+
+- A skill is **mastered** when ≥90% of its items have FSRS stability ≥ 7 days **and** recent median RT ≤ target.
+- A skill is **unlocked** when all its prerequisites are mastered, or "practised", a softer state, for low-risk skills.
+- Unlocking is **soft**. Learners can preview any skill; locked skills just won't feed new items into sessions automatically.
+- The **placement test** (about 3 minutes, adaptive) can mark items as known. Their FSRS state is seeded at stability ≈ 10 days.
+
+### 3.5 Guide fading (avoids the Fretlight effect)
+
+Each skill has a guide level (0–3) per user. The level goes down as the skill's accuracy and speed improve.
+
+| Level | What the learner sees |
+|---|---|
+| 3 | Every note labelled, roots highlighted, shape outline drawn |
+| 2 | Only the roots highlighted, plus the shape outline |
+| 1 | Fret inlays only |
+| 0 | Bare neck. Optionally inlays off too ("blind mode"). |
+
+Immediate correct-answer feedback after each response stays on at every level.
+
+### 3.6 Data model (Dexie)
+
+```ts
+Settings  { handedness, tuning, notation: 'none'|'tab'|'staff', goal, sessionMinutes, latencyBaselineMs, micEnabled, accidentalPref }
+Card      { itemId, skillId, fsrs: ts-fsrs Card, createdAt, lastReviewedAt }
+ReviewLog { id, itemId, drillType, correct, responseMs, rating, hintUsed, answerGiven, at }
+SkillState{ skillId, status: 'locked'|'unlocked'|'practising'|'mastered', guideLevel, rollingAccuracy }
+Confusion { a, b, count }                // learned confusable pairs
+SessionLog{ id, startedAt, endedAt, itemsSeen, accuracy }
+```
+
+- Export and import as JSON.
+- Schema versioning via Dexie migrations from day one.
+
+## 4. Personalisation (instead of "learning styles")
+
+Onboarding takes under 3 minutes, and every step is skippable:
+
+1. **Hand and tuning:** right- or left-handed; standard, Drop D, or DADGAD later.
+2. **Goal:** "Play songs with friends" (pop / singer-songwriter), "Solo and improvise" (rock-blues), "Jazz", or "Understand everything" (general). The goal reorders frontier skills and picks example progressions and repertoire.
+3. **Notation preference:** none, tab, or standard staff. This turns staff↔fretboard drills on or off.
+4. **Daily time:** 5, 10 or 15 minutes.
+5. **Latency calibration:** about 20 seconds of "tap the lit dot".
+6. **Placement test (optional):** adaptive probes of F1, F2, C2, C3, C5 and C8 that seed cards.
+
+Ear players can choose "start with sound", which puts ear→fretboard drills first in their path.
+
+The About screen explains the evidence honestly: *"This app adapts to what you know and what you want — not to a 'learning style'. Here's why."*
+
+## 5. Curriculum → modules
+
+| Module | Skills | Unlocks after |
+|---|---|---|
+| **M-Notes 1: Neck basics** | F1, F2 (strings 6 and 5), F3 | — |
+| **M-Notes 2: Whole neck** | C1 octaves (including the G–B shift), C2 all strings | M-Notes 1 |
+| **M-Intervals** | C3 interval shapes, the G–B shift, interval ear | F1 (and, softly, C1) |
+| **M-Keys** | C4 major scale and degrees, I3 circle of fifths and key signatures | F1 |
+| **M-Chords** | C5 triads → 7ths → sus/add | C3, C4 |
+| **M-Harmony** | C8 diatonic harmony, Roman and Nashville numerals | C4, C5 (triads) |
+| **M-Progressions** | C9 progressions, C10 capo and transposition, I6 progression ear | C8 |
+| **M-CAGED** | C6 shapes (partial and triad cores first), chaining, root finding | F2, C5 (triads) |
+| **M-Pentatonic** | C7 boxes ↔ CAGED, relative minor | C6 |
+| **M-Triads** | I1 string-set triads and inversions, voice leading | C6, C5 |
+| **M-Arpeggios** | I2 chord tones within shapes and boxes, target notes | C6, C7 |
+| **M-Minor & Function** | I4, I5 | M-Progressions |
+| **M-Scales** | I7 major scale in 5 positions | C6 |
+| **Advanced (optional)** | modes, drop-2, reharmonisation | — |
+| **Rhythm (parallel track)** | F4: tap and strum timing | — |
+| **Ear (parallel track)** | I6 interval, quality and progression ID | from day one |
+
+Following the research, **M-Harmony and M-Progressions open early**, in parallel with the fretboard modules, because playing songs drives motivation.
+
+## 6. Drill catalogue (the plugin interface)
+
+```ts
+interface DrillType<P = unknown, A = unknown> {
+  id: string;                                           // 'name-the-note'
+  skills: string[];                                     // skill IDs it can test
+  makePrompt(item: Item, ctx: DrillContext): P;         // pure; uses tonal
+  render: React.FC<{prompt: P; guideLevel: number; onAnswer(a: A): void}>;
+  check(prompt: P, answer: A): { correct: boolean; expected: unknown; confusedWith?: string };
+  inputModes: ('tap' | 'choice' | 'mic' | 'keyboard')[];
+}
+```
+
+| ID | Drill | Input | Topics | Phase |
+|---|---|---|---|---|
+| D1 | Name the highlighted note | choice (7–12 note buttons) | F2, C2 | M1 |
+| D2 | Find the note (one string, region, or all) | tap the neck | F2, C1, C2 | M1 |
+| D3 | Note-wheel steps ("a whole step above E") | choice | F1 | M1 |
+| D4 | Octave finder | tap | C1 | M2 |
+| D5 | Interval: name it from two dots | choice | C3 | M2 |
+| D6 | Interval: tap the M3/P5/b7 from a root | tap | C3 | M2 |
+| D7 | Spell it: key or chord ("notes of Bm7") | ordered choice | C4, C5 | M3 |
+| D8 | Find the chord tone in a shape | tap | C5, C6, I2 | M3 |
+| D9 | Build the CAGED shape at a root (tap or drag the template) | tap/drag | C6 | M3 |
+| D10 | Which shape, and which shape comes next? | choice | C6 | M3 |
+| D11 | Roman numeral ↔ chord in a key | choice | C8 | M4 |
+| D12 | Progression builder: fill the slots, transpose | drag | C9, C10 | M4 |
+| D13 | Capo calculator | choice | C10 | M4 |
+| D14 | Hear it → identify (interval, quality, progression) | choice | I6 | M4 |
+| D15 | Hear it → find it on the neck | tap | I6, C2 | M4 |
+| D16 | Play the note on a real guitar | **mic** | F2, C2, C1 | M5 |
+| D17 | Play the interval, arpeggio or scale (sequence check) | **mic** | C3, C4, C5, I2 | M5 |
+| D18 | Triad inversions on a string set | tap | I1 | M6 |
+| D19 | Voice-leading puzzle | tap | I1 | M6 |
+| D20 | Tap and strum rhythm | tap / mic onset | F4 | M6 |
+| D21 | Visualise it (mental practice): "picture the A shape at fret 5, then tap the roots" | tap | C6 | M6 |
+
+**Mic constraint:** pitch identifies the pitch, not the string. Mic drills therefore do one of three things:
+
+- accept any correct position,
+- restrict to a region so only one position fits,
+- check only the pitch class.
+
+## 7. Screens and UX
+
+### Layout system (iPad-first)
+
+The breakpoints are **width-based, not device-based**, so Split View and Stage Manager windows just work.
+
+| Size class | Width | Typical device | Layout |
+|---|---|---|---|
+| **Regular-wide** (primary) | ≥ 1024pt | iPad landscape | Collapsible sidebar, full 15-fret neck, plus a **context panel** |
+| **Regular** | 744–1023pt | iPad portrait, large Split View | Sidebar collapses to icons; 12-fret neck; context panel moves below the neck |
+| **Compact** (best-effort) | < 744pt | iPhone, narrow Split View | Bottom tab bar; zoomed 5-fret neck window; context panel becomes a sheet |
+
+Design every screen at regular-wide first, then make sure it degrades sensibly.
+
+- iPad pointer and trackpad hover states.
+- Hardware keyboard shortcuts in sessions: 1–9 and A–G for answers, space to continue, ⌘-K for search.
+- Apple Pencil works as a plain pointer. Nothing special is needed.
+
+### Navigation
+
+There are 4 sections: **Today**, **Learn**, **Explore** and **Progress**. Settings sits under Progress.
+
+- **iPad:** a sidebar, plus multi-pane layouts. For example, the Learn map sits on the left and the skill detail and worked example on the right.
+- **iPhone:** a bottom tab bar.
+
+### Today
+
+- One big **"Start session (10 min)"** button.
+- Shows the due count, new items queued, and a forgiving streak (2 freeze days a week).
+- Quick drills: "2-minute fretboard warm-up" and "Ear only (no guitar)".
+
+### Learn
+
+- The skill map, shown as module cards with a mastery ring each. Locked modules can be previewed.
+- Skill detail has three parts:
+  - a 30-second **worked example**, which is interactive and fades its guides,
+  - "Practise this now" for a focused session,
+  - the misconceptions callout from research/03.
+
+### Session (full screen, distraction-free)
+
+**iPad landscape (primary):**
+
+- The **full 15-fret neck spans the width**, at real-ish proportions with generous cells. The neck sits in the lower half, within easy thumb and finger reach when the iPad rests on a music stand or lap.
+- The prompt and answer buttons sit above the neck.
+- A **context panel** runs alongside on the right (collapsible), showing:
+  - the key and its diatonic chords
+  - the current chord diagram
+  - the CAGED chain mini-map
+  - the interval legend for the active skill
+- The context panel follows guide fading: it shows less at lower guide levels and is hidden at level 0.
+- Neck drills **always show the whole neck**, while still restricting the *active* region for adaptive scope. Inactive frets are dimmed, not hidden, which builds whole-neck spatial context.
+- Because there's room, the iPad can run **multi-target drills** that don't fit on a phone, e.g. "tap every G" across the whole neck, or "show all 5 CAGED shapes of D".
+
+**iPad portrait:** a 12-fret neck, with the context panel below it.
+
+**iPhone (best-effort):**
+
+- Landscape is recommended for neck drills.
+- In portrait, the neck shows a **zoomed region** (about 5 frets) that slides with the item.
+- Choice drills are fine in portrait.
+- Multi-target, whole-neck drills fall back to region-by-region versions.
+
+**All sizes:** a slim progress bar.
+- Feedback within 100ms: a correct note plays and flashes green. A wrong answer plays both the correct and the chosen notes, shows both positions, and prompts a retry later in the session.
+- Large touch targets: fret cells ≥ 44×44pt. On an iPad landscape full neck they're about 60–70pt wide.
+- iPadOS PWAs have no web haptics, so feedback is visual and audio. Capacitor can add haptics later.
+
+### Explore (reference tools, no grading)
+
+- **Fretboard explorer:** pick a key, scale or chord, then toggle note names, degrees, intervals or CAGED shapes.
+- **CAGED visualiser:** pick a chord, then an animated chain of the 5 shapes, highlighting the triad core of each.
+- **Chord finder:** tap notes on the neck to get the chord name (via tonal `Chord.detect`). Or type a chord symbol to see voicings.
+- **Progression player:** pick a progression and key, see the chords and the playback loop, use a capo/transposer, and switch between numerals and chord names.
+- **Circle of fifths:** interactive.
+- Every Explore view has a **"Quiz me on this"** button that starts a focused session. This keeps the "recall, not re-reading" rule.
+
+### Progress
+
+- A **fretboard heatmap** of mastery per cell (colour = stability; dimmed = slow).
+- Skill mastery rings and retention forecasts ("you'll remember ~92% of string 5 next week").
+- Session history, streak, export/import data, settings.
+
+### Visual design
+
+- A dark-first theme suited to practising in the evening. A light theme follows the system setting.
+- The fretboard shows a realistic but restrained wood or rosewood tone, with clear string thickness, and colour-blind-safe highlight colours: roots in one colour, chord tones in another, and shapes always distinguished by both colour and outline or shape.
+- Respects safe areas and Dynamic Type (rem-based scaling), and supports reduced motion.
+
+## 8. The fretboard component (the most important UI piece)
+
+- An SVG built for touch. Props:
+  - `strings` and `tuning`
+  - `fretRange` (visible window)
+  - `handedness`
+  - `markers[]` (note, label, style, shape-outline group)
+  - `guideLevel`
+  - `onTapCell(string, fret)`
+  - `highlight` / `flash` animations
+- Hit-testing works on generous invisible cells, so you can tap between frets.
+- Orientation:
+  - "player view", horizontal with the low E at the bottom, is the default;
+  - "chart view", vertical, is used for chord diagrams.
+- Smooth window transitions when the region changes, which respect reduced motion.
+- Pure presentation: theory comes from a `fretboard-model` module (pure functions plus tonal) that maps (string, fret) ↔ note, finds positions, and builds CAGED and triad shapes. It is unit-tested exhaustively.
+
+## 9. Audio
+
+- **Output:** Tone.js with a plucked-string sound, or small samples of a few notes per string, pitch-shifted. The AudioContext unlocks on the first tap (iOS requirement). Includes a volume control and a silent mode.
+- **Input (mic):**
+  - getUserMedia feeds an AudioWorklet running pitchy, which outputs {frequency, clarity}.
+  - A note counts after it is stable for ≥80ms.
+  - Octave-error tolerance follows the drill's rules.
+  - Includes a tuner screen, which doubles as a mic check.
+  - Permission is requested only when the learner enables mic mode.
+
+## 10. Non-functional requirements
+
+- **Offline:** the full app is precached. An update toast offers to refresh.
+- **Performance:** the first load JS is ≤ 250KB gzip before audio libraries, which are loaded lazily. Drill interactions run at 60fps.
+- **Accessibility:** WCAG AA contrast, VoiceOver labels on fretboard cells ("string 5, fret 7, E"), and a keyboard path on iPad.
+- **Privacy:** no analytics in v1. Review logs stay local. A future opt-in, anonymised upload would help tune thresholds (§3.2).
+- **Quality gates:** typecheck, lint, Vitest unit tests (theory and engine at ≥90% coverage), Playwright e2e on iPhone and iPad profiles, and a Lighthouse PWA check.
+
+## 11. Roadmap and milestones
+
+| Milestone | Scope | Definition of done |
+|---|---|---|
+| **M0 Foundations** | Repo, tooling, app shell, design tokens, fretboard component and model, engine core (ts-fsrs wrapper, grading, session builder skeleton), Dexie storage, drill plugin interface with D1 as reference, CDK infra, deploy script, orchestration skill | `pnpm verify` is green; a skeleton is live at https://guitar.dwellsee.com |
+| **M1 Fretboard notes MVP** | Onboarding (handedness, goal, time, latency calibration), F1–F3 and C2 via D1, D2 and D3, full session loop, Today, Progress heatmap, guide fading | A real learner can do daily sessions on **iPad** (landscape and portrait), offline, as an installed PWA. The iPhone smoke flow passes. |
+| **M2 Octaves and intervals** | C1, C3 via D4–D6, G–B shift content, confusable pairing, placement test | — |
+| **M3 Chords and CAGED** | C4, C5, C6 via D7–D10, Explore (CAGED visualiser, chord finder), worked examples | — |
+| **M4 Harmony, progressions and ear** | C8–C10, I3, I6 via D11–D15, progression player, audio playback everywhere | — |
+| **M5 Mic mode** | Tuner, D16 and D17, mic onboarding | — |
+| **M6 Intermediate** | C7, I1, I2, I4, I5, I7, D18–D21, rhythm track | — |
+| **M7 Native and sync** (optional) | Capacitor iOS build, haptics, optional account sync | — |
+
+Each milestone ships to production when it's done. The orchestration skill (see `.claude/skills/`) drives this roadmap.
