@@ -2,6 +2,20 @@
 
 ## Current status
 
+**Third shift, first report (2026-10-18, 20:15). 49 work packages live. 9 shipped this shift, plus the infra session's domain retirement and new pages. Production at https://fretfree.app is healthy: smoke passed after every ship.**
+
+Shipped this shift: M2-09 (placement test), **M1-28** (hotfix, user-reported: feedback and Continue always on screen), M3-02 (C4 key spelling + D7 "Spell it"), **M1-29** (user request: "Add to Home Screen" onboarding step and Today card), M3-03 (C5 chord-construction skills), M3-07 (chord-diagram component), M1-24 (**M1 milestone QA**: a first-week e2e on a mocked clock, a streak-repair e2e, and a 96-shot screenshot pass on production; the M1 definition of done is checked off below) and M3-05 (C6 CAGED skills + D9 "Build the shape at a root"). From the infra session: **guitar.dwellsee.com retired** (alias, certificate SAN and records removed; the certificate was replaced), Settings as its own `/settings` page, and a new `/privacy` page.
+
+In flight: **M1-34** (user feedback: after a full first day every Learn ring read 0%, because the ring counts only items stable for 7+ days). It is approved and in pre-flight. PM decision from its review: the ring's centre shows the *learning* share with a visible "learning" caption, switching to the stable share once anything is stable, so a glance never reads learning as done.
+
+**New work filed this shift:** M1-30 to M1-33 from the M1 QA: a visible streak-repair card, fretboard contrast (light-theme inactive frets and SVG nut labels, which axe doesn't check), the iPad-portrait mastery map clipping fret 12, and the summary's Done below the fold on phones held sideways. From user feedback (filed by another session): M1-34 to M1-36 and M2-15/16 (learning vs stable progress, retaking the placement test, testing out of a locked module, and a dev-only unlock).
+
+**Parallelism (168 samples, 18:00–20:15):** average 3.0 in flight (counting queued WPs), peak 5. The ceiling ran 1 → 3 → 1, driven by load (load1 8–35).
+
+**Incidents:** no stop-the-line events and no usage-limit pauses. One lane verify failure (M3-02) was a race in M2-09's PlacementTest focus assertion under load. It was fixed on main (`6808cfe`) and not counted against M3-02. Pre-flight rebases before queuing (M3-02, M1-28, M3-03, M1-24, M3-07, M3-05) caught drift from new onboarding steps and shared e2e helpers before the lane, with no further lane failures. Orchestrator fixes: `place_pane` now reads the Herdr workspace from the tab ID (a fresh PM in a new workspace couldn't spawn reviewers), and the first push of that fix failed silently after a 5-minute pre-push verify (an idle SSH connection); the retry reused the verified stamp.
+
+---
+
 **Second shift, final report (2026-10-18, 18:00, written by the third-shift PM). 41 work packages live, 18 of them shipped in the second shift. Production at https://fretfree.app is healthy: smoke passed after every ship.**
 
 Shipped in the second shift: M2-02, M2-04, M9-01, M1-15, **M1-27** (user feedback), M2-07, M1-17, M1-20, M1-22 (all in the 14:05 report below), then M2-03 (D4 octave finder), M2-05 (D5 name the interval), M2-06 (D6 tap the interval), M2-08 (learned confusion matrix), M2-10 (daily quests), M2-11 (focused sessions, `focusSession`), M2-12 (Explore v2), M2-13 (per-user FSRS refit) and M1-18 (Today quick drills). Alongside them: the `engine/config/` split, the move to fretfree.app and the **FretFree rebrand** (palette, Clear Sans, mark, copy), plus the FretworkEmail (SES, `no-reply@fretfree.app`) and FretworkBrand (brand.fretfree.app) stacks, all landed from the infra session.
