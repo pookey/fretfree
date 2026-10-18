@@ -14,6 +14,7 @@ import type { Celebration } from './summary/celebrations';
 import { ComboCounter } from './summary/ComboCounter';
 import { SessionSummary } from './summary/SessionSummary';
 import { CelebrationTracker } from './summary/tracker';
+import { TimeLeft } from './TimeLeft';
 import styles from './SessionScreen.module.css';
 
 const scheduler = createScheduler();
@@ -40,6 +41,7 @@ export function SessionScreen() {
   const [progress, setProgress] = useState({ position: 0, length: 1 });
   const [contextOpen, setContextOpen] = useState(true);
   const [combo, setCombo] = useState(0);
+  const [endsAt, setEndsAt] = useState<Date | null>(null);
 
   const finish = useCallback(async () => {
     const runner = runnerRef.current;
@@ -76,6 +78,7 @@ export function SessionScreen() {
       if (!live) return;
       runnerRef.current = runner;
       trackerRef.current = tracker;
+      setEndsAt(runner.endsAt);
       void showCurrent();
     });
     return () => {
@@ -174,6 +177,7 @@ export function SessionScreen() {
         >
           <span style={{ width: `${(progress.position / progress.length) * 100}%` }} />
         </div>
+        {endsAt && <TimeLeft endsAt={endsAt} />}
         <ComboCounter combo={combo} />
         {sizeClass !== 'compact' && (
           <button

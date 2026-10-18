@@ -1,0 +1,11 @@
+.timeLeft {
+  text-align: center;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.timeLeft[data-over='true'] {
+  color: var(--text);
+}
