@@ -143,3 +143,16 @@
 .ghost text {
   fill: var(--inlay);
 }
+
+/* Chord tones by degree (Explore, D37): colour and shape both differ. */
+.third circle {
+  fill: var(--tone);
+}
+
+.fifth polygon {
+  fill: var(--chord-fifth);
+}
+
+.seventh polygon {
+  fill: var(--chord-seventh);
+}

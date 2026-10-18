@@ -15,7 +15,17 @@ import {
 import { NUT_W, STRING_GAP, computeGeometry, minScale } from './geometry';
 import styles from './Fretboard.module.css';
 
-export type MarkerStyle = 'target' | 'root' | 'tone' | 'correct' | 'wrong' | 'ghost';
+export type MarkerStyle =
+  | 'target'
+  | 'root'
+  | 'tone'
+  | 'correct'
+  | 'wrong'
+  | 'ghost'
+  // Chord tones by degree: the 3rd a circle, the 5th a triangle, the 7th a hexagon.
+  | 'third'
+  | 'fifth'
+  | 'seventh';
 
 export interface FretMarker extends Position {
   style: MarkerStyle;
@@ -255,11 +265,16 @@ export function Fretboard({
                 rx={4}
                 transform={`rotate(45 ${cell.cx} ${cy})`}
               />
+            ) : m.style === 'fifth' ? (
+              <polygon points={trianglePoints(cell.cx, cy)} />
+            ) : m.style === 'seventh' ? (
+              <polygon points={hexagonPoints(cell.cx, cy)} />
             ) : (
               <circle cx={cell.cx} cy={cy} r={18} />
             )}
             {text && (
-              <text x={cell.cx} y={cy} dy="0.35em">
+              // A triangle's centroid sits below its box centre.
+              <text x={cell.cx} y={m.style === 'fifth' ? cy + 3 : cy} dy="0.35em">
                 {text}
               </text>
             )}
@@ -291,4 +306,19 @@ export function Fretboard({
       )}
     </svg>
   );
+}
+
+/** An upward triangle around a marker centre, wide enough at mid-height for a label. */
+function trianglePoints(cx: number, cy: number): string {
+  return `${cx},${cy - 23} ${cx + 23},${cy + 16} ${cx - 23},${cy + 16}`;
+}
+
+/** A flat-sided hexagon around a marker centre. */
+function hexagonPoints(cx: number, cy: number): string {
+  return [0, 60, 120, 180, 240, 300]
+    .map((deg) => {
+      const a = (deg * Math.PI) / 180;
+      return `${(cx + 20 * Math.cos(a)).toFixed(1)},${(cy + 20 * Math.sin(a)).toFixed(1)}`;
+    })
+    .join(' ');
 }

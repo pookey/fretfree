@@ -14,6 +14,8 @@
   --tone: #56b4e9; /* sky blue: chord tones, target highlight */
   --correct: #009e73; /* bluish green */
   --wrong: #d55e00; /* vermillion */
+  --chord-fifth: #f0e442; /* yellow: chord 5ths */
+  --chord-seventh: #cc79a7; /* reddish purple: chord 7ths */
   --streak: #ff9600;
   --wood: #4a2f22;
   --wood-dark: #3a2419;
