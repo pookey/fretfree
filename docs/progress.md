@@ -99,9 +99,9 @@ What exists:
 **M1 is done.** Design §11: "A real learner can do daily sessions on iPad (landscape and portrait), offline, as an installed PWA. The iPhone smoke flow passes." Every M1 package is live, M1-29 (Add to Home Screen) included. The final pass ran on `origin/main` at 57c946d. Production served the same bundle.
 
 The evidence is `app/e2e/m1-24.spec.ts`. It runs on all four Playwright profiles, both locally in `pnpm verify` and against https://fretfree.app (`E2E_BASE_URL=https://fretfree.app ../scripts/e2e-slot.sh playwright test e2e/m1-24.spec.ts`). It covers:
-- **The first week**, on a mocked clock (Europe/London, starting Wednesday). Onboarding with a 5-minute goal, then sessions on three days in a row: the streak reaches 3, Thursday's session clears due reviews, and the heatmap fills in each answered cell. On Friday, Settings switches to a 10-minute goal with the weekend amulet on. Monday opens with the streak still at 3 and no freeze held, and its 10-minute session takes the streak to 4.
+- **The first week**, on a mocked clock (Europe/London, starting Wednesday). Onboarding with a 5-minute goal, then sessions on three days in a row: the streak reaches 3, and the heatmap fills in each answered cell. On Thursday, Today's 2-minute warm-up reviews every due card, and the due count drops to 0. Answers are graded on real (quick) response times, so recall rates Good or Easy. On Friday, Settings switches to a 10-minute goal with the weekend amulet on. Monday opens with the streak still at 3 and no freeze held, and its 10-minute session takes the streak to 4.
 - **Streak repair.** A missed weekday breaks a 2-day streak, and a double session the next day restores it to 3. Until now repair was only unit-tested.
-- **A screenshot pass.** Every M1 screen (onboarding, Today before and after practice, a session prompt, the summary, Learn, Explore, Progress, Settings, About and Privacy) in dark and light, with no horizontal overflow.
+- **A screen walk.** Every M1 screen (onboarding, Today before and after practice, a session prompt, the summary, Learn, Explore, Progress, Settings, About and Privacy) is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep @screens`, it also saves each screen in dark and light. This is on demand, not part of `pnpm verify`. The command is in the spec header.
 
 | §11 scope or criterion | Status | Evidence |
 |---|---|---|
@@ -127,6 +127,8 @@ The evidence is `app/e2e/m1-24.spec.ts`. It runs on all four Playwright profiles
 3. **The nut's string names** (E B G D A E) have low contrast on the wood in both themes, and are nearly invisible in light. Lighthouse passes because the neck is SVG.
 4. **iPad portrait, Progress:** the mastery map's 12th fret is cut off at the right edge, label included.
 5. **iPhone landscape:** the session summary's Done link sits below the fold. The page scrolls to it.
+
+**Planner finding** (found while fixing the M1-24 review). `interleave` in `app/src/engine/session.ts` spaces reviews with `gap = floor(reviews / (blocks + 1))`. With fewer due reviews than new blocks + 1, the gap is 0 and every review goes after every new block, despite the doc comment's "short warm-up of reviews". In the first week, Thursday's 3 overdue learning cards were planned behind 3 new blocks (48 prompts). A 10-minute session at a minute per answer never reached them, and a learner who ends a session early skips their due reviews. Design §3.3 puts due reviews first (step 1), and says new items interleave with reviews after their block. A session "the learner can stop at any point" shouldn't hold its reviews back to the very end. The Today warm-up (review-only) isn't affected. Proposed fix: at least one warm-up review when any are due, and reviews spread among blocks with a minimum gap of 1.
 
 ## Fan-out incidents and fixes (2026-10-18)
 
