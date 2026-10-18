@@ -55,7 +55,7 @@ export UPSTREAM_NOTES REVIEW_HISTORY="${REVIEW_HISTORY:-none}"
 export WP_LOWER="$(lower "$WP")" WP_SPEC="$($BACKLOG show "$WP" | jq -r .body)"
 brief="$ORCH/briefs/$WP.$ROLE.md"
 render "$template" >"$brief"
-herdr agent prompt "$name" "Read $brief and follow it exactly." >/dev/null
+prompt_agent "$name" "Read $brief and follow it exactly."
 
 if [[ "$ROLE" == worker ]]; then
   attempts=$(($(worker_field "$WP" attempts || echo 0) + 0))

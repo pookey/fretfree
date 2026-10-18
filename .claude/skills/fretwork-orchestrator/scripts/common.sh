@@ -15,6 +15,21 @@ lower() { tr '[:upper:]' '[:lower:]' <<<"$1"; }
 agent_name() { echo "$1-$(lower "$2")"; } # agent_name wp M1-04 → wp-m1-04
 worker_field() { $STATE show | jq -r --arg wp "$1" --arg f "$2" '.workers[$wp][$f] // empty'; }
 agent_status() { herdr agent get "$1" 2>/dev/null | jq -r '.result.agent.agent_status // "none"' || echo none; }
+# Submit a prompt and make sure it took. Under load (or after a stalled start)
+# the text can land in the input box without the Enter registering, leaving the
+# agent idle with the brief unsent. Press Enter until the agent leaves idle.
+prompt_agent() {
+  local agent="$1" text="$2" try st
+  herdr agent prompt "$agent" "$text" >/dev/null || true
+  for try in 1 2 3; do
+    sleep 5
+    st="$(agent_status "$agent")"
+    [[ "$st" == idle || "$st" == done ]] || return 0
+    echo "prompt_agent: $agent still $st after the prompt; pressing Enter" >&2
+    herdr agent send-keys "$agent" enter >/dev/null || true
+  done
+  echo "prompt_agent: $agent did not start working; check it by hand" >&2
+}
 
 # Find room for a new pane in an orchestrator-created tab (≤ MAX_PANES_PER_TAB
 # panes, splitting the largest pane along its long side), or create a new tab.

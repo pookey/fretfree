@@ -26,6 +26,6 @@ if [[ -f "$REVIEW" ]]; then
   REVIEW="$ORCH/reports/$WP.review.$attempts.md"
 fi
 text="$(render "$SKILL_DIR/templates/$KIND-brief.md")"
-herdr agent prompt "$agent" "$text" >/dev/null
+prompt_agent "$agent" "$text"
 $STATE worker "$WP" "$(jq -nc --arg f "$field" --argjson n "$attempts" '{status:"fixing", reviewer:null} + {($f): $n}')" >/dev/null
 echo "sent $KIND brief to $agent ($field: $attempts)"
