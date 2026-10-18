@@ -129,6 +129,11 @@ export function Fretboard({
   );
 
   const openCell = g.cell(0);
+  // The names' wood halo would ring them with undimmed wood on a dimmed nut.
+  const nameClass =
+    activeRange && openCell && !inRange(openCell.fret, activeRange)
+      ? `${styles.stringName} ${styles.stringNameDimmed}`
+      : styles.stringName;
   const neckLeft = Math.min(...g.cells.map((c) => c.x));
   const neckRight = Math.max(...g.cells.map((c) => c.x + c.w));
 
@@ -236,7 +241,7 @@ export function Fretboard({
           .map((s) => (
             <text
               key={`sn${s}`}
-              className={styles.stringName}
+              className={nameClass}
               x={openCell.cx}
               y={g.stringY(s)}
               dy="0.35em"

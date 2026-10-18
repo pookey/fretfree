@@ -59,6 +59,10 @@
   paint-order: stroke;
 }
 
+.stringNameDimmed {
+  stroke: none;
+}
+
 .marker {
   pointer-events: none;
 }

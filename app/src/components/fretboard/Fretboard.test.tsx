@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { GuideLevel } from '../../engine/model';
 import { Fretboard, type FretMarker } from './Fretboard';
+import styles from './Fretboard.module.css';
 
 describe('<Fretboard>', () => {
   it('renders one hit cell per string and fret with accessible labels', () => {
@@ -168,6 +169,19 @@ describe('<Fretboard>', () => {
   it('dims frets outside the active range', () => {
     render(<Fretboard fretRange={{ from: 0, to: 15 }} activeRange={{ from: 0, to: 12 }} />);
     expect(screen.getAllByTestId('dimmed-fret')).toHaveLength(3);
+  });
+
+  it("drops the string names' wood halo only when the nut is dimmed", () => {
+    const { rerender } = render(
+      <Fretboard fretRange={{ from: 0, to: 15 }} activeRange={{ from: 0, to: 12 }} />,
+    );
+    for (const name of screen.getAllByTestId('string-name')) {
+      expect(name).not.toHaveClass(styles.stringNameDimmed!);
+    }
+    rerender(<Fretboard fretRange={{ from: 0, to: 15 }} activeRange={{ from: 3, to: 7 }} />);
+    const names = screen.getAllByTestId('string-name');
+    expect(names).toHaveLength(6);
+    for (const name of names) expect(name).toHaveClass(styles.stringNameDimmed!);
   });
 
   it('exposes handedness and window for layout tests', () => {
