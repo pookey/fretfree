@@ -360,7 +360,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - On compact it runs region by region.
 
 ### M2-04 · C3 interval-shape skills
-- **Status:** todo
+- **Status:** done
 - **Deps:** M2-01
 - **Owns:** `app/src/engine/skills/c3.ts`, `app/src/engine/skills/c3.test.ts`
 - **Acceptance:**
