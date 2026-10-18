@@ -1,9 +1,3 @@
-import {
-  xpForAnswer,
-  startOfLocalDay,
-  toLocalDate,
-  type XpConfig,
-} from '../../engine/gamification';
 import { ENGINE_CONFIG, type CardRecord, type Skill, type SkillStatus } from '../../engine';
 import { allCards, getSkillStates, type FretworkDB } from '../../storage';
 import type { SessionSummary } from '../runner';
@@ -11,17 +5,18 @@ import {
   bestPastSpeedMs,
   buildCelebration,
   nextCombo,
-  xpKind,
   type Celebration,
   type CelebrationConfig,
   type Snapshot,
   type TalliedAnswer,
 } from './celebrations';
+import { streakMilestones } from './copy';
 
 /**
  * Follows a session alongside the runner: snapshots cards and skills before
- * it, counts the combo and XP as answers come in, and builds the summary's
- * celebration once the runner has finished.
+ * it, counts the combo as answers come in, and builds the summary's
+ * celebration once the runner has finished. XP and streak events come from
+ * the runner's summary, which is what was persisted (M1-10).
  */
 
 export interface TrackerDeps {
@@ -29,8 +24,11 @@ export interface TrackerDeps {
   skills: readonly Skill[];
   now?: () => Date;
   config?: CelebrationConfig;
-  xpConfig?: XpConfig;
 }
+
+/** What the tracker needs from `runner.finish()`. */
+export type FinishedSession = Pick<SessionSummary, 'itemsSeen' | 'accuracy' | 'newItems' | 'xp'> &
+  Partial<Pick<SessionSummary, 'events'>>;
 
 async function snapshot(db: FretworkDB): Promise<Snapshot> {
   const [cards, states] = await Promise.all([allCards(db), getSkillStates(db)]);
@@ -44,13 +42,11 @@ export class CelebrationTracker {
   private readonly answers: TalliedAnswer[] = [];
   private comboNow = 0;
   private best = 0;
-  private xpTotal = 0;
   private result: Celebration | null = null;
 
   private constructor(
     private readonly deps: TrackerDeps,
     private readonly before: Snapshot,
-    private readonly answeredToday: Map<string, number>,
     private readonly previousBestMs: number | null,
   ) {}
 
@@ -58,65 +54,44 @@ export class CelebrationTracker {
   static async begin(deps: TrackerDeps): Promise<CelebrationTracker> {
     const at = (deps.now ?? (() => new Date()))();
     const cfg = deps.config ?? ENGINE_CONFIG.gamification.celebrations;
-    const dayStart = startOfLocalDay(toLocalDate(at));
     const [before, earlier, sessions] = await Promise.all([
       snapshot(deps.db),
       deps.db.reviewLogs.where('at').below(at).toArray(),
       deps.db.sessionLogs.toArray(),
     ]);
-    const today = new Map<string, number>();
-    for (const r of earlier) {
-      if (r.at >= dayStart) today.set(r.itemId, (today.get(r.itemId) ?? 0) + 1);
-    }
     const best = bestPastSpeedMs(
       sessions.map((s) => s.startedAt).filter((d) => d < at),
       earlier,
       cfg.speedMinAnswers,
     );
-    return new CelebrationTracker(deps, before, today, best);
+    return new CelebrationTracker(deps, before, best);
   }
 
   get combo(): number {
     return this.comboNow;
   }
 
-  /** Record one graded answer; returns the combo and the XP it earned. */
-  record(answer: TalliedAnswer): { combo: number; xp: number } {
-    const answeredToday = this.answeredToday.get(answer.itemId) ?? 0;
-    const xp = xpForAnswer(
-      {
-        correct: answer.correct,
-        rating: answer.rating,
-        kind: xpKind(answer.kind),
-        stabilityDays: this.before.cards.get(answer.itemId)?.fsrs.stability ?? 0,
-        answeredToday,
-      },
-      this.deps.xpConfig,
-    );
-    this.answeredToday.set(answer.itemId, answeredToday + 1);
+  /** Record one graded answer; returns the combo after it. */
+  record(answer: TalliedAnswer): { combo: number } {
     this.answers.push(answer);
-    this.xpTotal += xp;
     this.comboNow = nextCombo(this.comboNow, answer);
     this.best = Math.max(this.best, this.comboNow);
-    return { combo: this.comboNow, xp };
+    return { combo: this.comboNow };
   }
 
   /** Build the celebration after `runner.finish()` has persisted skill states. */
-  async finish(
-    summary: Pick<SessionSummary, 'itemsSeen' | 'accuracy' | 'newItems'>,
-    milestones: readonly string[] = [],
-  ): Promise<Celebration> {
+  async finish(summary: FinishedSession, milestones: readonly string[] = []): Promise<Celebration> {
     if (this.result) return this.result;
     this.result = buildCelebration({
       summary,
       answers: this.answers,
-      xp: this.xpTotal,
+      xp: summary.xp,
       bestCombo: this.best,
       skills: this.deps.skills,
       before: this.before,
       after: await snapshot(this.deps.db),
       previousBestMs: this.previousBestMs,
-      milestones,
+      milestones: [...streakMilestones(summary.events ?? []), ...milestones],
       ...(this.deps.config ? { config: this.deps.config } : {}),
     });
     return this.result;

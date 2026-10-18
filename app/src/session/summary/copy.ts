@@ -1,3 +1,4 @@
+import type { GamificationEvent } from '../../engine/gamification';
 import type { Celebration, CompetenceLine } from './celebrations';
 
 /**
@@ -51,4 +52,13 @@ export const SPACING_COPY =
 
 function lowerFirst(s: string): string {
   return s.charAt(0).toLowerCase() + s.slice(1);
+}
+
+/** Milestone copy for the streak milestones (7, 30, 100, 365 days) reached at finish. */
+export function streakMilestones(events: readonly GamificationEvent[]): string[] {
+  return events.flatMap((e) =>
+    e.type === 'streak-extended' && e.milestone !== undefined
+      ? [`${e.milestone}-day streak: a real daily habit`]
+      : [],
+  );
 }

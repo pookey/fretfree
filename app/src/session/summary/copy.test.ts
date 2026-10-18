@@ -8,6 +8,7 @@ import {
   formatSeconds,
   headline,
   personalBestText,
+  streakMilestones,
 } from './copy';
 
 const base: Celebration = {
@@ -68,6 +69,18 @@ describe('speed copy', () => {
     expect(personalBestText({ medianMs: 1400, previousMs: 1700 })).toBe(
       'Median answer 1.4s, down from 1.7s',
     );
+  });
+});
+
+describe('streakMilestones', () => {
+  it('names streak milestones and ignores other events', () => {
+    expect(
+      streakMilestones([
+        { type: 'streak-extended', date: '2026-10-18', streak: 30, milestone: 30 },
+        { type: 'streak-extended', date: '2026-10-18', streak: 31 },
+        { type: 'goal-met', date: '2026-10-18', minutes: 10, xp: 50 },
+      ]),
+    ).toEqual(['30-day streak: a real daily habit']);
   });
 });
 

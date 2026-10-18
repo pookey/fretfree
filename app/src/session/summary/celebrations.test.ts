@@ -20,7 +20,6 @@ import {
   nextCombo,
   sessionSpeedMs,
   stringReach,
-  xpKind,
   type Snapshot,
   type TalliedAnswer,
 } from './celebrations';
@@ -85,14 +84,6 @@ describe('nextCombo', () => {
     expect(nextCombo(2, { correct: true, guided: true })).toBe(2);
     expect(nextCombo(5, { correct: false, guided: false })).toBe(0);
     expect(nextCombo(5, { correct: false, guided: true })).toBe(0);
-  });
-});
-
-describe('xpKind', () => {
-  it('maps new entries to new and reviews and retries to due', () => {
-    expect(xpKind('new')).toBe('new');
-    expect(xpKind('review')).toBe('due');
-    expect(xpKind('retry')).toBe('due');
   });
 });
 

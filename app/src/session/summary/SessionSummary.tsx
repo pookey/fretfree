@@ -112,8 +112,6 @@ export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryP
 
         <dl className={styles.stats}>
           <div>
-            {/* TODO(M1-10): show the runner's persisted XP for the session (Gamification.xpTotal /
-                DailyProgress) instead of the tracker's recomputation, so the two can't diverge. */}
             <dt>XP earned</dt>
             <dd data-testid="summary-xp">{c.xp}</dd>
           </div>

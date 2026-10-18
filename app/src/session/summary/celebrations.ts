@@ -9,7 +9,7 @@ import {
   type Skill,
   type SkillStatus,
 } from '../../engine';
-import { daysBetween, toLocalDate, type CardKind } from '../../engine/gamification';
+import { daysBetween, toLocalDate } from '../../engine/gamification';
 import type { SessionSummary } from '../runner';
 
 /**
@@ -95,17 +95,6 @@ export function nextCombo(
 ): number {
   if (!answer.correct) return 0;
   return answer.guided ? combo : combo + 1;
-}
-
-// --- XP ------------------------------------------------------------------
-
-/**
- * The XP kind of a session entry. The builder only schedules due reviews, so
- * `review` is `due`. A `retry` re-asks a missed item; its earlier answer
- * today already lowers its XP through the repeat decay.
- */
-export function xpKind(kind: EntryKind): CardKind {
-  return kind === 'new' ? 'new' : 'due';
 }
 
 // --- Items improved ------------------------------------------------------

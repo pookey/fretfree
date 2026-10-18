@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Rating, type Grade } from 'ts-fsrs';
 import { DEFAULT_SETTINGS, ENGINE_CONFIG, SKILLS, createScheduler } from '../../engine';
-import { xpForAnswer } from '../../engine/gamification';
 import { DRILLS } from '../../drills/registry';
 import type { D1Prompt } from '../../drills/d1-name-the-note/logic';
-import { FretworkDB, recordAnswer, startSessionLog } from '../../storage';
+import { FretworkDB } from '../../storage';
 import { SessionRunner } from '../runner';
 import { CelebrationTracker } from './tracker';
 
@@ -79,24 +78,11 @@ describe('CelebrationTracker', () => {
     expect(combos).toEqual([0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8]);
     expect(tracker.combo).toBe(8);
 
-    const c = await tracker.finish(await runner.finish());
-    // Guided reps rate Hard, fast unguided ones Easy; repeats today decay.
-    const hard = xpForAnswer({
-      correct: true,
-      rating: Rating.Hard,
-      kind: 'new',
-      stabilityDays: 0,
-      answeredToday: 0,
-    });
-    const easy = (k: number) =>
-      xpForAnswer({
-        correct: true,
-        rating: Rating.Easy,
-        kind: 'new',
-        stabilityDays: 0,
-        answeredToday: k,
-      });
-    expect(c.xp).toBe(4 * (hard + easy(1) + easy(2)));
+    const summary = await runner.finish();
+    const c = await tracker.finish(summary);
+    // XP is the runner's, which is what was persisted.
+    expect(summary.xp).toBeGreaterThan(0);
+    expect(c.xp).toBe(summary.xp);
     expect(c).toMatchObject({
       answered: 12,
       accuracy: 1,
@@ -113,7 +99,7 @@ describe('CelebrationTracker', () => {
       expect.objectContaining({ kind: 'learned', string: 6, toFret: 5, complete: false }),
     ]);
     expect(c.confetti).toBe(false);
-    expect(await tracker.finish({ itemsSeen: 0, accuracy: 0, newItems: 0 })).toBe(c);
+    expect(await tracker.finish({ itemsSeen: 0, accuracy: 0, newItems: 0, xp: 0 })).toBe(c);
   });
 
   it('calls items known once they are recalled on a later day', async () => {
@@ -159,40 +145,44 @@ describe('CelebrationTracker', () => {
     expect((await first.tracker.finish(await first.runner.finish())).personalBest).toBeNull();
   });
 
-  it('decays XP for items already answered earlier today', async () => {
-    const item = { itemId: 'note@s6f0', skillId: 'F2.string6-naturals' };
-    await startSessionLog(db, new Date(clock.getTime() - 60_000));
-    await recordAnswer(db, {
-      card: scheduler.newCard({ id: item.itemId, skillId: item.skillId }, clock),
-      log: {
-        ...item,
-        drillType: 'name-the-note',
-        correct: true,
-        responseMs: 900,
-        rating: Rating.Good,
-        hintUsed: false,
-        answerGiven: 'E',
-        at: new Date(clock.getTime() - 30_000),
-      },
-    });
+  it('turns streak milestones from the runner into summary milestones', async () => {
     const tracker = await CelebrationTracker.begin({
       db,
       skills: NOTE_SKILLS,
       now,
       config: { ...ENGINE_CONFIG.gamification.celebrations, perfectMinAnswers: 1 },
     });
-    const answer = {
-      ...item,
-      kind: 'review' as const,
+    tracker.record({
+      itemId: 'note@s6f0',
+      skillId: 'F2.string6-naturals',
+      kind: 'review',
       guided: false,
       correct: true,
       rating: Rating.Good as Grade,
       responseMs: 800,
-    };
-    const fresh = xpForAnswer({ ...answer, kind: 'due', stabilityDays: 0, answeredToday: 0 });
-    expect(tracker.record(answer).xp).toBe(Math.round(fresh * 0.5));
-    expect(tracker.record(answer).xp).toBe(Math.round(fresh * 0.25));
-    const c = await tracker.finish({ itemsSeen: 2, accuracy: 1, newItems: 0 }, ['7-day streak']);
-    expect(c).toMatchObject({ perfect: true, milestones: ['7-day streak'], confetti: true });
+    });
+    const c = await tracker.finish(
+      {
+        itemsSeen: 1,
+        accuracy: 1,
+        newItems: 0,
+        xp: 10,
+        events: [
+          { type: 'streak-extended', date: '2026-10-18', streak: 6 },
+          { type: 'streak-extended', date: '2026-10-18', streak: 7, milestone: 7 },
+        ],
+      },
+      ['Badge: String 6 master'],
+    );
+    expect(c).toMatchObject({
+      xp: 10,
+      perfect: true,
+      milestones: ['7-day streak: a real daily habit', 'Badge: String 6 master'],
+      confetti: true,
+    });
+    // No events at all: no milestones, no confetti.
+    const quiet = await CelebrationTracker.begin({ db, skills: NOTE_SKILLS, now });
+    const q = await quiet.finish({ itemsSeen: 0, accuracy: 0, newItems: 0, xp: 0 });
+    expect(q).toMatchObject({ milestones: [], confetti: false });
   });
 });
