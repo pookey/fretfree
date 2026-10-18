@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useAppStore } from '../../../app-store';
-import { exportData, exportToJson, getDb, importData, parseExport } from '../../../storage';
+import { getDb, importData, parseExport } from '../../../storage';
+import { downloadExport } from '../../../storage/download-export';
 import type { PanelProps } from '../registry';
 import styles from '../../screens.module.css';
 
@@ -13,15 +14,7 @@ export function Panel({ onDataChanged }: PanelProps) {
   const [message, setMessage] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const onExport = async () => {
-    const json = exportToJson(await exportData(getDb()));
-    const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `fretwork-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const onExport = () => downloadExport(getDb());
 
   const onImport = async (file: File) => {
     try {

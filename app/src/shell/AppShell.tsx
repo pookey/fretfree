@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router';
 import { AchievementUnlocks } from '../components/achievements/AchievementToast';
 import { InstallHint } from './InstallHint';
+import { MovedNotice, movedTo } from './MovedNotice';
 import { NAV_ITEMS } from './nav';
 import { useSizeClass } from './size-class';
 import { StreakBadge } from './StreakBadge';
@@ -13,6 +14,7 @@ import styles from './AppShell.module.css';
 export function AppShell() {
   const sizeClass = useSizeClass();
   const compact = sizeClass === 'compact';
+  const moved = movedTo(window.location.hostname);
   return (
     <div className={styles.shell} data-size-class={sizeClass}>
       {!compact && (
@@ -44,7 +46,8 @@ export function AppShell() {
         </nav>
       )}
       <main className={styles.main}>
-        <InstallHint />
+        {/* Don't invite installing the old origin; point to the new one instead. */}
+        {moved ? <MovedNotice target={moved} /> : <InstallHint />}
         <Outlet />
       </main>
       <AchievementUnlocks />
