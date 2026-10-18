@@ -41,10 +41,10 @@ test.describe('M1-01 registries', () => {
   test('screens compose their registered cards, panels and views', async ({ page }) => {
     await freshStart(page);
     const cards = page.locator('[data-today-card]');
-    await expect(cards).toHaveCount(3);
+    await expect(cards).toHaveCount(4);
     expect(
       await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-today-card'))),
-    ).toEqual(['hero', 'quests', 'stats']);
+    ).toEqual(['hero', 'quests', 'stats', 'quick-drills']);
     await expect(page.getByTestId('start-session')).toBeVisible();
 
     await page.goto('/progress');
