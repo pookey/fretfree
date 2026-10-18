@@ -10,7 +10,7 @@ Fretwork is a free, open-source, iPad-first guitar learning app (an installable 
 - diatonic harmony, Roman numerals and common progressions
 - ear skills
 
-**Try it:** https://guitar.dwellsee.com. On an iPad, open it in Safari and choose *Share → Add to Home Screen*. It works offline.
+**Try it:** https://fretfree.app. On an iPad, open it in Safari and choose *Share → Add to Home Screen*. It works offline.
 
 ## Why it's different
 
@@ -59,8 +59,9 @@ Fretwork is a static site on AWS: a private S3 bucket behind CloudFront, with an
 
 ```bash
 export AWS_PROFILE=your-profile           # default: smartthings-hp
-export SITE_DOMAIN=guitar.example.com     # default: guitar.dwellsee.com
+export SITE_DOMAIN=guitar.example.com     # default: fretfree.app
 export HOSTED_ZONE_DOMAIN=example.com     # an existing Route53 public hosted zone
+# optional: SITE_ALIAS_DOMAINS / SITE_REDIRECT_DOMAINS ("domain:zone ...") for extra names
 pnpm --filter infra exec cdk bootstrap    # once per account, in us-east-1
 pnpm ship                                 # verify → build → deploy → smoke test
 ```

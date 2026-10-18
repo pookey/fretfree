@@ -1,6 +1,6 @@
 import { App, Tags } from 'aws-cdk-lib';
 import { EmailStack } from '../lib/email-stack';
-import { SiteStack } from '../lib/site-stack';
+import { SiteStack, type ExtraDomain } from '../lib/site-stack';
 
 const app = new App();
 
@@ -9,6 +9,16 @@ const app = new App();
 // runtime and is never committed.
 const siteDomain = app.node.tryGetContext('siteDomain') as string;
 const zoneDomain = app.node.tryGetContext('zoneDomain') as string;
+// Space-separated `domain:zone` pairs (scripts/lib.sh SITE_ALIAS_DOMAINS etc.).
+const extraDomains = (key: string): ExtraDomain[] =>
+  String(app.node.tryGetContext(key) ?? '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((pair) => {
+      const [domain = '', zoneDomain = ''] = pair.split(':');
+      if (!domain || !zoneDomain) throw new Error(`${key}: expected domain:zone, got "${pair}"`);
+      return { domain, zoneDomain };
+    });
 // CloudFront certificates must live in us-east-1, so the site stacks do.
 const env = { account: process.env.CDK_DEFAULT_ACCOUNT, region: 'us-east-1' };
 
@@ -16,6 +26,8 @@ new SiteStack(app, 'FretworkSite', {
   env,
   siteDomain,
   zoneDomain,
+  aliasDomains: extraDomains('siteAliasDomains'),
+  redirectDomains: extraDomains('siteRedirectDomains'),
   description: `Fretwork PWA static site for ${siteDomain}`,
 });
 

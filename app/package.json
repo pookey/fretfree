@@ -13,7 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "e2e": "pnpm build && ../scripts/e2e-slot.sh playwright test",
     "e2e:only": "../scripts/e2e-slot.sh playwright test",
-    "e2e:prod": "E2E_BASE_URL=${SITE_URL:-https://guitar.dwellsee.com} playwright test --grep @smoke"
+    "e2e:prod": "E2E_BASE_URL=${SITE_URL:-https://fretfree.app} playwright test --grep @smoke"
   },
   "dependencies": {
     "dexie": "4.4.6",

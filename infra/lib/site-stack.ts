@@ -7,27 +7,57 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import type { Construct } from 'constructs';
 
-export interface SiteStackProps extends StackProps {
-  /** e.g. guitar.dwellsee.com */
-  siteDomain: string;
-  /** The existing public hosted zone, looked up by name, e.g. dwellsee.com */
+/** Another name for the site, in its own (or the same) public hosted zone. */
+export interface ExtraDomain {
+  domain: string;
   zoneDomain: string;
+}
+
+export interface SiteStackProps extends StackProps {
+  /** The canonical name, e.g. fretfree.app or guitar.example.com (apex or subdomain). */
+  siteDomain: string;
+  /** The existing public hosted zone, looked up by name, e.g. fretfree.app */
+  zoneDomain: string;
+  /**
+   * Also serve the site, unchanged, at these names. For a domain move: learners'
+   * progress lives in the old origin's storage, so the old name keeps working
+   * until they have exported it.
+   */
+  aliasDomains?: ExtraDomain[];
+  /** Answer at these names with a 301 to `siteDomain` (e.g. www, or a retired domain). */
+  redirectDomains?: ExtraDomain[];
+}
+
+function inZone(domain: string, zoneDomain: string): boolean {
+  return domain === zoneDomain || domain.endsWith(`.${zoneDomain}`);
 }
 
 /**
  * Private S3 bucket + CloudFront (OAC) + ACM certificate + Route53 A/AAAA
- * aliases. Only records for `siteDomain` are created in the zone (plus the
- * certificate's DNS-validation CNAME for that name).
+ * aliases. Only records for the site's own names are created in each zone
+ * (plus the certificate's DNS-validation CNAMEs for those names).
  */
 export class SiteStack extends Stack {
   constructor(scope: Construct, id: string, props: SiteStackProps) {
     super(scope, id, props);
-    const { siteDomain, zoneDomain } = props;
-    if (!siteDomain.endsWith(`.${zoneDomain}`)) {
-      throw new Error(`siteDomain ${siteDomain} is not inside zone ${zoneDomain}`);
+    const { siteDomain, zoneDomain, aliasDomains = [], redirectDomains = [] } = props;
+    const extras = [...aliasDomains, ...redirectDomains];
+    for (const d of [{ domain: siteDomain, zoneDomain }, ...extras]) {
+      if (!inZone(d.domain, d.zoneDomain)) {
+        throw new Error(`domain ${d.domain} is not inside zone ${d.zoneDomain}`);
+      }
     }
 
     const zone = route53.HostedZone.fromLookup(this, 'Zone', { domainName: zoneDomain });
+    const zones = new Map<string, route53.IHostedZone>([[zoneDomain, zone]]);
+    const zoneFor = (name: string): route53.IHostedZone => {
+      let z = zones.get(name);
+      if (!z) {
+        z = route53.HostedZone.fromLookup(this, `Zone-${name}`, { domainName: name });
+        zones.set(name, z);
+      }
+      return z;
+    };
 
     const bucket = new s3.Bucket(this, 'SiteBucket', {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -39,8 +69,26 @@ export class SiteStack extends Stack {
 
     const certificate = new acm.Certificate(this, 'Certificate', {
       domainName: siteDomain,
-      validation: acm.CertificateValidation.fromDns(zone),
+      subjectAlternativeNames: extras.length ? extras.map((d) => d.domain) : undefined,
+      validation: acm.CertificateValidation.fromDnsMultiZone(
+        Object.fromEntries([
+          [siteDomain, zone],
+          ...extras.map((d) => [d.domain, zoneFor(d.zoneDomain)] as const),
+        ]),
+      ),
     });
+
+    // A viewer-request function answers the redirect names with a 301 to the
+    // canonical name, keeping the path and query.
+    const redirect = redirectDomains.length
+      ? new cloudfront.Function(this, 'RedirectFunction', {
+          runtime: cloudfront.FunctionRuntime.JS_2_0,
+          comment: `301 to ${siteDomain}`,
+          code: cloudfront.FunctionCode.fromInline(
+            redirectFunctionCode(siteDomain, redirectDomains),
+          ),
+        })
+      : undefined;
 
     const securityHeaders = new cloudfront.ResponseHeadersPolicy(this, 'SecurityHeaders', {
       securityHeadersBehavior: {
@@ -59,7 +107,7 @@ export class SiteStack extends Stack {
     });
 
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
-      domainNames: [siteDomain],
+      domainNames: [siteDomain, ...extras.map((d) => d.domain)],
       certificate,
       defaultRootObject: 'index.html',
       httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
@@ -72,6 +120,9 @@ export class SiteStack extends Stack {
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
         responseHeadersPolicy: securityHeaders,
         compress: true,
+        functionAssociations: redirect && [
+          { function: redirect, eventType: cloudfront.FunctionEventType.VIEWER_REQUEST },
+        ],
       },
       // Client-side routes (e.g. /progress) fall back to the SPA shell.
       errorResponses: [403, 404].map((httpStatus) => ({
@@ -82,13 +133,41 @@ export class SiteStack extends Stack {
       })),
     });
 
-    const recordName = siteDomain.slice(0, -(zoneDomain.length + 1));
     const target = route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution));
-    new route53.ARecord(this, 'AliasA', { zone, recordName, target });
-    new route53.AaaaRecord(this, 'AliasAAAA', { zone, recordName, target });
+    // The canonical records keep their original IDs. Extra names get IDs keyed by
+    // name, so moving one between alias and redirect never recreates its records.
+    new route53.ARecord(this, 'AliasA', { zone, recordName: siteDomain, target });
+    new route53.AaaaRecord(this, 'AliasAAAA', { zone, recordName: siteDomain, target });
+    for (const d of extras) {
+      const z = zoneFor(d.zoneDomain);
+      new route53.ARecord(this, `AliasA-${d.domain}`, { zone: z, recordName: d.domain, target });
+      new route53.AaaaRecord(this, `AliasAAAA-${d.domain}`, {
+        zone: z,
+        recordName: d.domain,
+        target,
+      });
+    }
 
     new CfnOutput(this, 'BucketName', { value: bucket.bucketName });
     new CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
     new CfnOutput(this, 'SiteUrl', { value: `https://${siteDomain}` });
   }
+}
+
+/** CloudFront Functions (JS 2.0) source: 301 the redirect hosts to the site. */
+export function redirectFunctionCode(siteDomain: string, redirectDomains: ExtraDomain[]): string {
+  const hosts = JSON.stringify(redirectDomains.map((d) => d.domain));
+  return `var HOSTS = ${hosts};
+function handler(event) {
+  var request = event.request;
+  var host = request.headers.host ? request.headers.host.value : '';
+  if (HOSTS.indexOf(host) === -1) return request;
+  var qs = request.querystring;
+  var query = Object.keys(qs)
+    .map(function (k) { return qs[k].value === '' ? k : k + '=' + qs[k].value; })
+    .join('&');
+  var location = 'https://${siteDomain}' + request.uri + (query ? '?' + query : '');
+  return { statusCode: 301, statusDescription: 'Moved Permanently', headers: { location: { value: location } } };
+}
+`;
 }
