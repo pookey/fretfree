@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { Fretboard } from './Fretboard';
+import type { GuideLevel } from '../../engine/model';
+import { Fretboard, type FretMarker } from './Fretboard';
 
 describe('<Fretboard>', () => {
   it('renders one hit cell per string and fret with accessible labels', () => {
@@ -42,6 +43,101 @@ describe('<Fretboard>', () => {
     expect(labels()).toEqual(['A', 'A']);
     rerender(<Fretboard fretRange={{ from: 0, to: 12 }} markers={markers} guideLevel={1} />);
     expect(labels()).toEqual(['A']);
+  });
+
+  describe('recall prompts never show their answer (M1-25)', () => {
+    const levels: GuideLevel[] = [0, 1, 2, 3];
+    const markerText = (container: HTMLElement, style: string) =>
+      [...container.querySelectorAll(`[data-testid="marker-${style}"] text`)].map(
+        (t) => t.textContent,
+      );
+    const stringNames = (container: HTMLElement) =>
+      [...container.querySelectorAll('[data-testid="string-name"]')].map((t) =>
+        Number(t.getAttribute('data-string')),
+      );
+
+    it.each(levels)('never labels an unforced target at guide level %i', (level) => {
+      const { container } = render(
+        <Fretboard
+          fretRange={{ from: 0, to: 12 }}
+          guideLevel={level}
+          markers={[{ string: 6, fret: 1, style: 'target', label: 'F' }]}
+        />,
+      );
+      expect(markerText(container, 'target')).toEqual([]);
+      expect(container.textContent).not.toContain('F');
+    });
+
+    it.each(levels)('labels a forced target (worked example) at guide level %i', (level) => {
+      const { container } = render(
+        <Fretboard
+          fretRange={{ from: 0, to: 12 }}
+          guideLevel={level}
+          markers={[{ string: 6, fret: 3, style: 'target', label: 'G', forceLabel: true }]}
+        />,
+      );
+      expect(markerText(container, 'target')).toEqual(['G']);
+    });
+
+    it.each(levels)('labels feedback markers at guide level %i', (level) => {
+      const markers: FretMarker[] = [
+        { string: 6, fret: 3, style: 'correct', label: 'G', forceLabel: true },
+        { string: 6, fret: 5, style: 'wrong', label: 'A', forceLabel: true },
+      ];
+      const { container } = render(
+        <Fretboard fretRange={{ from: 0, to: 12 }} guideLevel={level} markers={markers} />,
+      );
+      expect(markerText(container, 'correct')).toEqual(['G']);
+      expect(markerText(container, 'wrong')).toEqual(['A']);
+    });
+
+    it('still labels non-target markers at level 3 beside an unlabelled target', () => {
+      const { container } = render(
+        <Fretboard
+          fretRange={{ from: 0, to: 12 }}
+          guideLevel={3}
+          markers={[
+            { string: 6, fret: 5, style: 'root', label: 'A' },
+            { string: 5, fret: 7, style: 'tone', label: 'E' },
+            { string: 4, fret: 7, style: 'target', label: 'A' },
+          ]}
+        />,
+      );
+      expect(markerText(container, 'root')).toEqual(['A']);
+      expect(markerText(container, 'tone')).toEqual(['E']);
+      expect(markerText(container, 'target')).toEqual([]);
+    });
+
+    it.each([0, 12])("hides the target string's name when the target is at fret %i", (fret) => {
+      const { container } = render(
+        <Fretboard
+          fretRange={{ from: 0, to: 12 }}
+          guideLevel={3}
+          markers={[{ string: 5, fret, style: 'target' }]}
+        />,
+      );
+      expect(stringNames(container)).toEqual([1, 2, 3, 4, 6]);
+      expect(container.textContent).not.toContain('A');
+    });
+
+    it('keeps every string name for other frets and for a forced target at the nut', () => {
+      const { container, rerender } = render(
+        <Fretboard
+          fretRange={{ from: 0, to: 12 }}
+          guideLevel={2}
+          markers={[{ string: 5, fret: 7, style: 'target' }]}
+        />,
+      );
+      expect(stringNames(container)).toEqual([1, 2, 3, 4, 5, 6]);
+      rerender(
+        <Fretboard
+          fretRange={{ from: 0, to: 12 }}
+          guideLevel={2}
+          markers={[{ string: 5, fret: 0, style: 'target', label: 'A', forceLabel: true }]}
+        />,
+      );
+      expect(stringNames(container)).toEqual([1, 2, 3, 4, 5, 6]);
+    });
   });
 
   it('hides inlays only at level 0 in blind mode, and skips off-window markers', () => {

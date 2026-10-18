@@ -20,7 +20,10 @@ export type MarkerStyle = 'target' | 'root' | 'tone' | 'correct' | 'wrong' | 'gh
 export interface FretMarker extends Position {
   style: MarkerStyle;
   label?: string;
-  /** Show the label regardless of guide level (worked examples, feedback). */
+  /**
+   * Show the label regardless of guide level (worked examples, feedback).
+   * A `target` is the queried cell, so only this can label it.
+   */
   forceLabel?: boolean;
   /** Shape-outline group, e.g. a CAGED shape ID. */
   group?: string;
@@ -52,6 +55,9 @@ export interface FretboardProps {
  * Guide levels (design §3.5): 3 = all marker labels + string names + fret
  * numbers; 2 = root labels + string names + fret numbers; 1 = inlays only;
  * 0 = bare neck (inlays hidden too in blind mode).
+ *
+ * A `target` marker is a recall prompt: guide levels never label it, and no
+ * string name gives its note away (retrieval practice, research/02).
  */
 export function Fretboard({
   tuning = STANDARD_TUNING,
@@ -79,6 +85,7 @@ export function Fretboard({
 
   const labelFor = (m: FretMarker) => {
     if (m.forceLabel) return m.label;
+    if (m.style === 'target') return undefined;
     if (guideLevel >= 3) return m.label;
     if (guideLevel >= 2 && m.style === 'root') return m.label;
     return undefined;
@@ -90,6 +97,20 @@ export function Fretboard({
       onTapCell?.(pos);
     }
   };
+
+  // An unlabelled target on its open string's pitch class (fret 0, 12, 24)
+  // would be named by the string label at the nut.
+  const openPc = (s: number) => noteAt({ string: s, fret: 0 }, tuning, accidentalPref).pc;
+  const hiddenStringNames = new Set(
+    markers
+      .filter(
+        (m) =>
+          m.style === 'target' &&
+          !m.forceLabel &&
+          noteAt(m, tuning, accidentalPref).pc === openPc(m.string),
+      )
+      .map((m) => m.string),
+  );
 
   const openCell = g.cell(0);
   const neckLeft = Math.min(...g.cells.map((c) => c.x));
@@ -194,17 +215,21 @@ export function Fretboard({
 
       {showStringNames &&
         openCell &&
-        strings.map((s) => (
-          <text
-            key={`sn${s}`}
-            className={styles.stringName}
-            x={openCell.cx}
-            y={g.stringY(s)}
-            dy="0.35em"
-          >
-            {noteAt({ string: s, fret: 0 }, tuning, accidentalPref).pc}
-          </text>
-        ))}
+        strings
+          .filter((s) => !hiddenStringNames.has(s))
+          .map((s) => (
+            <text
+              key={`sn${s}`}
+              className={styles.stringName}
+              x={openCell.cx}
+              y={g.stringY(s)}
+              dy="0.35em"
+              data-testid="string-name"
+              data-string={s}
+            >
+              {openPc(s)}
+            </text>
+          ))}
 
       {markers.map((m) => {
         const cell = g.cell(m.fret);

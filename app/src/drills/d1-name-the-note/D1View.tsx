@@ -51,14 +51,12 @@ export function D1View({
       })),
     ];
   } else {
+    // Worked example: the first rep of a new item shows the answer. An
+    // unguided prompt is a recall test, so the answer never reaches the neck.
     markers = [
-      {
-        ...prompt.position,
-        style: 'target',
-        label: prompt.expectedPc,
-        // Worked example: the first rep of a new item shows the answer.
-        forceLabel: guided,
-      },
+      guided
+        ? { ...prompt.position, style: 'target', label: prompt.expectedPc, forceLabel: true }
+        : { ...prompt.position, style: 'target' },
     ];
   }
 
