@@ -601,7 +601,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ---
 
 ### M2-17 · Interleave near-tie due reviews
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §3.3 session builder, research/02 rule 6 (interleave)
 - **Owns:** `app/src/engine/session.ts` (hotspot), `app/src/engine/session.test.ts`
