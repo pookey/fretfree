@@ -43,6 +43,9 @@ export default defineConfig({
     // list after new siblings land. The quality gate must never see that.
     fsModuleCache: false,
     environment: 'jsdom',
+    // Verify runs while several worktrees verify at once (load 40–50 on 10
+    // cores). The 5 s default failed healthy tests in the integration lane.
+    testTimeout: 20_000,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
