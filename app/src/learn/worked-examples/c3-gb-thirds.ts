@@ -7,7 +7,7 @@ import type { WorkedExample } from './types';
  */
 const example: WorkedExample = {
   id: 'c3-gb-thirds',
-  for: ['C3'],
+  for: ['C3.thirds'],
   title: 'Major 3rds across the G–B shift',
   idea: 'On the lower strings a major 3rd is one string up, one fret back. From G to B it is straight up.',
   steps: [

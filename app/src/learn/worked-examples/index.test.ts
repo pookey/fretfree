@@ -36,7 +36,7 @@ describe('worked-example registry', () => {
     expect(exampleFor({ id: 'X.none', topic: 'X' }, [topic, skill])).toBeUndefined();
   });
 
-  it('gives the shipped skills their examples, and future C3 skills theirs by topic', () => {
+  it('gives the shipped skills their examples', () => {
     const example = (id: string) => exampleFor(getSkill(id)!)?.id;
     expect(example('C1.octaves')).toBe('c1-octave-shapes');
     expect(example('C1.octaves-gb-shift')).toBe('c2-gb-octaves');
@@ -44,8 +44,10 @@ describe('worked-example registry', () => {
     expect(example('F2.string6-naturals')).toBe('f2-landmarks');
     // Double octaves are a different shape; no example rather than a misleading one.
     expect(example('C1.double-octaves')).toBeUndefined();
-    expect(exampleFor({ id: 'C3.thirds', topic: 'C3' })?.id).toBe('c3-gb-thirds');
-    expect(SKILLS.some((s) => s.topic === 'C1')).toBe(true);
+    expect(example('C3.thirds')).toBe('c3-gb-thirds');
+    // A 3rds example would mislead on other interval groups.
+    expect(example('C3.sevenths')).toBeUndefined();
+    expect(SKILLS.some((s) => s.topic === 'C3')).toBe(true);
   });
 });
 
