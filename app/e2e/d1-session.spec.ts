@@ -5,8 +5,9 @@ test.describe('D1 "Name the highlighted note" session', () => {
   test('runs a scheduled session, persists answers and survives a reload', async ({ page }) => {
     await freshStart(page);
     await masterSkills(page, F1_SKILLS);
-    // 16 notes on strings 6 and 5, plus the 14 musical-alphabet items.
-    await expect(page.getByTestId('new-count')).toHaveText('30');
+    // 16 notes on strings 6 and 5, 14 notes to find on them (D2), and the
+    // 14 musical-alphabet items.
+    await expect(page.getByTestId('new-count')).toHaveText('44');
     await page.getByTestId('start-session').click();
 
     // First pass: guided worked examples show the note name on the neck.

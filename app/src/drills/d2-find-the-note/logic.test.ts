@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DROP_D_TUNING, STANDARD_TUNING, type Position } from '../../theory';
+import { DROP_D_TUNING, STANDARD_TUNING, type AccidentalPref, type Position } from '../../theory';
 import type { DrillFeedback } from '../types';
 import {
   D2_SCOPE,
@@ -27,7 +27,7 @@ import {
 
 const ctx = {
   tuning: STANDARD_TUNING,
-  accidentalPref: 'sharp' as const,
+  accidentalPref: 'sharp' as AccidentalPref,
   scopeLevel: 0,
   rng: () => 0,
 };
