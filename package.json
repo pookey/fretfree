@@ -16,6 +16,7 @@
     "test": "pnpm --filter app test",
     "test:coverage": "pnpm --filter app test:coverage",
     "e2e": "pnpm --filter app e2e",
+    "lighthouse": "pnpm build && node scripts/lighthouse.mjs",
     "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test:all && pnpm build && node scripts/check-bundle.mjs && pnpm --filter app e2e:only",
     "deploy": "./scripts/deploy.sh",
     "smoke": "./scripts/smoke.sh",
