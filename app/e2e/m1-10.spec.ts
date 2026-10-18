@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { answer, freshStart, targetNote } from './helpers';
+import { F1_SKILLS, answer, freshStart, masterSkills, targetNote } from './helpers';
 
 // M1-10: answers earn XP and daily-goal minutes, the goal flips mid-session,
 // and the streak settles at session finish and on app open (design §3.7).
@@ -59,6 +59,8 @@ test.describe('M1-10 daily progress wiring', () => {
   test('a session reaches the daily goal and extends the streak @smoke', async ({ page }, info) => {
     await page.clock.install();
     await freshStart(page);
+    // Skip the F1 note-wheel skills so the session serves D1 prompts.
+    await masterSkills(page, F1_SKILLS);
     await seedGamification(page, { dailyGoalMinutes: 5 });
     await expect(hero(page).getByRole('img', { name: 'Daily goal: 0 of 5 minutes' })).toBeVisible();
     await expect(hero(page).getByTestId('streak-count')).toHaveText('0');
