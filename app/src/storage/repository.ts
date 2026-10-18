@@ -3,6 +3,7 @@ import {
   DEFAULT_SETTINGS,
   type CardRecord,
   type ConfusionRecord,
+  type Reading,
   type ReviewLogRecord,
   type SessionLogRecord,
   type Settings,
@@ -11,11 +12,31 @@ import {
 import type { FretworkDB } from './db';
 import { DEFAULT_GAMIFICATION, type GamificationRecord } from './gamification-model';
 
+/**
+ * A stored settings row. Rows saved before M1-26 have `notation: 'none' |
+ * 'tab' | 'staff'` (the one thing the learner read) instead of `reading`.
+ */
+type StoredSettings = Partial<Settings> & { notation?: unknown };
+
+/** `reading` from a stored row, mapping the legacy `notation` field on read. */
+export function readingFrom(row: StoredSettings): Reading {
+  const { reads, learn } = DEFAULT_SETTINGS.reading;
+  if (row.reading)
+    return {
+      reads: { ...reads, ...row.reading.reads },
+      learn: { ...learn, ...row.reading.learn },
+    };
+  return {
+    reads: { tab: row.notation === 'tab', staff: row.notation === 'staff' },
+    learn: { ...learn },
+  };
+}
+
 export async function getSettings(db: FretworkDB): Promise<Settings> {
-  const row = await db.settings.get('singleton');
-  if (!row) return { ...DEFAULT_SETTINGS };
-  const { key: _key, ...rest } = row;
-  return { ...DEFAULT_SETTINGS, ...rest };
+  const row: StoredSettings | undefined = await db.settings.get('singleton');
+  if (!row) return { ...DEFAULT_SETTINGS, reading: readingFrom({}) };
+  const { key: _key, notation: _legacy, ...rest } = row as StoredSettings & { key: string };
+  return { ...DEFAULT_SETTINGS, ...rest, reading: readingFrom(row) };
 }
 
 export async function saveSettings(db: FretworkDB, patch: Partial<Settings>): Promise<Settings> {

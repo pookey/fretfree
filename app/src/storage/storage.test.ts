@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import Dexie from 'dexie';
 import { Rating, State } from 'ts-fsrs';
+import { DEFAULT_SETTINGS } from '../engine/model';
 import { createScheduler } from '../engine/scheduler';
 import { FretworkDB, SCHEMA_VERSION, TABLE_NAMES, getDb } from './db';
 import { ImportError, exportData, exportToJson, importData, parseExport } from './export-import';
@@ -14,6 +15,7 @@ import {
   getSettings,
   getSkillStates,
   putSkillState,
+  readingFrom,
   recentReviews,
   recordAnswer,
   reviewCount,
@@ -81,6 +83,67 @@ describe('settings and gamification', () => {
     expect(saved.handedness).toBe('left');
     expect(saved.sessionMinutes).toBe(5);
     expect(saved.tuning).toBe('standard');
+  });
+
+  it('defaults to reading nothing and learning nothing', async () => {
+    expect((await getSettings(db)).reading).toEqual({
+      reads: { tab: false, staff: false },
+      learn: { tab: false, staff: false },
+    });
+  });
+
+  it('never hands out the shared default reading object', async () => {
+    const reading = (await getSettings(db)).reading;
+    reading.reads.tab = true;
+    expect(DEFAULT_SETTINGS.reading.reads.tab).toBe(false);
+    expect((await getSettings(db)).reading.reads.tab).toBe(false);
+  });
+
+  it('round-trips reading through a save', async () => {
+    const reading = { reads: { tab: true, staff: false }, learn: { tab: false, staff: true } };
+    await saveSettings(db, { reading });
+    expect((await getSettings(db)).reading).toEqual(reading);
+    await saveSettings(db, { handedness: 'left' });
+    expect((await getSettings(db)).reading).toEqual(reading);
+  });
+
+  describe('legacy notation (before M1-26)', () => {
+    const { reading: _reading, ...legacy } = DEFAULT_SETTINGS;
+    const putLegacy = (notation: string) =>
+      db.settings.put({ ...legacy, key: 'singleton', notation } as never);
+    const none = { tab: false, staff: false };
+
+    it.each([
+      ['tab', { tab: true, staff: false }],
+      ['staff', { tab: false, staff: true }],
+      ['none', none],
+    ])('maps notation %s to what the learner reads', async (notation, reads) => {
+      await putLegacy(notation);
+      const settings = await getSettings(db);
+      expect(settings.reading).toEqual({ reads, learn: none });
+      expect(settings).not.toHaveProperty('notation');
+    });
+
+    it('drops the legacy field on the next save, keeping the mapped value', async () => {
+      await putLegacy('tab');
+      await saveSettings(db, { sessionMinutes: 5 });
+      const row = await db.settings.get('singleton');
+      expect(row).not.toHaveProperty('notation');
+      expect(row?.reading).toEqual({ reads: { tab: true, staff: false }, learn: none });
+    });
+
+    it('prefers a stored reading over a stale notation, filling missing flags', () => {
+      expect(
+        readingFrom({
+          notation: 'staff',
+          reading: { reads: { tab: true }, learn: {} } as never,
+        }),
+      ).toEqual({ reads: { tab: true, staff: false }, learn: none });
+    });
+
+    it('ignores an unknown notation value', () => {
+      expect(readingFrom({ notation: 42 })).toEqual({ reads: none, learn: none });
+    });
   });
 
   it('returns default gamification state', async () => {

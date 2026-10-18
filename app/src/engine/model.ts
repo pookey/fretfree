@@ -69,13 +69,27 @@ export interface SessionLogRecord {
 }
 
 export type Handedness = 'right' | 'left';
-export type Notation = 'none' | 'tab' | 'staff';
+
+/** The notations a learner can read or learn to read (design §4). */
+export type Notation = 'tab' | 'staff';
+export type NotationSet = Record<Notation, boolean>;
+
+/**
+ * What the learner already reads and what they want to learn to read
+ * (design §4). The neck is taught by name, position and sound either way;
+ * reading adds drills and promotes reading tracks, and never locks one away.
+ */
+export interface Reading {
+  reads: NotationSet;
+  learn: NotationSet;
+}
+
 export type Goal = 'songs' | 'improvise' | 'jazz' | 'general';
 
 export interface Settings {
   handedness: Handedness;
   tuning: string;
-  notation: Notation;
+  reading: Reading;
   goal: Goal;
   sessionMinutes: 5 | 10 | 15;
   latencyBaselineMs: number | null;
@@ -90,7 +104,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   handedness: 'right',
   tuning: 'standard',
-  notation: 'none',
+  reading: { reads: { tab: false, staff: false }, learn: { tab: false, staff: false } },
   goal: 'general',
   sessionMinutes: 10,
   latencyBaselineMs: null,
