@@ -275,6 +275,7 @@ interface DrillType<P = unknown, A = unknown> {
 | D36 | What chord is this? A voicing on the neck or a chord diagram → root, then quality | choice | C5, C6 | M3 |
 | D37 | Chord tones across the neck: tap every note (or every 3rd, 5th …) of a chord | tap (multi-target) | C5, I2 | M3 |
 | D38 | Build the chord: tap a playable voicing from a symbol and a root | tap | C5 | M3 |
+| D39 | Fret landmarks: name the spotlit marker, tap the named marker, and where a fret repeats an octave away | choice / tap / keyboard | F3 | M1 |
 
 **D3 wording and input:**
 
@@ -286,6 +287,13 @@ interface DrillType<P = unknown, A = unknown> {
 
 - **Single shapes** (`octave:s6f5→s4`): a dot is shown and the learner taps its octave on one string, the octave nearest in fret. Tapping the fret the shape would land on with the G–B shift the other way round (unshifted across it, or shifted where there is none) is logged as a confusion between the two shapes, so they get interleaved.
 - **Every octave** (`octaves:G`, skill `C1.every-octave`): one G is shown, and the learner taps every other G in frets 0–12. This is its own item, one card per pitch class, so the multi-target round is scheduled by FSRS like any other fact. Each tap is marked at once. The round answers at the last G, at the first wrong tap, or on "Done". It is graded on completion time per target (the drill's `gradedResponseMs`), so the usual speed targets apply. The iPad runs it over the whole neck (frets 13–15 dimmed). Compact screens run it region by region (`neckRegions` windows of the session's compact fret count, so wider on a phone on its side), skipping regions with nothing to find and starting nearest the dot.
+
+**D39 items and grading:**
+
+- **Name the marker** (`marker:f7`): frets 0–12 are drawn with every fret but one dimmed, and the learner names the spotlit fret. Scope level 0 offers the five landmarks (3, 5, 7, 9, 12). Level 1 offers every fret from 1 to 12.
+- **Find the marker** (`find-marker:f7`): "Tap the 7th-fret marker". A tap on any string of that fret counts.
+- **The 12th-fret repeat** (`repeat:+12@f3`, `repeat:-12@f15`): "Which fret has the same notes as fret 3, an octave higher?" Only the starting octave is drawn, with the starting fret's notes marked. The answers are the other octave's landmarks (every fret of it at level 1), never the starting fret itself. Feedback draws both frets side by side with their notes named, and plays both, so the octave is heard.
+- While a marker prompt is open, the neck shows inlays only: fret numbers would name the answer. A typed fret number answers too (`1` then `2` for 12, and `o` for the open strings). The confusion matrix keys every item by its answer fret (`fret:7`).
 
 **Mic constraint:** pitch identifies the pitch, not the string. Mic drills therefore do one of three things:
 
