@@ -25,7 +25,7 @@ export const explanation = (
 );
 
 /** A labelled group of checkbox cards: pick any, both or none. */
-function Picks({
+export function Picks({
   legend,
   value,
   onChange,
