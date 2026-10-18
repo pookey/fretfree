@@ -311,6 +311,20 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The fix is in the session shell, so it covers every drill (D1–D6 and future ones) with no per-drill changes.
   - E2E (`m1-28.spec.ts`, all iPad projects, iPhone tagged `@smoke`): answer wrong in each registered drill reachable through `focusSession` and assert that Continue's bounding box lies inside the viewport with no scrolling (`window.scrollY` unchanged), and that Enter continues. RTL covers focus and keyboard.
 
+### M1-29 · "Add to Home Screen": an onboarding step and a Today card
+- **Status:** blocked
+- **Deps:** none
+- **Design:** §2 (installed PWA on iPad), §4 onboarding, §7 Today
+- **Owns:** `app/src/onboarding/steps/install.tsx`, `app/src/onboarding/steps/install.module.css`, `app/src/screens/today/cards/install.tsx`, `app/src/screens/today/cards/install.module.css`, `app/src/shell/install.ts`, `app/src/shell/InstallHint.tsx`, `app/src/shell/InstallHint.module.css`, `app/src/shell/AppShell.tsx` (hotspot), `app/e2e/m1-29.spec.ts`
+- **Acceptance:**
+  - User request (2026-10-18): a screen that suggests adding the app to the Home Screen, during the setup wizard, with the same tip on the dashboard (Today).
+  - **Onboarding step, first in the flow** (lowest `order`). Shown only where the app can be installed and isn't running standalone (reuse `installPlatform`, moved to `shell/install.ts`). It explains why: full screen, works offline, one tap to practise, and progress is kept safe. It shows illustrated steps for Safari's Share → "Add to Home Screen" (iPad: top right; iPhone: bottom), and offers "Continue in the browser" so it's never a gate.
+  - **Storage caveat; check this on current iPadOS and record it in design §2:** a Home Screen web app on iOS/iPadOS has its own storage, separate from Safari. That's why the step comes before anything is saved. Its copy says to open the app from the Home Screen and finish setup there. If the learner already has progress in this browser, the step and card say it won't carry over automatically, and offer Export (Progress → Your data) for importing in the installed app. Once M7 sync exists, signing in is the alternative.
+  - **Today card** (`screens/today/cards/install.tsx`): the same tip in compact form, under the same conditions. It can be dismissed and stays dismissed per device (reuse `DISMISS_KEY` handling), and it never shows in standalone mode. The global banner in `AppShell` is removed so the tip doesn't show twice. On an old host, `MovedNotice` still takes its place in `AppShell`, and the step and card point to the new host instead of suggesting installing the old one.
+  - Other browsers, best effort: iOS Chrome or Edge (iOS 16.4+ can add to the Home Screen from their share menu) get matching instructions. Where `beforeinstallprompt` fires (Chromium desktop, Android), offer an Install button.
+  - Copy uses the current product name. The infra session is rebranding to "FretFree", so rebase over it if it lands first. iPad-first layout, a11y (Lighthouse 100), reduced motion.
+  - Unit tests for platform detection (the iPadOS Mac UA case) and dismissal, RTL tests for the step and the card, and an e2e test (`m1-29.spec.ts`) with an iPad Safari UA (step shown first, card on Today, dismiss persists) and a standalone emulation (neither shows).
+
 ### M1-26 · Reading question: what you can read, and what you want to learn
 - **Status:** done
 - **Deps:** none
