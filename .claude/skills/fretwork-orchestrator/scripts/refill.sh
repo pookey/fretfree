@@ -16,7 +16,9 @@ if ((new != ceil)); then
   $STATE event ceiling "$ceil→$new ($h)" >/dev/null
 fi
 busy="$($STATE active)"
-n="$(tr ',' '\n' <<<"$busy" | grep -c . || true)"
+# Queued and integrating WPs stay in the planner's busy set, but their agents
+# are idle, so they don't use a worker slot.
+n="$($STATE show | jq '[.workers[] | select(.status == "starting" or .status == "working" or .status == "reviewing" or .status == "fixing")] | length')"
 free=$((new - n))
 echo "ceiling=$new in_flight=$n free=$free"
 ((free > 0)) || exit 0
