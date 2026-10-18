@@ -8,13 +8,15 @@ const DAY = 86_400_000;
 /**
  * Write rows straight into the app's IndexedDB (the app has already created
  * the schema). `slowHistory` adds a finished session yesterday with a 9s
- * median answer, so any normal session is a new personal best. `knownString6`
- * seeds graduated cards for string 6's naturals below fret 12, so learning
- * fret 12 completes the string.
+ * median answer, so any normal session is a new personal best. `string6Due`
+ * seeds string 5's naturals and string 6's below fret 12 as known (introduced
+ * days ago, recalled since, not due), plus fret 12 introduced days ago and due
+ * now. The session is that one review, and recalling it completes string 6
+ * across a gap.
  */
-async function seed(page: Page, opts: { slowHistory?: boolean; knownString6?: boolean }) {
+async function seed(page: Page, opts: { slowHistory?: boolean; string6Due?: boolean }) {
   await page.evaluate(
-    async ({ slowHistory, knownString6, DAY }) => {
+    async ({ slowHistory, string6Due, DAY }) => {
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
         const req = indexedDB.open('fretwork');
         req.onsuccess = () => resolve(req.result);
@@ -44,28 +46,33 @@ async function seed(page: Page, opts: { slowHistory?: boolean; knownString6?: bo
           });
         }
       }
-      if (knownString6) {
+      if (string6Due) {
+        const card = (itemId: string, skillId: string, due: number, stability: number) => ({
+          itemId,
+          skillId,
+          fsrs: {
+            due: new Date(due),
+            stability,
+            difficulty: 5,
+            elapsed_days: 0,
+            scheduled_days: Math.round(stability),
+            learning_steps: 0,
+            reps: 3,
+            lapses: 0,
+            state: 2,
+            last_review: new Date(now - 2 * DAY),
+          },
+          createdAt: new Date(now - 4 * DAY),
+          lastReviewedAt: new Date(now - 2 * DAY),
+        });
+        const cards = tx.objectStore('cards');
         for (const fret of [0, 1, 3, 5, 7, 8, 10]) {
-          const last = new Date(now - DAY);
-          tx.objectStore('cards').put({
-            itemId: `note@s6f${fret}`,
-            skillId: 'F2.string6-naturals',
-            fsrs: {
-              due: new Date(now + 10 * DAY),
-              stability: 10,
-              difficulty: 5,
-              elapsed_days: 0,
-              scheduled_days: 10,
-              learning_steps: 0,
-              reps: 3,
-              lapses: 0,
-              state: 2,
-              last_review: last,
-            },
-            createdAt: last,
-            lastReviewedAt: last,
-          });
+          cards.put(card(`note@s6f${fret}`, 'F2.string6-naturals', now + 10 * DAY, 10));
         }
+        for (const fret of [0, 2, 3, 5, 7, 8, 10, 12]) {
+          cards.put(card(`note@s5f${fret}`, 'F2.string5-naturals', now + 10 * DAY, 10));
+        }
+        cards.put(card('note@s6f12', 'F2.string6-naturals', now - 3_600_000, 2));
       }
       await new Promise<void>((resolve, reject) => {
         tx.oncomplete = () => resolve();
@@ -73,7 +80,7 @@ async function seed(page: Page, opts: { slowHistory?: boolean; knownString6?: bo
       });
       db.close();
     },
-    { slowHistory: false, knownString6: false, ...opts, DAY },
+    { slowHistory: false, string6Due: false, ...opts, DAY },
   );
 }
 
@@ -108,10 +115,12 @@ test.describe('M1-12 session celebrations', () => {
     await expect(page.getByTestId('combo')).toHaveText('8 in a row');
 
     await endSession(page);
+    // Learned in one sitting is not yet known: honest copy and a come-back hint.
     await expect(
-      page.getByRole('heading', { level: 1, name: 'You now know string 6 to fret 5' }),
+      page.getByRole('heading', { level: 1, name: 'You learned string 6 to fret 5 today' }),
     ).toBeVisible();
     await expect(page.getByText('Natural notes on string 6')).toBeVisible();
+    await expect(page.getByTestId('summary-learned-hint')).toContainText('tomorrow');
     await expect(page.getByTestId('moment-perfect')).toContainText('Perfect session');
     await expect(page.getByTestId('moment-personal-best')).toContainText('New personal-best speed');
     await expect(page.getByTestId('moment-personal-best')).toContainText('down from 9.0s');
@@ -121,7 +130,7 @@ test.describe('M1-12 session celebrations', () => {
     await expect(page.getByTestId('summary-accuracy')).toHaveText('100%');
     await expect(page.getByTestId('summary-items')).toHaveText('12');
     await expect(page.getByTestId('summary-spacing')).toContainText('Come back tomorrow');
-    // A partial string is competence, not a milestone: no confetti.
+    // Same-day learning is not a milestone: no confetti.
     await expect(page.getByTestId('confetti')).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
 
@@ -131,10 +140,11 @@ test.describe('M1-12 session celebrations', () => {
 
   test('confetti fires for a milestone and never blocks the summary', async ({ page }) => {
     await freshStart(page);
-    await seed(page, { knownString6: true });
+    await seed(page, { string6Due: true });
     await page.getByTestId('start-session').click();
-    for (let i = 0; i < 12; i++) await answerCorrectly(page);
-    await endSession(page);
+    // The only item is the due review of fret 12; the session ends after it.
+    await answer(page, await targetNote(page));
+    await expect(page.getByTestId('session-summary')).toBeVisible();
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
       /^(You now know string 6 to fret 12|You've mastered natural notes on string 6)$/,
@@ -148,10 +158,11 @@ test.describe('M1-12 session celebrations', () => {
   test('confetti is off under reduced motion; the milestone copy stays', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await freshStart(page);
-    await seed(page, { knownString6: true });
+    await seed(page, { string6Due: true });
     await page.getByTestId('start-session').click();
-    for (let i = 0; i < 12; i++) await answerCorrectly(page);
-    await endSession(page);
+    // The only item is the due review of fret 12; the session ends after it.
+    await answer(page, await targetNote(page));
+    await expect(page.getByTestId('session-summary')).toBeVisible();
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(/string 6/);
     await expect(page.getByTestId('confetti')).toHaveCount(0);
