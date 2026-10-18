@@ -1,8 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, SKILLS, createScheduler } from '../engine';
+import { DEFAULT_SETTINGS, SKILLS, createScheduler, parseNoteItemId, type Skill } from '../engine';
+import { toLocalDate } from '../engine/gamification';
 import { DRILLS } from '../drills/registry';
 import type { D1Prompt } from '../drills/d1-name-the-note/logic';
-import { FretworkDB, allCards, getGamification, getSkillStates, reviewCount } from '../storage';
+import {
+  FretworkDB,
+  allCards,
+  getDailyProgress,
+  getGamification,
+  getSkillStates,
+  reviewCount,
+} from '../storage';
 import { SessionRunner, type RunnerDeps } from './runner';
 
 // M1-36: the development build's "unlock every skill" overlay. It widens the
@@ -15,9 +23,10 @@ const UNLOCK_ALL = { unlockAll: true };
 // C2 opens once the F2 naturals are being practised, so a fresh learner has it locked.
 const LOCKED = 'C2.all-notes';
 const OPEN = 'F2.string6-naturals';
+const scheduler = createScheduler({ enableFuzz: false });
 const deps = (over: Partial<RunnerDeps> = {}): RunnerDeps => ({
   db,
-  scheduler: createScheduler({ enableFuzz: false }),
+  scheduler,
   settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 500 },
   skills: SKILLS,
   drills: DRILLS.filter((d) => d.id === 'name-the-note'),
@@ -27,13 +36,16 @@ const deps = (over: Partial<RunnerDeps> = {}): RunnerDeps => ({
 });
 const focus = (...skillIds: string[]) => ({ skillIds, itemIds: [] });
 
+/** Items given a stored card before the session, which are real data. */
+let seeded = new Set<string>();
+
 async function answerAll(r: SessionRunner): Promise<string[]> {
   const skills: string[] = [];
   while (!r.isOver) {
     const cur = r.currentPrompt()!;
     skills.push(cur.entry.skillId);
     const res = await r.answer((cur.prompt as D1Prompt).expectedPc, 900);
-    if (cur.entry.skillId === LOCKED) expect(res.xp).toBe(0);
+    if (cur.entry.skillId === LOCKED && !seeded.has(cur.entry.itemId)) expect(res.xp).toBe(0);
     clock = new Date(clock.getTime() + 5_000);
     r.next();
   }
@@ -41,6 +53,7 @@ async function answerAll(r: SessionRunner): Promise<string[]> {
 }
 
 beforeEach(() => {
+  seeded = new Set();
   db = new FretworkDB(`runner-overlay-${n++}`);
   clock = new Date('2026-10-18T09:00:00Z');
 });
@@ -62,9 +75,14 @@ describe('the unlock-all overlay', () => {
     const served = await answerAll(r);
     expect(served.length).toBeGreaterThan(0);
     expect(new Set(served)).toEqual(new Set([LOCKED]));
+    // A gap before finishing that a real session would count as practice time.
+    clock = new Date(clock.getTime() + 30_000);
     const summary = await r.finish();
-    expect(summary.itemsSeen).toBe(served.length);
-    expect(summary.xp).toBe(0);
+    expect(summary).toMatchObject({ itemsSeen: 0, correct: 0, xp: 0, minutes: 0 });
+    expect(await db.sessionLogs.toArray()).toEqual([
+      expect.objectContaining({ itemsSeen: 0, accuracy: 0 }),
+    ]);
+    expect((await getDailyProgress(db, toLocalDate(clock))).minutes).toBe(0);
     expect(await allCards(db)).toEqual([]);
     expect(await reviewCount(db)).toBe(0);
     expect((await getSkillStates(db)).size).toBe(0);
@@ -72,6 +90,27 @@ describe('the unlock-all overlay', () => {
 
     // Off again, the skill is as locked as it was.
     expect((await SessionRunner.start(deps({ focus: focus(LOCKED) }))).isEmpty).toBe(true);
+  });
+
+  it('still stores reviews of cards a locked skill already had', async () => {
+    const old = new Date('2026-09-01T09:00:00Z');
+    const items = (SKILLS.find((s) => s.id === LOCKED) as Skill).items();
+    const due = items.filter((i) => parseNoteItemId(i.id)).slice(0, 2);
+    expect(due).toHaveLength(2);
+    await db.cards.bulkPut(due.map((i) => scheduler.seedKnownCard(i, old, 1)));
+    seeded = new Set(due.map((i) => i.id));
+
+    const r = await SessionRunner.start(deps({ focus: focus(LOCKED), overlay: UNLOCK_ALL }));
+    await answerAll(r);
+    const summary = await r.finish();
+    const cards = await allCards(db);
+    // Only the stored cards: the sandboxed new items left no card behind.
+    expect(new Set(cards.map((c) => c.itemId))).toEqual(seeded);
+    for (const c of cards) expect(c.lastReviewedAt!.getTime()).toBeGreaterThan(old.getTime());
+    const logs = await db.reviewLogs.toArray();
+    expect(logs.length).toBeGreaterThanOrEqual(2);
+    expect(logs.every((l) => seeded.has(l.itemId))).toBe(true);
+    expect(summary.itemsSeen).toBe(logs.length);
   });
 
   it('still stores answers on skills that were really on the frontier', async () => {

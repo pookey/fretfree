@@ -74,9 +74,11 @@ import { focusFilter, type SessionFocus } from './focus';
  * still looks at every skill, so a focus can't unlock anything.
  *
  * A status overlay (the development build's "unlock every skill", M1-36)
- * widens the frontier for this session only. Answers on a skill that only the
- * overlay put there are a sandbox: graded and scheduled in memory, but no
- * card, review log, skill state or XP is written, so real progress is as it was.
+ * widens the frontier for this session only. New items of a skill that only
+ * the overlay put there are a sandbox: graded and scheduled in memory, but no
+ * card, review log, skill state, XP or minutes are written, and they don't
+ * count in the session log, so real progress is as it was. A card that was
+ * already stored is real data, so its reviews are stored as usual.
  */
 
 export interface RunnerDeps {
@@ -171,8 +173,10 @@ export class SessionRunner {
   private current: CurrentPrompt | null = null;
   private scopes = new Map<string, ScopeState>();
   private cards: Map<string, CardRecord>;
+  /** Stored answers; sandboxed ones are counted apart and never logged. */
   private answered = 0;
   private correct = 0;
+  private sandboxedAnswers = 0;
   private newItems = new Set<string>();
   private touchedSkills = new Set<string>();
   /** The XP kind of each planned item; retries look theirs up here. */
@@ -189,6 +193,8 @@ export class SessionRunner {
   private readonly steps = new Map<string, { entry: SessionEntry; due: Date }>();
   /** The drill that last served each item, so the picker can vary it. */
   private readonly lastDrill: Map<string, string>;
+  /** Items with a stored card when the session started: real data, never sandboxed. */
+  private readonly storedAtStart: ReadonlySet<string>;
 
   private constructor(
     private readonly deps: RunnerDeps,
@@ -198,10 +204,11 @@ export class SessionRunner {
     private readonly skillStates: Map<string, SkillStateRecord>,
     private readonly sessionLogId: number,
     lastDrill: Map<string, string>,
-    /** Skills on the frontier only through the overlay: their answers aren't stored. */
+    /** Skills on the frontier only through the overlay: their new items aren't stored. */
     private readonly sandbox: ReadonlySet<string>,
   ) {
     this.cards = new Map(cards.map((c) => [c.itemId, c]));
+    this.storedAtStart = new Set(this.cards.keys());
     this.startedAt = this.now();
     this.lastTick = this.startedAt;
     this.lastDrill = lastDrill;
@@ -400,8 +407,8 @@ export class SessionRunner {
     this.cards.set(item.id, card);
     this.lastDrill.set(item.id, drill.id);
 
-    // A sandboxed answer (overlay-only skill) is kept in memory: nothing is stored.
-    const sandboxed = this.sandbox.has(item.skillId);
+    // A new item of an overlay-only skill is a sandbox: kept in memory, never stored.
+    const sandboxed = this.sandbox.has(item.skillId) && !this.storedAtStart.has(item.id);
     const minutes = sandboxed ? this.skipTick(now) : this.tick(now);
     const db = this.deps.db;
     // The answer and the XP it earned are stored together or not at all.
@@ -477,9 +484,12 @@ export class SessionRunner {
     if (!entry.guided) {
       this.scopes.set(drill.id, updateScope(this.scope(drill), result.correct, drill.scope).state);
     }
-    this.answered++;
-    if (result.correct) this.correct++;
-    else this.queue = scheduleRetry(this.queue, this.index);
+    if (sandboxed) this.sandboxedAnswers++;
+    else {
+      this.answered++;
+      if (result.correct) this.correct++;
+    }
+    if (!result.correct) this.queue = scheduleRetry(this.queue, this.index);
     // A learning step due before the budget ends comes back this session,
     // unless the item is already queued again (a later rep or a retry).
     const queued = this.queue.slice(this.index + 1).some((e) => e.itemId === item.id);
@@ -589,7 +599,9 @@ export class SessionRunner {
       itemsSeen: this.answered,
       accuracy,
     });
-    const trailing = this.tick(endedAt);
+    // A session of sandboxed answers only counts no time at all.
+    const sandboxOnly = this.answered === 0 && this.sandboxedAnswers > 0;
+    const trailing = sandboxOnly ? this.skipTick(endedAt) : this.tick(endedAt);
     const progress = await finishSessionProgress(this.deps.db, {
       sessionId: this.sessionLogId,
       at: endedAt,
