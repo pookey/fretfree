@@ -1,4 +1,4 @@
-import { useMemo, type KeyboardEvent } from 'react';
+import { useMemo, type CSSProperties, type KeyboardEvent } from 'react';
 import type { GuideLevel } from '../../engine/model';
 import { STANDARD_TUNING, stringCount, type Tuning } from '../../theory';
 import { tabEventLabel, tabLines, type TabEvent } from '../../theory/tab';
@@ -83,10 +83,12 @@ export function TabStaff({
     <svg
       className={[styles.staff, className].filter(Boolean).join(' ')}
       viewBox={`0 0 ${g.width} ${g.height}`}
-      style={{
-        minWidth: `${Math.ceil(g.width * minScale())}px`,
-        maxWidth: `${Math.ceil(g.width * MAX_SCALE)}px`,
-      }}
+      style={
+        {
+          '--tab-min': `${Math.ceil(g.width * minScale())}px`,
+          '--tab-max': `${Math.ceil(g.width * MAX_SCALE)}px`,
+        } as CSSProperties
+      }
       role="group"
       aria-label={label}
       data-guide-level={guideLevel}

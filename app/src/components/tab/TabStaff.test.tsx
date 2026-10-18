@@ -149,7 +149,7 @@ describe('<TabStaff>', () => {
     it('gives every line a band at least 44pt tall at the smallest scale', () => {
       const { container } = render(<TabStaff onPickLine={() => {}} />);
       const svg = container.querySelector('svg')!;
-      const minWidth = parseFloat(svg.style.minWidth);
+      const minWidth = parseFloat(svg.style.getPropertyValue('--tab-min'));
       const viewWidth = Number(svg.getAttribute('viewBox')!.split(' ')[2]);
       for (const b of screen.getAllByRole('button')) {
         expect(Number(b.getAttribute('height')) * (minWidth / viewWidth)).toBeGreaterThanOrEqual(

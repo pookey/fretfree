@@ -4,6 +4,9 @@
 
   display: block;
   width: 100%;
+  /* Set inline: the widths that keep line bands between 44pt and MAX_SCALE. */
+  min-width: var(--tab-min);
+  max-width: var(--tab-max);
   height: auto;
   touch-action: manipulation;
   user-select: none;
@@ -148,6 +151,13 @@
 @media (hover: hover) {
   .hit:hover {
     fill: rgb(255 255 255 / 0.06);
+  }
+}
+
+/* Short (phone landscape) screens: the smallest size that keeps 44pt bands. */
+@media (max-height: 500px) {
+  .staff {
+    max-width: var(--tab-min);
   }
 }
 
