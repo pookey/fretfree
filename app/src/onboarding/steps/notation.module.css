@@ -1,17 +1,35 @@
 /* Multi-select cards (design §4). They reuse the onboarding `.choice` card and
    swap its round radio ring for a square box with a tick, so the shape says
-   "pick any" as well as the colour. Doubled classes outrank `.choice`. */
+   "pick any" as well as the colour. The box is a decorative element, not
+   generated text, so the tick stays out of the checkbox's accessible name. */
 .check.check::before {
-  display: grid;
-  place-items: center;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--accent-text);
+  display: none;
 }
 
-.check.check:has(input:checked)::before {
-  content: '✓';
+.box {
+  flex: none;
+  position: relative;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.25rem;
+  border: 2px solid var(--text-muted);
+  /* Taps go to the label, which toggles the checkbox. */
+  pointer-events: none;
+}
+
+.check:has(input:checked) .box {
+  border-color: var(--accent);
   background: var(--accent);
+}
+
+.check:has(input:checked) .box::after {
+  content: '';
+  position: absolute;
+  left: 0.3125rem;
+  top: 0.0625rem;
+  width: 0.3125rem;
+  height: 0.625rem;
+  border: solid var(--accent-text);
+  border-width: 0 0.1875rem 0.1875rem 0;
+  transform: rotate(45deg);
 }

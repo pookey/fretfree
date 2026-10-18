@@ -33,8 +33,10 @@ test.describe('M1-26 reading question', () => {
     // Pick-any cards are tall tap targets with a square box, not a round radio ring.
     const card = reads(page).locator('label').first();
     expect((await card.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-    const radius = await card.evaluate((el) => getComputedStyle(el, '::before').borderRadius);
-    expect(radius).not.toBe('50%');
+    const box = card.locator('[aria-hidden="true"]');
+    await expect(box).toBeVisible();
+    const radius = await box.evaluate((el) => getComputedStyle(el).borderRadius);
+    expect(radius).toBe('4px');
 
     await reads(page).getByRole('checkbox', { name: /^Tab/ }).check();
     await reads(page)

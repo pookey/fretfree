@@ -46,6 +46,7 @@ function Picks({
             checked={value[o.value]}
             onChange={() => toggle(o.value)}
           />
+          <span className={local.box} aria-hidden="true" />
           <span className={styles.choiceText}>
             <strong>{o.label}</strong>
             {o.detail && <span>{o.detail}</span>}
