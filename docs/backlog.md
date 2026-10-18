@@ -357,7 +357,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ---
 
 ### M1-30 · Make streak repair visible on Today
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §3.7 (streak repair), §7 Today
 - **Owns:** `app/src/screens/today/cards/streak-repair.tsx`, `app/src/screens/today/cards/streak-repair.module.css`, `app/src/screens/today/cards/streak-repair.test.tsx`, `app/e2e/m1-30.spec.ts`
