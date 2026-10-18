@@ -1,8 +1,12 @@
 import type { Card as FsrsCard, Rating } from 'ts-fsrs';
 import type { FittedFsrsParams } from './refit';
 import {
+  CAGED_ORDER,
+  CAGED_QUALITIES,
   isChordKind,
   isIntervalName,
+  type CagedQuality,
+  type CagedShapeName,
   type ChordKind,
   type IntervalName,
   type Position,
@@ -153,7 +157,8 @@ export type ItemRef =
   | { kind: 'interval' | 'interval-name'; interval: IntervalName; from: number; to: number }
   | { kind: 'spell-key'; tonic: string }
   | { kind: 'spell-chord'; chord: ChordKind; root: string }
-  | { kind: 'degree' | 'degree-of'; degree: number; tonic: string };
+  | { kind: 'degree' | 'degree-of'; degree: number; tonic: string }
+  | { kind: 'caged' | 'caged-core'; shape: CagedShapeName; quality: CagedQuality };
 
 const INT = '(0|[1-9]\\d*)';
 const OFFSET = '([+-][1-9]\\d*)';
@@ -171,6 +176,7 @@ const INTERVAL_ITEM = new RegExp(`^(interval|interval-name):([A-Za-z0-9]+)@s${IN
 const SPELL_KEY_ITEM = new RegExp(`^spell-key:${PC}$`);
 const SPELL_CHORD_ITEM = new RegExp(`^spell-chord:([A-Za-z0-9]+)@${PC}$`);
 const DEGREE_ITEM = new RegExp(`^(degree|degree-of):([1-7])@${PC}$`);
+const CAGED_ITEM = /^(caged|caged-core):([CAGED])-shape@(major|minor|dominant7)$/;
 
 function count(n: number, what: string): number {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Invalid ${what}: ${n}`);
@@ -359,6 +365,36 @@ export function parseDegreeItemId(
   return { kind: m[1] as 'degree' | 'degree-of', degree: Number(m[2]), tonic: m[3] as string };
 }
 
+/**
+ * `caged:A-shape@major`: build the whole A shape of a major chord from its
+ * root (C6). `caged-core:A-shape@major` builds only its triad core. The root
+ * varies per prompt, so one card holds the shape in every key (research/02
+ * rule 12). A dominant-7 shape's core is the major one, so it has no core card.
+ */
+export function cagedItemId(
+  kind: 'caged' | 'caged-core',
+  shape: CagedShapeName,
+  quality: CagedQuality,
+): string {
+  if (!CAGED_ORDER.includes(shape)) throw new RangeError(`Invalid CAGED shape: ${String(shape)}`);
+  if (!CAGED_QUALITIES.includes(quality) || (kind === 'caged-core' && quality === 'dominant7')) {
+    throw new RangeError(`Invalid ${kind} quality: ${String(quality)}`);
+  }
+  return `${kind}:${shape}-shape@${quality}`;
+}
+
+export function parseCagedItemId(
+  id: string,
+): { kind: 'caged' | 'caged-core'; shape: CagedShapeName; quality: CagedQuality } | null {
+  const m = CAGED_ITEM.exec(id);
+  if (!m || (m[1] === 'caged-core' && m[3] === 'dominant7')) return null;
+  return {
+    kind: m[1] as 'caged' | 'caged-core',
+    shape: m[2] as CagedShapeName,
+    quality: m[3] as CagedQuality,
+  };
+}
+
 export function itemId(ref: ItemRef): string {
   switch (ref.kind) {
     case 'note':
@@ -389,6 +425,9 @@ export function itemId(ref: ItemRef): string {
     case 'degree':
     case 'degree-of':
       return degreeItemId(ref.kind, ref.degree, ref.tonic);
+    case 'caged':
+    case 'caged-core':
+      return cagedItemId(ref.kind, ref.shape, ref.quality);
   }
 }
 
@@ -417,5 +456,7 @@ export function parseItemId(id: string): ItemRef | null {
   if (spellChord) return { kind: 'spell-chord', ...spellChord };
   const degree = parseDegreeItemId(id);
   if (degree) return degree;
+  const caged = parseCagedItemId(id);
+  if (caged) return caged;
   return null;
 }
