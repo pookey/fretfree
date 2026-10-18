@@ -36,126 +36,135 @@ export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryP
     <main className={styles.screen} data-testid="session-summary">
       <Confetti active={c.confetti} />
       <article className={styles.card} aria-labelledby="summary-title">
-        <header className={styles.head}>
-          {title !== 'Session complete' && <p className={styles.eyebrow}>Session complete</p>}
-          <h1 id="summary-title" data-testid="summary-headline">
-            {title}
-          </h1>
-          {first && first.kind !== 'mastered' && (
-            <p className={styles.context}>{first.skillTitle}</p>
+        {/* What happened. At short heights it sits beside what's next (M1-33). */}
+        <div className={styles.recap}>
+          <header className={styles.head}>
+            {title !== 'Session complete' && <p className={styles.eyebrow}>Session complete</p>}
+            <h1 id="summary-title" data-testid="summary-headline">
+              {title}
+            </h1>
+            {first && first.kind !== 'mastered' && (
+              <p className={styles.context}>{first.skillTitle}</p>
+            )}
+            {learnedToday && (
+              <p className={styles.context} data-testid="summary-learned-hint">
+                {LEARNED_HINT}
+              </p>
+            )}
+          </header>
+
+          {(more.length > 0 || c.milestones.length > 0) && (
+            <ul className={styles.gains} aria-label="What you can now do">
+              {more.map((line) => (
+                <li
+                  key={`${line.skillId}:${line.kind === 'mastered' ? 'm' : `${line.kind}:${line.string}`}`}
+                >
+                  <span className={styles.check} aria-hidden="true">
+                    ✓
+                  </span>
+                  {competenceText(line)}
+                </li>
+              ))}
+              {c.milestones.map((m) => (
+                <li key={m}>
+                  <span className={styles.check} aria-hidden="true">
+                    ✓
+                  </span>
+                  {m}
+                </li>
+              ))}
+            </ul>
           )}
-          {learnedToday && (
-            <p className={styles.context} data-testid="summary-learned-hint">
-              {LEARNED_HINT}
+
+          {(c.perfect || c.personalBest || showCombo) && (
+            <ul className={styles.moments} aria-label="Moments">
+              {c.perfect && (
+                <li className={styles.moment} data-testid="moment-perfect">
+                  <span className={styles.icon} data-shape="star" aria-hidden="true">
+                    ★
+                  </span>
+                  <span>
+                    <strong>Perfect session</strong>
+                    <span className={styles.detail}>Every answer right</span>
+                  </span>
+                </li>
+              )}
+              {c.personalBest && (
+                <li className={styles.moment} data-testid="moment-personal-best">
+                  <span className={styles.icon} data-shape="bolt" aria-hidden="true">
+                    ⚡︎
+                  </span>
+                  <span>
+                    <strong>New personal-best speed</strong>
+                    <span className={styles.detail}>{personalBestText(c.personalBest)}</span>
+                  </span>
+                </li>
+              )}
+              {showCombo && (
+                <li className={styles.moment} data-testid="moment-combo">
+                  <span className={styles.icon} data-shape="chain" aria-hidden="true">
+                    ∞
+                  </span>
+                  <span>
+                    <strong>Best run</strong>
+                    <span className={styles.detail}>{c.bestCombo} correct in a row</span>
+                  </span>
+                </li>
+              )}
+            </ul>
+          )}
+
+          {/* Today's score, Learn's two levels and XP are different numbers (M1-35). */}
+          <dl className={styles.stats}>
+            <div>
+              <dt>Today&rsquo;s accuracy</dt>
+              <dd data-testid="summary-accuracy">{Math.round(c.accuracy * 100)}%</dd>
+              <dd className={styles.statDetail}>
+                <span data-testid="summary-items">{c.answered}</span> answered
+              </dd>
+            </div>
+            <div>
+              <dt>Learning</dt>
+              <dd data-testid="summary-learning">{c.progress.learning}</dd>
+            </div>
+            <div>
+              <dt>Became stable</dt>
+              <dd data-testid="summary-stable">{c.progress.becameStable}</dd>
+              <dd className={styles.statDetail}>
+                {/* Already-stable items reviewed today, so a 0 here isn't read as none. */}
+                {c.progress.stable > c.progress.becameStable && (
+                  <>
+                    <span data-testid="summary-stable-total">{c.progress.stable}</span> stable
+                    ·{' '}
+                  </>
+                )}
+                <span data-testid="summary-improved">{c.itemsImproved}</span> stronger
+              </dd>
+            </div>
+            <div>
+              <dt>XP earned</dt>
+              <dd data-testid="summary-xp">{c.xp}</dd>
+            </div>
+          </dl>
+          {note && <p className={styles.note}>{note}</p>}
+
+          {progress && (
+            <p className={styles.progress} data-testid="summary-progress">
+              {progress}
             </p>
           )}
-        </header>
+        </div>
 
-        {(more.length > 0 || c.milestones.length > 0) && (
-          <ul className={styles.gains} aria-label="What you can now do">
-            {more.map((line) => (
-              <li
-                key={`${line.skillId}:${line.kind === 'mastered' ? 'm' : `${line.kind}:${line.string}`}`}
-              >
-                <span className={styles.check} aria-hidden="true">
-                  ✓
-                </span>
-                {competenceText(line)}
-              </li>
-            ))}
-            {c.milestones.map((m) => (
-              <li key={m}>
-                <span className={styles.check} aria-hidden="true">
-                  ✓
-                </span>
-                {m}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {(c.perfect || c.personalBest || showCombo) && (
-          <ul className={styles.moments} aria-label="Moments">
-            {c.perfect && (
-              <li className={styles.moment} data-testid="moment-perfect">
-                <span className={styles.icon} data-shape="star" aria-hidden="true">
-                  ★
-                </span>
-                <span>
-                  <strong>Perfect session</strong>
-                  <span className={styles.detail}>Every answer right</span>
-                </span>
-              </li>
-            )}
-            {c.personalBest && (
-              <li className={styles.moment} data-testid="moment-personal-best">
-                <span className={styles.icon} data-shape="bolt" aria-hidden="true">
-                  ⚡︎
-                </span>
-                <span>
-                  <strong>New personal-best speed</strong>
-                  <span className={styles.detail}>{personalBestText(c.personalBest)}</span>
-                </span>
-              </li>
-            )}
-            {showCombo && (
-              <li className={styles.moment} data-testid="moment-combo">
-                <span className={styles.icon} data-shape="chain" aria-hidden="true">
-                  ∞
-                </span>
-                <span>
-                  <strong>Best run</strong>
-                  <span className={styles.detail}>{c.bestCombo} correct in a row</span>
-                </span>
-              </li>
-            )}
-          </ul>
-        )}
-
-        {/* Today's score, Learn's two levels and XP are different numbers (M1-35). */}
-        <dl className={styles.stats}>
-          <div>
-            <dt>Today&rsquo;s accuracy</dt>
-            <dd data-testid="summary-accuracy">{Math.round(c.accuracy * 100)}%</dd>
-            <dd className={styles.statDetail}>
-              <span data-testid="summary-items">{c.answered}</span> answered
-            </dd>
-          </div>
-          <div>
-            <dt>Learning</dt>
-            <dd data-testid="summary-learning">{c.progress.learning}</dd>
-          </div>
-          <div>
-            <dt>Became stable</dt>
-            <dd data-testid="summary-stable">{c.progress.becameStable}</dd>
-            <dd className={styles.statDetail}>
-              {/* Already-stable items reviewed today, so a 0 here isn't read as none. */}
-              {c.progress.stable > c.progress.becameStable && (
-                <>
-                  <span data-testid="summary-stable-total">{c.progress.stable}</span> stable ·{' '}
-                </>
-              )}
-              <span data-testid="summary-improved">{c.itemsImproved}</span> stronger
-            </dd>
-          </div>
-          <div>
-            <dt>XP earned</dt>
-            <dd data-testid="summary-xp">{c.xp}</dd>
-          </div>
-        </dl>
-        {note && <p className={styles.note}>{note}</p>}
-
-        {progress && (
-          <p className={styles.progress} data-testid="summary-progress">
-            {progress}
+        {/* What's next, with Done always in view: beside the recap at short
+            heights, held at the bottom when a tall recap overflows. */}
+        <footer className={styles.next}>
+          <p className={styles.spacing} data-testid="summary-spacing">
+            {SPACING_COPY}
           </p>
-        )}
-        <p className={styles.spacing} data-testid="summary-spacing">
-          {SPACING_COPY}
-        </p>
-        <Link to={doneTo} className={styles.done}>
-          Done
-        </Link>
+          <Link to={doneTo} className={styles.done}>
+            Done
+          </Link>
+        </footer>
       </article>
     </main>
   );

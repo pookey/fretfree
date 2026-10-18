@@ -1,9 +1,13 @@
 .screen {
+  /* The screen's end padding, which a held-down .next takes over. */
+  --pad: var(--space-5);
+  --pad-end: calc(var(--pad) + var(--safe-bottom));
+
   height: 100%;
   overflow-y: auto;
   display: flex;
-  padding: calc(var(--space-5) + var(--safe-top)) calc(var(--space-5) + var(--safe-right))
-    calc(var(--space-5) + var(--safe-bottom)) calc(var(--space-5) + var(--safe-left));
+  padding: calc(var(--pad) + var(--safe-top)) calc(var(--pad) + var(--safe-right)) var(--pad-end)
+    calc(var(--pad) + var(--safe-left));
 }
 
 /* Regular-wide first: one roomy card, stats in a single row of four. */
@@ -15,6 +19,39 @@
   flex-direction: column;
   gap: var(--space-5);
   text-align: center;
+}
+
+.recap,
+.next {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+}
+
+/*
+ * When the recap is taller than the screen (a busy session on a phone in
+ * portrait), what's next stays at the bottom instead of below the fold. Its
+ * end padding stands in for the screen's, so in flow nothing moves, and when
+ * held it keeps Done clear of the home indicator. The fade above it only
+ * shows over content scrolling beneath.
+ */
+.next {
+  position: sticky;
+  /* Sticky insets count from inside the screen's padding; this reaches its edge. */
+  bottom: calc(-1 * var(--pad-end));
+  margin-bottom: calc(-1 * var(--pad-end));
+  padding-bottom: var(--pad-end);
+  background: var(--bg);
+}
+
+.next::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 100%;
+  /* Shorter than the card's gap, so in flow it never covers text. */
+  height: var(--space-3);
+  background: linear-gradient(transparent, var(--bg));
+  pointer-events: none;
 }
 
 .head h1 {
@@ -177,8 +214,10 @@
 /* Compact (iPhone, narrow Split View): two-by-two stats, tighter spacing. */
 @media (max-width: 743px), (max-height: 499px) {
   .screen {
-    padding: calc(var(--space-3) + var(--safe-top)) calc(var(--space-4) + var(--safe-right))
-      calc(var(--space-3) + var(--safe-bottom)) calc(var(--space-4) + var(--safe-left));
+    --pad: var(--space-3);
+
+    padding-right: calc(var(--space-4) + var(--safe-right));
+    padding-left: calc(var(--space-4) + var(--safe-left));
   }
 
   .card {
@@ -199,29 +238,112 @@
 }
 
 /*
- * Compact landscape (a phone held sideways): short but wide, so the stats go
- * back to one row and the copy runs the full width. That keeps the learning
- * line from pushing Done further down.
+ * Compact landscape (a phone held sideways, down to 320pt tall): short but
+ * wide, so the summary splits in two. The recap runs down the left; what's
+ * next sits top right, so Done's place doesn't depend on how much the session
+ * earned and it never needs pinning. Stats fit one row where there's room.
  */
-@media (max-height: 499px) and (min-width: 600px) {
+@media (max-height: 499px) and (orientation: landscape) {
   .card {
-    gap: var(--space-3);
+    max-width: 60rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(11rem, 15rem);
+    align-items: start;
+    gap: var(--space-3) var(--space-4);
+    text-align: left;
+  }
+
+  .head h1 {
+    font-size: 1.375rem;
+  }
+
+  .eyebrow {
+    margin-bottom: var(--space-1);
+    font-size: 0.75rem;
+  }
+
+  .context {
+    margin-top: var(--space-1);
+  }
+
+  .gains {
+    font-size: 1rem;
+  }
+
+  .moments {
+    justify-content: flex-start;
+    gap: var(--space-2);
+  }
+
+  .moment {
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-m);
+    font-size: 0.875rem;
+  }
+
+  .detail {
+    font-size: 0.75rem;
+  }
+
+  .icon {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 1rem;
   }
 
   .stats {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+    gap: var(--space-2);
   }
 
   .stats > div {
     padding: var(--space-2);
+    border-radius: var(--radius-m);
   }
 
-  .progress,
+  .stats dt,
+  .stats dd.statDetail {
+    font-size: 0.75rem;
+  }
+
+  .stats dd {
+    font-size: 1.25rem;
+  }
+
+  .note {
+    margin-top: calc(-1 * var(--space-1));
+    font-size: 0.875rem;
+  }
+
+  .progress {
+    max-width: none;
+    align-self: stretch;
+    font-size: 0.875rem;
+  }
+
+  /* A panel, not a pinned bar: it is short, so it always fits. */
+  .next {
+    position: static;
+    margin: 0;
+    padding: var(--space-3);
+    gap: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-l);
+    background: var(--bg-raised);
+  }
+
+  .next::before {
+    content: none;
+  }
+
   .spacing {
     max-width: none;
+    font-size: 0.875rem;
   }
 
-  .spacing {
-    font-size: 0.875rem;
+  .done {
+    align-self: stretch;
+    min-width: 0;
   }
 }
