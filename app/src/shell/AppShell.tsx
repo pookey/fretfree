@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router';
 import { NAV_ITEMS } from './nav';
 import { useSizeClass } from './size-class';
+import { StreakBadge } from './StreakBadge';
 import styles from './AppShell.module.css';
 
 /**
@@ -37,6 +38,7 @@ export function AppShell() {
               </li>
             ))}
           </ul>
+          <StreakBadge variant={sizeClass === 'regular-wide' ? 'full' : 'icon'} />
         </nav>
       )}
       <main className={styles.main}>

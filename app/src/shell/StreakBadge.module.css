@@ -1,0 +1,65 @@
+/* Pinned to the bottom of the sidebar (design §7: always visible on iPad). */
+.badge {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'ring streak'
+    'ring detail';
+  align-items: center;
+  column-gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+}
+
+.badge > svg {
+  grid-area: ring;
+}
+
+.badge[data-variant='icon'] {
+  grid-template-columns: auto;
+  grid-template-areas:
+    'streak'
+    'ring';
+  justify-items: center;
+  row-gap: var(--space-2);
+  padding: var(--space-2) var(--space-1);
+}
+
+.streak {
+  grid-area: streak;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--streak-on-card);
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.streak strong {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* Flame over count, so a 3-digit streak still fits the 4.5rem rail. */
+.badge[data-variant='icon'] .streak {
+  flex-direction: column;
+  gap: 0;
+}
+
+.badge[data-variant='icon'] .streak strong {
+  font-size: 1rem;
+}
+
+.flame {
+  font-size: 1.125rem;
+}
+
+.detail {
+  grid-area: detail;
+  display: flex;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
