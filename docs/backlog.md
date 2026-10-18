@@ -592,7 +592,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m2-16.spec.ts`, iPad projects; iPhone tagged `@smoke`): from a fresh profile, test out of Chords' prerequisites fluently, then start a Chords focus session.
 
 ### M2-14 · M2 milestone QA
-- **Status:** todo
+- **Status:** done
 - **Deps:** M2-01, M2-02, M2-03, M2-04, M2-05, M2-06, M2-07, M2-08, M2-09, M2-10, M2-11, M2-12, M2-13
 - **Owns:** `docs/progress.md`, `app/e2e/m2-14.spec.ts`
 - **Acceptance:**
