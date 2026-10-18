@@ -143,17 +143,20 @@ export function InstallSteps({ platform }: { platform: InstallPlatform }) {
 
 /** Exports this browser's progress, for importing in the installed app. */
 export function ExportButton({ className }: { className?: string }) {
-  const [saved, setSaved] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const save = () =>
+    downloadExport(getDb()).then(
+      (name) => setMessage(`Saved ${name}.`),
+      // Say so: this is the step before moving to the installed app.
+      (e: unknown) =>
+        setMessage(`Couldn’t export: ${e instanceof Error ? e.message : 'something went wrong'}.`),
+    );
   return (
     <>
-      <button
-        type="button"
-        className={className ?? styles.secondary}
-        onClick={() => void downloadExport(getDb()).then(setSaved)}
-      >
+      <button type="button" className={className ?? styles.secondary} onClick={() => void save()}>
         Export my progress
       </button>
-      {saved && <p role="status">Saved {saved}.</p>}
+      {message && <p role="status">{message}</p>}
     </>
   );
 }
@@ -191,12 +194,21 @@ export function StorageNote({
   );
 }
 
-/** Chromium's install prompt behind our own button. */
+const OUTCOME_COPY = {
+  accepted: 'Installed. Open FretFree from your apps.',
+  dismissed: 'You can install FretFree later from the browser menu.',
+} as const;
+
+/**
+ * Chromium's install prompt behind our own button. A prompt works once, so the
+ * button shows only while the browser holds one (it may offer another later).
+ */
 export function PromptInstall({ className }: { className?: string }) {
+  const prompt = useSyncExternalStore(subscribeInstallPrompt, getInstallPrompt, () => null);
   const [outcome, setOutcome] = useState<'accepted' | 'dismissed' | null>(null);
   return (
     <>
-      {outcome !== 'accepted' && (
+      {prompt && outcome !== 'accepted' && (
         <button
           type="button"
           className={className ?? styles.secondary}
@@ -206,7 +218,7 @@ export function PromptInstall({ className }: { className?: string }) {
         </button>
       )}
       <p role="status" className={styles.status}>
-        {outcome === 'accepted' ? 'Installed. Open FretFree from your apps.' : ''}
+        {outcome && !(prompt && outcome === 'dismissed') ? OUTCOME_COPY[outcome] : ''}
       </p>
     </>
   );

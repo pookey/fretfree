@@ -90,6 +90,15 @@ describe('<StorageNote>', () => {
     expect(save).toHaveBeenCalledOnce();
     expect(await screen.findByRole('status')).toHaveTextContent('Saved fretfree-2026-10-18.json.');
   });
+
+  it('says so when the export fails', async () => {
+    vi.spyOn(download, 'downloadExport').mockRejectedValue(new Error('storage is blocked'));
+    render(<StorageNote browser="safari" hasProgress during="setup" />);
+    await userEvent.click(screen.getByRole('button', { name: 'Export my progress' }));
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Couldn’t export: storage is blocked.',
+    );
+  });
 });
 
 describe('<PromptInstall>', () => {
@@ -102,12 +111,23 @@ describe('<PromptInstall>', () => {
     expect(screen.queryByRole('button', { name: 'Install FretFree' })).toBeNull();
   });
 
-  it('keeps the button when the learner declines', async () => {
+  it('drops the used-up button when the learner declines, until the browser offers again', async () => {
     firePrompt('dismissed');
     render(<PromptInstall />);
     await userEvent.click(screen.getByRole('button', { name: 'Install FretFree' }));
-    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'You can install FretFree later from the browser menu.',
+    );
+    expect(screen.queryByRole('button', { name: 'Install FretFree' })).toBeNull();
+
+    firePrompt('accepted');
     expect(screen.getByRole('button', { name: 'Install FretFree' })).toBeVisible();
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  });
+
+  it('shows no button without a prompt', () => {
+    render(<PromptInstall />);
+    expect(screen.queryByRole('button', { name: 'Install FretFree' })).toBeNull();
   });
 });
 
