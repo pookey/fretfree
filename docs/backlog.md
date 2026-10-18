@@ -275,7 +275,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Note:** M1-15 also adds the blind-mode toggle to `settings.tsx`. Don't run M1-15 and M1-22 at the same time.
 
 ### M1-25 · [hotfix] Recall prompts must never show their answer
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §3.5, research/02 (retrieval practice)
 - **Owns:** `app/src/components/fretboard/Fretboard.tsx`, `app/src/components/fretboard/Fretboard.test.tsx`, `app/src/drills/d1-name-the-note/D1View.tsx`, `app/src/drills/d1-name-the-note/*.test.tsx`, `app/e2e/m1-25.spec.ts`
