@@ -88,6 +88,8 @@ describe('<D6View>', () => {
   it('dims everything but the shape string and the hand position at the shape scope', () => {
     const { container, onAnswer } = view(prompt('interval:M3@s6→s5'));
     expect(container.querySelector('[data-live-string="5"]')).not.toBeNull();
+    // The root's own cell is kept clear of the dimming on its string.
+    expect(container.querySelector('style')?.textContent).toContain('rect[data-cell="s6f5"]');
     // Frets 3–7 are live out of 0–15.
     expect(screen.getAllByTestId('dimmed-fret')).toHaveLength(11);
     fireEvent.pointerDown(cell(4, 4));
@@ -98,6 +100,7 @@ describe('<D6View>', () => {
   it('opens every string, then the whole region, as the scope widens', () => {
     const box = view(prompt('interval:M3@s6→s5', 1));
     expect(box.container.querySelector('[data-live-string]')).toBeNull();
+    expect(box.container.querySelector('style')).toBeNull();
     expect(screen.getByTestId('d6-prompt')).toHaveTextContent(
       'Tap a major 3rd from the root, on any string',
     );

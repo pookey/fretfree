@@ -126,6 +126,10 @@ export function D6View({
         className={styles.neckArea}
         data-live-string={prompt.scope === 'shape' ? prompt.shapeTarget.string : undefined}
       >
+        {prompt.scope === 'shape' && (
+          // The root sits on a dimmed string, but it is the reference: keep its cell clear.
+          <style>{`.${styles.neckArea} rect[data-cell="s${prompt.root.string}f${prompt.root.fret}"] { fill: transparent !important; }`}</style>
+        )}
         <Fretboard
           tuning={tuning}
           fretRange={visible}
