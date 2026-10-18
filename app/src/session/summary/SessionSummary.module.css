@@ -154,7 +154,7 @@
   min-width: 10rem;
   padding: 0 var(--space-5);
   border-radius: var(--radius-m);
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--accent-text);
   font-weight: 800;
   text-decoration: none;

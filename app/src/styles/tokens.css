@@ -1,16 +1,43 @@
-/* Design tokens — dark first (design §7 visual design). Colour-blind-safe
-   highlights use the Okabe–Ito palette. */
+/* Design tokens — dark first (design §7 visual design). Brand: FretFree
+   (brand/README.md), sunflower on deep plum. Colour-blind-safe highlights use
+   the Okabe–Ito palette and never change with the brand. */
+
+/* Clear Sans (Intel, Apache-2.0; public/fonts/ClearSans-LICENSE.txt), subset
+   to Latin. Precached by the service worker, so it works offline. */
+@font-face {
+  font-family: 'Clear Sans';
+  src: url('/fonts/ClearSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Clear Sans';
+  src: url('/fonts/ClearSans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Clear Sans';
+  src: url('/fonts/ClearSans-Bold.woff2') format('woff2');
+  font-weight: 600 700;
+  font-display: swap;
+}
+
 :root {
   color-scheme: dark light;
-  --bg: #14110f;
-  --bg-raised: #1f1a17;
-  --bg-sunken: #0e0c0a;
-  --surface: #2a231f;
-  --border: #3a312b;
-  --text: #f3ece6;
-  --text-muted: #b4a79c;
-  --accent: #e69f00; /* orange: roots, primary actions */
-  --accent-text: #1a1206;
+  --bg: #1b1626;
+  --bg-raised: #261f35;
+  --bg-sunken: #130f1c;
+  --surface: #2f2742;
+  --border: #3a3050;
+  --text: #f7f2ff;
+  --text-muted: #b4aaca;
+  /* Sunflower: the brand, for chrome only (primary actions, focus, the logo).
+     It sits near Okabe–Ito orange and yellow, so it never appears on the neck. */
+  --accent: #f5c542; /* text and borders on the page */
+  --accent-fill: #f5c542; /* button and chip backgrounds */
+  --accent-text: #1b1626; /* text on --accent-fill */
+  --root: #e69f00; /* Okabe–Ito orange: roots and half-step marks */
   --tone: #56b4e9; /* sky blue: chord tones, target highlight */
   --correct: #009e73; /* bluish green */
   --wrong: #d55e00; /* vermillion */
@@ -22,7 +49,7 @@
   --fret-wire: #c9c3bb;
   --string: #ddd3c4;
   --inlay: #e8dfd2;
-  --dim: rgb(14 12 10 / 0.55);
+  --dim: rgb(19 15 28 / 0.55);
 
   --radius-s: 0.5rem;
   --radius-m: 0.875rem;
@@ -37,9 +64,8 @@
   --sidebar-w: 15rem;
   --sidebar-w-collapsed: 4.5rem;
   --context-w: 20rem;
-  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
-  --font-display:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'SF Pro Display', system-ui, sans-serif;
+  --font: 'Clear Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display: var(--font);
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -49,18 +75,20 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #faf6f1;
+    --bg: #f7f5fa;
     --bg-raised: #ffffff;
-    --bg-sunken: #efe8df;
-    --surface: #f2ebe3;
-    --border: #ddd2c6;
-    --text: #1d1713;
-    --text-muted: #6b5d52;
-    --accent: #965800; /* AA on every light background */
-    --accent-text: #ffffff;
+    --bg-sunken: #ece8f2;
+    --surface: #efebf5;
+    --border: #e3deea;
+    --text: #2a2038;
+    --text-muted: #5f5574;
+    --accent: #765600; /* AA on every light background */
+    --accent-fill: #f5c542;
+    --accent-text: #2a2038;
+    --root: #965800;
     --tone: #0072b2;
     --correct: #007a59;
     --wrong: #b84f00;
-    --dim: rgb(250 246 241 / 0.6);
+    --dim: rgb(247 245 250 / 0.6);
   }
 }

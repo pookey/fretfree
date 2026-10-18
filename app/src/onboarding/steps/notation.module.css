@@ -19,7 +19,7 @@
 
 .check:has(input:checked) .box {
   border-color: var(--accent);
-  background: var(--accent);
+  background: var(--accent-fill);
 }
 
 .check:has(input:checked) .box::after {

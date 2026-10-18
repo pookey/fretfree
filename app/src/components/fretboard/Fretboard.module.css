@@ -73,7 +73,7 @@
 }
 
 .root rect {
-  fill: var(--accent);
+  fill: var(--root);
   stroke: #fff;
   stroke-width: 2;
 }

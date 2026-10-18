@@ -51,7 +51,7 @@
 
 .primary {
   border: none;
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--accent-text);
 }
 

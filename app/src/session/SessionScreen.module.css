@@ -144,7 +144,7 @@
 
 .alphabet li[data-half-step-after] {
   margin-right: -0.25rem;
-  color: var(--accent);
+  color: var(--root);
 }
 
 .loading {
@@ -161,7 +161,7 @@
   padding: 0 var(--space-5);
   border-radius: var(--radius-m);
   border: none;
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--accent-text);
   font-weight: 800;
   text-decoration: none;

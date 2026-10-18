@@ -15,13 +15,13 @@
 /* B–C and E–F: a heavy accent arc (shape) as well as a colour. */
 .halfStep {
   fill: none;
-  stroke: var(--accent);
+  stroke: var(--root);
   stroke-width: 7;
   stroke-linecap: round;
 }
 
 .badge {
-  fill: var(--accent);
+  fill: var(--root);
   font-size: 15px;
   font-weight: 800;
   text-anchor: middle;
