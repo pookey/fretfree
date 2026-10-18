@@ -28,7 +28,7 @@ afterEach(async () => {
 });
 
 function renderTest() {
-  render(
+  return render(
     <PlacementTest
       doneAction={<button type="button">Continue</button>}
       now={() => t}
@@ -138,6 +138,34 @@ describe('PlacementTest', () => {
     fireEvent.click(within(dialog()).getByRole('button', { name: 'Finish now' }));
     expect(await screen.findByTestId('placement-result')).toBeInTheDocument();
     expect(await db.reviewLogs.count()).toBe(1);
+  });
+
+  it('makes the page behind the test inert while probing, and restores it after', async () => {
+    const { container } = renderTest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start the test' }));
+    // The dialog is portalled to <body>, beside the page, so focus can't leave it.
+    expect(dialog().parentElement).toBe(document.body);
+    expect(container).toHaveAttribute('inert');
+    expect(dialog()).not.toHaveAttribute('inert');
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Placement test' }));
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Finish now' }));
+    const result = await screen.findByTestId('placement-result');
+    expect(container).not.toHaveAttribute('inert');
+    expect(document.activeElement).toBe(result);
+  });
+
+  it('lets the learner carry on when saving fails', async () => {
+    vi.spyOn(db, 'transaction').mockRejectedValue(new Error('QuotaExceededError'));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderTest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start the test' }));
+    await answerRight();
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Finish now' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/couldn’t be saved, so nothing was skipped/);
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
   });
 
   it('ends when the time budget runs out', async () => {

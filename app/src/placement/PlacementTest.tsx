@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppStore } from '../app-store';
 import { playNotes } from '../audio/audio';
 import { DRILLS } from '../drills/registry';
@@ -43,7 +44,8 @@ type Phase =
   | { kind: 'probe'; shown: Shown }
   | { kind: 'feedback'; shown: Shown; feedback: DrillFeedback<unknown> }
   | { kind: 'saving' }
-  | { kind: 'done'; summary: PlacementSummary };
+  | { kind: 'done'; summary: PlacementSummary }
+  | { kind: 'failed' };
 
 const perfNow = () => performance.now();
 const defaultScheduler = createScheduler();
@@ -54,7 +56,9 @@ const defaultScheduler = createScheduler();
  * its session layout. Anything answered fluently is seeded as known when the
  * test ends (`savePlacement`). "Not sure" settles a probe without guessing,
  * and "Finish now" ends the test early, keeping what it has found.
- * `doneAction` shows under the result.
+ * `doneAction` shows under the result, and also if saving fails: the step is
+ * optional, so the learner can always carry on. While probing, the rest of
+ * the page is `inert`, so focus and the screen reader stay in the test.
  */
 export function PlacementTest({
   doneAction,
@@ -88,6 +92,7 @@ export function PlacementTest({
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const heading = useRef<HTMLHeadingElement>(null);
   const result = useRef<HTMLParagraphElement>(null);
+  const overlay = useRef<HTMLDivElement>(null);
 
   const picker = useMemo(() => createDrillPicker(skills, drills), [skills, drills]);
   const tuning = getTuning(settings.tuning);
@@ -96,10 +101,19 @@ export function PlacementTest({
 
   useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
-    if (running) heading.current?.focus();
+    if (!running) return;
+    // The overlay is portalled to <body>; everything beside it goes inert.
+    const others = [...document.body.children].filter(
+      (el) => el !== overlay.current && !el.hasAttribute('inert'),
+    );
+    for (const el of others) el.setAttribute('inert', '');
+    heading.current?.focus();
+    return () => {
+      for (const el of others) el.removeAttribute('inert');
+    };
   }, [running]);
   useEffect(() => {
-    if (phase.kind === 'done') result.current?.focus();
+    if (phase.kind === 'done' || phase.kind === 'failed') result.current?.focus();
   }, [phase.kind]);
 
   const finish = async () => {
@@ -108,15 +122,20 @@ export function PlacementTest({
     if (!s) return;
     state.current = null;
     setPhase({ kind: 'saving' });
-    const summary = await savePlacement(db, {
-      state: s,
-      logs: logs.current,
-      skills,
-      scheduler,
-      targets,
-      now: clock(),
-    });
-    setPhase({ kind: 'done', summary });
+    try {
+      const summary = await savePlacement(db, {
+        state: s,
+        logs: logs.current,
+        skills,
+        scheduler,
+        targets,
+        now: clock(),
+      });
+      setPhase({ kind: 'done', summary });
+    } catch (e) {
+      console.error('Placement test not saved', e);
+      setPhase({ kind: 'failed' });
+    }
   };
 
   const advance = () => {
@@ -186,8 +205,9 @@ export function PlacementTest({
     const { shown } = phase;
     const feedback = phase.kind === 'feedback' ? phase.feedback : null;
     const Drill = shown.drill.render;
-    return (
+    return createPortal(
       <div
+        ref={overlay}
         className={styles.overlay}
         role="dialog"
         aria-modal="true"
@@ -249,7 +269,8 @@ export function PlacementTest({
             )}
           </div>
         </div>
-      </div>
+      </div>,
+      document.body,
     );
   }
 
@@ -271,6 +292,21 @@ export function PlacementTest({
       {phase.kind === 'done' && (
         <>
           <Result summary={phase.summary} skills={skills} ref={result} />
+          {doneAction}
+        </>
+      )}
+      {phase.kind === 'failed' && (
+        <>
+          <p
+            className={onboarding.lead}
+            ref={result}
+            tabIndex={-1}
+            role="alert"
+            data-testid="placement-result"
+          >
+            Your answers couldn’t be saved, so nothing was skipped. Carry on: your sessions find
+            what you know as you practise.
+          </p>
           {doneAction}
         </>
       )}
