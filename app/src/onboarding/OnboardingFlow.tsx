@@ -13,7 +13,7 @@ import styles from './Onboarding.module.css';
  * guard lets the learner through from then on.
  */
 export function OnboardingFlow({
-  steps = ONBOARDING_STEPS,
+  steps: registered = ONBOARDING_STEPS,
   onDone,
   now = () => new Date(),
 }: {
@@ -22,6 +22,7 @@ export function OnboardingFlow({
   now?: () => Date;
 }) {
   const sizeClass = useSizeClass();
+  const [steps] = useState(() => registered.filter((s) => s.available?.() ?? true));
   const update = useAppStore((s) => s.update);
   // -1 is the welcome screen.
   const [index, setIndex] = useState(-1);

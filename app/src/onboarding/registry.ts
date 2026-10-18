@@ -18,6 +18,8 @@ export interface OnboardingStep extends Ordered {
   /** The choice. It persists what the learner picks, then calls `onNext`. */
   Step: ComponentType<OnboardingStepProps>;
   skippable: true;
+  /** Whether the step applies on this device (e.g. only where the app can be installed). Default: yes. */
+  available?(): boolean;
 }
 
 /**
