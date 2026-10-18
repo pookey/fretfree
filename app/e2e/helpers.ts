@@ -66,3 +66,32 @@ export async function freshStart(page: Page, path = '/'): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
   if (path !== '/') await page.goto(path);
 }
+
+/** The F1 note-wheel skills, which lead a fresh session's frontier. */
+export const F1_SKILLS = ['F1.alphabet', 'F1.b-c-e-f', 'F1.half-steps', 'F1.whole-steps'];
+
+/** Mark skills mastered so sessions skip them (e.g. to reach D1 from a fresh start). */
+export async function masterSkills(page: Page, skillIds: readonly string[]): Promise<void> {
+  await page.evaluate(async (ids) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open('fretwork');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('skillStates', 'readwrite');
+      for (const skillId of ids) {
+        tx.objectStore('skillStates').put({
+          skillId,
+          status: 'mastered',
+          guideLevel: 0,
+          rollingAccuracy: 1,
+        });
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  }, skillIds);
+  await page.reload();
+}

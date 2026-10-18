@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { answer, expectNoHorizontalOverflow, freshStart, targetNote } from './helpers';
+import {
+  F1_SKILLS,
+  answer,
+  expectNoHorizontalOverflow,
+  freshStart,
+  masterSkills,
+  targetNote,
+} from './helpers';
 
 test.describe('smoke @smoke', () => {
   test('loads, navigates every section and serves the manifest', async ({ page, request }) => {
@@ -25,6 +32,7 @@ test.describe('smoke @smoke', () => {
 
   test('can answer a drill prompt', async ({ page }) => {
     await freshStart(page);
+    await masterSkills(page, F1_SKILLS);
     await page.getByTestId('start-session').click();
     const note = await targetNote(page);
     await answer(page, note);

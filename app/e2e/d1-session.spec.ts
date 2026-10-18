@@ -1,10 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { answer, freshStart, targetNote } from './helpers';
+import { F1_SKILLS, answer, freshStart, masterSkills, targetNote } from './helpers';
 
 test.describe('D1 "Name the highlighted note" session', () => {
   test('runs a scheduled session, persists answers and survives a reload', async ({ page }) => {
     await freshStart(page);
-    await expect(page.getByTestId('new-count')).toHaveText('16');
+    await masterSkills(page, F1_SKILLS);
+    // 16 notes on strings 6 and 5, plus the 14 musical-alphabet items.
+    await expect(page.getByTestId('new-count')).toHaveText('30');
     await page.getByTestId('start-session').click();
 
     // First pass: guided worked examples show the note name on the neck.
@@ -45,6 +47,7 @@ test.describe('D1 "Name the highlighted note" session', () => {
 
   test('accepts hardware-keyboard answers and Space to continue', async ({ page }) => {
     await freshStart(page);
+    await masterSkills(page, F1_SKILLS);
     await page.getByTestId('start-session').click();
     const note = await targetNote(page);
     await page.keyboard.press(note.length === 1 ? note.toLowerCase() : `Shift+${note[0]}`);
