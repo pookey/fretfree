@@ -1,0 +1,155 @@
+/* Fretboard explorer v2 (design §7 Explore). */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+  align-items: flex-end;
+  margin-bottom: var(--space-4);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.field select {
+  min-height: var(--tap);
+  min-width: 9rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+/* Label mode: a segmented control built from radios. */
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.segmented legend {
+  padding: 0;
+  margin-bottom: var(--space-1);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.segmented label {
+  position: relative;
+  display: inline-flex;
+}
+
+.segmented input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segmented span {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.segmented label:first-of-type span {
+  border-radius: var(--radius-s) 0 0 var(--radius-s);
+}
+
+.segmented label:last-of-type span {
+  border-radius: 0 var(--radius-s) var(--radius-s) 0;
+}
+
+.segmented label + label span {
+  border-left: 0;
+}
+
+.segmented input:checked + span {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+.segmented input:focus-visible + span {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+
+.quiz {
+  margin-left: auto;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-5);
+  margin-bottom: var(--space-3);
+}
+
+.name {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.tones,
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tones span {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+}
+
+.swatch {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+}
+
+.swatch[data-style='root'] {
+  fill: var(--accent);
+}
+
+.swatch[data-style='third'],
+.swatch[data-style='tone'] {
+  fill: var(--tone);
+}
+
+.swatch[data-style='fifth'] {
+  fill: var(--chord-fifth);
+}
+
+.swatch[data-style='seventh'] {
+  fill: var(--chord-seventh);
+}
