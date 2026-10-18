@@ -10,9 +10,9 @@ const DAY = 86_400_000;
  * the schema). `slowHistory` adds a finished session yesterday with a 9s
  * median answer, so any normal session is a new personal best. `string6Due`
  * seeds string 5's naturals and string 6's below fret 12 as known (introduced
- * days ago, recalled since, not due), plus fret 12 introduced days ago and due
- * now. The session is that one review, and recalling it completes string 6
- * across a gap.
+ * days ago, recalled since, not due), plus fret 12 learned in one sitting two
+ * days ago and due now. The session is that one review, and recalling it
+ * completes string 6 across a gap.
  */
 async function seed(page: Page, opts: { slowHistory?: boolean; string6Due?: boolean }) {
   await page.evaluate(
@@ -47,7 +47,13 @@ async function seed(page: Page, opts: { slowHistory?: boolean; string6Due?: bool
         }
       }
       if (string6Due) {
-        const card = (itemId: string, skillId: string, due: number, stability: number) => ({
+        const card = (
+          itemId: string,
+          skillId: string,
+          due: number,
+          stability: number,
+          createdAt = now - 4 * DAY,
+        ) => ({
           itemId,
           skillId,
           fsrs: {
@@ -62,7 +68,7 @@ async function seed(page: Page, opts: { slowHistory?: boolean; string6Due?: bool
             state: 2,
             last_review: new Date(now - 2 * DAY),
           },
-          createdAt: new Date(now - 4 * DAY),
+          createdAt: new Date(createdAt),
           lastReviewedAt: new Date(now - 2 * DAY),
         });
         const cards = tx.objectStore('cards');
@@ -72,7 +78,8 @@ async function seed(page: Page, opts: { slowHistory?: boolean; string6Due?: bool
         for (const fret of [0, 2, 3, 5, 7, 8, 10, 12]) {
           cards.put(card(`note@s5f${fret}`, 'F2.string5-naturals', now + 10 * DAY, 10));
         }
-        cards.put(card('note@s6f12', 'F2.string6-naturals', now - 3_600_000, 2));
+        // Learned in one sitting two days ago (so not yet known), and due now.
+        cards.put(card('note@s6f12', 'F2.string6-naturals', now - 3_600_000, 2, now - 2 * DAY));
       }
       await new Promise<void>((resolve, reject) => {
         tx.oncomplete = () => resolve();
