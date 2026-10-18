@@ -21,6 +21,11 @@ export interface DrillCheck {
   expected: string;
   /** The concept the learner confused the expected answer with, for the confusion matrix. */
   confusedWith?: string;
+  /**
+   * The expected answer's concept in the confusion matrix, when `expected` is
+   * display text (D9: `caged:A` for "the A shape of C"). Defaults to `expected`.
+   */
+  concept?: string;
 }
 
 export interface DrillFeedback<A> {

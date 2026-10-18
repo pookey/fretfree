@@ -417,7 +417,12 @@ export class SessionRunner {
             at: now,
           },
           ...(result.confusedWith
-            ? { confusion: { expected: result.expected, given: result.confusedWith } }
+            ? {
+                confusion: {
+                  expected: result.concept ?? result.expected,
+                  given: result.confusedWith,
+                },
+              }
             : {}),
         });
         return addAnswerProgress(db, {
