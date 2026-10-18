@@ -24,7 +24,9 @@ function Arc({ className, pct }: { className: string | undefined; pct: number })
  * *stable* arc, so a first session lights the ring before anything is
  * retained (research/02 rule 15). The state is carried by shape as well as
  * colour: a tick when mastered, a padlock when locked, a dashed track when
- * the module isn't built yet, and the learning share in the middle otherwise.
+ * the module isn't built yet. Otherwise the middle shows a captioned share:
+ * learning until anything is stable, then stable. It is never shown bare, so
+ * a glance doesn't read learning as done (research/02, illusion of competence).
  */
 export function MasteryRing({
   learning,
@@ -52,6 +54,7 @@ export function MasteryRing({
       : state === 'mastered'
         ? `${label}: mastered`
         : `${label}: ${learningPct}% learning, ${stablePct}% stable${state === 'locked' ? ', locked' : ''}`;
+  const centre = stablePct > 0 ? 'stable' : 'learning';
   return (
     <svg
       className={styles.ring}
@@ -62,6 +65,7 @@ export function MasteryRing({
       data-state={state}
       data-learning={learningPct}
       data-mastery={stablePct}
+      data-centre={state === 'open' ? centre : undefined}
       data-testid="mastery-ring"
     >
       <circle className={styles.ringTrack} cx="22" cy="22" r={R} />
@@ -75,9 +79,14 @@ export function MasteryRing({
         </g>
       )}
       {state === 'open' && (
-        <text className={styles.ringText} x="22" y="22">
-          {learningPct}%
-        </text>
+        <>
+          <text className={styles.ringText} x="22" y="19.5">
+            {centre === 'stable' ? stablePct : learningPct}%
+          </text>
+          <text className={styles.ringCaption} x="22" y="28">
+            {centre}
+          </text>
+        </>
       )}
     </svg>
   );

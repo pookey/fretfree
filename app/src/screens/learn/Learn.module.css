@@ -232,18 +232,19 @@
 
 /* Mastery rings: colour plus shape (tick, padlock, dashed track; a thin,
    light learning arc under the thick, solid stable arc). */
+/* Sized so the centre caption stays legible. */
 .ring {
   --ring-fill: var(--tone);
   display: block;
   flex: none;
-  width: 3rem;
-  height: 3rem;
+  width: 4rem;
+  height: 4rem;
   overflow: visible;
 }
 
 .ring[data-size='large'] {
-  width: 4.5rem;
-  height: 4.5rem;
+  width: 5rem;
+  height: 5rem;
 }
 
 .ring[data-state='mastered'] {
@@ -305,11 +306,20 @@
 
 .ringText {
   fill: var(--text);
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 800;
   text-anchor: middle;
   dominant-baseline: central;
   font-variant-numeric: tabular-nums;
+}
+
+/* Font sizes are in viewBox units (44 across the ring). */
+.ringCaption {
+  fill: var(--text-muted);
+  font-size: 0.40625rem;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
 }
 
 @media (prefers-reduced-motion: reduce) {

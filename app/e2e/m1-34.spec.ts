@@ -55,6 +55,9 @@ async function expectLearningNotStable(page: Page): Promise<void> {
   await expect(ring).toHaveAttribute('data-mastery', '0');
   await expect(ring).not.toHaveAttribute('data-learning', '0');
   await expect(ring).toHaveAccessibleName(/^Neck basics: [1-9]\d*% learning, 0% stable$/);
+  // The centre number is never bare: its caption says it is the learning share.
+  await expect(ring).toHaveAttribute('data-centre', 'learning');
+  await expect(ring.locator('text')).toHaveText([/^[1-9]\d*%$/, 'learning']);
   await expect(card).toContainText(/[1-9]\d*% learning · 0% stable/);
 }
 

@@ -213,11 +213,13 @@ describe('<MasteryRing>', () => {
     learning: document.querySelectorAll('circle[class*="ringLearning"]'),
     stable: document.querySelectorAll('circle[class*="ringFill"]'),
   });
+  /** The centre's number and caption, as shown. */
+  const centre = () => [...document.querySelectorAll('text')].map((t) => t.textContent);
 
   it('shows an empty track at 0/0', () => {
     render(<MasteryRing learning={0} stable={0} state="open" label="X" />);
     expect(screen.getByRole('img')).toHaveAccessibleName('X: 0% learning, 0% stable');
-    expect(screen.getByText('0%')).toBeInTheDocument();
+    expect(centre()).toEqual(['0%', 'learning']);
     expect(document.querySelectorAll('circle')).toHaveLength(1);
   });
 
@@ -227,7 +229,9 @@ describe('<MasteryRing>', () => {
     expect(ring).toHaveAccessibleName('Neck basics: 69% learning, 0% stable');
     expect(ring).toHaveAttribute('data-learning', '69');
     expect(ring).toHaveAttribute('data-mastery', '0');
-    expect(screen.getByText('69%')).toBeInTheDocument();
+    // Never a bare number: the caption says it is the learning share.
+    expect(centre()).toEqual(['69%', 'learning']);
+    expect(ring).toHaveAttribute('data-centre', 'learning');
     expect(arcs().learning).toHaveLength(1);
     expect(arcs().stable).toHaveLength(0);
   });
@@ -244,19 +248,30 @@ describe('<MasteryRing>', () => {
     ]);
     const offset = (c: Element) => Number(c.getAttribute('stroke-dashoffset'));
     expect(offset(circles[1]!)).toBeLessThan(offset(circles[2]!));
+    // Once anything is stable, the centre shows the stable share instead.
+    expect(centre()).toEqual(['20%', 'stable']);
+    expect(screen.getByRole('img')).toHaveAttribute('data-centre', 'stable');
     rerender(<MasteryRing learning={0.2} stable={0.2} state="locked" label="X" />);
     expect(screen.getByRole('img')).toHaveAccessibleName('X: 20% learning, 20% stable, locked');
-    expect(screen.queryByText('20%')).toBeNull();
+    expect(centre()).toEqual([]);
     // Fully stable: the learning arc is hidden under it, so it isn't drawn.
     expect(arcs().learning).toHaveLength(0);
     rerender(<MasteryRing learning={0.1} stable={0.3} state="open" label="X" />);
     expect(screen.getByRole('img')).toHaveAccessibleName('X: 30% learning, 30% stable');
   });
 
+  it('shows any progress as at least 1% on both layers', () => {
+    render(<MasteryRing learning={0.004} stable={0.003} state="open" label="X" />);
+    const ring = screen.getByRole('img');
+    expect(ring).toHaveAccessibleName('X: 1% learning, 1% stable');
+    expect(arcs().stable).toHaveLength(1);
+    expect(centre()).toEqual(['1%', 'stable']);
+  });
+
   it('shows a tick and full ring when mastered, and speaks only that', () => {
     const { rerender } = render(<MasteryRing learning={1} stable={1} state="mastered" label="X" />);
     expect(screen.getByRole('img')).toHaveAccessibleName('X: mastered');
-    expect(screen.queryByText('100%')).toBeNull();
+    expect(centre()).toEqual([]);
     expect(arcs().stable).toHaveLength(1);
     rerender(<MasteryRing learning={0} stable={0} state="soon" label="X" />);
     expect(screen.getByRole('img')).toHaveAccessibleName('X: coming soon');
