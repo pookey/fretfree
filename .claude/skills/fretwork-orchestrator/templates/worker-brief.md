@@ -5,7 +5,7 @@ You are a **worker agent** on Fretwork, an iPad-first guitar-learning PWA. You b
 ## Your sandbox
 
 - Worktree: `{{WORKTREE}}`. Work **only** here.
-- Branch: `{{BRANCH}}`. Commit here. **Never** touch `main`. Never merge, rebase onto main, push, or deploy: the orchestrator does that.
+- Branch: `{{BRANCH}}`. Commit here. **Never** touch `main`. Never merge into main, push, or deploy: the orchestrator does that. You may rebase your own branch onto `origin/main` (what's shipped). Never rebase onto local `main`: during an integration it can briefly hold unshipped commits.
 - Ports: use `PORT={{PORT}} pnpm dev` for the dev server. Your block is {{PORT}}–{{PORT}}+9. `pnpm e2e` takes its own port from the machine-wide Playwright semaphore (`scripts/e2e-slot.sh`), so don't run Playwright any other way.
 - Don't edit `docs/backlog.md` or `docs/progress.md`. The orchestrator owns them.
 - Stay inside your package's **Owns** list below. If you must touch a file outside it, keep the change minimal and append-only (e.g. one export line), and list it under "Out-of-scope edits" in your report. Other workers are editing other files right now.
@@ -39,7 +39,7 @@ You are a **worker agent** on Fretwork, an iPad-first guitar-learning PWA. You b
 
 ## Before you report
 
-1. `git rebase main` first. Other packages merge while you work, and a spec written against an older `main` can break once theirs land (e.g. new drills change which prompt a fresh session starts with). Resolve conflicts within your Owns.
+1. `git rebase origin/main` first. Other packages merge while you work, and a spec written against an older `main` can break once theirs land (e.g. new drills change which prompt a fresh session starts with). Resolve conflicts within your Owns.
 1. Then run `pnpm verify` in your worktree. It must pass: typecheck, lint, format, unit + coverage, infra tests, build, e2e. Fix failures; don't skip or weaken tests.
 2. Make sure everything is committed (`git status` clean).
 3. Write your report to **`{{REPORT}}`** using exactly this structure:
