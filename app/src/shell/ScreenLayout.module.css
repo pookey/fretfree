@@ -23,13 +23,64 @@
   font-size: 2rem;
 }
 
-.context,
-.sheet {
+.context {
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius-l);
   padding: var(--space-4);
   align-self: start;
+}
+
+/* Compact: the context panel is a bottom sheet over the screen (design §7). */
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  max-height: 60dvh;
+  overflow-y: auto;
+  background: var(--bg-raised);
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius-l) var(--radius-l) 0 0;
+  box-shadow: 0 -10px 30px rgb(0 0 0 / 0.35);
+  padding: var(--space-4) calc(var(--space-4) + var(--safe-right))
+    calc(var(--space-4) + var(--safe-bottom)) calc(var(--space-4) + var(--safe-left));
+  animation: sheet-in 0.2s ease-out;
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    animation: none;
+  }
+}
+
+.sheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.sheetHeader h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.sheetClose {
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
 }
 
 .sheetToggle {
