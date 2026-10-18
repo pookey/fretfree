@@ -28,7 +28,16 @@ const LIGHTHOUSE = 'lighthouse@13.5.0';
 const MIN_SCORES = { accessibility: 1, 'best-practices': 0.9 };
 // Onboarding is audited first, on a fresh profile; the rest after skipping it.
 const FRESH_ROUTES = ['/onboarding'];
-const ROUTES = ['/', '/learn', '/explore', '/progress', '/session'];
+const ROUTES = [
+  '/',
+  '/learn',
+  '/explore',
+  '/progress',
+  '/settings',
+  '/privacy',
+  '/about',
+  '/session',
+];
 const IPAD = { width: 1194, height: 834, deviceScaleFactor: 2 };
 const RUN_TIMEOUT_MS = 120_000;
 // Blink's preferredColorScheme setting: 0 is dark, 1 is light.

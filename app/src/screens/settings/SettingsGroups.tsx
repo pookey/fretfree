@@ -1,26 +1,21 @@
 import { liveQuery } from 'dexie';
 import { useEffect, useId, useState, type ReactNode } from 'react';
-import { Link } from 'react-router';
-import { useAppStore } from '../../../app-store';
-import { playNotes, unlockAudio } from '../../../audio/audio';
-import type { Settings } from '../../../engine';
-import { CalibrationSetting } from '../../../onboarding/calibration/CalibrationSetting';
-import { DAILY_GOAL_OPTIONS, SESSION_LENGTH_OPTIONS } from '../../../onboarding/options';
-import { Picks } from '../../../onboarding/steps/notation';
+import { useAppStore } from '../../app-store';
+import { playNotes, unlockAudio } from '../../audio/audio';
+import type { Settings } from '../../engine';
+import { CalibrationSetting } from '../../onboarding/calibration/CalibrationSetting';
+import { DAILY_GOAL_OPTIONS, SESSION_LENGTH_OPTIONS } from '../../onboarding/options';
+import { Picks } from '../../onboarding/steps/notation';
 import {
   getDb,
   getGamification,
   saveGamification,
   type DailyGoalMinutes,
   type GamificationRecord,
-} from '../../../storage';
-import { TUNINGS } from '../../../theory';
-import styles from '../../screens.module.css';
+} from '../../storage';
+import { TUNINGS } from '../../theory';
+import styles from '../screens.module.css';
 import local from './settings.module.css';
-
-export const id = 'settings';
-export const order = 20;
-export const title = 'Settings';
 
 /** The note the "Play a test note" button sounds (A below middle C). */
 const TEST_NOTE = 'A3';
@@ -30,9 +25,9 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
   const heading = useId();
   return (
     <div role="group" aria-labelledby={heading} className={local.group}>
-      <h3 id={heading} className={local.groupTitle}>
+      <h2 id={heading} className={local.groupTitle}>
         {title}
-      </h3>
+      </h2>
       {children}
     </div>
   );
@@ -264,26 +259,20 @@ interface SettingsProps {
 }
 
 /**
- * Progress → Settings (design §4, §9): everything onboarding asked, plus
+ * The settings cards (design §4, §9): everything onboarding asked, plus
  * sound, the weekend amulet and a calibration re-run. Every change saves at
  * once. None of them can switch off spacing or retrieval (research/02 rule 16).
  */
-export function Panel() {
+export function SettingsGroups() {
   const settings = useAppStore((s) => s.settings);
   const update = useAppStore((s) => s.update);
   return (
-    <>
-      <div className={local.settings}>
-        <GuitarSettings settings={settings} update={update} />
-        <PracticeSettings settings={settings} update={update} />
-        <SoundSettings settings={settings} update={update} />
-        <ReadingSettings settings={settings} update={update} />
-        <GuideSettings settings={settings} update={update} />
-      </div>
-      <p className={local.about}>
-        <Link to="/about">About FretFree</Link>
-        <span className={styles.muted}>How it teaches, and what happens to your data.</span>
-      </p>
-    </>
+    <div className={local.settings}>
+      <GuitarSettings settings={settings} update={update} />
+      <PracticeSettings settings={settings} update={update} />
+      <SoundSettings settings={settings} update={update} />
+      <ReadingSettings settings={settings} update={update} />
+      <GuideSettings settings={settings} update={update} />
+    </div>
   );
 }

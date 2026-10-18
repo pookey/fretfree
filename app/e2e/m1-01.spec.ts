@@ -8,6 +8,7 @@ const SECTIONS = [
   { label: 'Learn', href: '/learn' },
   { label: 'Explore', href: '/explore' },
   { label: 'Progress', href: '/progress' },
+  { label: 'Settings', href: '/settings' },
 ];
 
 async function expectNavFromRegistry(page: Page) {
@@ -51,8 +52,10 @@ test.describe('M1-01 registries', () => {
     const panels = page.locator('[data-progress-panel]');
     expect(
       await panels.evaluateAll((els) => els.map((e) => e.getAttribute('data-progress-panel'))),
-    ).toEqual(['heatmap', 'stats', 'achievements', 'settings', 'data']);
-    await expect(page.getByRole('region', { name: 'Settings' })).toBeVisible();
+    ).toEqual(['heatmap', 'stats', 'achievements']);
+
+    await page.goto('/settings');
+    await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Your data' })).toBeVisible();
 
     await page.goto('/explore');

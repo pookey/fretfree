@@ -3,7 +3,7 @@ import { useAppStore } from '../../app-store';
 import { Calibration } from './Calibration';
 import styles from './Calibration.module.css';
 
-/** The Progress → Settings row: the stored tap time, and a re-run of the calibration in place. */
+/** The Settings row: the stored tap time, and a re-run of the calibration in place. */
 export function CalibrationSetting() {
   const baseline = useAppStore((s) => s.settings.latencyBaselineMs);
   const [open, setOpen] = useState(false);

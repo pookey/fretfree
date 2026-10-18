@@ -1,14 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart } from './helpers';
 
-// M1-22: Progress → Settings (design §4, §9) and the About page (§1, §10).
+// M1-22: Settings (design §4, §7, §9), the About page (§1, §10) and Privacy.
 
-const settings = (page: Page) => page.getByRole('region', { name: 'Settings' });
+const settings = (page: Page) => page.getByRole('main');
 const group = (page: Page, name: string) => settings(page).getByRole('group', { name });
 
 test.describe('M1-22 settings', () => {
   test('every setting saves at once and survives a reload', async ({ page }) => {
-    await freshStart(page, '/progress');
+    await freshStart(page, '/settings');
 
     const guitar = group(page, 'Your guitar');
     await guitar.getByRole('combobox', { name: 'Handedness' }).selectOption('left');
@@ -71,7 +71,7 @@ test.describe('M1-22 settings', () => {
   test('the settings sit in cards with tappable controls, side by side when wide', async ({
     page,
   }) => {
-    await freshStart(page, '/progress');
+    await freshStart(page, '/settings');
     await expect(
       group(page, 'Guides and timing').getByRole('button', { name: 'Measure' }),
     ).toBeVisible();
@@ -93,7 +93,7 @@ test.describe('M1-22 settings', () => {
 
 test.describe('M1-22 About', () => {
   test('explains the approach and privacy, from Settings and back @smoke', async ({ page }) => {
-    await freshStart(page, '/progress');
+    await freshStart(page, '/settings');
     await settings(page).getByRole('link', { name: 'About FretFree' }).click();
     await expect(page).toHaveURL(/\/about$/);
     await expect(page.getByRole('heading', { name: 'About FretFree', level: 1 })).toBeVisible();
@@ -107,8 +107,8 @@ test.describe('M1-22 About', () => {
     await expect(privacy.getByText('Your data stays here.')).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
-    await page.getByRole('link', { name: 'Back to Progress' }).click();
-    await expect(page.getByRole('heading', { name: 'Progress', level: 1 })).toBeVisible();
+    await page.getByRole('link', { name: 'Back to Settings' }).click();
+    await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
   });
 
   test('shows the summary beside the page at regular-wide', async ({ page }) => {

@@ -3,7 +3,7 @@ import { ScreenLayout } from '../../shell/ScreenLayout';
 import { PROGRESS_PANELS, type ProgressPanel } from './registry';
 import styles from '../screens.module.css';
 
-/** Progress (design §7): the registered panels, top to bottom. Settings live here. */
+/** Progress (design §7): the registered panels, top to bottom. */
 export function ProgressScreen({
   panels = PROGRESS_PANELS,
 }: {

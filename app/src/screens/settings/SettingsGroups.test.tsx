@@ -2,23 +2,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
-import { useAppStore } from '../../../app-store';
-import { DEFAULT_SETTINGS } from '../../../engine/model';
-import { getDb, getGamification, getSettings, saveGamification } from '../../../storage';
-import { Panel } from './settings';
+import { useAppStore } from '../../app-store';
+import { DEFAULT_SETTINGS } from '../../engine/model';
+import { getDb, getGamification, getSettings, saveGamification } from '../../storage';
+import { SettingsGroups } from './SettingsGroups';
 
 const audio = vi.hoisted(() => ({
   unlockAudio: vi.fn(() => Promise.resolve()),
   playNotes: vi.fn(() => Promise.resolve()),
 }));
-vi.mock('../../../audio/audio', () => audio);
+vi.mock('../../audio/audio', () => audio);
 
 const db = getDb();
 
 function renderPanel() {
   return render(
     <MemoryRouter>
-      <Panel />
+      <SettingsGroups />
     </MemoryRouter>,
   );
 }
@@ -35,7 +35,7 @@ afterEach(async () => {
   useAppStore.setState({ settings: DEFAULT_SETTINGS });
 });
 
-describe('Progress settings panel', () => {
+describe('<SettingsGroups>', () => {
   it('groups the settings into titled cards', () => {
     renderPanel();
     for (const name of ['Your guitar', 'Practice', 'Sound', 'Reading music', 'Guides and timing'])
@@ -148,11 +148,10 @@ describe('Progress settings panel', () => {
     expect((await getSettings(db)).blindMode).toBe(false);
   });
 
-  it('offers a calibration re-run and links to About', () => {
+  it('offers a calibration re-run', () => {
     renderPanel();
     expect(
       within(group('Guides and timing')).getByRole('button', { name: 'Measure' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'About FretFree' })).toHaveAttribute('href', '/about');
   });
 });

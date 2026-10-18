@@ -311,7 +311,7 @@ Design every screen at regular-wide first, then make sure it degrades sensibly.
 
 ### Navigation
 
-There are 4 sections: **Today**, **Learn**, **Explore** and **Progress**. Settings sits under Progress.
+There are 5 sections: **Today**, **Learn**, **Explore**, **Progress** and **Settings** (user decision, 2026-10-18: Settings was a Progress panel until then). About and Privacy are reached from Settings.
 
 - **iPad:** a sidebar, plus multi-pane layouts. For example, the Learn map sits on the left and the skill detail and worked example on the right.
 - **iPhone:** a bottom tab bar.
@@ -374,7 +374,13 @@ There are 4 sections: **Today**, **Learn**, **Explore** and **Progress**. Settin
 
 - A **fretboard heatmap** of mastery per cell (colour = stability; dimmed = slow).
 - Skill mastery rings and retention forecasts ("you'll remember ~92% of string 5 next week").
-- Session history, streak, export/import data, settings.
+- Session history and streak.
+
+### Settings
+
+- Every onboarding choice, plus sound, guides and timing (including a calibration re-run). Each change saves at once, and none of them can switch off spacing or retrieval.
+- **Your data:** JSON export and import.
+- Links to **About** (the approach and its evidence) and **Privacy** (what's stored, where, and what isn't).
 
 ### Visual design
 

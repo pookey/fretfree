@@ -42,10 +42,8 @@ async function runCalibration(page: Page): Promise<number> {
 }
 
 async function expectStoredBaseline(page: Page, text: string) {
-  await page.goto('/progress');
-  await expect(
-    page.getByRole('region', { name: 'Settings' }).getByTestId('latency-baseline'),
-  ).toHaveText(text);
+  await page.goto('/settings');
+  await expect(page.getByRole('main').getByTestId('latency-baseline')).toHaveText(text);
 }
 
 test.describe('M1-07 latency calibration', () => {
@@ -100,9 +98,9 @@ test.describe('M1-07 latency calibration', () => {
     await expectStoredBaseline(page, 'not measured');
   });
 
-  test('Progress → Settings re-runs the calibration', async ({ page }) => {
-    await freshStart(page, '/progress');
-    const settings = page.getByRole('region', { name: 'Settings' });
+  test('Settings re-runs the calibration', async ({ page }) => {
+    await freshStart(page, '/settings');
+    const settings = page.getByRole('main');
     await expect(settings.getByTestId('latency-baseline')).toHaveText('not measured');
     await settings.getByRole('button', { name: 'Measure' }).click();
     await expect(settings.getByRole('button', { name: 'Close' })).toHaveAttribute(

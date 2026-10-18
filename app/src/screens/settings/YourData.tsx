@@ -1,15 +1,11 @@
 import { useRef, useState } from 'react';
-import { useAppStore } from '../../../app-store';
-import { getDb, importData, parseExport } from '../../../storage';
-import { downloadExport } from '../../../storage/download-export';
-import type { PanelProps } from '../registry';
-import styles from '../../screens.module.css';
+import { useAppStore } from '../../app-store';
+import { getDb, importData, parseExport } from '../../storage';
+import { downloadExport } from '../../storage/download-export';
+import styles from '../screens.module.css';
 
-export const id = 'data';
-export const order = 30;
-export const title = 'Your data';
-
-export function Panel({ onDataChanged }: PanelProps) {
+/** Export and import of all local data (design §3.6). */
+export function YourData() {
   const load = useAppStore((s) => s.load);
   const [message, setMessage] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -20,7 +16,6 @@ export function Panel({ onDataChanged }: PanelProps) {
     try {
       await importData(getDb(), parseExport(await file.text()));
       await load();
-      onDataChanged();
       setMessage('Import complete.');
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Import failed.');

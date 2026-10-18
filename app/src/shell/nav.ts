@@ -14,8 +14,5 @@ export function navItems(routes: readonly Pick<RouteModule, 'path' | 'nav'>[]): 
     .map(({ path, nav }) => ({ to: path, label: nav.label, icon: nav.icon }));
 }
 
-/**
- * The sections (design §7 navigation), generated from the route registry.
- * Settings live under Progress.
- */
+/** The sections (design §7 navigation), generated from the route registry. */
 export const NAV_ITEMS: readonly NavItem[] = navItems(ROUTES);

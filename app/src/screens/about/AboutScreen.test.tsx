@@ -29,15 +29,19 @@ describe('<AboutScreen>', () => {
     expect(privacy.getByText('No account.')).toBeInTheDocument();
     expect(privacy.getByText('No analytics.')).toBeInTheDocument();
     expect(privacy.getByText('Your data stays here.')).toBeInTheDocument();
-    expect(privacy.getByRole('link', { name: 'Progress' })).toHaveAttribute('href', '/progress');
+    expect(privacy.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
+    expect(privacy.getByRole('link', { name: 'Read the full privacy page' })).toHaveAttribute(
+      'href',
+      '/privacy',
+    );
   });
 
   it('sums it up in the context panel and links back', () => {
     renderAbout();
     expect(screen.getByRole('heading', { level: 2, name: 'In short' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Back to Progress' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Back to Settings' })).toHaveAttribute(
       'href',
-      '/progress',
+      '/settings',
     );
   });
 });

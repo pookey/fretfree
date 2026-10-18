@@ -17,17 +17,20 @@ describe('route registry', () => {
       ['/explore', 'shell'],
       ['/learn', 'shell'],
       ['/onboarding', 'fullscreen'],
+      ['/privacy', 'shell'],
       ['/progress', 'shell'],
       ['/session', 'fullscreen'],
+      ['/settings', 'shell'],
     ]);
   });
 
-  it('generates the four sections from route nav entries, in order', () => {
+  it('generates the five sections from route nav entries, in order', () => {
     expect(NAV_ITEMS.map((n) => [n.to, n.label])).toEqual([
       ['/', 'Today'],
       ['/learn', 'Learn'],
       ['/explore', 'Explore'],
       ['/progress', 'Progress'],
+      ['/settings', 'Settings'],
     ]);
   });
 

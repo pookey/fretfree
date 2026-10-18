@@ -44,7 +44,7 @@
   max-height: calc(100dvh - 4rem);
 }
 
-/* Progress → Settings. */
+/* Settings. */
 .setting {
   display: grid;
   gap: var(--space-3);

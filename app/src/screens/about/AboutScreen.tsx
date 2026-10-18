@@ -54,8 +54,7 @@ function InShort() {
 
 /**
  * About (design §1, §4, §10): the evidence behind the approach, said
- * honestly, and what happens to the learner's data. Reached from Progress →
- * Settings.
+ * honestly, and what happens to the learner's data. Reached from Settings.
  */
 export function AboutScreen() {
   return (
@@ -122,16 +121,20 @@ export function AboutScreen() {
             </li>
             <li>
               <strong>Keep a backup.</strong> Clearing this site&rsquo;s data deletes your progress.
-              Export it from <Link to="/progress">Progress</Link> → Your data, and import it on
+              Export it from <Link to="/settings">Settings</Link> → Your data, and import it on
               another device.
             </li>
           </ul>
+          <p>
+            <Link to="/privacy">Read the full privacy page</Link>: what&rsquo;s stored, where, and
+            what isn&rsquo;t.
+          </p>
           <p className={screens.muted}>FretFree is open source under the MIT licence.</p>
         </section>
 
         <p>
-          <Link to="/progress" className={screens.secondaryButton}>
-            Back to Progress
+          <Link to="/settings" className={screens.secondaryButton}>
+            Back to Settings
           </Link>
         </p>
       </div>

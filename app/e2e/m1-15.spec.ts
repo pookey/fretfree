@@ -73,7 +73,7 @@ test.describe('M1-15 blind mode', () => {
   test('blind mode hides the inlays at level 0, and feedback still names the note @smoke', async ({
     page,
   }) => {
-    await freshStart(page, '/progress');
+    await freshStart(page, '/settings');
     const blind = page.getByRole('checkbox', { name: 'Blind mode' });
     // The toggle reflects the saved setting, so it flips once the write lands.
     await blind.click();

@@ -1,4 +1,4 @@
-/* Progress → Settings (design §4, §9). Cards of related settings: side by side
+/* Settings (design §4, §7, §9). Cards of related settings: side by side
    at regular-wide, one column on narrower widths. */
 .settings {
   display: grid;
@@ -85,7 +85,7 @@
   cursor: default;
 }
 
-.about {
+.links {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -93,7 +93,7 @@
   margin: var(--space-4) 0 0;
 }
 
-.about a {
+.links a {
   display: inline-flex;
   align-items: center;
   min-height: var(--tap);
