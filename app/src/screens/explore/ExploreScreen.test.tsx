@@ -52,7 +52,7 @@ describe('<ExploreScreen>', () => {
     expect(screen.getByRole('region', { name: 'Fretboard explorer' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Quiz me on this' })).toHaveAttribute(
       'href',
-      '/session',
+      '/session?skill=F2.string6-naturals&skill=F2.string5-naturals&skill=C2.all-notes',
     );
   });
 });

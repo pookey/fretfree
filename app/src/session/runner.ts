@@ -54,6 +54,7 @@ import {
   xpKindOf,
 } from './gamification-bridge';
 import { createDrillPicker, factOf, type DrillPicker } from './drill-picker';
+import { focusFilter, type SessionFocus } from './focus';
 
 /**
  * Runs one practice session end to end: plans it with the session builder,
@@ -67,6 +68,9 @@ import { createDrillPicker, factOf, type DrillPicker } from './drill-picker';
  * any new block in progress. A queue that runs dry early is planned again
  * from what is left: cards that came due, unseen frontier items, then
  * stretch items.
+ *
+ * A focus (`focus.ts`) narrows all of that to some skills or items. Gating
+ * still looks at every skill, so a focus can't unlock anything.
  */
 
 export interface RunnerDeps {
@@ -79,6 +83,8 @@ export interface RunnerDeps {
   rng?: () => number;
   /** Override the time-budget-derived length (tests, quick drills). */
   maxItems?: number;
+  /** Serve only these skills or items ("Practise this now", "Quiz me on this"). */
+  focus?: SessionFocus | null;
 }
 
 export interface CurrentPrompt {
@@ -216,6 +222,8 @@ export class SessionRunner {
     );
     // Skills may list items whose drill isn't built yet; plan only what a drill can test.
     const picker = createDrillPicker(deps.skills, deps.drills);
+    const inFocus = focusFilter(deps.focus);
+    const serves = (item: Item) => inFocus(item) && picker.canServe(item);
     const frontierSkills = new Set<string>();
     const frontierInOrder: Skill[] = [];
     for (const skill of deps.skills) {
@@ -227,13 +235,13 @@ export class SessionRunner {
     }
     // The goal profile reorders frontier skills (design §3.3 step 2).
     const frontier: Item[] = orderFrontier(frontierInOrder, deps.settings.goal).flatMap((skill) =>
-      skill.items().filter((i) => picker.canServe(i)),
+      skill.items().filter(serves),
     );
     const tuning = getTuning(deps.settings.tuning);
     const ctx = { tuning, accidentalPref: deps.settings.accidentalPref };
 
     const planner: Planner = (at, minutes, known, seen, maxItems) => {
-      const servable = known.filter((c) => picker.canServe({ id: c.itemId, skillId: c.skillId }));
+      const servable = known.filter((c) => serves({ id: c.itemId, skillId: c.skillId }));
       const skillOf = new Map(servable.map((c) => [c.itemId, c.skillId]));
       const plan = buildSession({
         now: at,

@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useAppStore } from '../../../app-store';
 import { Fretboard, type FretMarker } from '../../../components/fretboard/Fretboard';
+import { SKILLS } from '../../../engine';
+import { focusHref, noteSkillIds } from '../../../session/focus';
 import { neckWindow, useSizeClass } from '../../../shell/size-class';
 import { allStrings, isNatural, noteAt } from '../../../theory';
 import styles from '../../screens.module.css';
@@ -9,6 +11,9 @@ import styles from '../../screens.module.css';
 export const id = 'fretboard-explorer';
 export const title = 'Fretboard explorer';
 export const order = 10;
+
+/** "Quiz me on this": a session on the notes the explorer shows. */
+const QUIZ_HREF = focusHref({ skillIds: noteSkillIds(SKILLS) });
 
 /** Fretboard explorer (design §7 Explore): reference only, no grading. */
 export function View() {
@@ -35,7 +40,7 @@ export function View() {
           <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
           Show sharps and flats
         </label>
-        <Link to="/session" className={styles.secondaryButton}>
+        <Link to={QUIZ_HREF} className={styles.secondaryButton}>
           Quiz me on this
         </Link>
       </div>

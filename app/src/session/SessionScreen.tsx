@@ -3,12 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { useAppStore } from '../app-store';
 import { playNotes } from '../audio/audio';
 import { DRILLS } from '../drills/registry';
-import { FOCUS_PARAM, focusedSkills } from '../learn/worked-examples/focus';
 import type { DrillFeedback } from '../drills/types';
 import { SKILLS, createScheduler, type GuideLevel } from '../engine';
 import { useCompactWindowFrets, useSizeClass } from '../shell/size-class';
 import { getDb } from '../storage';
 import { getTuning } from '../theory';
+import { parseFocus } from './focus';
 import { SessionRunner, type CurrentPrompt } from './runner';
 import type { Celebration } from './summary/celebrations';
 import { ComboCounter } from './summary/ComboCounter';
@@ -34,7 +34,7 @@ export function SessionScreen() {
   const compactFrets = useCompactWindowFrets();
   const compact = sizeClass === 'compact';
   const navigate = useNavigate();
-  const focus = useSearchParams()[0].get(FOCUS_PARAM);
+  const query = useSearchParams()[0].toString();
   const runnerRef = useRef<SessionRunner | null>(null);
   const trackerRef = useRef<CelebrationTracker | null>(null);
   const shownAt = useRef(0);
@@ -76,8 +76,9 @@ export function SessionScreen() {
         db,
         scheduler,
         settings,
-        skills: focusedSkills(SKILLS, focus),
+        skills: SKILLS,
         drills: DRILLS,
+        focus: parseFocus(new URLSearchParams(query), SKILLS),
       }),
       CelebrationTracker.begin({ db, skills: SKILLS }),
     ]).then(([runner, tracker]) => {
@@ -90,7 +91,7 @@ export function SessionScreen() {
     return () => {
       live = false;
     };
-  }, [loaded, settings, focus, showCurrent]);
+  }, [loaded, settings, query, showCurrent]);
 
   const advance = useCallback(() => {
     runnerRef.current?.next();
