@@ -437,7 +437,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m1-36.spec.ts`, iPad landscape, dev server): toggle on, start a Chords focus session, toggle off, Chords is locked again.
 
 ### M1-37 · [hotfix] D39 "Fret landmarks", and a guard against empty lessons
-- **Status:** blocked
+- **Status:** done
 - **Deps:** M1-34
 - **Design:** §6 (drill catalogue), §7 Learn and session, research/02
 - **Owns:** `app/src/drills/d39-fret-landmarks/`, `app/src/drills/registry.test.ts`, `app/src/screens/learn/LearnScreen.tsx`, `app/src/screens/learn/SkillDetail.tsx`, `app/src/screens/learn/SkillDetail.test.tsx`, `app/src/screens/learn/map-model.ts`, `app/src/screens/learn/map-model.test.ts`, `app/src/session/SessionScreen.tsx`, `app/src/session/SessionScreen.module.css`, `app/src/session/SessionScreen.test.tsx`, `app/e2e/m1-37.spec.ts`, `docs/design/app-design.md` (§6 row only)
