@@ -1,5 +1,5 @@
 import { liveQuery } from 'dexie';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { STREAK_RULES } from '../../../engine/gamification/streak';
 import { addDays, startOfLocalDay, toLocalDate } from '../../../engine/gamification/local-date';
 import type { DailyProgressRecord, GamificationRecord } from '../../../engine/gamification/types';
@@ -53,10 +53,14 @@ export function repairView(
   };
 }
 
-/** "by the end of today" on the window's last day, otherwise e.g. "by the end of Wednesday". */
+/**
+ * "by the end of today" on the window's last day, otherwise e.g. "by the end
+ * of Wednesday". The weekday is English to match the sentence, whatever the
+ * device locale.
+ */
 export function byWhen(lastDay: string, now: Date): string {
   if (lastDay <= toLocalDate(now)) return 'by the end of today';
-  const weekday = startOfLocalDay(lastDay).toLocaleDateString(undefined, { weekday: 'long' });
+  const weekday = startOfLocalDay(lastDay).toLocaleDateString('en-GB', { weekday: 'long' });
   return `by the end of ${weekday}`;
 }
 
@@ -67,26 +71,28 @@ interface Loaded {
 
 /**
  * The stored gamification state and today's progress, kept live, plus a
- * re-render at the deadline and whenever the app returns to the foreground,
- * so the card leaves on time without a reload.
+ * refresh at the deadline or the next local midnight (whichever is first)
+ * and whenever the app returns to the foreground, so the card leaves on time
+ * and the meter never shows yesterday's minutes as today's.
  */
 function useRepairView(db: FretworkDB, now: () => Date): RepairView | null {
   const [today, setToday] = useState(() => toLocalDate(now()));
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [, setTick] = useState(0);
 
+  const refresh = useCallback(() => {
+    setToday(toLocalDate(now()));
+    setTick((t) => t + 1);
+  }, [now]);
+
   useEffect(() => {
-    const refresh = () => {
-      setToday(toLocalDate(now()));
-      setTick((t) => t + 1);
-    };
     document.addEventListener('visibilitychange', refresh);
     window.addEventListener('focus', refresh);
     return () => {
       document.removeEventListener('visibilitychange', refresh);
       window.removeEventListener('focus', refresh);
     };
-  }, [now]);
+  }, [refresh]);
 
   useEffect(() => {
     const sub = liveQuery(async () => {
@@ -104,9 +110,10 @@ function useRepairView(db: FretworkDB, now: () => Date): RepairView | null {
 
   useEffect(() => {
     if (deadline === undefined) return;
-    const timer = setTimeout(() => setTick((t) => t + 1), deadline - now().getTime());
+    const midnight = startOfLocalDay(addDays(today, 1)).getTime();
+    const timer = setTimeout(refresh, Math.min(deadline, midnight) - now().getTime());
     return () => clearTimeout(timer);
-  }, [deadline, now]);
+  }, [deadline, today, now, refresh]);
 
   return view;
 }
@@ -163,7 +170,7 @@ export function Card({ db = getDb(), now = systemNow }: StreakRepairProps) {
         </div>
         <p className={styles.note}>
           {done
-            ? 'Double session done. Your streak comes back as soon as this session is saved.'
+            ? 'Double session done. Your streak will be restored shortly.'
             : 'Every minute you practise today counts, across as many sessions as you like.'}
         </p>
       </div>

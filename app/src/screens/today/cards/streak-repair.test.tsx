@@ -79,6 +79,29 @@ describe('Today streak-repair card', () => {
     expect(progress()).toHaveAttribute('aria-valuenow', '12');
   });
 
+  it('moves to the new day’s minutes at local midnight while Today stays open', async () => {
+    await saveGamification(db, broken);
+    await practisedToday(7);
+    await saveDailyProgress(db, { ...emptyDailyProgress('2026-10-21'), minutes: 3 });
+    // 100 ms before midnight, then the clock moves into Wednesday.
+    let at = new Date(2026, 9, 20, 23, 59, 59, 900);
+    render(<Card db={db} now={() => at} />);
+    expect(await screen.findByText('7 / 20 min today')).toBeVisible();
+
+    at = new Date(2026, 9, 21, 0, 0, 1);
+    expect(await screen.findByText('3 / 20 min today')).toBeVisible();
+    expect(screen.getByTestId('streak-repair-copy')).toHaveTextContent('by the end of today');
+  });
+
+  it('says the streak is on its way once the double session is done', async () => {
+    await saveGamification(db, broken);
+    await practisedToday(20);
+    render(<Card db={db} now={clock} />);
+    expect(
+      await screen.findByText('Double session done. Your streak will be restored shortly.'),
+    ).toBeVisible();
+  });
+
   it('goes once the double session restores the streak', async () => {
     await saveGamification(db, broken);
     await practisedToday(10);
@@ -131,7 +154,7 @@ describe('repairView', () => {
 });
 
 describe('byWhen', () => {
-  it('says "today" on the last day and names the weekday before it', () => {
+  it('says "today" on the last day and names the weekday before it, in English', () => {
     expect(byWhen('2026-10-21', new Date(2026, 9, 21, 20, 0))).toBe('by the end of today');
     expect(byWhen('2026-10-21', now)).toBe('by the end of Wednesday');
   });
