@@ -191,6 +191,21 @@ describe('buildHeatmap', () => {
     expect(cell.slow).toBe(false);
   });
 
+  it('ignores guided answers, which show the note, for speed and counts', () => {
+    const guided = { ...log('note@s5f7', 600, true, 10), hintUsed: true };
+    const logs = [guided, log('note@s5f7', 3500, true, 5), log('note@s5f7', 4000, true, 1)];
+    const cell = cellAt(heatmap([known('note@s5f7', 2)], logs), 5, 7);
+    // With the 0.6s worked example the median would be 3.5s; still slow, but
+    // a lone fast guided rep would otherwise hide a slow cell entirely.
+    expect(cell).toMatchObject({ medianMs: 3750, slow: true, reviews: 2, correct: 2 });
+    const onlyGuided = cellAt(
+      heatmap([known('note@s5f7', 2)], [guided, log('note@s5f7', 4000)]),
+      5,
+      7,
+    );
+    expect(onlyGuided).toMatchObject({ medianMs: 4000, slow: true, reviews: 1 });
+  });
+
   it('marks a cell slow when its median answer is over the target', () => {
     const logs = [log('find:A@s5', 3000), log('find:A@s5', 3200), log('note@s5f0', 1000)];
     const cells = heatmap([known('find:A@s5', 2), known('note@s5f0', 2)], logs);
@@ -288,5 +303,8 @@ describe('copy', () => {
     );
     expect(cellSummary(practised!)).toBe('string 5, fret 7, E: stable for 12 days, slow');
     expect(cellSummary(cellAt(heatmap([]), 6, 3))).toBe('string 6, fret 3, G: not practised yet');
+    expect(cellSummary(cellAt(heatmap([]), 5, 1), undefined, 'flat')).toBe(
+      'string 5, fret 1, Bb: not practised yet',
+    );
   });
 });

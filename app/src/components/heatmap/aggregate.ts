@@ -11,6 +11,7 @@ import {
   chromaOf,
   noteAt,
   stringCount,
+  type AccidentalPref,
   type FretRange,
   type Position,
   type Tuning,
@@ -41,10 +42,11 @@ export interface HeatCell extends Position {
   stabilityDays: number | null;
   /** Index into the stability bands (0 = least stable); `null` when not practised. */
   band: number | null;
-  /** Median of the latest correct answers' response times. */
+  /** Median response time of the latest correct, unguided answers. */
   medianMs: number | null;
   /** Median response time is over the learner's target (design §3.2). */
   slow: boolean;
+  /** Unguided answers, and how many were right (guided reps show the answer). */
   reviews: number;
   correct: number;
   /** Predicted recall of the weakest practised card, now and at the forecast horizon. */
@@ -157,7 +159,10 @@ export function buildHeatmap(input: {
       const logs = [...(logsAt.get(key({ string, fret })) ?? [])].sort(
         (a, b) => a.at.getTime() - b.at.getTime(),
       );
-      const correct = logs.filter((l) => l.correct);
+      // Guided reps are worked examples, not evidence of recall (as in the
+      // session runner and the speed achievement), so they don't count.
+      const recalled = logs.filter((l) => !l.hintUsed);
+      const correct = recalled.filter((l) => l.correct);
       const medianMs = median(correct.slice(-cfg.recentAnswers).map((l) => l.responseMs));
       const minOf = (values: number[]) => (values.length ? Math.min(...values) : null);
       const stabilityDays = minOf(cards.map((c) => c.fsrs.stability));
@@ -169,7 +174,7 @@ export function buildHeatmap(input: {
         band: stabilityDays === null ? null : stabilityBand(stabilityDays, cfg.stabilityBandsDays),
         medianMs,
         slow: medianMs !== null && medianMs > targets.targetMs,
-        reviews: logs.length,
+        reviews: recalled.length,
         correct: correct.length,
         recallNow: minOf(cards.map((c) => retrievability(c, now))),
         recallForecast: minOf(cards.map((c) => retrievability(c, horizon))),
@@ -243,8 +248,12 @@ export function forecastSentence(f: StringForecast, forecastDays: number): strin
 }
 
 /** A cell's accessible name, e.g. "string 5, fret 7, E: stable for 12 days, slow". */
-export function cellSummary(cell: HeatCell, tuning: Tuning = STANDARD_TUNING): string {
-  const base = cellLabel(cell, { tuning, revealNote: true });
+export function cellSummary(
+  cell: HeatCell,
+  tuning: Tuning = STANDARD_TUNING,
+  pref: AccidentalPref = 'sharp',
+): string {
+  const base = cellLabel(cell, { tuning, pref, revealNote: true });
   if (cell.stabilityDays === null) return `${base}: not practised yet`;
   return `${base}: stable for ${formatDays(cell.stabilityDays)}${cell.slow ? ', slow' : ''}`;
 }

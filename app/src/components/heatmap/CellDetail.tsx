@@ -59,7 +59,7 @@ export function CellDetail({
             </dd>
           </div>
           <div>
-            <dt>Answers</dt>
+            <dt>Answers from recall</dt>
             <dd data-testid="heat-answers">
               {cell.correct} of {cell.reviews} right
             </dd>
