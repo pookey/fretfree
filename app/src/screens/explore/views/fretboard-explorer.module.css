@@ -138,7 +138,7 @@
 }
 
 .swatch[data-style='root'] {
-  fill: var(--accent);
+  fill: var(--root);
 }
 
 .swatch[data-style='third'],
