@@ -134,6 +134,7 @@ export type ItemRef =
   | { kind: 'find-marker'; fret: number }
   | { kind: 'repeat'; frets: number; from: number }
   | { kind: 'octave'; from: Position; string: number }
+  | { kind: 'octaves'; pc: string }
   | { kind: 'interval' | 'interval-name'; interval: IntervalName; from: number; to: number };
 
 const INT = '(0|[1-9]\\d*)';
@@ -147,6 +148,7 @@ const LETTER_ITEM = new RegExp(`^letter:${OFFSET}@([A-G])$`);
 const MARKER_ITEM = new RegExp(`^(marker|find-marker):f${INT}$`);
 const REPEAT_ITEM = new RegExp(`^repeat:${OFFSET}@f${INT}$`);
 const OCTAVE_ITEM = new RegExp(`^octave:s${INT}f${INT}→s${INT}$`);
+const OCTAVES_ITEM = new RegExp(`^octaves:${PC}$`);
 const INTERVAL_ITEM = new RegExp(`^(interval|interval-name):([A-Za-z0-9]+)@s${INT}→s${INT}$`);
 
 function count(n: number, what: string): number {
@@ -249,6 +251,17 @@ export function parseOctaveItemId(id: string): { from: Position; string: number 
   return { from: { string: Number(m[1]), fret: Number(m[2]) }, string: Number(m[3]) };
 }
 
+/** `octaves:G`: every octave of G across the neck, from one shown G (multi-target). */
+export function octavesItemId(pc: string): string {
+  return `octaves:${pitchClass(pc)}`;
+}
+
+export function parseOctavesItemId(id: string): { pc: string } | null {
+  const m = OCTAVES_ITEM.exec(id);
+  if (!m) return null;
+  return { pc: m[1] as string };
+}
+
 /**
  * `interval:M3@s6→s5`: tap the M3 above a root on string 6, on string 5
  * (name → position). `interval-name:M3@s6→s5` is the reverse: name the
@@ -298,6 +311,8 @@ export function itemId(ref: ItemRef): string {
       return repeatItemId(ref.frets, ref.from);
     case 'octave':
       return octaveItemId(ref.from, ref.string);
+    case 'octaves':
+      return octavesItemId(ref.pc);
     case 'interval':
     case 'interval-name':
       return intervalItemId(ref.kind, ref.interval, ref.from, ref.to);
@@ -319,6 +334,8 @@ export function parseItemId(id: string): ItemRef | null {
   if (repeat) return { kind: 'repeat', ...repeat };
   const octave = parseOctaveItemId(id);
   if (octave) return { kind: 'octave', ...octave };
+  const octaves = parseOctavesItemId(id);
+  if (octaves) return { kind: 'octaves', ...octaves };
   const interval = parseIntervalItemId(id);
   if (interval) return interval;
   return null;

@@ -7,12 +7,14 @@ import {
   letterItemId,
   markerItemId,
   noteItemId,
+  octavesItemId,
   parseFindItemId,
   parseIntervalItemId,
   parseItemId,
   parseLetterItemId,
   parseMarkerItemId,
   parseNoteItemId,
+  parseOctavesItemId,
   parseRepeatItemId,
   parseStepItemId,
   repeatItemId,
@@ -34,6 +36,7 @@ describe('item IDs', () => {
     expect(repeatItemId(-12, 15)).toBe('repeat:-12@f15');
     expect(intervalItemId('interval', 'M3', 6, 5)).toBe('interval:M3@s6→s5');
     expect(intervalItemId('interval-name', 'TT', 3, 1)).toBe('interval-name:TT@s3→s1');
+    expect(octavesItemId('G')).toBe('octaves:G');
     expect(() => intervalItemId('interval', 'X9' as 'M3', 6, 5)).toThrow(RangeError);
   });
 
@@ -46,6 +49,7 @@ describe('item IDs', () => {
     expect(parseMarkerItemId('find-marker:f9')).toEqual({ kind: 'find-marker', fret: 9 });
     expect(parseRepeatItemId('repeat:-12@f17')).toEqual({ frets: -12, from: 17 });
     expect(parseIntervalItemId('interval:b7@s5→s3')).toBeNull();
+    expect(parseOctavesItemId('octaves:F#')).toEqual({ pc: 'F#' });
   });
 
   const refs: ItemRef[] = [
@@ -58,6 +62,8 @@ describe('item IDs', () => {
     { kind: 'repeat', frets: 12, from: 0 },
     { kind: 'interval', interval: 'm7', from: 5, to: 3 },
     { kind: 'interval-name', interval: 'M3', from: 3, to: 2 },
+    { kind: 'octave', from: { string: 6, fret: 5 }, string: 4 },
+    { kind: 'octaves', pc: 'G' },
   ];
 
   it.each(refs)('round-trips $kind refs', (ref) => {
@@ -87,6 +93,9 @@ describe('item IDs', () => {
     'interval:M3@s6-s5',
     'interval-name:M3@s6',
     'nope:G',
+    'octaves:H',
+    'octaves:g',
+    'octaves:G@s6',
   ])('rejects non-canonical %j', (id) => {
     expect(parseItemId(id)).toBeNull();
   });
@@ -100,5 +109,6 @@ describe('item IDs', () => {
     expect(() => letterItemId(1, 'C#')).toThrow(RangeError);
     expect(() => markerItemId(-3)).toThrow(RangeError);
     expect(() => repeatItemId(12, -1)).toThrow(RangeError);
+    expect(() => octavesItemId('H')).toThrow(RangeError);
   });
 });
