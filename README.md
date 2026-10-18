@@ -42,7 +42,18 @@ pnpm verify           # typecheck, lint, format check, unit tests (with coverage
 
 The e2e tests use Playwright on iPad Pro 11" (landscape and portrait), iPad mini (landscape) and iPhone 15 (smoke tests only). Install the browsers once with `pnpm --filter app exec playwright install webkit`.
 
-## Deploy your own copy
+## Host it anywhere
+
+The app is a static site with no backend: progress lives in the browser's IndexedDB. Build it and serve `app/dist` from any static host (nginx, Caddy, GitHub Pages, Netlify, a Raspberry Pi):
+
+```bash
+pnpm install && pnpm --filter app build   # outputs app/dist
+pnpm --filter app exec vite preview --host  # or point any web server at app/dist
+```
+
+Two requirements: serve it over HTTPS (or `localhost`) so the service worker and offline mode work, and send unknown paths to `index.html` so routes like `/progress` load. No AWS, account or email setup is needed. Optional email sign-in and multi-device sync are extras of the hosted version.
+
+## Deploy your own copy on AWS
 
 Fretwork is a static site on AWS: a private S3 bucket behind CloudFront, with an ACM certificate and Route53 records, all defined with CDK in [`infra/`](infra). Everything runs from your machine. There is no hosted CI.
 
