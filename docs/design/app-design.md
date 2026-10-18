@@ -66,7 +66,7 @@ Topic IDs (F1, C6, I1, …) refer to the curriculum map in research/03.
   - `note@s6f5` (the note at string 6, fret 5)
   - `find:G@s5` (find G on string 5)
   - `interval:M3@root-s6` (the major 3rd from a root on string 6)
-  - `caged:A-shape:root=C` (the A shape with root C)
+  - `caged:A-shape@major` (the whole major A shape; `caged-core:A-shape@major` is its triad core). The item is the template, not the key: the drill picks the root and neck position per prompt, so one card meets its shape in many keys and positions (research/02 rules 1 and 12). Chord-tone items (M3-13) use the same grain.
   - `numeral:vi@key=D` (the vi chord in D)
   - `prog:I-V-vi-IV:ear` (recognise I–V–vi–IV by ear)
 - **Card**: the FSRS state of one item for this user. Use bidirectional cards where it makes sense: position→name and name→positions.
