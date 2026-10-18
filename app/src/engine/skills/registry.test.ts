@@ -23,6 +23,11 @@ describe('skill registry', () => {
       'C1.octaves-gb-shift',
       'C1.double-octaves',
       'C2.all-notes',
+      'C3.thirds',
+      'C3.fourths-fifths',
+      'C3.sevenths',
+      'C3.sixths',
+      'C3.seconds',
     ]);
     expect(getSkill('nope')).toBeUndefined();
   });
