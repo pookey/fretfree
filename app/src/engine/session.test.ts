@@ -113,6 +113,25 @@ describe('dueReviews near-ties', () => {
     }
   });
 
+  it('carries the last skill and drill across a run boundary', () => {
+    // `a-old` is its own run; the tied run after it would open on `a-0` by item ID.
+    const old = s.seedKnownCard({ id: 'a-old', skillId: 'a' }, new Date(now.getTime() - 40 * DAY));
+    const tied = [...seeded('a', 1), ...seeded('b', 1)];
+    expect(dueReviews([old, ...tied], s, now).map((c) => c.itemId)).toEqual([
+      'a-old',
+      'b-0',
+      'a-0',
+    ]);
+    // Skills differ either way, so the drill decides: `b-0` shares `a-old`'s drill.
+    const others = [...seeded('b', 1), ...seeded('c', 1)];
+    const drillOf = (id: string) => (id === 'c-0' ? 'D2' : 'D1');
+    expect(dueReviews([old, ...others], s, now, { drillOf }).map((c) => c.itemId)).toEqual([
+      'a-old',
+      'c-0',
+      'b-0',
+    ]);
+  });
+
   it('keeps overdue order outside the window', () => {
     const card = (skillId: string, age: number) => ({
       ...dueCard(`${skillId}${age}`, age),

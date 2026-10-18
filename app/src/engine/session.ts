@@ -95,26 +95,31 @@ export function dueReviews(
     let end = start + 1;
     while (end < ranked.length && ranked[end]!.r - lead <= window) end++;
     const tied = ranked.slice(start, end).map(({ c }) => c);
-    out.push(...dealTies(rng ? shuffle(tied, rng) : tied, drillOf));
+    // Deal on from the previous run's last card, so a run doesn't open on the skill it ended with.
+    out.push(...dealTies(rng ? shuffle(tied, rng) : tied, drillOf, out.at(-1)));
     start = end;
   }
   return out;
 }
 
 /**
- * Each pick is the first card that differs from the last one in skill, then
- * in drill, favouring the skill with the most cards left so none clumps at
- * the end.
+ * Each pick is the first card that differs from the last one (starting from
+ * `prev`) in skill, then in drill, favouring the skill with the most cards
+ * left so none clumps at the end.
  */
 function dealTies(
   cards: readonly CardRecord[],
   drillOf?: (itemId: string) => string | null,
+  prev?: CardRecord,
 ): CardRecord[] {
   const left = cards.map((c) => ({ c, drill: drillOf?.(c.itemId) ?? null }));
   const count = new Map<string, number>();
   for (const { c } of left) count.set(c.skillId, (count.get(c.skillId) ?? 0) + 1);
   const out: CardRecord[] = [];
-  let last: (typeof left)[number] | undefined;
+  let last: (typeof left)[number] | undefined = prev && {
+    c: prev,
+    drill: drillOf?.(prev.itemId) ?? null,
+  };
   while (left.length > 0) {
     const score = ({ c, drill }: (typeof left)[number]) =>
       (c.skillId !== last?.c.skillId ? 2 : 0) +
