@@ -223,7 +223,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The goal profile reorders frontier skills (pure `orderFrontier(skills, goal)`, tested). The session builder consumes it via its existing `frontier` input.
 
 ### M1-17 · Multi-drill sessions and in-session learning steps
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-04, M1-05, M1-10
 - **Design:** §3.3
 - **Owns:** `app/src/session/runner.ts` (hotspot), `app/src/engine/session.ts` (hotspot), `app/src/session/drill-picker.ts`
