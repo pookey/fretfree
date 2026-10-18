@@ -1,4 +1,4 @@
-import type { Rating } from 'ts-fsrs';
+import type { Grade } from 'ts-fsrs';
 import type { ReviewLogRecord, SkillStateRecord } from '../model';
 import type { DailyProgressRecord, GamificationRecord } from '../../storage/gamification-model';
 import type { LocalDate } from './local-date';
@@ -31,7 +31,7 @@ export type CardKind = 'new' | 'due' | 'stretch' | 'not-due';
 export interface AnswerXpInput {
   correct: boolean;
   /** The FSRS rating from `engine/grading.ts`; `Easy` marks a fluent answer. */
-  rating: Rating;
+  rating: Grade;
   kind: CardKind;
   /** FSRS stability of the card before this answer, in days (0 for new cards). */
   stabilityDays: number;
@@ -50,7 +50,7 @@ export interface AnswerEvent {
   itemId: string;
   skillId: string;
   correct: boolean;
-  rating: Rating;
+  rating: Grade;
   kind: CardKind;
   xp: number;
 }
@@ -150,6 +150,8 @@ export type LoggedGamificationEvent = GamificationEvent & { id: number; at: Date
 /** The result of settling one local date against the streak rules. */
 export interface DayResult {
   state: GamificationRecord;
+  /** The settled date's progress; `freezeUsed` is set when a freeze covered it. */
+  day: DailyProgressRecord;
   events: GamificationEvent[];
 }
 
