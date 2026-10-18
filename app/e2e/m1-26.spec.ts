@@ -48,6 +48,9 @@ test.describe('M1-26 reading question', () => {
     await choice(page).getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByRole('heading', { name: 'How long is a session?' })).toBeVisible();
     await choice(page).getByRole('button', { name: 'Skip this step' }).click();
+    // Calibration (M1-07) comes last and has its own spec.
+    await expect(page.getByRole('heading', { name: 'Tap the lit dots', level: 1 })).toBeVisible();
+    await choice(page).getByRole('button', { name: 'Skip this step' }).click();
     await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 
     // A relaunch keeps the picks.
