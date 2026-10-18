@@ -10,6 +10,7 @@ const STEPS = [
   'Your daily goal',
   'Reading music',
   'How long is a session?',
+  'Tap the lit dots',
 ];
 
 const choice = (page: Page) => page.getByTestId('onboarding-choice');
@@ -77,6 +78,10 @@ test.describe('M1-06 onboarding', () => {
     await expectStep(page, 5);
     await pick(page, /15 minutes/);
     await next(page);
+
+    // Calibration (M1-07) has its own spec.
+    await expectStep(page, 6);
+    await choice(page).getByRole('button', { name: 'Skip this step' }).click();
 
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByTestId('start-session')).toHaveText('Start session (15 min)');
