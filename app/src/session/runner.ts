@@ -119,11 +119,16 @@ export class SessionRunner {
     const statuses = new Map<string, SkillStatus>(
       [...states.values()].map((s) => [s.skillId, s.status]),
     );
+    // Skills may list items whose drill isn't built yet; plan only what a drill can test.
+    const servable = (item: Item) => {
+      const skill = deps.skills.find((s) => s.id === item.skillId);
+      return deps.drills.some((d) => skill?.drillTypes.includes(d.id) && d.canTest(item));
+    };
     const frontier: Item[] = [];
     for (const skill of deps.skills) {
       const status = deriveStatus(skill, statuses, statuses.get(skill.id));
       statuses.set(skill.id, status);
-      if (isFrontier(status)) frontier.push(...skill.items());
+      if (isFrontier(status)) frontier.push(...skill.items().filter(servable));
     }
     const tuning = getTuning(deps.settings.tuning);
     const drillFor = (skillId: string) => {
@@ -133,7 +138,7 @@ export class SessionRunner {
     const plan = buildSession({
       now,
       minutes: deps.settings.sessionMinutes,
-      cards,
+      cards: cards.filter((c) => servable({ id: c.itemId, skillId: c.skillId })),
       frontier,
       scheduler: deps.scheduler,
       confusions,

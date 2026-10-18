@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SKILLS } from '../../../engine';
+import { DRILLS } from '../../../drills/registry';
 import { allCards, countDue, getDb, getGamification } from '../../../storage';
 import styles from '../../screens.module.css';
 
@@ -17,8 +18,11 @@ async function loadStats(): Promise<TodayStats> {
   const now = new Date();
   const cards = await allCards(db);
   const carded = new Set(cards.map((c) => c.itemId));
+  // Count only items a registered drill can test: some skills list items ahead of their drill.
   const newAvailable = SKILLS.filter((s) => s.prerequisites.length === 0)
-    .flatMap((s) => s.items())
+    .flatMap((s) =>
+      s.items().filter((i) => DRILLS.some((d) => s.drillTypes.includes(d.id) && d.canTest(i))),
+    )
     .filter((i) => !carded.has(i.id)).length;
   const { freezesHeld } = await getGamification(db);
   return { due: await countDue(db, now), newAvailable, freezesHeld };
