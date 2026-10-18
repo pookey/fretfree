@@ -53,6 +53,11 @@ export interface FretboardProps {
   revealNotes?: boolean;
   accidentalPref?: AccidentalPref;
   onTapCell?: (pos: Position) => void;
+  /**
+   * Accessible names for tap targets, when "string N, fret M" would give the
+   * answer away (D39 asks for a fret, so it names each fret by its marker).
+   */
+  cellLabel?: (pos: Position) => string;
   /** Accessible name for the whole neck. */
   label?: string;
   className?: string;
@@ -80,6 +85,7 @@ export function Fretboard({
   revealNotes = false,
   accidentalPref = 'sharp',
   onTapCell,
+  cellLabel: labelCell,
   label = 'Fretboard',
   className,
 }: FretboardProps) {
@@ -291,7 +297,9 @@ export function Fretboard({
       {strings.map((s) =>
         g.cells.map((c) => {
           const pos = { string: s, fret: c.fret };
-          const name = cellLabel(pos, { tuning, pref: accidentalPref, revealNote: revealNotes });
+          const name =
+            labelCell?.(pos) ??
+            cellLabel(pos, { tuning, pref: accidentalPref, revealNote: revealNotes });
           return (
             <rect
               key={`hit${s}-${c.fret}`}

@@ -291,7 +291,8 @@ interface DrillType<P = unknown, A = unknown> {
 **D39 items and grading:**
 
 - **Name the marker** (`marker:f7`): frets 0–12 are drawn with every fret but one dimmed, and the learner names the spotlit fret. Scope level 0 offers the five landmarks (3, 5, 7, 9, 12). Level 1 offers every fret from 1 to 12.
-- **Find the marker** (`find-marker:f7`): "Tap the 7th-fret marker". A tap on any string of that fret counts.
+- **Find the marker** (`find-marker:f7`): "Tap the 7th-fret marker". A tap on any string of that fret counts. The arrow keys move a focus fret along the neck from the nut, and Enter answers.
+- **Screen readers** never hear a fret number while a marker prompt is open. A spotlit marker is named by its place from the nut ("the 3rd marker from the nut"), and each tap target by how its fret looks ("single-dot marker", "no marker"). The learner counts markers, as a sighted learner counts dots.
 - **The 12th-fret repeat** (`repeat:+12@f3`, `repeat:-12@f15`): "Which fret has the same notes as fret 3, an octave higher?" Only the starting octave is drawn, with the starting fret's notes marked. The answers are the other octave's landmarks (every fret of it at level 1), never the starting fret itself. Feedback draws both frets side by side with their notes named, and plays both, so the octave is heard.
 - While a marker prompt is open, the neck shows inlays only: fret numbers would name the answer. A typed fret number answers too (`1` then `2` for 12, and `o` for the open strings). The confusion matrix keys every item by its answer fret (`fret:7`).
 

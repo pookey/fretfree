@@ -100,13 +100,26 @@ test.describe('D39 "Fret landmarks"', () => {
     await expect(neckArea(page)).toHaveAttribute('data-mode', 'repeat');
   });
 
-  test('a session with nothing to serve says so @smoke', async ({ page }) => {
+  test('a session with nothing to serve says so @smoke', async ({ page }, info) => {
     await freshStart(page);
     // Mastered, with no cards: nothing is due and nothing is new.
     await masterSkills(page, ['F3.markers']);
     await page.goto('/session?skill=F3.markers');
     await expect(page.getByTestId('session-empty')).toContainText('Nothing to practise right now');
     await expect(page.getByText('Session complete')).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
+    if (info.project.name === 'ipad-landscape') {
+      // A centred message in a readable column, not a full-width line.
+      const heading = (await page
+        .getByRole('heading', { name: 'Nothing to practise right now' })
+        .boundingBox())!;
+      const column = (await page.getByTestId('session-empty').boundingBox())!;
+      const width = page.viewportSize()!.width;
+      expect(Math.abs(heading.x + heading.width / 2 - width / 2)).toBeLessThan(2);
+      expect(Math.abs(column.x + column.width / 2 - width / 2)).toBeLessThan(2);
+      expect(column.width).toBeLessThanOrEqual(32 * 16 + 1);
+      expect(column.y).toBeGreaterThan(page.viewportSize()!.height * 0.15);
+    }
     await page.getByRole('link', { name: 'Done' }).click();
     await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
   });

@@ -11,12 +11,15 @@ import {
   d39DescribeAnswer,
   d39FeedbackPositions,
   d39FeedbackRange,
+  d39FretLook,
   d39FretName,
   d39MakePrompt,
+  d39MoveFocus,
   d39NeckGuideLevel,
   d39Ordinal,
   d39Question,
   d39Sounds,
+  d39SpotlightLabel,
   d39TypeKey,
   d39WorkedExample,
   type D39Answer,
@@ -214,5 +217,37 @@ describe('D39 typed answers', () => {
     expect(d39TypeKey('', 'o', low)).toEqual({ typed: '', answer: 0 });
     expect(d39TypeKey('', 'O', markers)).toEqual({ typed: '', answer: null });
     expect(d39TypeKey('', '0', low)).toEqual({ typed: '', answer: 0 });
+  });
+});
+
+describe('D39 accessibility', () => {
+  it('describes a fret by how it looks, never by its number', () => {
+    expect([0, 1, 3, 12].map(d39FretLook)).toEqual([
+      'open strings',
+      'no marker',
+      'single-dot marker',
+      'double-dot marker',
+    ]);
+    for (let f = 0; f <= 12; f++) expect(d39FretLook(f)).not.toMatch(/\d/);
+  });
+
+  it('names the spotlit marker by its place from the nut', () => {
+    expect(d39SpotlightLabel(3)).toBe('Fretboard. The 1st marker from the nut is spotlit.');
+    expect(d39SpotlightLabel(7)).toBe('Fretboard. The 3rd marker from the nut is spotlit.');
+    expect(d39SpotlightLabel(12)).toBe(
+      'Fretboard. The 5th marker from the nut is spotlit, the double dot.',
+    );
+  });
+
+  it('moves the focus fret along the neck as drawn', () => {
+    const range = { from: 0, to: 12 };
+    expect(d39MoveFocus(3, 'ArrowRight', range, 'right')).toBe(4);
+    expect(d39MoveFocus(3, 'ArrowLeft', range, 'right')).toBe(2);
+    expect(d39MoveFocus(3, 'ArrowRight', range, 'left')).toBe(2);
+    expect(d39MoveFocus(12, 'ArrowRight', range, 'right')).toBe(12);
+    expect(d39MoveFocus(0, 'ArrowLeft', range, 'right')).toBe(0);
+    expect(d39MoveFocus(5, 'Home', range, 'right')).toBe(0);
+    expect(d39MoveFocus(5, 'End', range, 'right')).toBe(12);
+    expect(d39MoveFocus(5, 'ArrowUp', range, 'right')).toBeNull();
   });
 });

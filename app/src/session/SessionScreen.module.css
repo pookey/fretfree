@@ -178,25 +178,7 @@
     animation-name: feedback-down;
   }
 
-  .feedbackBar .empty {
-    max-width: 32rem;
-    margin: 20vh auto 0;
-    padding: 0 var(--space-4);
-    text-align: center;
-  }
-
-  .empty h1 {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-  }
-
-  .empty p {
-    color: var(--text-muted);
-    line-height: 1.5;
-    margin-bottom: var(--space-5);
-  }
-
-  .primary {
+  .feedbackBar .primary {
     min-height: var(--tap);
   }
 
@@ -270,6 +252,25 @@
   color: var(--text-muted);
   text-align: center;
   margin-top: 20vh;
+}
+
+/* Nothing to serve (an empty plan): a message, not a session summary. */
+.empty {
+  max-width: 32rem;
+  margin: 20vh auto 0;
+  padding: 0 var(--space-4);
+  text-align: center;
+}
+
+.empty h1 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+.empty p {
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: var(--space-5);
 }
 
 .primary {

@@ -12,7 +12,8 @@ import { DRILLS, getDrill } from './registry';
  * an empty session (F3 shipped that way until M1-37). Remove the entry when
  * the drill lands; a registered drill left here fails.
  */
-const PENDING: Record<string, { kinds: readonly ItemRef['kind'][]; wp: string }> = {};
+type Pending = Record<string, { kinds: readonly ItemRef['kind'][]; wp: string }>;
+const PENDING: Pending = {};
 
 async function readBacklog(): Promise<string> {
   // Kept out of the browser bundle's module graph: tests run under Node.
@@ -33,6 +34,57 @@ function wpStatus(backlog: string, wp: string): string | null {
   const body = backlog.slice(start).split(/\n### /)[0] as string;
   return /\*\*Status:\*\*\s*(\S+)/.exec(body)?.[1] ?? null;
 }
+
+/** Every way a pending list has gone stale against the backlog; empty when it holds. */
+function pendingProblems(
+  pending: Pending,
+  backlog: string,
+  isBuilt: (drillId: string) => boolean,
+): string[] {
+  return Object.entries(pending).flatMap(([drillId, { wp }]) => {
+    if (isBuilt(drillId)) return [`${drillId} is built: remove it from PENDING`];
+    const status = wpStatus(backlog, wp);
+    if (status === null) return [`${drillId}: ${wp} is not in docs/backlog.md`];
+    if (status === 'done') return [`${drillId}: ${wp} is done but the drill isn't registered`];
+    return [];
+  });
+}
+
+describe('pendingProblems', () => {
+  const backlog = [
+    '# Backlog',
+    '### M1-03 · Shipped work',
+    '- **Status:** done',
+    '### M4-01 · Building the drill',
+    '- **Deps:** —',
+    '- **Status:** in-progress',
+  ].join('\n');
+  const entry = (wp: string) => ({ kinds: ['marker'] as const, wp });
+
+  it('passes a drill an open WP is building', () => {
+    expect(pendingProblems({ 'new-drill': entry('M4-01') }, backlog, () => false)).toEqual([]);
+  });
+
+  it('fails a WP that is done, one that is missing, and a drill that is built', () => {
+    expect(pendingProblems({ 'new-drill': entry('M1-03') }, backlog, () => false)).toEqual([
+      "new-drill: M1-03 is done but the drill isn't registered",
+    ]);
+    expect(pendingProblems({ 'new-drill': entry('M9-99') }, backlog, () => false)).toEqual([
+      'new-drill: M9-99 is not in docs/backlog.md',
+    ]);
+    expect(pendingProblems({ 'new-drill': entry('M4-01') }, backlog, () => true)).toEqual([
+      'new-drill is built: remove it from PENDING',
+    ]);
+  });
+
+  it('reads a WP status only from its own section', () => {
+    expect(wpStatus(backlog, 'M4-01')).toBe('in-progress');
+    expect(wpStatus(backlog, 'M1-03')).toBe('done');
+    expect(
+      wpStatus('### M2-01 · No status line\n### M2-02 · Next\n- **Status:** done', 'M2-01'),
+    ).toBeNull();
+  });
+});
 
 describe('drill registry', () => {
   it('has unique IDs and resolves by ID', () => {
@@ -74,13 +126,9 @@ describe('drill registry', () => {
   });
 
   it('ties every pending drill to an open work package, and drops built ones', async () => {
-    const backlog = await readBacklog();
-    for (const [drillId, { wp }] of Object.entries(PENDING)) {
-      expect(getDrill(drillId), `${drillId} is built: remove it from PENDING`).toBeUndefined();
-      const status = wpStatus(backlog, wp);
-      expect(status, `${drillId}: ${wp} is not in docs/backlog.md`).not.toBeNull();
-      expect(status, `${drillId}: ${wp} is done but the drill isn't registered`).not.toBe('done');
-    }
+    expect(pendingProblems(PENDING, await readBacklog(), (id) => Boolean(getDrill(id)))).toEqual(
+      [],
+    );
   });
 
   it('reads WP statuses from the backlog', async () => {

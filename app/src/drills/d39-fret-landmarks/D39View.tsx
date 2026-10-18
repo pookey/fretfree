@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import type { GuideLevel } from '../../engine/model';
 import { noteAt, type Position } from '../../theory';
@@ -8,8 +8,11 @@ import {
   d39Column,
   d39FeedbackPositions,
   d39FeedbackRange,
+  d39FretLook,
+  d39MoveFocus,
   d39NeckGuideLevel,
   d39Question,
+  d39SpotlightLabel,
   d39TypeKey,
   d39WorkedExample,
   type D39Answer,
@@ -17,11 +20,14 @@ import {
 } from './logic';
 import styles from './D39View.module.css';
 
+/** The string the keyboard focus moves along in find mode; any string on the fret counts. */
+const FOCUS_STRING = 3;
+
 /**
  * D39 view (design §6 D39): the question and fret buttons, the neck below.
  * A spotlit fret is the one every other fret is dimmed around. Markers are
- * found by tapping the neck; everything else is answered with a button or by
- * typing the fret number.
+ * found by tapping the neck, or with the arrow keys and Enter; everything
+ * else is answered with a button or by typing the fret number.
  */
 export function D39View({
   prompt,
@@ -39,6 +45,11 @@ export function D39View({
   const [entry, setEntry] = useState({ itemId: prompt.itemId, typed: '' });
   const typed = entry.itemId === prompt.itemId ? entry.typed : '';
   const { choices, mode } = prompt;
+  // Find mode's keyboard focus fret, kept with its prompt; null until the first arrow key.
+  const [nav, setNav] = useState<{ itemId: string; fret: number } | null>(null);
+  const focusFret = nav?.itemId === prompt.itemId ? nav.fret : null;
+  const neckRef = useRef<HTMLDivElement>(null);
+  const moved = useRef(false);
 
   useEffect(() => {
     if (feedback || choices.length === 0) return;
@@ -55,6 +66,41 @@ export function D39View({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [feedback, onAnswer, choices, typed, prompt.itemId]);
+
+  useEffect(() => {
+    if (feedback || mode !== 'find-marker') return;
+    const onKey = (e: KeyboardEvent) => {
+      // A focused cell answers its own Enter (and prevents the default).
+      if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+      if ((e.key === 'Enter' || e.key === ' ') && focusFret !== null) {
+        e.preventDefault();
+        onAnswer(focusFret);
+        return;
+      }
+      // The first arrow key lands on the nut, which gives nothing away.
+      const next =
+        focusFret === null
+          ? e.key.startsWith('Arrow')
+            ? prompt.range.from
+            : null
+          : d39MoveFocus(focusFret, e.key, prompt.range, handedness);
+      if (next === null) return;
+      e.preventDefault();
+      moved.current = true;
+      setNav({ itemId: prompt.itemId, fret: next });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [feedback, mode, focusFret, onAnswer, prompt.itemId, prompt.range, handedness]);
+
+  // Move DOM focus to the focus cell, so a screen reader reads how that fret looks.
+  useEffect(() => {
+    if (!moved.current || focusFret === null) return;
+    moved.current = false;
+    neckRef.current
+      ?.querySelector<SVGElement>(`[data-cell="s${FOCUS_STRING}f${focusFret}"]`)
+      ?.focus({ preventScroll: true });
+  }, [focusFret]);
 
   const tap = (pos: Position) => {
     if (feedback || mode !== 'find-marker') return;
@@ -149,9 +195,9 @@ export function D39View({
 
   const neckLabel =
     mode === 'find-marker'
-      ? 'Fretboard. Tap a fret.'
+      ? 'Fretboard. Tap a fret, or move along the frets with the arrow keys.'
       : mode === 'name-marker'
-        ? 'Fretboard, one marker spotlit'
+        ? d39SpotlightLabel(prompt.from)
         : prompt.from === 0
           ? 'Fretboard, the open strings marked'
           : `Fretboard, fret ${prompt.from} marked`;
@@ -179,7 +225,7 @@ export function D39View({
           <p className={styles.hint} data-testid="d39-hint" aria-live="polite">
             {!feedback &&
               (mode === 'find-marker'
-                ? 'Tap anywhere on that fret.'
+                ? 'Tap anywhere on that fret, or use the arrow keys and Enter.'
                 : typed
                   ? `Typed ${typed}. Press Enter to answer.`
                   : '')}
@@ -216,6 +262,7 @@ export function D39View({
         {sizeClass === 'regular-wide' && context}
       </div>
       <div
+        ref={neckRef}
         className={styles.neckArea}
         data-testid="d39-neck"
         data-mode={mode}
@@ -231,6 +278,7 @@ export function D39View({
           blindMode={blindMode}
           accidentalPref={prompt.accidentalPref}
           onTapCell={mode === 'find-marker' && !feedback ? tap : undefined}
+          cellLabel={(p) => `string ${p.string}, ${d39FretLook(p.fret)}`}
           label={neckLabel}
         />
       </div>

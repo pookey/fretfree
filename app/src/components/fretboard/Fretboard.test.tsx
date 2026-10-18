@@ -22,6 +22,18 @@ describe('<Fretboard>', () => {
     expect(onTap).toHaveBeenCalledTimes(1);
   });
 
+  it('takes its tap targets’ accessible names from cellLabel when given', () => {
+    render(
+      <Fretboard
+        fretRange={{ from: 0, to: 5 }}
+        onTapCell={vi.fn()}
+        cellLabel={(p) => `cell ${p.string}/${p.fret}`}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'cell 6/5' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'string 6, fret 5' })).toBeNull();
+  });
+
   it('is not interactive without a tap handler', () => {
     render(<Fretboard fretRange={{ from: 0, to: 5 }} />);
     expect(screen.queryAllByRole('button')).toHaveLength(0);

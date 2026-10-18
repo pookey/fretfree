@@ -119,6 +119,42 @@ describe('<D39View>', () => {
     expect(onAnswer).toHaveBeenCalledWith(9);
   });
 
+  it('names the spotlit marker for screen readers by its place, not its fret', () => {
+    renderView(prompt('marker:f9'));
+    expect(
+      screen.getByRole('group', { name: 'Fretboard. The 4th marker from the nut is spotlit.' }),
+    ).toBeInTheDocument();
+  });
+
+  it('finds a marker with the arrow keys and Enter, cells named by their marker', () => {
+    const { onAnswer } = renderView(prompt('find-marker:f3'));
+    // No tap target names its fret: that would give the answer away.
+    const names = screen.getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? '');
+    expect(names.some((n) => /fret/.test(n))).toBe(false);
+    expect(screen.getAllByRole('button', { name: 'string 3, single-dot marker' })).toHaveLength(4);
+
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(cell(3, 0)).toHaveFocus();
+    expect(cell(3, 0)).toHaveAccessibleName('string 3, open strings');
+    for (let i = 0; i < 3; i++) fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(cell(3, 3)).toHaveFocus();
+    fireEvent.keyDown(window, { key: 'x' });
+    expect(onAnswer).not.toHaveBeenCalled();
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(onAnswer).toHaveBeenCalledWith(3);
+  });
+
+  it('answers once when Enter lands on the focused cell itself', () => {
+    const { onAnswer } = renderView(prompt('find-marker:f5'));
+    fireEvent.keyDown(window, { key: 'End' });
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    fireEvent.keyDown(window, { key: 'End' });
+    expect(cell(3, 12)).toHaveFocus();
+    fireEvent.keyDown(cell(3, 12), { key: 'Enter' });
+    expect(onAnswer).toHaveBeenCalledTimes(1);
+    expect(onAnswer).toHaveBeenCalledWith(12);
+  });
+
   it('spotlights the sought marker on a guided find, and stops taking taps in feedback', () => {
     const p = prompt('find-marker:f3');
     renderView(p, { guided: true });

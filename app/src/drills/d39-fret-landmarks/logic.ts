@@ -2,9 +2,11 @@ import {
   parseMarkerItemId,
   parseRepeatItemId,
   type GuideLevel,
+  type Handedness,
   type Item,
 } from '../../engine/model';
 import {
+  DOUBLE_INLAY_FRETS,
   INLAY_FRETS,
   allStrings,
   noteAt,
@@ -244,6 +246,51 @@ export function d39ConceptOf(item: Item): string | null {
 }
 
 // --- Keyboard path ----------------------------------------------------------
+
+/**
+ * How a fret looks, for screen readers, with no fret number in it: a fret
+ * number would name a marker prompt's answer. The learner counts markers from
+ * the nut, as a sighted learner counts dots.
+ */
+export function d39FretLook(fret: number): string {
+  if (fret === 0) return 'open strings';
+  if (DOUBLE_INLAY_FRETS.includes(fret)) return 'double-dot marker';
+  return INLAY_FRETS.includes(fret) ? 'single-dot marker' : 'no marker';
+}
+
+/** The neck's accessible name for a spotlit marker: its place among the markers from the nut. */
+export function d39SpotlightLabel(fret: number): string {
+  const nth = D39_MARKERS.indexOf(fret) + 1;
+  const look = DOUBLE_INLAY_FRETS.includes(fret) ? ', the double dot' : '';
+  return `Fretboard. The ${d39Ordinal(nth)} marker from the nut is spotlit${look}.`;
+}
+
+/**
+ * Arrow keys move a focus fret along the neck in find mode (design §10
+ * keyboard path). Left and right follow the neck as drawn, which a
+ * left-handed neck mirrors; Home and End jump to its ends. Null for other keys.
+ */
+export function d39MoveFocus(
+  fret: number,
+  key: string,
+  range: FretRange,
+  handedness: Handedness,
+): number | null {
+  const toward = handedness === 'left' ? -1 : 1;
+  const clamp = (f: number) => Math.max(range.from, Math.min(range.to, f));
+  switch (key) {
+    case 'ArrowRight':
+      return clamp(fret + toward);
+    case 'ArrowLeft':
+      return clamp(fret - toward);
+    case 'Home':
+      return range.from;
+    case 'End':
+      return range.to;
+    default:
+      return null;
+  }
+}
 
 /**
  * Typing a fret number answers (design §7 keyboard path). Digits build up a
