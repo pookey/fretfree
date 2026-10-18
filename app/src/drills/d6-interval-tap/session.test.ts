@@ -81,6 +81,13 @@ describe('D6 in a session', () => {
   });
 
   it('serves C3 shapes as guided worked examples, then grades taps', async () => {
+    // The name-it direction (D5) is already known, so the tap items lead the
+    // first new block whether or not D5 is registered.
+    const scheduler = createScheduler({ enableFuzz: false });
+    const names = C3_SKILLS.flatMap((s) => s.items()).filter((i) =>
+      i.id.startsWith('interval-name:'),
+    );
+    await db.cards.bulkPut(names.map((i) => scheduler.seedKnownCard(i, clock, 30)));
     const r = await start();
     const first = r.currentPrompt()!;
     expect(first.drill.id).toBe(D6_ID);
