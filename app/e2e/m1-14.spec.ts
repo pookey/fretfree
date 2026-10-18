@@ -1,5 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { answer, expectNoHorizontalOverflow, freshStart, targetNote } from './helpers';
+import {
+  F1_SKILLS,
+  answer,
+  expectNoHorizontalOverflow,
+  freshStart,
+  masterSkills,
+  targetNote,
+} from './helpers';
 
 const DAY = 86_400_000;
 
@@ -161,6 +168,8 @@ test.describe('M1-14 Progress fretboard heatmap', () => {
 
   test('answering in a session fills in that cell', async ({ page }) => {
     await freshStart(page);
+    // Skip the F1 note-wheel frontier so the session reaches the D1 neck drill.
+    await masterSkills(page, F1_SKILLS);
     await openProgress(page);
     await expect(map(page).getByTestId('heatmap-panel')).toHaveAttribute('data-loaded', 'true');
     await expect(map(page).getByTestId('heat-tile')).toHaveCount(0);
