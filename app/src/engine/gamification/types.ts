@@ -102,7 +102,10 @@ export interface StreakBrokenEvent {
   /** The missed date that broke the streak. */
   date: LocalDate;
   previousStreak: number;
-  /** Repair with a double session before this instant (48 hours). */
+  /**
+   * `startOfLocalDay(date + 3)`: a double session on either of the next two
+   * calendar dates repairs the streak. Shown as "48 hours".
+   */
   repairDeadline: Date;
 }
 

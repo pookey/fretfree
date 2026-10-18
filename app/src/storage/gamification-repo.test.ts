@@ -238,6 +238,17 @@ describe('engine contracts (stubs filled by M1-08, M1-09, M1-13)', () => {
       minutes: 3,
       xp: 20,
     });
+    // Idempotent per date: re-settling a date with its own output is a no-op.
+    for (const [day, date] of [
+      [undefined, '2026-10-18'],
+      [{ ...emptyDailyProgress('2026-10-19'), minutes: 10, goalMet: true }, '2026-10-19'],
+    ] as const) {
+      const first = applyDay(DEFAULT_GAMIFICATION, day, date);
+      const again = applyDay(first.state, first.day, date);
+      expect(again.events).toEqual([]);
+      expect(again.state).toEqual(first.state);
+      expect(again.day).toEqual(first.day);
+    }
     const ctx = { skillStates: new Map(), gamification: DEFAULT_GAMIFICATION, recentReviews: [] };
     expect(checkAchievements(ctx, new Set(ACHIEVEMENTS.map((a) => a.id)), ACHIEVEMENTS)).toEqual(
       [],
