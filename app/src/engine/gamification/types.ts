@@ -94,6 +94,8 @@ export interface FreezeUsedEvent {
 
 /**
  * A streak ended: a day was missed with no freeze and no weekend amulet.
+ * `streakCurrent` restarts from 0 and `previousStreak` is kept in
+ * `streakBeforeBreak` until the repair window closes.
  * Not in the §3.7 table, but the streak engine must report breaks so the log
  * can show streak length against retention, and repair needs a deadline.
  */
@@ -104,7 +106,8 @@ export interface StreakBrokenEvent {
   previousStreak: number;
   /**
    * `startOfLocalDay(date + 3)`: a double session on either of the next two
-   * calendar dates repairs the streak. Shown as "48 hours".
+   * calendar dates adds `previousStreak` back onto the restarted streak.
+   * Shown as "48 hours".
    */
   repairDeadline: Date;
 }

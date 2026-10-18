@@ -23,7 +23,9 @@ import type { DailyProgressRecord, DayResult, GamificationRecord, LocalDate } fr
  * state unchanged and no events when:
  * - `date <= lastGoalMetDate` (already counted), or
  * - `day.freezeUsed` is already true (already covered), or
- * - the date is missed while `streakCurrent === 0` or a repair window is open.
+ * - the date is missed while `streakCurrent === 0`. After a missed date is
+ *   first settled the streak is 0 (or a freeze covered it), and it only rises
+ *   on a later goal-met date, which moves `lastGoalMetDate` past it.
  * The one exception is a repair, which may fire on a re-settle (see below).
  *
  * Contract for M1-09, which replaces this stub:
@@ -36,24 +38,28 @@ import type { DailyProgressRecord, DayResult, GamificationRecord, LocalDate } fr
  *   freeze automatically: `freeze-used`, and the returned `day` has
  *   `freezeUsed: true`, so the streak calendar can show it.
  * - With `weekendAmulet`, a missed Saturday or Sunday changes nothing.
- * - A missed date `M` with no freeze breaks the streak (`streak-broken`) and
- *   opens a repair window over the next two calendar dates, `M+1` and `M+2`.
+ * - A missed date `M` with no freeze breaks the streak (`streak-broken`):
+ *   `streakBeforeBreak` keeps the ended count, `streakCurrent = 0`, and a
+ *   repair window opens over the next two calendar dates, `M+1` and `M+2`.
  *   `streakRepairDeadline` is `startOfLocalDay(addDays(M, 3))`, the instant
  *   the window ends, shown as "48 hours". It is defined in calendar dates so
- *   a DST change inside the window neither adds nor removes a day.
- * - While the window is open, `streakCurrent` keeps the pre-break count, so a
- *   repair can restore it, and normal extension is suspended. A further
- *   missed date inside the window changes nothing (the window stays as the
- *   first break set it). A single-goal date inside the window sets
- *   `lastGoalMetDate` but doesn't extend.
+ *   a DST change inside the window neither adds nor removes a day. (It is
+ *   read in the device's current zone, so a zone change mid-window can move
+ *   the boundary by a date.)
+ * - The streak restarts normally inside the window: each goal-met date
+ *   extends `streakCurrent` as usual, so practice there is never lost. A
+ *   missed date inside the window resets that in-window run to 0 (no new
+ *   `streak-broken`), leaving the deadline and `streakBeforeBreak` alone.
  * - A double session (minutes ≥ 2 × `dailyGoalMinutes`) on `M+1` or `M+2`
- *   (`date < toLocalDate(streakRepairDeadline)`) repairs: `streak-repaired`,
- *   `streakCurrent` becomes the kept count + 1 for the repair date,
- *   `lastGoalMetDate = date`, and the deadline is cleared.
+ *   (`date < toLocalDate(streakRepairDeadline)`) repairs: the date counts
+ *   once in the run as usual, then `streakCurrent = streakBeforeBreak +
+ *   streakCurrent`, `streak-repaired` reports the result, and the deadline
+ *   and `streakBeforeBreak` are cleared. Example: break after 10, single goal
+ *   on `M+1`, double on `M+2` → 12.
  * - Settling a date on or after `toLocalDate(streakRepairDeadline)` first
- *   closes an unrepaired window (`streakCurrent = 0`, deadline cleared), then
- *   settles that date normally. Until then the UI treats a deadline in the
- *   past as closed.
+ *   closes an unrepaired window (deadline cleared, `streakBeforeBreak = 0`,
+ *   `streakCurrent` untouched), then settles that date normally. Until then
+ *   the UI treats a deadline in the past as closed.
  * - `streakLongest` never decreases.
  */
 export function applyDay(

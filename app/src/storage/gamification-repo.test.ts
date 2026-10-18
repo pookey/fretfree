@@ -60,6 +60,14 @@ describe('gamification state', () => {
   });
 });
 
+describe('gamification state from before streakBeforeBreak', () => {
+  it('reads a stored row without the field as 0', async () => {
+    const { streakBeforeBreak: _omitted, ...legacy } = DEFAULT_GAMIFICATION;
+    await db.gamification.put({ ...legacy, streakCurrent: 4, key: 'singleton' } as never);
+    expect(await getGamification(db)).toMatchObject({ streakCurrent: 4, streakBeforeBreak: 0 });
+  });
+});
+
 describe('daily progress', () => {
   it('returns an empty day when nothing was practised', async () => {
     expect(await getDailyProgress(db, '2026-10-18')).toEqual(emptyDailyProgress('2026-10-18'));
@@ -239,11 +247,16 @@ describe('engine contracts (stubs filled by M1-08, M1-09, M1-13)', () => {
       xp: 20,
     });
     // Idempotent per date: re-settling a date with its own output is a no-op.
-    for (const [day, date] of [
-      [undefined, '2026-10-18'],
-      [{ ...emptyDailyProgress('2026-10-19'), minutes: 10, goalMet: true }, '2026-10-19'],
+    const active = { ...DEFAULT_GAMIFICATION, streakCurrent: 8, lastGoalMetDate: '2026-10-17' };
+    for (const [state, day, date] of [
+      [DEFAULT_GAMIFICATION, undefined, '2026-10-18'],
+      // An active streak with a freeze: the re-settle must not burn a second one.
+      [{ ...active, freezesHeld: 1 }, undefined, '2026-10-18'],
+      // An active streak with no freeze: the re-settle must not break it again.
+      [{ ...active, freezesHeld: 0 }, undefined, '2026-10-18'],
+      [active, { ...emptyDailyProgress('2026-10-18'), minutes: 10, goalMet: true }, '2026-10-18'],
     ] as const) {
-      const first = applyDay(DEFAULT_GAMIFICATION, day, date);
+      const first = applyDay(state, day, date);
       const again = applyDay(first.state, first.day, date);
       expect(again.events).toEqual([]);
       expect(again.state).toEqual(first.state);

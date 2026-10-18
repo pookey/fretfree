@@ -12,6 +12,11 @@ export interface GamificationRecord {
   freezesHeld: number;
   weekendAmulet: boolean;
   streakRepairDeadline: Date | null;
+  /**
+   * The streak a break ended, kept while its repair window is open so a
+   * repair can add it back; 0 otherwise. Not indexed, so no schema version.
+   */
+  streakBeforeBreak: number;
 }
 
 export interface DailyProgressRecord {
@@ -46,4 +51,5 @@ export const DEFAULT_GAMIFICATION: GamificationRecord = {
   freezesHeld: 0,
   weekendAmulet: false,
   streakRepairDeadline: null,
+  streakBeforeBreak: 0,
 };
