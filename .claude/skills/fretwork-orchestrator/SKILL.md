@@ -20,6 +20,9 @@ Everything lives under `.claude/skills/fretwork-orchestrator/`:
 | `health.sh` | memory, Playwright and load → suggested ceiling |
 | `integrate.sh <WP>` | **the integration lane**: rebase → ff-merge → mark done → `pnpm ship` → push (exit codes below) |
 | `cleanup.sh <WP>` | closes the WP's own panes, removes the worktree and merged branch |
+| `lane-next.sh` | ships the first WP in `.orchestrator/lane-queue.txt`, then exits (gates on load, retries EINTR); run in the background, once per ship |
+| `watch.sh [secs]` | blocks until a WP needs action (verdict, real `REPORTED`, blocked) or usage limit; run in the background as the wake-up |
+| `refill.sh` | steps the ceiling towards `health.sh` and spawns into free slots |
 
 Templates (`templates/`): `worker-brief.md`, `reviewer-brief.md`, `fix-brief.md`, `rebase-brief.md`.
 
@@ -148,3 +151,14 @@ Stop spawning, finish or park in-flight work, and write the situation to `docs/p
   - incidents (stop-the-line events, usage-limit pauses);
   - open questions.
 - Keep messages to the user short: milestone summaries, not play-by-play.
+
+## 9. Operating notes (learned in the first fan-out, 2026-10-18)
+
+- **The loop in practice:** keep one `watch.sh` running in the background, and kill any stale copy before starting another. On wake: spawn reviewers, send fix briefs, and append approved WPs to `.orchestrator/lane-queue.txt`. Keep one `lane-next.sh` running whenever the queue is non-empty. After each ship, run `cleanup.sh <WP> && refill.sh`.
+- **Queue only real reports.** A worker that is idle while a background `pnpm verify` runs isn't finished. Check for `REPORTED <WP>` on screen, a clean worktree, and no "shell still running".
+- **Rebase drift is the main failure mode.** New drills change what a fresh session serves (e.g. D3 put F1 prompts first, and D2 made answers positions), which breaks specs and tests written earlier. Before a WP joins the queue, make sure it was rebased onto `origin/main` recently, and pre-flight waiting WPs in parallel rather than letting them fail one by one in the serial lane.
+- **Rebase onto `origin/main`, never local `main`.** `integrate.sh` fast-forwards local `main` before verify and resets it on failure.
+- **Integration failures count towards the cap of 3,** even when the fault is drift. Pre-emptively ask a WP at 2 to rebase before its turn.
+- **Hotspots in practice:** `engine/config.ts` (every WP appends a block) and the shared e2e specs and helpers. Expect conflicts there. See the proposals in `docs/progress.md`.
+- **Machine:** keep the repo under a path whose last component ends in `.nosync`. iCloud Drive syncs `~/Documents`, and `fileproviderd` churn caused load spikes and `getcwd` EINTR. `health.sh` reacts to load1, so iCloud overhead shows up as a low ceiling.
+- **Agent quirks:** a prompt can land without its Enter under load (`prompt_agent` handles it). A macOS Keychain prompt can block new agents (the agent hangs in `SecItemCopyMatching`, and the user must answer the dialog). Dev servers can outlive their panes (`cleanup.sh` kills them).
