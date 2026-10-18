@@ -124,7 +124,10 @@ The trust-folder prompt never appeared, because worktrees under the trusted repo
 
 ## Questions for the user
 
-None open.
+**M7 accounts and sync (filed 2026-10-18, deferred; the packages are `blocked` until these are answered):**
+1. **New AWS services.** Sync needs a second stack, `FretworkSync`, beside `FretworkSite`: Cognito, SES, an HTTP API with Lambda, and DynamoDB. At this scale it should cost cents a month, but it's new spend and new surface. OK to add?
+2. **Email sender.** Sign-in emails need a verified SES sender, e.g. `no-reply@guitar.dwellsee.com`. That means DKIM records under `guitar.dwellsee.com`, plus a one-off request to move SES out of its sandbox, which is done in your AWS account. Which address, and may the stack create those DNS records?
+3. **Privacy.** Emails and progress would be stored in AWS us-east-1. Is a short privacy note on the About page enough, or do you want a separate privacy policy page?
 
 ### Answered
 

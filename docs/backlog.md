@@ -769,6 +769,81 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ---
 
+## M7: Accounts and sync (deferred)
+
+Filed from user feedback (2026-10-18): "allow people to enter an email address to save progress. Login should be optional. To log in, it should email you a link, or a code; both should work. If a user already has progress but no login, it should be transferred to the server so that multiple devices stay in sync." **Not to be worked on yet.** Every package is `blocked` until the user answers the M7 questions in `docs/progress.md` (new AWS services beyond `FretworkSite`, the email sender, and privacy). Design §1 principle 8 still holds: everything works without an account, offline, on one device.
+
+Notes for whoever picks this up:
+- **An installed iPad PWA doesn't open email links.** Tapping a magic link opens Safari, which has separate storage from the home-screen app. So the emailed **code** is the primary path in the installed app. The link signs in the browser it opens in. Every email carries both.
+- **Merge by design, not last-writer-wins on everything.** Review logs and XP events are append-only, so the union is keyed by ID. FSRS cards can be replayed from logs, or merged with per-card `updatedAt`. Settings use per-field last-writer-wins. Streaks and stats are derived.
+- The scope is accounts and sync. The rest of design §11's M7 (Capacitor build, Web Push reminders, opt-in leagues) builds on this and isn't filed yet.
+
+### M7-01 · [contract] Sync model and merge rules (pure)
+- **Status:** blocked
+- **Deps:** —
+- **Design:** §1 (principle 8), §11 M7
+- **Owns:** `app/src/storage/sync/model.ts`, `app/src/storage/sync/merge.ts`, `app/src/storage/sync/*.test.ts`, `app/src/storage/db.ts` (hotspot: new schema version for IDs, `updatedAt`, tombstones and an outbox)
+- **Acceptance:**
+  - Every syncable table (cards, review logs, settings, gamification tables) has a stable ID, `updatedAt` and tombstones. A Dexie schema version is appended, never edited.
+  - Pure merge functions for each table follow the rules above. They're property-tested: merging is commutative, associative and idempotent, and no review log is ever lost.
+  - Document the sync protocol (push and pull with a server cursor) in `docs/design/sync.md`.
+
+### M7-02 · Infra: passwordless auth and sync API stack
+- **Status:** blocked
+- **Deps:** M7-01
+- **Owns:** `infra/lib/sync-stack.ts`, `infra/bin/app.ts`, `infra/test/sync-stack.test.ts`, `scripts/deploy.sh`
+- **Acceptance:**
+  - A separate CDK stack (`FretworkSync`, us-east-1). It has a Cognito user pool with passwordless email sign-in, where one email carries both a magic link and a 6-digit code: single use, about 15-minute expiry, a few attempts, rate-limited. It also has SES sending from an approved address, an HTTP API with a JWT authoriser, Lambda, and a DynamoDB table partitioned by user.
+  - No account IDs, ARNs or zone IDs in git. Domain and sender come from config with env overrides (`scripts/lib.sh`). DNS records are created only under `guitar.dwellsee.com` (e.g. SES DKIM), as the user approves.
+  - CDK assertion tests. `pnpm ship` deploys both stacks, and smoke checks the API's health route.
+
+### M7-03 · Sync API handlers
+- **Status:** blocked
+- **Deps:** M7-01, M7-02
+- **Owns:** `infra/lambda/sync/**`
+- **Acceptance:**
+  - `push` (a batch of changed records) and `pull` (changes since a cursor) per authenticated user. A user can only reach their own data, with a test for it. Batches are size-limited and idempotent.
+  - The handlers reuse M7-01's merge functions. Unit tests run against a local DynamoDB fake.
+  - `DELETE /account` removes all of the user's server data and the Cognito user.
+
+### M7-04 · "Save your progress": optional email sign-in UI
+- **Status:** blocked
+- **Deps:** M7-02
+- **Owns:** `app/src/account/**`, `app/src/routes/account.route.tsx`, `app/src/screens/progress/panels/account.tsx`, `app/e2e/m7-04.spec.ts`
+- **Acceptance:**
+  - Optional, and never a gate: a Progress panel (and a gentle Today card after a few sessions) offers "Save your progress across devices". The learner enters an email and gets "check your email". Then they either type the 6-digit code in the app or tap the link, which lands on `/account/verify`.
+  - Copy explains that the code is the way to sign in to the installed iPad app. Errors cover expired, used and wrong codes. Sign-out keeps the local data.
+  - iPad-first layout, a11y (Lighthouse 100), and no analytics. An e2e test runs against a mocked auth endpoint.
+
+### M7-05 · Client sync engine, including uploading existing progress
+- **Status:** blocked
+- **Deps:** M7-01, M7-03, M7-04
+- **Owns:** `app/src/storage/sync/engine.ts`, `app/src/storage/sync/engine.test.ts`, `app/e2e/m7-05.spec.ts`
+- **Acceptance:**
+  - On first sign-in, all existing local progress is pushed to the server. Nothing is lost if the server already holds another device's data: it merges.
+  - After that, sync runs on app start, focus, reconnect and after each session, from a Dexie outbox. Everything stays offline-first, and the UI never waits on the network.
+  - Two-device tests against a fake server: diverged offline progress on both devices converges to the same state after sync, review logs are complete, and streaks and stats match.
+  - A sync status line (last synced, offline, error) in the account panel.
+
+### M7-06 · Account management and privacy
+- **Status:** blocked
+- **Deps:** M7-04, M7-05
+- **Owns:** `app/src/screens/progress/panels/account-manage.tsx`, `app/src/routes/about.route.tsx`, `docs/design/app-design.md`, `app/e2e/m7-06.spec.ts`
+- **Acceptance:**
+  - Delete account removes the server data (M7-03) and keeps or clears local data as the learner chooses. Export still works signed in or not.
+  - The About and privacy copy explain what's stored (email, progress), where (AWS us-east-1), and why. There's still no analytics.
+  - Design §1 principle 8 and §2 (Backend) are updated to describe optional sync.
+
+### M7-07 · M7 milestone QA
+- **Status:** blocked
+- **Deps:** M7-01, M7-02, M7-03, M7-04, M7-05, M7-06
+- **Owns:** `docs/progress.md`, `app/e2e/m7-07.spec.ts`
+- **Acceptance:**
+  - An end-to-end test in production with two browser contexts: sign in by code on one and by link on the other, practise offline on both, reconnect, and see identical progress.
+  - Abuse checks: code brute-force limits, email rate limits, cross-user access denied.
+
+---
+
 ## M8: Reading and meter (future)
 
 Design §12, research/03 Tracks R and T, drills D22–D32.
