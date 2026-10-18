@@ -39,7 +39,8 @@ You are a **worker agent** on Fretwork, an iPad-first guitar-learning PWA. You b
 
 ## Before you report
 
-1. Run `pnpm verify` in your worktree. It must pass: typecheck, lint, format, unit + coverage, infra tests, build, e2e. Fix failures; don't skip or weaken tests.
+1. `git rebase main` first. Other packages merge while you work, and a spec written against an older `main` can break once theirs land (e.g. new drills change which prompt a fresh session starts with). Resolve conflicts within your Owns.
+1. Then run `pnpm verify` in your worktree. It must pass: typecheck, lint, format, unit + coverage, infra tests, build, e2e. Fix failures; don't skip or weaken tests.
 2. Make sure everything is committed (`git status` clean).
 3. Write your report to **`{{REPORT}}`** using exactly this structure:
 
