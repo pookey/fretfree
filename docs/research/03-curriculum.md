@@ -51,6 +51,41 @@ Every topic ID below is used throughout the design (`docs/design/`).
 | I6 | Ear training for intervals, chord quality, bass movement and progression ID (runs from day one) | Hear I–V–vi–IV vs vi–IV–I–V |
 | I7 | Major scale in CAGED or 3NPS positions | Play 5 positions; start from any degree |
 
+### Track R: Reading standard notation (future, M8)
+
+Guitar music is written in **treble clef sounding an octave lower** (treble 8vb). Reading matters most for players heading toward jazz, session or classical work, or formal study. It's lower priority for rock and pop players who learn by ear or from tab. That's why it's a **separate optional track**, promoted when the learner picks `notation: staff` or the Jazz or "Understand everything" goals.
+
+| ID | Topic | Learner can DO (quizzable) |
+|---|---|---|
+| R1 | Staff basics: treble clef, guitar 8vb, lines and spaces, ledger lines (low E is 3 ledger lines below), accidentals, naturals | Name any note on the staff in under 2s, including ±3 ledger lines |
+| R2 | Staff ↔ fretboard in **open position** (frets 0–3), then **5th, 7th, 9th and 12th position** (Leavitt-style position reading) | Given a staff note and a position, tap its fret in under 2s; given a fret, place it on the staff |
+| R3 | Key signatures on the staff (links to I3) and how they change fingerings | Read a key signature; apply it to an unaltered note |
+| R4 | Rhythm notation: note and rest values, dots, ties, beams, 8ths → 16ths → triplets, syncopation | Count and tap a written bar accurately |
+| R5 | Intervallic and pattern reading: see steps, skips and familiar shapes instead of decoding single notes | Name the interval between adjacent staff notes in under 1.5s |
+| R6 | Sight-reading fluency: read ahead, keep going through errors, simple melodies → chord symbols over a melody | Play 4–8 bars at a target tempo with ≥90% correct notes (mic) |
+| R7 | Tab ↔ staff: reading both, and choosing a position for a staff passage | Pick a playable position for a short phrase |
+
+### Track T: Time signatures and meter (future, M8)
+
+This extends F4 (rhythm basics) into an understanding of meter. **High value for every player**: strumming patterns, feel, counting songs in, and playing with others all depend on it.
+
+| ID | Topic | Learner can DO (quizzable) |
+|---|---|---|
+| T1 | What a time signature means: top number = beats per bar (simple time), bottom number = beat unit; bar lines | Read 4/4, 3/4 and 2/4; say what each number means |
+| T2 | Simple vs **compound** meter: 6/8 is **2 dotted-quarter beats** (not 6), 9/8 and 12/8 likewise; cut time (2/2) | Classify a time signature; say how many felt beats it has |
+| T3 | Counting systems: "1 e & a" for simple time and "1 la li" for compound, or Takadimi syllables | Count a bar aloud in time (tap-along check) |
+| T4 | Common meters by feel: 4/4 rock and pop, 3/4 waltz, 6/8 and 12/8 ballad and blues shuffle, 2/4 march | **Identify the meter by ear** from a clip or strummed pattern |
+| T5 | Strumming and accent patterns per meter; where the downbeat falls | Strum or tap with the correct accent pattern against a click |
+| T6 | Pickups (anacrusis), repeats, first and second endings, simple form markings | Find bar 1 of a pickup melody; follow repeat signs |
+| T7 | Odd and mixed meters (advanced): 5/4 and 7/8 as groupings (3+2, 2+2+3) | Tap the grouping; identify 5/4 and 7/8 by ear |
+
+**Sources and evidence** (verify before relying on specifics):
+
+- Sight-reading skill is predicted by accumulated sight-reading practice and fast information processing (Kopiez & Lee 2006, 2008; Lehmann & Ericsson 1996).
+- Skilled readers have a larger eye-hand span: they read ahead in chunks (Sloboda 1974, 1984). That supports R5 pattern reading.
+- "Sound before symbol" (Gordon's Music Learning Theory, Kodály) supports hearing and moving to a meter before reading it.
+- Count-syllable systems such as Takadimi have some classroom evidence (Hoffman, Pelto & White 1996).
+
 ### Tier 3: Advanced (optional, lower payoff)
 
 - Modes as chord-scale colours
@@ -70,6 +105,7 @@ Every topic ID below is used throughout the design (`docs/design/`).
 7. I1–I2.
 8. I3–I5, then I7.
 9. Advanced topics, as optional modules.
+10. **Future tracks:** T (time signatures; T1–T5 are valuable for everyone) and R (reading; promoted for readers and the jazz and general goals).
 
 ## Touch drills by topic (**mic** = pitch detection on a real guitar)
 

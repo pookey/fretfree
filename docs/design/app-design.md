@@ -213,6 +213,8 @@ The About screen explains the evidence honestly: *"This app adapts to what you k
 | **Advanced (optional)** | modes, drop-2, reharmonisation | — |
 | **Rhythm (parallel track)** | F4: tap and strum timing | — |
 | **Ear (parallel track)** | I6 interval, quality and progression ID | from day one |
+| **M-Meter (future, M8)** | T1–T7: time signatures, simple vs compound, counting, meter by ear, accents, pickups and repeats | F4 / D20 rhythm track |
+| **M-Reading (future, M8)** | R1–R7: staff reading for guitar (treble 8vb), staff ↔ fretboard by position, rhythm notation, sight-reading | F2 (strings 6 and 5) and T1. Promoted for `notation: staff` and the jazz and general goals |
 
 Following the research, **M-Harmony and M-Progressions open early**, in parallel with the fretboard modules, because playing songs drives motivation.
 
@@ -252,6 +254,17 @@ interface DrillType<P = unknown, A = unknown> {
 | D19 | Voice-leading puzzle | tap | I1 | M6 |
 | D20 | Tap and strum rhythm | tap / mic onset | F4 | M6 |
 | D21 | Visualise it (mental practice): "picture the A shape at fret 5, then tap the roots" | tap | C6 | M6 |
+| D22 | Name the note on the staff | choice / keyboard | R1 | M8 |
+| D23 | Staff → fretboard: tap where it's played, in the current position | tap | R2 | M8 |
+| D24 | Fretboard → staff: place the highlighted fret's note on the staff | tap the staff | R1, R2 | M8 |
+| D25 | Read the key signature, then apply it to a note | choice | R3, I3 | M8 |
+| D26 | Sight-read: play a short scrolling passage at an adaptive tempo | **mic** | R6, R2 | M8 |
+| D27 | Rhythm reading: tap the written rhythm against a click (onset timing) | tap / mic onset | R4, T3 | M8 |
+| D28 | Rhythm dictation: hear a bar, then pick or build its notation | choice / drag | R4, T4 | M8 |
+| D29 | Complete the bar: drag note values to fill a bar in a given time signature | drag | T1, T2, R4 | M8 |
+| D30 | Hear the meter: 3/4 vs 4/4 vs 6/8 vs 12/8 (later 5/4, 7/8) | choice | T4, T7 | M8 |
+| D31 | Accent and strum in meter: strum with the correct accents; the click fades out (guidance fading) | tap / mic onset | T5 | M8 |
+| D32 | Simple or compound? How many felt beats? | choice | T2 | M8 |
 
 **Mic constraint:** pitch identifies the pitch, not the string. Mic drills therefore do one of three things:
 
@@ -397,5 +410,43 @@ There are 4 sections: **Today**, **Learn**, **Explore** and **Progress**. Settin
 | **M5 Mic mode** | Tuner, D16 and D17, mic onboarding | — |
 | **M6 Intermediate** | C7, I1, I2, I4, I5, I7, D18–D21, rhythm track | — |
 | **M7 Native and sync** (optional) | Capacitor iOS build, haptics, optional account sync, **Web Push streak reminders**, **opt-in weekly leagues** | — |
+| **M8 Reading and meter** (future) | Tracks R and T (research/03), D22–D32, VexFlow notation renderer, metronome and onset-timing engine (§12) | Readers can go from staff to fretboard in open and 5th position at fluent speed. Every learner can identify and count 4/4, 3/4 and 6/8 |
 
 **Deploy continuously, locally.** Every work package merged to `main` ships to production through `pnpm ship`, run on the developer machine: verify → build → deploy to AWS → smoke-test https://guitar.dwellsee.com → push to GitHub. GitHub is only a git remote; there are no GitHub Actions. Milestones group features; they are not release gates. The orchestration skill (see `.claude/skills/`) drives this roadmap.
+
+## 12. Future: reading notation and time signatures (M8)
+
+The **Time signatures** track (T) is valuable for everyone. The **Reading** track (R) is optional and promoted by the learner's notation preference and goals (§4). Both reuse the same engine: items, FSRS, speed grading, adaptive scope and guide fading.
+
+**Rendering.** **VexFlow** (MIT) for staves, clefs, key signatures, notes, rests, beams and tuplets. Guitar parts use treble clef 8vb. Optionally show tab under the staff (VexFlow `TabStave`) at higher guide levels; it fades away as reading improves.
+
+**Items:**
+
+- R1: `staff:E4@treble8vb`, both directions.
+- R2: `staff→fret:G3@pos5`. In a given position each pitch has a unique fret, which removes the mic ambiguity problem (§6).
+- T1–T2: `meter:6/8:feltBeats`.
+- T4: `meter-ear:3/4`.
+- R4: rhythm cells, such as `rhythm:dotted-8th-16th`, which are short reusable rhythm patterns.
+
+**Timing engine (shared with the F4 rhythm track, D20):**
+
+- A Tone.js Transport metronome, with accent patterns per meter.
+- Tap and mic onset detection.
+- Latency compensation. Calibrate the device's audio output and input latency (`AudioContext.outputLatency` plus a tap-to-click calibration) so timing grades are fair on iPad.
+- Timing grade: on-time within about ±30–50ms (configurable), feeding the same Again/Hard/Good/Easy mapping.
+
+**Pedagogy (evidence rules apply):**
+
+- **Sound before symbol:** hear, tap and count a meter or rhythm pattern before seeing its notation.
+- **Pattern and intervallic reading** (R5) is introduced early, to build read-ahead chunks.
+- **Position-by-position reading:** open position, then the 5th position, so each staff note maps to exactly one fret.
+- **Fade the click:** in D31 the metronome drops beats as accuracy improves, to build internal pulse. Guidance hypothesis.
+- **Interleave confusables:** adjacent lines and spaces, ledger lines, 6/8 vs 3/4, dotted vs straight rhythms.
+- **Sight-reading volume matters most** (Kopiez & Lee). D26 generates unlimited fresh passages from the learner's known notes and rhythms, so they never memorise a piece instead of reading it.
+
+**Screens.**
+
+- iPad landscape: the staff above the neck, with both visible at once. This is the key iPad advantage for staff ↔ fretboard drills.
+- Explore gains a **Notation viewer**: tap a note on the staff to see it on the neck and vice versa. It also includes a **Metronome** (with meter and accent presets).
+
+**Gamification hooks.** Achievements such as "Open-position reader", "5th-position reader", "Waltz, shuffle, march" (meter-by-ear) and "Steady pulse" (no click for 8 bars).
