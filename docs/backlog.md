@@ -456,7 +456,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The "Quiz me on this" buttons in Explore and Learn use it.
 
 ### M2-12 · Explore: fretboard explorer v2
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-01, M2-01
 - **Design:** §7 Explore
 - **Owns:** `app/src/screens/explore/views/fretboard-explorer.tsx`, `app/e2e/m2-12.spec.ts`
