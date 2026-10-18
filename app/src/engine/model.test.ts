@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   findItemId,
   findMarkerItemId,
+  intervalItemId,
   itemId,
   letterItemId,
   markerItemId,
   noteItemId,
   parseFindItemId,
+  parseIntervalItemId,
   parseItemId,
   parseLetterItemId,
   parseMarkerItemId,
@@ -30,6 +32,9 @@ describe('item IDs', () => {
     expect(findMarkerItemId(12)).toBe('find-marker:f12');
     expect(repeatItemId(12, 3)).toBe('repeat:+12@f3');
     expect(repeatItemId(-12, 15)).toBe('repeat:-12@f15');
+    expect(intervalItemId('interval', 'M3', 6, 5)).toBe('interval:M3@s6→s5');
+    expect(intervalItemId('interval-name', 'TT', 3, 1)).toBe('interval-name:TT@s3→s1');
+    expect(() => intervalItemId('interval', 'X9' as 'M3', 6, 5)).toThrow(RangeError);
   });
 
   it('parses each kind', () => {
@@ -40,6 +45,7 @@ describe('item IDs', () => {
     expect(parseMarkerItemId('marker:f0')).toEqual({ kind: 'marker', fret: 0 });
     expect(parseMarkerItemId('find-marker:f9')).toEqual({ kind: 'find-marker', fret: 9 });
     expect(parseRepeatItemId('repeat:-12@f17')).toEqual({ frets: -12, from: 17 });
+    expect(parseIntervalItemId('interval:b7@s5→s3')).toBeNull();
   });
 
   const refs: ItemRef[] = [
@@ -50,6 +56,8 @@ describe('item IDs', () => {
     { kind: 'marker', fret: 3 },
     { kind: 'find-marker', fret: 5 },
     { kind: 'repeat', frets: 12, from: 0 },
+    { kind: 'interval', interval: 'm7', from: 5, to: 3 },
+    { kind: 'interval-name', interval: 'M3', from: 3, to: 2 },
   ];
 
   it.each(refs)('round-trips $kind refs', (ref) => {
@@ -74,6 +82,10 @@ describe('item IDs', () => {
     'marker:7',
     'marker:f-1',
     'repeat:12@f3',
+    'interval:M9@s6→s5',
+    'interval:M3@s06→s5',
+    'interval:M3@s6-s5',
+    'interval-name:M3@s6',
     'nope:G',
   ])('rejects non-canonical %j', (id) => {
     expect(parseItemId(id)).toBeNull();

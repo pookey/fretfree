@@ -1,5 +1,5 @@
 import type { Card as FsrsCard, Rating } from 'ts-fsrs';
-import type { Position } from '../theory';
+import { isIntervalName, type IntervalName, type Position } from '../theory';
 
 /** Design §3.1 / §3.6. */
 
@@ -130,7 +130,8 @@ export type ItemRef =
   | { kind: 'marker'; fret: number }
   | { kind: 'find-marker'; fret: number }
   | { kind: 'repeat'; frets: number; from: number }
-  | { kind: 'octave'; from: Position; string: number };
+  | { kind: 'octave'; from: Position; string: number }
+  | { kind: 'interval' | 'interval-name'; interval: IntervalName; from: number; to: number };
 
 const INT = '(0|[1-9]\\d*)';
 const OFFSET = '([+-][1-9]\\d*)';
@@ -143,6 +144,7 @@ const LETTER_ITEM = new RegExp(`^letter:${OFFSET}@([A-G])$`);
 const MARKER_ITEM = new RegExp(`^(marker|find-marker):f${INT}$`);
 const REPEAT_ITEM = new RegExp(`^repeat:${OFFSET}@f${INT}$`);
 const OCTAVE_ITEM = new RegExp(`^octave:s${INT}f${INT}→s${INT}$`);
+const INTERVAL_ITEM = new RegExp(`^(interval|interval-name):([A-Za-z0-9]+)@s${INT}→s${INT}$`);
 
 function count(n: number, what: string): number {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Invalid ${what}: ${n}`);
@@ -244,6 +246,37 @@ export function parseOctaveItemId(id: string): { from: Position; string: number 
   return { from: { string: Number(m[1]), fret: Number(m[2]) }, string: Number(m[3]) };
 }
 
+/**
+ * `interval:M3@s6→s5`: tap the M3 above a root on string 6, on string 5
+ * (name → position). `interval-name:M3@s6→s5` is the reverse: name the
+ * interval two dots on strings 6 and 5 make (position → name).
+ */
+export function intervalItemId(
+  kind: 'interval' | 'interval-name',
+  interval: IntervalName,
+  from: number,
+  to: number,
+): string {
+  if (!isIntervalName(interval)) throw new RangeError(`Invalid interval: ${String(interval)}`);
+  return `${kind}:${interval}@s${count(from, 'string')}→s${count(to, 'string')}`;
+}
+
+export function parseIntervalItemId(id: string): {
+  kind: 'interval' | 'interval-name';
+  interval: IntervalName;
+  from: number;
+  to: number;
+} | null {
+  const m = INTERVAL_ITEM.exec(id);
+  if (!m || !isIntervalName(m[2] as string)) return null;
+  return {
+    kind: m[1] as 'interval' | 'interval-name',
+    interval: m[2] as IntervalName,
+    from: Number(m[3]),
+    to: Number(m[4]),
+  };
+}
+
 export function itemId(ref: ItemRef): string {
   switch (ref.kind) {
     case 'note':
@@ -262,6 +295,9 @@ export function itemId(ref: ItemRef): string {
       return repeatItemId(ref.frets, ref.from);
     case 'octave':
       return octaveItemId(ref.from, ref.string);
+    case 'interval':
+    case 'interval-name':
+      return intervalItemId(ref.kind, ref.interval, ref.from, ref.to);
   }
 }
 
@@ -280,5 +316,7 @@ export function parseItemId(id: string): ItemRef | null {
   if (repeat) return { kind: 'repeat', ...repeat };
   const octave = parseOctaveItemId(id);
   if (octave) return { kind: 'octave', ...octave };
+  const interval = parseIntervalItemId(id);
+  if (interval) return interval;
   return null;
 }
