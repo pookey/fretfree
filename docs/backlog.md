@@ -624,7 +624,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Shapes include the common open and barre voicings as well as the CAGED shapes, at varied roots and positions.
 
 ### M3-05 · C6 CAGED skills plus D9 "Build the shape at a root"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-01
 - **Owns:** `app/src/engine/skills/c6.ts`, `app/src/drills/d9-build-caged/**`, `app/e2e/m3-05.spec.ts`
 - **Acceptance:**
