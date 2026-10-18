@@ -154,7 +154,7 @@ Stop spawning, finish or park in-flight work, and write the situation to `docs/p
 
 ## 9. Operating notes (learned in the first fan-out, 2026-10-18)
 
-- **The loop in practice:** keep one `watch.sh` running in the background, and kill any stale copy before starting another. On wake: spawn reviewers, send fix briefs, and append approved WPs to `.orchestrator/lane-queue.txt`. Keep one `lane-next.sh` running whenever the queue is non-empty. After each ship, run `cleanup.sh <WP> && refill.sh`.
+- **The loop in practice:** keep one `watch.sh` running in the background, and kill any stale copy before starting another. On wake: spawn reviewers, send fix briefs, and append approved WPs to `.orchestrator/lane-queue.txt`, marking each one `node $O/state.mjs worker <WP> '{"status":"queued"}'`. `queued` counts as in flight, so `refill.sh` won't re-plan a WP that is waiting for the lane, and `watch.sh` stops waking on it. Keep one `lane-next.sh` running whenever the queue is non-empty. After each ship, run `cleanup.sh <WP> && refill.sh`.
 - **Queue only real reports.** A worker that is idle while a background `pnpm verify` runs isn't finished. Check for `REPORTED <WP>` on screen, a clean worktree, and no "shell still running".
 - **Rebase drift is the main failure mode.** New drills change what a fresh session serves (e.g. D3 put F1 prompts first, and D2 made answers positions), which breaks specs and tests written earlier. Before a WP joins the queue, make sure it was rebased onto `origin/main` recently, and pre-flight waiting WPs in parallel rather than letting them fail one by one in the serial lane.
 - **Rebase onto `origin/main`, never local `main`.** `integrate.sh` fast-forwards local `main` before verify and resets it on failure.

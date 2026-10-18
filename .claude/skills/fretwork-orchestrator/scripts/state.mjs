@@ -34,7 +34,7 @@ const EMPTY = {
   parallelism: [],
 };
 
-const IN_FLIGHT = ['starting', 'working', 'reviewing', 'fixing', 'integrating'];
+const IN_FLIGHT = ['starting', 'working', 'reviewing', 'fixing', 'queued', 'integrating'];
 
 function load() {
   if (!existsSync(file)) return structuredClone(EMPTY);
