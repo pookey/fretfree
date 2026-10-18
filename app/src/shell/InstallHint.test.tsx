@@ -84,7 +84,7 @@ describe('<StorageNote>', () => {
       'Your progress in Chrome won’t carry over by itself',
     );
     expect(screen.getByTestId('install-storage')).toHaveTextContent(
-      'Progress → Your data → Import data',
+      'Settings → Your data → Import data',
     );
     await userEvent.click(screen.getByRole('button', { name: 'Export my progress' }));
     expect(save).toHaveBeenCalledOnce();

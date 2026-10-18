@@ -95,7 +95,7 @@ test.describe('M1-29 install step and Today card', () => {
 
     const card = installCard(page);
     await expect(card.getByTestId('install-storage')).toContainText('won’t carry over by itself');
-    await expect(card).toContainText('Progress → Your data → Import data');
+    await expect(card).toContainText('Settings → Your data → Import data');
     const download = page.waitForEvent('download');
     await card.getByRole('button', { name: 'Export my progress' }).click();
     expect((await download).suggestedFilename()).toMatch(/^fretfree-\d{4}-\d{2}-\d{2}\.json$/);

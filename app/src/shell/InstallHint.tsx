@@ -187,7 +187,7 @@ export function StorageNote({
     <div className={styles.note} data-testid="install-storage">
       <p>
         Your progress in {name} won’t carry over by itself: the Home Screen app keeps its own.
-        Export it here, then in the installed app open <b>Progress → Your data → Import data</b>.
+        Export it here, then in the installed app open <b>Settings → Your data → Import data</b>.
       </p>
       <ExportButton />
     </div>
