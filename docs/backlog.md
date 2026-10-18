@@ -43,7 +43,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ## M1: Fretboard notes MVP
 
 ### M1-01 · [contract] One-file-per-entry registries for routes, Today cards, Progress panels, Explore views and onboarding steps
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **Design:** §7
 - **Owns:** `app/src/App.tsx`, `app/src/routes/**`, `app/src/screens/**`, `app/src/shell/nav.ts`, `app/e2e/m1-01.spec.ts`
