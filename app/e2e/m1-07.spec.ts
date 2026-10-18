@@ -13,18 +13,22 @@ const ONBOARDING_STEPS = 6;
 const MAX_PAUSE_MS = 1000;
 const REACTION_MS = 300;
 
+const calibrationNeck = (page: Page) => page.getByRole('group', { name: 'Calibration neck' });
+
 /** Tap every dot as it lights, and return the stored tap time from the result. */
 async function runCalibration(page: Page): Promise<number> {
   await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1000);
   await page.getByRole('button', { name: 'Start' }).click();
-  const dot = page.getByTestId('marker-target');
+  // Other necks (e.g. the Progress heatmap) render cells too.
+  const neck = calibrationNeck(page);
+  const dot = neck.getByTestId('marker-target');
   for (let n = 1; n <= TRIALS; n++) {
     await expect(dot).toHaveCount(0);
     await page.clock.runFor(MAX_PAUSE_MS);
     await expect(dot).toBeVisible();
     const cell = await dot.evaluate((g) => `s${g.dataset.string}f${g.dataset.fret}`);
     await page.clock.runFor(REACTION_MS);
-    await page.locator(`[data-cell="${cell}"]`).click();
+    await neck.locator(`[data-cell="${cell}"]`).click();
   }
   const result = page.getByTestId('calibration-result');
   await expect(result).toHaveText(/Your tap time is \d+ ms/);
@@ -60,13 +64,13 @@ test.describe('M1-07 latency calibration', () => {
     await expect(page.getByRole('heading', { name: 'Tap the lit dots', level: 1 })).toBeVisible();
     await expect(page.getByTestId('onboarding-progress')).toHaveText('Step 6 of 6');
     await expect(page.getByText(/Tap each dot as soon as it lights up: 16 dots/)).toBeVisible();
-    await expect(page.getByTestId('marker-target')).toHaveCount(0);
+    await expect(calibrationNeck(page).getByTestId('marker-target')).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
 
     // Regular-wide: the neck sits in the choice pane, beside the explanation,
     // and its cells stay at least 44pt.
     const choice = page.getByTestId('onboarding-choice');
-    const neck = choice.getByRole('group', { name: 'Calibration neck' });
+    const neck = calibrationNeck(page);
     await expect(neck).toBeVisible();
     if (info.project.name !== 'iphone-smoke') {
       const cell = await neck.locator('[data-cell="s1f5"]').boundingBox();
@@ -106,7 +110,7 @@ test.describe('M1-07 latency calibration', () => {
     await expect(settings.getByTestId('latency-baseline')).toHaveText(`${ms} ms`);
     await settings.getByRole('button', { name: 'Done' }).click();
     await expect(settings.getByRole('button', { name: 'Recalibrate' })).toBeVisible();
-    await expect(page.getByRole('group', { name: 'Calibration neck' })).toHaveCount(0);
+    await expect(calibrationNeck(page)).toHaveCount(0);
 
     // The new tap time survives a relaunch.
     await page.reload();
