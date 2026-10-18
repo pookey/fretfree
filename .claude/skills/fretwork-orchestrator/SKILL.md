@@ -134,7 +134,7 @@ Stop spawning, finish or park in-flight work, and write the situation to `docs/p
 - you hit a product, scope, cost or external-account decision (a new paid service, an App Store account, analytics);
 - production can't be restored by a revert + ship;
 - a trust prompt appears for a directory outside `.orchestrator/worktrees/`;
-- AWS needs anything beyond the `FretworkSite` stack.
+- AWS needs anything beyond the `FretworkSite` and `FretworkSync` stacks. FretworkSync (Cognito, HTTP API with Lambda, DynamoDB) was approved by the user on 2026-10-18 for M7. The `FretworkEmail` and `FretworkBrand` stacks belong to the infra session.
 
 ## 7. Safety
 
