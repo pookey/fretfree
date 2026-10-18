@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Rating } from 'ts-fsrs';
 import { createScheduler } from '../../../engine';
-import { getDb } from '../../../storage';
+import { getDb, recordAnswer } from '../../../storage';
 import { PROGRESS_PANELS } from '../registry';
 import { Panel, id, order, title } from './heatmap';
 
@@ -36,20 +36,23 @@ describe('Progress heatmap panel', () => {
       Rating.Good,
       now,
     );
-    await act(async () => {
-      await getDb().cards.put(card);
-      await getDb().reviewLogs.add({
-        itemId: 'note@s5f7',
-        skillId: 'F2.string5-naturals',
-        drillType: 'name-the-note',
-        correct: true,
-        responseMs: 1500,
-        rating: Rating.Good,
-        hintUsed: false,
-        answerGiven: 'E',
-        at: now,
-      });
-    });
+    // One transaction, as the session runner writes it.
+    await act(() =>
+      recordAnswer(getDb(), {
+        card,
+        log: {
+          itemId: 'note@s5f7',
+          skillId: 'F2.string5-naturals',
+          drillType: 'name-the-note',
+          correct: true,
+          responseMs: 1500,
+          rating: Rating.Good,
+          hintUsed: false,
+          answerGiven: 'E',
+          at: now,
+        },
+      }),
+    );
 
     await waitFor(() => expect(screen.getAllByTestId('heat-tile')).toHaveLength(1));
     expect(screen.getByTestId('forecast-string-5')).toHaveTextContent(
@@ -60,5 +63,21 @@ describe('Progress heatmap panel', () => {
     expect(screen.getByTestId('heat-cell-detail')).toHaveTextContent('String 5, fret 7 · E');
     expect(screen.getByTestId('heat-answers')).toHaveTextContent('1 of 1 right');
     expect(screen.getByTestId('heat-median')).toHaveTextContent('1.5s');
+  });
+
+  it('reads only neck items, so other topics never land on the map', async () => {
+    const now = new Date();
+    const card = scheduler.review(
+      scheduler.newCard({ id: 'marker:f7', skillId: 'F3.markers' }, now),
+      Rating.Good,
+      now,
+    );
+    await getDb().cards.put(card);
+    render(<Panel revision={0} onDataChanged={() => {}} />);
+    await waitFor(() =>
+      expect(screen.getByTestId('heatmap-panel')).toHaveAttribute('data-loaded', 'true'),
+    );
+    expect(screen.queryAllByTestId('heat-tile')).toHaveLength(0);
+    expect(screen.getByTestId('retention-forecast')).toHaveTextContent(/Practise a session/);
   });
 });

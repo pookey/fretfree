@@ -82,6 +82,13 @@ describe('<FretboardHeatmap>', () => {
     expect(container.querySelectorAll('text')).not.toHaveLength(0);
   });
 
+  it('spells cell labels with the accidental preference, matching the detail', () => {
+    render(<FretboardHeatmap cells={cells} fretRange={RANGE} accidentalPref="flat" />);
+    expect(
+      screen.getByRole('button', { name: 'string 5, fret 1, Bb: not practised yet' }),
+    ).toBeInTheDocument();
+  });
+
   it('mirrors for left-handed players and falls back to plain labels for missing cells', () => {
     render(<FretboardHeatmap cells={[]} fretRange={RANGE} handedness="left" />);
     const neck = screen.getByRole('group', { name: 'Fretboard mastery map' });

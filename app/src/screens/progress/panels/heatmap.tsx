@@ -93,6 +93,7 @@ export function Panel({ revision }: PanelProps) {
           fretRange={fretRange}
           tuning={tuning}
           handedness={handedness}
+          accidentalPref={accidentalPref}
           selected={selected}
           onSelect={setSelected}
         />

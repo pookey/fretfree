@@ -4,6 +4,7 @@ import {
   STANDARD_TUNING,
   allStrings,
   stringCount,
+  type AccidentalPref,
   type FretRange,
   type Position,
   type Tuning,
@@ -22,6 +23,7 @@ export interface FretboardHeatmapProps {
   cells: readonly HeatCell[];
   fretRange: FretRange;
   tuning?: Tuning;
+  accidentalPref?: AccidentalPref;
   handedness?: Handedness;
   selected?: Position | null;
   onSelect?: (pos: Position) => void;
@@ -38,6 +40,7 @@ export function FretboardHeatmap({
   cells,
   fretRange,
   tuning = STANDARD_TUNING,
+  accidentalPref = 'sharp',
   handedness = 'right',
   selected = null,
   onSelect,
@@ -206,7 +209,9 @@ export function FretboardHeatmap({
               role="button"
               tabIndex={0}
               aria-pressed={isSelected}
-              aria-label={cell ? cellSummary(cell, tuning) : `string ${s}, fret ${c.fret}`}
+              aria-label={
+                cell ? cellSummary(cell, tuning, accidentalPref) : `string ${s}, fret ${c.fret}`
+              }
               data-cell={`s${s}f${c.fret}`}
               onClick={() => onSelect?.(pos)}
               onKeyDown={(e) => onKey(e, pos)}
