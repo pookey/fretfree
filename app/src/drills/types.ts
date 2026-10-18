@@ -39,6 +39,8 @@ export interface DrillRenderProps<P, A> {
   /** Set once the learner has answered; the view shows correct/wrong feedback. */
   feedback: DrillFeedback<A> | null;
   onAnswer(answer: A): void;
+  /** Blind mode: at guide level 0 the neck hides its inlays too (design §3.5). */
+  blindMode?: boolean;
   /**
    * The session's context panel. Drills place it beside their prompt area so
    * the neck can span the full width below (design §7 iPad landscape).

@@ -192,6 +192,7 @@ export function SessionScreen() {
               feedback={feedback}
               onAnswer={(a: unknown) => void onAnswer(a)}
               aside={aside}
+              blindMode={settings.blindMode}
             />
           ) : (
             <p className={styles.loading}>Preparing your session…</p>

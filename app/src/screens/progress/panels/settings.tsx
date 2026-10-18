@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { useAppStore } from '../../../app-store';
 import type { Settings } from '../../../engine';
 import { CalibrationSetting } from '../../../onboarding/calibration/CalibrationSetting';
@@ -10,6 +11,7 @@ export const title = 'Settings';
 export function Panel() {
   const settings = useAppStore((s) => s.settings);
   const update = useAppStore((s) => s.update);
+  const blindHint = useId();
   return (
     <div className={styles.settings}>
       <label>
@@ -43,6 +45,18 @@ export function Panel() {
         />
         Sound
       </label>
+      <label className={styles.toggle}>
+        <input
+          type="checkbox"
+          checked={settings.blindMode}
+          aria-describedby={blindHint}
+          onChange={(e) => void update({ blindMode: e.target.checked })}
+        />
+        Blind mode
+      </label>
+      <p id={blindHint} className={styles.muted}>
+        Once a skill&apos;s guides have faded completely, hide the fret inlays too.
+      </p>
       <CalibrationSetting />
     </div>
   );

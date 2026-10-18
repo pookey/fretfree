@@ -99,6 +99,8 @@ export interface Settings {
   volume: number;
   /** When onboarding was finished or skipped (design §4); `null` before first launch. */
   onboardedAt: Date | null;
+  /** Hide the fret inlays too at guide level 0 (design §3.5). */
+  blindMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -113,6 +115,7 @@ export const DEFAULT_SETTINGS: Settings = {
   soundOn: true,
   volume: 0.8,
   onboardedAt: null,
+  blindMode: false,
 };
 
 // --- Item IDs -------------------------------------------------------------
