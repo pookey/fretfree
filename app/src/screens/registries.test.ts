@@ -4,9 +4,10 @@ import { PROGRESS_PANELS } from './progress/registry';
 import { TODAY_CARDS } from './today/registry';
 
 describe('screen registries', () => {
-  it('composes Today from the hero, the install tip, quests, the stats, then quick drills', () => {
+  it('composes Today from the hero, streak repair, the install tip, quests, the stats, then quick drills', () => {
     expect(TODAY_CARDS.map((c) => c.id)).toEqual([
       'hero',
+      'streak-repair',
       'install',
       'quests',
       'stats',
