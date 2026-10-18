@@ -19,6 +19,10 @@ const OTHER_SKILLS = [
   'C3.sevenths',
   'C3.sixths',
   'C3.seconds',
+  'C4.sharp-keys',
+  'C4.flat-keys',
+  'C4.sharp-key-degrees',
+  'C4.flat-key-degrees',
 ];
 
 /**
