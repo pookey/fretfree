@@ -13,6 +13,8 @@ let n = 0;
 let clock: Date;
 const now = () => clock;
 const scheduler = createScheduler({ enableFuzz: false });
+// F1 items are served by D3; these tests drive D1 prompts.
+const NOTE_SKILLS = SKILLS.filter((s) => s.topic !== 'F1');
 
 beforeEach(() => {
   db = new FretworkDB(`tracker-${n++}`);
@@ -28,14 +30,14 @@ async function start(maxItems = 12) {
     db,
     scheduler,
     settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 500 },
-    skills: SKILLS,
+    skills: NOTE_SKILLS,
     drills: DRILLS,
     now,
     maxItems,
   };
   const [runner, tracker] = await Promise.all([
     SessionRunner.start(deps),
-    CelebrationTracker.begin({ db, skills: SKILLS, now }),
+    CelebrationTracker.begin({ db, skills: NOTE_SKILLS, now }),
   ]);
   return { runner, tracker };
 }
@@ -175,7 +177,7 @@ describe('CelebrationTracker', () => {
     });
     const tracker = await CelebrationTracker.begin({
       db,
-      skills: SKILLS,
+      skills: NOTE_SKILLS,
       now,
       config: { ...ENGINE_CONFIG.gamification.celebrations, perfectMinAnswers: 1 },
     });
