@@ -82,6 +82,11 @@
   animation: sheet-in 0.2s ease-out;
 }
 
+/* With a wrong answer's bar over its foot, the sheet's last lines scroll clear of it. */
+.screen[data-size-class='compact']:has(.feedbackBar[data-state='wrong']) .drillArea aside {
+  padding-bottom: calc(var(--space-4) + var(--feedback-bar) + var(--safe-bottom));
+}
+
 @keyframes sheet-in {
   from {
     transform: translateY(100%);
@@ -176,6 +181,17 @@
   .feedbackBar .primary {
     min-height: var(--tap);
   }
+
+  /* One line, so the bar stays within the header row on a narrow phone:
+     the reminder is for screen readers only here. */
+  .feedbackBar .again {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 
 @keyframes feedback-down {
@@ -188,8 +204,10 @@
   color: var(--correct);
 }
 
+/* --text, not --wrong: vermillion on the raised bar is under 4.5:1 in dark.
+   The bar's vermillion edge carries the colour. */
 .wrong {
-  color: var(--wrong);
+  color: var(--text);
 }
 
 .contextToggle {

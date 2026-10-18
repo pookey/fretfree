@@ -253,7 +253,8 @@ export function SessionScreen() {
               ) : (
                 <>
                   <p className={styles.wrong} data-testid="feedback-wrong">
-                    That was {feedback.result.expected}. You'll see it again shortly.
+                    That was {feedback.result.expected}.
+                    <span className={styles.again}> You'll see it again shortly.</span>
                   </p>
                   <button
                     type="button"
