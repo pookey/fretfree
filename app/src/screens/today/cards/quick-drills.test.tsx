@@ -23,19 +23,15 @@ describe('warmupPlan', () => {
   it('reviews the due fretboard items only', () => {
     const plan = warmupPlan(SKILLS, DRILLS, [dueNote, notDue, dueF1], scheduler, now);
     expect(plan.due).toBe(1);
-    expect(plan.options).toEqual({
-      minutes: 2,
-      maxItems: sessionLength(2),
-      skillIds: FRETBOARD,
-      reviewOnly: true,
-    });
+    expect(plan.focus).toEqual({ skillIds: FRETBOARD, itemIds: [] });
+    expect(plan.options).toEqual({ minutes: 2, maxItems: sessionLength(2), reviewOnly: true });
   });
 
   it('runs the fretboard frontier when nothing is due', () => {
     const plan = warmupPlan(SKILLS, DRILLS, [notDue, dueF1], scheduler, now);
     expect(plan.due).toBe(0);
     expect(plan.options.reviewOnly).toBeUndefined();
-    expect(plan.options.skillIds).toEqual(FRETBOARD);
+    expect(plan.focus.skillIds).toEqual(FRETBOARD);
   });
 
   it('ignores due items no drill can serve', () => {
@@ -50,12 +46,18 @@ describe('warmupPlan', () => {
     });
     expect(plan.due).toBe(0);
     expect(plan.options).toMatchObject({ minutes: 5, maxItems: sessionLength(5) });
-    expect(plan.options.skillIds).toEqual(['F3.markers', 'F3.repeat-12']);
+    expect(plan.focus.skillIds).toEqual(['F3.markers', 'F3.repeat-12']);
   });
 });
 
 function SessionProbe() {
-  return <pre data-testid="route-state">{JSON.stringify(useLocation().state)}</pre>;
+  const { search, state } = useLocation();
+  return (
+    <>
+      <p data-testid="route-search">{search}</p>
+      <pre data-testid="route-state">{JSON.stringify(state)}</pre>
+    </>
+  );
 }
 
 function renderCard() {
@@ -81,7 +83,9 @@ describe('Quick drills card', () => {
     expect(screen.getByTestId('warmup-copy')).toHaveTextContent(/nothing is due/i);
     await userEvent.click(link);
     const state = JSON.parse(screen.getByTestId('route-state').textContent!);
-    expect(state).toEqual({ minutes: 2, maxItems: sessionLength(2), skillIds: FRETBOARD });
+    expect(state).toEqual({ minutes: 2, maxItems: sessionLength(2) });
+    const focus = new URLSearchParams(screen.getByTestId('route-search').textContent!);
+    expect(focus.getAll('skill')).toEqual(FRETBOARD);
   });
 
   it('starts a review-only warm-up when fretboard items are due', async () => {

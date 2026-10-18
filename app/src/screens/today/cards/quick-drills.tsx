@@ -12,6 +12,7 @@ import {
 import { DRILLS } from '../../../drills/registry';
 import type { AnyDrillType } from '../../../drills/types';
 import { createDrillPicker } from '../../../session/drill-picker';
+import { focusFilter, focusHref, type SessionFocus } from '../../../session/focus';
 import type { SessionOptions } from '../../../session/options';
 import { allCards, getDb } from '../../../storage';
 import screens from '../../screens.module.css';
@@ -23,14 +24,17 @@ export const order = 30;
 export interface WarmupPlan {
   /** Due fretboard reviews a drill can serve. */
   due: number;
+  /** The fretboard skills, as a session focus (the link's URL). */
+  focus: SessionFocus;
   /** Route state for `/session`. */
   options: SessionOptions;
 }
 
 /**
  * The 2-minute fretboard warm-up (design §7 Today): a short, fixed-length
- * session on the fretboard skills. It reviews what is due; with nothing due,
- * it runs the frontier as a normal session would, new blocks and all.
+ * session focused on the fretboard skills. It reviews what is due; with
+ * nothing due, it runs the frontier as a normal session would, new blocks
+ * and all. Gating still sees every skill (`session/focus.ts`).
  */
 export function warmupPlan(
   skills: readonly Skill[],
@@ -41,21 +45,22 @@ export function warmupPlan(
   cfg = ENGINE_CONFIG.quickDrills,
 ): WarmupPlan {
   const topics: readonly string[] = cfg.warmupTopics;
-  const fretboard = skills.filter((s) => topics.includes(s.topic));
-  const ids = new Set(fretboard.map((s) => s.id));
-  const picker = createDrillPicker(fretboard, drills);
-  const due = cards.filter(
-    (c) =>
-      ids.has(c.skillId) &&
-      picker.canServe({ id: c.itemId, skillId: c.skillId }) &&
-      scheduler.isDue(c, now),
-  ).length;
+  const focus: SessionFocus = {
+    skillIds: skills.filter((s) => topics.includes(s.topic)).map((s) => s.id),
+    itemIds: [],
+  };
+  const inFocus = focusFilter(focus);
+  const picker = createDrillPicker(skills, drills);
+  const due = cards.filter((c) => {
+    const item = { id: c.itemId, skillId: c.skillId };
+    return inFocus(item) && picker.canServe(item) && scheduler.isDue(c, now);
+  }).length;
   return {
     due,
+    focus,
     options: {
       minutes: cfg.warmupMinutes,
       maxItems: sessionLength(cfg.warmupMinutes),
-      skillIds: [...ids],
       ...(due > 0 ? { reviewOnly: true } : {}),
     },
   };
@@ -89,7 +94,7 @@ export function Card() {
       {plan && (
         <div className={styles.row}>
           <Link
-            to="/session"
+            to={focusHref(plan.focus)}
             state={plan.options}
             className={screens.secondaryButton}
             data-testid="warmup"

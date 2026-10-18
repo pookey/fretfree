@@ -1,8 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { answer, expectNoHorizontalOverflow, freshStart, targetNote } from './helpers';
+import { focusSession } from './helpers/focus';
 
 // M1-18: Today's "2-minute fretboard warm-up" (design §7 Today). It reviews
 // due fretboard items, or runs the fretboard frontier when nothing is due.
+// The warm-up tests start from Today on purpose: the link sets the focus.
 
 const DUE_FRETS = [0, 3, 5];
 
@@ -66,7 +68,7 @@ test.describe('M1-18 Today quick drills', () => {
     await expectNoHorizontalOverflow(page);
 
     await warmup(page).click();
-    await expect(page).toHaveURL(/\/session$/);
+    await expect(page).toHaveURL(/\/session\?skill=F2\.string6-naturals&/);
     await expect(timeLeft(page)).toHaveText('2 min left');
     // A short, fixed-length session: one new block, not the daily 10 minutes.
     await expect(progress(page)).toHaveAttribute('aria-valuemax', '16');
@@ -97,9 +99,9 @@ test.describe('M1-18 Today quick drills', () => {
     await expect(page.getByTestId('summary-items')).toHaveText('3');
   });
 
-  test('the daily start button still runs the full session', async ({ page }) => {
+  test('a session without warm-up state keeps the daily time budget', async ({ page }) => {
     await freshStart(page);
-    await page.getByTestId('start-session').click();
+    await focusSession(page, 'F2.string6-naturals');
     await expect(timeLeft(page)).toHaveText('10 min left');
   });
 
