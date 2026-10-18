@@ -6,12 +6,21 @@ import type { Celebration, CompetenceLine } from './celebrations';
  * punishment for mistakes).
  */
 
-/** "You now know string 6 to fret 12". */
+/**
+ * "You now know string 6 to fret 12" for recall across a gap; "You learned
+ * string 6 to fret 5 today" for a same-day gain, which isn't knowing yet.
+ */
 export function competenceText(line: CompetenceLine): string {
   if (line.kind === 'mastered') return `You've mastered ${lowerFirst(line.skillTitle)}`;
-  if (line.toFret === 0) return `You now know open string ${line.string}`;
-  return `You now know string ${line.string} to fret ${line.toFret}`;
+  const span =
+    line.toFret === 0
+      ? `open string ${line.string}`
+      : `string ${line.string} to fret ${line.toFret}`;
+  return line.kind === 'learned' ? `You learned ${span} today` : `You now know ${span}`;
 }
+
+/** Shown with same-day gains: knowing it means recalling it after a gap. */
+export const LEARNED_HINT = 'Come back tomorrow to lock it in.';
 
 export function headline(c: Celebration): string {
   const first = c.competence[0];

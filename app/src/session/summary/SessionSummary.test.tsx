@@ -89,6 +89,26 @@ describe('<SessionSummary>', () => {
     expect(screen.queryByText(/learning zone/)).toBeNull();
   });
 
+  it('frames same-day gains as learned, with a come-back hint and no confetti', () => {
+    show({
+      competence: [
+        {
+          kind: 'learned',
+          skillId: 'F2.string6-naturals',
+          skillTitle: 'Natural notes on string 6',
+          string: 6,
+          toFret: 5,
+          complete: false,
+        },
+      ],
+    });
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'You learned string 6 to fret 5 today' }),
+    ).toBeVisible();
+    expect(screen.getByTestId('summary-learned-hint')).toHaveTextContent(/tomorrow/);
+    expect(screen.queryByTestId('confetti')).toBeNull();
+  });
+
   it('fires confetti for a milestone', () => {
     show({
       confetti: true,

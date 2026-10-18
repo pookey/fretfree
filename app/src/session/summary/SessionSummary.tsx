@@ -2,7 +2,14 @@ import { Link } from 'react-router';
 import { Confetti } from '../../components/confetti/Confetti';
 import { ENGINE_CONFIG } from '../../engine';
 import type { Celebration } from './celebrations';
-import { SPACING_COPY, accuracyNote, competenceText, headline, personalBestText } from './copy';
+import {
+  LEARNED_HINT,
+  SPACING_COPY,
+  accuracyNote,
+  competenceText,
+  headline,
+  personalBestText,
+} from './copy';
 import styles from './SessionSummary.module.css';
 
 export interface SessionSummaryProps {
@@ -19,6 +26,7 @@ export interface SessionSummaryProps {
 export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryProps) {
   const title = headline(c);
   const [first, ...more] = c.competence;
+  const learnedToday = c.competence.some((line) => line.kind === 'learned');
   const note = accuracyNote(c);
   const showCombo = c.bestCombo >= ENGINE_CONFIG.gamification.celebrations.comboShowAt;
 
@@ -31,13 +39,22 @@ export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryP
           <h1 id="summary-title" data-testid="summary-headline">
             {title}
           </h1>
-          {first?.kind === 'reach' && <p className={styles.context}>{first.skillTitle}</p>}
+          {first && first.kind !== 'mastered' && (
+            <p className={styles.context}>{first.skillTitle}</p>
+          )}
+          {learnedToday && (
+            <p className={styles.context} data-testid="summary-learned-hint">
+              {LEARNED_HINT}
+            </p>
+          )}
         </header>
 
         {(more.length > 0 || c.milestones.length > 0) && (
           <ul className={styles.gains} aria-label="What you can now do">
             {more.map((line) => (
-              <li key={`${line.skillId}:${line.kind === 'reach' ? line.string : 'm'}`}>
+              <li
+                key={`${line.skillId}:${line.kind === 'mastered' ? 'm' : `${line.kind}:${line.string}`}`}
+              >
                 <span className={styles.check} aria-hidden="true">
                   ✓
                 </span>
@@ -95,6 +112,8 @@ export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryP
 
         <dl className={styles.stats}>
           <div>
+            {/* TODO(M1-10): show the runner's persisted XP for the session (Gamification.xpTotal /
+                DailyProgress) instead of the tracker's recomputation, so the two can't diverge. */}
             <dt>XP earned</dt>
             <dd data-testid="summary-xp">{c.xp}</dd>
           </div>

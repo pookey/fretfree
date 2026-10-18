@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Celebration } from './celebrations';
 import {
+  LEARNED_HINT,
   SPACING_COPY,
   accuracyNote,
   competenceText,
@@ -29,6 +30,13 @@ describe('competenceText', () => {
   it('names what the learner can now do', () => {
     expect(competenceText(reach(6, 12))).toBe('You now know string 6 to fret 12');
     expect(competenceText(reach(5, 0))).toBe('You now know open string 5');
+    expect(competenceText({ ...reach(6, 5), kind: 'learned' })).toBe(
+      'You learned string 6 to fret 5 today',
+    );
+    expect(competenceText({ ...reach(6, 0), kind: 'learned' })).toBe(
+      'You learned open string 6 today',
+    );
+    expect(LEARNED_HINT).toMatch(/tomorrow/);
     expect(
       competenceText({ kind: 'mastered', skillId: 's', skillTitle: 'Natural notes on string 6' }),
     ).toBe("You've mastered natural notes on string 6");
