@@ -660,7 +660,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ## M6: Intermediate
 
 ### M6-01 · [contract] Intermediate theory
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-01
 - **Owns:** `app/src/theory/pentatonic.ts`, `app/src/theory/arpeggios.ts`, `app/src/theory/function.ts`, `app/src/theory/*.test.ts`
 - **Acceptance:**
