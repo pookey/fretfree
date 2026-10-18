@@ -151,7 +151,8 @@ describe('PlacementTest', () => {
     fireEvent.click(within(dialog()).getByRole('button', { name: 'Finish now' }));
     const result = await screen.findByTestId('placement-result');
     expect(container).not.toHaveAttribute('inert');
-    expect(document.activeElement).toBe(result);
+    // Focus moves in an effect after the result renders, so wait for it.
+    await waitFor(() => expect(document.activeElement).toBe(result));
   });
 
   it('lets the learner carry on when saving fails', async () => {
