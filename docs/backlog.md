@@ -399,7 +399,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m1-33.spec.ts`, iPhone tagged `@smoke`, plus iPad projects): finish a `focusSession` and assert that Done's bounding box lies inside the viewport with `window.scrollY` at 0.
 
 ### M1-34 · Learning vs stable: show progress before mastery
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §3.4, §3.7 mastery map, §7 Learn, research/02 rules 11 and 15
 - **Owns:** `app/src/engine/progress.ts`, `app/src/engine/progress.test.ts`, `app/src/screens/learn/map-model.ts`, `app/src/screens/learn/map-model.test.ts`, `app/src/screens/learn/MasteryRing.tsx`, `app/src/screens/learn/Learn.module.css`, `app/src/screens/learn/LearnScreen.tsx`, `app/src/screens/learn/LearnScreen.test.tsx`, `app/src/screens/learn/ModuleDetail.tsx`, `app/src/screens/learn/SkillDetail.tsx`, `app/src/screens/learn/SkillDetail.test.tsx`, `app/e2e/m1-34.spec.ts`
