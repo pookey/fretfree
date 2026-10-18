@@ -31,7 +31,7 @@ export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryP
   const showCombo = c.bestCombo >= ENGINE_CONFIG.gamification.celebrations.comboShowAt;
 
   return (
-    <div className={styles.screen} data-testid="session-summary">
+    <main className={styles.screen} data-testid="session-summary">
       <Confetti active={c.confetti} />
       <article className={styles.card} aria-labelledby="summary-title">
         <header className={styles.head}>
@@ -137,6 +137,6 @@ export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryP
           Done
         </Link>
       </article>
-    </div>
+    </main>
   );
 }

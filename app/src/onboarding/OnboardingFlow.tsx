@@ -44,7 +44,7 @@ export function OnboardingFlow({
   };
 
   return (
-    <div className={styles.flow} data-size-class={sizeClass} data-testid="onboarding">
+    <main className={styles.flow} data-size-class={sizeClass} data-testid="onboarding">
       <header className={styles.header}>
         <span className={styles.brand}>
           <span aria-hidden>♪</span> Fretwork
@@ -110,6 +110,6 @@ export function OnboardingFlow({
           </section>
         </div>
       )}
-    </div>
+    </main>
   );
 }

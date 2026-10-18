@@ -146,7 +146,7 @@ export function SessionScreen() {
   ) : null;
 
   return (
-    <div className={styles.screen} data-size-class={sizeClass}>
+    <main className={styles.screen} data-size-class={sizeClass}>
       <header className={styles.header}>
         <button
           type="button"
@@ -215,6 +215,6 @@ export function SessionScreen() {
           </div>
         </section>
       </div>
-    </div>
+    </main>
   );
 }
