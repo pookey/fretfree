@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyCard } from 'ts-fsrs';
+import { State, createEmptyCard } from 'ts-fsrs';
 import { SKILLS, type CardRecord, type Skill, type SkillStatus } from '../../engine';
 import { MODULES } from '../../engine/frontier';
 import { buildMap, defaultModule, percent, skillRingState, skillStatuses } from './map-model';
@@ -101,6 +101,50 @@ describe('buildMap', () => {
     expect(map.find((m) => m.module.id === 'advanced')?.mastery).toBe(0);
   });
 
+  it('carries learning next to stable, item-weighted, for skills and modules', () => {
+    const a = skill('F2.a', 'F2');
+    const b = skill('F2.b', 'F2', { items: () => [] });
+    const c = skill('F3.c', 'F3');
+    const reviewed = (itemId: string, skillId: string, stability: number) => ({
+      ...card(itemId, skillId, stability),
+      fsrs: { ...card(itemId, skillId, stability).fsrs, state: State.Learning },
+    });
+    const cards = [
+      reviewed('F2.a#0', 'F2.a', 2.3),
+      reviewed('F2.a#1', 'F2.a', 2.3),
+      reviewed('F2.a#2', 'F2.a', 0.2),
+      reviewed('F2.a#3', 'F2.a', 9),
+      reviewed('F3.c#0', 'F3.c', 2.3),
+    ];
+    const outcomes = new Map([
+      ['F2.a#0', true],
+      ['F2.a#1', true],
+      ['F2.a#2', false],
+      ['F3.c#0', true],
+    ]);
+    const map = buildMap({ skills: [a, b, c], goal: 'general', stored: stored(), cards, outcomes });
+    const notes1 = map.find((m) => m.module.id === 'notes-1')!;
+    expect(
+      notes1.skills.map((s) => [s.skill.id, s.learningCount, s.stableCount, s.learning, s.mastery]),
+    ).toEqual([
+      ['F2.a', 3, 1, 0.75, 0.25],
+      ['F2.b', 0, 0, 0, 0],
+      ['F3.c', 1, 0, 0.25, 0],
+    ]);
+    expect(notes1.learning).toBe(0.5);
+    expect(notes1.mastery).toBe(0.125);
+    // Without outcomes, a reviewed card still counts (e.g. placement seeds).
+    const bare = buildMap({ skills: [c], goal: 'general', stored: stored(), cards });
+    expect(bare[0]!.skills[0]!.learningCount).toBe(1);
+    const mastered = buildMap({
+      skills: [c],
+      goal: 'general',
+      stored: stored([['F3.c', 'mastered']]),
+      cards: [],
+    });
+    expect(mastered[0]!.learning).toBe(1);
+  });
+
   it('caps stable counts at the item count and ignores skills outside any module', () => {
     const a = skill('F2.a', 'F2');
     const stray = skill('Z9.x', 'Z9');
@@ -114,6 +158,7 @@ describe('buildMap', () => {
     });
     expect(map.flatMap((m) => m.skills).map((s) => s.skill.id)).toEqual(['F2.a']);
     expect(map[0]!.skills[0]!.stableCount).toBe(4);
+    expect(map[0]!.skills[0]!.learningCount).toBe(4);
   });
 });
 

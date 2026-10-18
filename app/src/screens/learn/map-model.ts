@@ -8,11 +8,12 @@ import {
   type SkillStatus,
 } from '../../engine';
 import { moduleOfTopic, orderModules, type Module } from '../../engine/frontier';
+import { progressBySkill } from '../../engine/progress';
 
 /**
  * The Learn map's view model (design §7 Learn, §5): every module with its
- * skills, a mastery ring value and a derived state. Pure, so the screen only
- * loads data and renders.
+ * skills, a two-layer ring value (learning under stable, `engine/progress`)
+ * and a derived state. Pure, so the screen only loads data and renders.
  */
 
 /** `soon`: the module's skills aren't built yet; it can still be previewed. */
@@ -22,9 +23,13 @@ export interface SkillView {
   skill: Skill;
   status: SkillStatus;
   itemCount: number;
+  /** Items whose latest review was correct, or that are stable. */
+  learningCount: number;
   /** Items whose FSRS stability has reached the mastery threshold. */
   stableCount: number;
-  /** 0–1: the ring value. A mastered skill is full. */
+  /** 0–1: the ring's light layer, never below `mastery`. A mastered skill is full. */
+  learning: number;
+  /** 0–1: the ring's solid, stable layer. A mastered skill is full. */
   mastery: number;
 }
 
@@ -32,6 +37,8 @@ export interface ModuleView {
   module: Module;
   skills: SkillView[];
   state: ModuleState;
+  /** 0–1, weighted by item count. */
+  learning: number;
   /** 0–1, weighted by item count. */
   mastery: number;
   masteredSkills: number;
@@ -43,6 +50,8 @@ export interface MapInput {
   /** Stored skill statuses; missing ones are derived from prerequisites. */
   stored: ReadonlyMap<string, SkillStatus>;
   cards: readonly CardRecord[];
+  /** Each item's latest review, true when correct (`latestOutcomes`). */
+  outcomes?: ReadonlyMap<string, boolean>;
   modules?: readonly Module[];
   stabilityDays?: number;
 }
@@ -70,31 +79,40 @@ function moduleState(skills: readonly SkillView[]): ModuleState {
 export function buildMap(input: MapInput): ModuleView[] {
   const stabilityDays = input.stabilityDays ?? ENGINE_CONFIG.mastery.stabilityDays;
   const statuses = skillStatuses(input.skills, input.stored);
-  const stable = new Map<string, number>();
-  for (const c of input.cards) {
-    if (c.fsrs.stability >= stabilityDays) stable.set(c.skillId, (stable.get(c.skillId) ?? 0) + 1);
-  }
+  const progress = progressBySkill(input.cards, input.outcomes ?? new Map(), stabilityDays);
   const byModule = new Map<string, SkillView[]>();
   for (const skill of input.skills) {
     const moduleId = moduleOfTopic(skill.topic)?.id;
     if (!moduleId) continue;
     const status = statuses.get(skill.id) as SkillStatus;
     const itemCount = skill.items().length;
-    const stableCount = Math.min(itemCount, stable.get(skill.id) ?? 0);
-    const mastery = status === 'mastered' ? 1 : itemCount === 0 ? 0 : stableCount / itemCount;
+    const p = progress.get(skill.id);
+    const learningCount = Math.min(itemCount, p?.learning ?? 0);
+    const stableCount = Math.min(itemCount, p?.stable ?? 0);
+    const share = (n: number) => (status === 'mastered' ? 1 : itemCount === 0 ? 0 : n / itemCount);
     const list = byModule.get(moduleId) ?? [];
-    list.push({ skill, status, itemCount, stableCount, mastery });
+    list.push({
+      skill,
+      status,
+      itemCount,
+      learningCount,
+      stableCount,
+      learning: share(learningCount),
+      mastery: share(stableCount),
+    });
     byModule.set(moduleId, list);
   }
   return orderModules(input.goal, input.modules).map((module) => {
     const skills = byModule.get(module.id) ?? [];
     const items = skills.reduce((n, s) => n + s.itemCount, 0);
-    const weighted = skills.reduce((n, s) => n + s.mastery * s.itemCount, 0);
+    const weighted = (of: (s: SkillView) => number) =>
+      items === 0 ? 0 : skills.reduce((n, s) => n + of(s) * s.itemCount, 0) / items;
     return {
       module,
       skills,
       state: moduleState(skills),
-      mastery: items === 0 ? 0 : weighted / items,
+      learning: weighted((s) => s.learning),
+      mastery: weighted((s) => s.mastery),
       masteredSkills: skills.filter((s) => s.status === 'mastered').length,
     };
   });
