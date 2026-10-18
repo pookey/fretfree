@@ -19,6 +19,7 @@ function synth(emailDomain = 'example.com', fromAddress = 'no-reply@example.com'
     zoneDomain: 'example.com',
     fromAddress,
     fromName: 'Example',
+    configurationSetName: 'test-email',
     ssmPrefix: '/test/email',
   });
   return Template.fromStack(stack);
@@ -55,6 +56,7 @@ describe('EmailStack', () => {
 
   it('requires TLS and suppresses bounces and complaints', () => {
     t.hasResourceProperties('AWS::SES::ConfigurationSet', {
+      Name: 'test-email',
       DeliveryOptions: { TlsPolicy: 'REQUIRE' },
       SuppressionOptions: { SuppressedReasons: ['BOUNCE', 'COMPLAINT'] },
     });

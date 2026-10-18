@@ -13,7 +13,9 @@ export interface EmailStackProps extends StackProps {
   fromAddress: string;
   /** Display name for the From header, e.g. "Fret Free". */
   fromName: string;
-  /** SSM prefix other stacks read the identity from, e.g. /fretwork/email. */
+  /** A fixed name, so stacks in other regions can reference it without a lookup. */
+  configurationSetName: string;
+  /** SSM prefix (in this stack's region) holding the identity details, e.g. /fretwork/email. */
   ssmPrefix: string;
 }
 
@@ -23,14 +25,20 @@ export interface EmailStackProps extends StackProps {
  *
  * Creates a domain identity with Easy DKIM, a custom MAIL FROM subdomain and a
  * DMARC policy, all as records in the zone. A configuration set enforces TLS and
- * suppresses addresses that bounce or complain. Other stacks find the identity
- * through SSM parameters, so no ARN ever lands in git. Cognito sends through the
- * identity with its own service-linked role, so no identity policy is needed.
+ * suppresses addresses that bounce or complain.
+ *
+ * It may live in a different region from the app's other stacks (SES production
+ * access is granted per region, and a us-east-1 Cognito pool can send through
+ * eu-west-1). Consumers rebuild the identity ARN from config (region, domain) with
+ * Stack.formatArn, so no ARN ever lands in git; the SSM parameters are for
+ * same-region consumers and operators. Cognito sends through the identity with its
+ * own service-linked role, so no identity policy is needed.
  */
 export class EmailStack extends Stack {
   constructor(scope: Construct, id: string, props: EmailStackProps) {
     super(scope, id, props);
-    const { emailDomain, zoneDomain, fromAddress, fromName, ssmPrefix } = props;
+    const { emailDomain, zoneDomain, fromAddress, fromName, configurationSetName, ssmPrefix } =
+      props;
     if (emailDomain !== zoneDomain && !emailDomain.endsWith(`.${zoneDomain}`)) {
       throw new Error(`emailDomain ${emailDomain} is not inside zone ${zoneDomain}`);
     }
@@ -42,6 +50,7 @@ export class EmailStack extends Stack {
     const mailFromDomain = `mail.${emailDomain}`;
 
     const configurationSet = new ses.ConfigurationSet(this, 'ConfigurationSet', {
+      configurationSetName,
       reputationMetrics: true,
       sendingEnabled: true,
       tlsPolicy: ses.ConfigurationSetTlsPolicy.REQUIRE,

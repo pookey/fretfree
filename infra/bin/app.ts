@@ -9,7 +9,7 @@ const app = new App();
 // runtime and is never committed.
 const siteDomain = app.node.tryGetContext('siteDomain') as string;
 const zoneDomain = app.node.tryGetContext('zoneDomain') as string;
-// CloudFront certificates must live in us-east-1, so every stack does.
+// CloudFront certificates must live in us-east-1, so the site stacks do.
 const env = { account: process.env.CDK_DEFAULT_ACCOUNT, region: 'us-east-1' };
 
 new SiteStack(app, 'FretworkSite', {
@@ -25,11 +25,13 @@ new SiteStack(app, 'FretworkSite', {
 const emailDomain = app.node.tryGetContext('emailDomain') as string | undefined;
 if (emailDomain) {
   new EmailStack(app, 'FretworkEmail', {
-    env,
+    // SES production access is per region, so the sending region is configurable.
+    env: { ...env, region: app.node.tryGetContext('emailRegion') as string },
     emailDomain,
     zoneDomain: app.node.tryGetContext('emailZoneDomain') as string,
     fromAddress: app.node.tryGetContext('emailFrom') as string,
     fromName: app.node.tryGetContext('emailFromName') as string,
+    configurationSetName: app.node.tryGetContext('emailConfigSet') as string,
     ssmPrefix: app.node.tryGetContext('emailSsmPrefix') as string,
     description: `Fretwork SES sending identity for ${emailDomain}`,
   });
