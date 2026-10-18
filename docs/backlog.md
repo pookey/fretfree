@@ -375,7 +375,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The context panel shows an interval legend that fades with the guide level.
 
 ### M2-06 · D6 "Tap the M3/P5/b7 from a root"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M2-04
 - **Owns:** `app/src/drills/d6-interval-tap/**`, `app/e2e/m2-06.spec.ts`
 - **Acceptance:**
