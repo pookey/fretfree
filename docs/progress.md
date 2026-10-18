@@ -2,7 +2,34 @@
 
 ## Current status
 
-**First fan-out shift complete (2026-10-18). 23 work packages live in production. The build is handed to a fresh PM (`docs/handoff/03-pm-handoff.md`) after moving the repo to `guitar.nosync`, so iCloud stops syncing it.**
+**Second shift, first report (2026-10-18, 14:05). 32 work packages live. 9 shipped this shift. Production healthy: smoke passes after every ship.**
+
+Shipped this shift: M2-02 (C1 octave skills), M2-04 (C3 interval-shape skills, with C1 as a soft prerequisite), M9-01 (tab model and `<TabStaff>`), M1-15 (guide fading in-session, blind mode), **M1-27 (user feedback: D3 says "note", and answers by tapping the neck)**, M2-07 (worked-example framework, G–B shift content), M1-17 (multi-drill sessions, in-session learning steps), M1-20 (compact polish: wider neck on short landscape, help as a sheet), M1-22 (settings, sound and About).
+
+In flight: M2-03 (D4 octave finder), M2-05 (D5 name the interval), M2-06 (D6 tap the interval).
+
+**From user feedback (2026-10-18, second shift):**
+- **M1-27 (live):** "why 'letter' rather than 'note'?" and "clicking the fretboard should be the same as pressing the letters". F1 prompts now read "The note before C in the musical alphabet?". D3's neck is an answer surface with the same grading path as the buttons.
+- **Chord lessons logged (M3-04 widened, M3-13 to M3-15):** finding the root first, then the 3rd, 5th and 7th, in both directions (D8). Also D36 "What chord is this?", D37 chord tones across the neck (multi-target; "highlight all notes in a C chord"), and D38 "Build the chord". Explore v2 and the C4–C6 worked examples gain matching hooks.
+
+**Process changes:**
+- `engine/config.ts` is split into `engine/config/<area>.ts`, auto-collected with `EngineConfig` declaration merging. Workers add an area file instead of appending to a hub.
+- The shared e2e files (`helpers.ts`, `d1-session.spec.ts`, `smoke.spec.ts`) are orchestrator-owned. New helpers go in `e2e/helpers/<topic>.ts`. M2-11 owns the shared specs and will pin them to a skill with `focusSession`.
+- A new `queued` worker status counts as in flight. Without it, `refill.sh` re-planned M9-01 while it waited in the lane and tried to spawn a second worker into its worktree (the agent never started; the pane was closed).
+- Unit-test timeouts are raised for verify under load: Vitest `testTimeout` 20 s, Testing Library `asyncUtilTimeout` 5 s.
+
+**Parallelism (107 samples since 12:43):** average 5.5 active workers, peak 7, idle-slot share 0.28. The ceiling ran 2 → 7 → 4. Load from concurrent worktree verifies (load1 35–57, up to 85 Playwright processes) kept `health.sh` stepping it down.
+
+**Incidents:** no stop-the-line events and no usage-limit pauses.
+- Two verify failures in the lane were load timeouts in healthy tests (M1-17: heatmap `waitFor`; M1-20: arpeggios, LearnScreen, WorkedExample). `main` was reset each time and nothing broken shipped. Fixed by the timeout change above.
+- Two rebase conflicts (M1-20 in D1View/D3View, M1-17 in `runner.ts`) came after M1-15 and M1-27 landed. Both workers resolved them.
+- One reviewer brief was lost under load (M1-22) and was re-sent.
+
+---
+
+**First fan-out shift (2026-10-18).**
+
+23 work packages live in production at the end of the first shift. The build is handed to a fresh PM (`docs/handoff/03-pm-handoff.md`) after moving the repo to `guitar.nosync`, so iCloud stops syncing it.
 
 Shipped by the builder (each through worker, then fresh reviewer, then the integration lane, then `pnpm ship`, then push):
 
