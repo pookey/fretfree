@@ -73,6 +73,11 @@ test.describe('M1-11 Today hero and sidebar streak', () => {
     ).toHaveAttribute('data-progress', '0.60');
     await expect(hero(page).getByTestId('freezes')).toContainText('2 streak freezes held');
     await expect(hero(page).getByTestId('goal-copy')).toHaveText(/4 min to go/);
+    // The ring and the streak share a row, even in the narrow iPad mini column.
+    const ring = (await hero(page).getByTestId('goal-ring').boundingBox())!;
+    const count = (await hero(page).getByTestId('streak-count').boundingBox())!;
+    expect(count.x).toBeGreaterThan(ring.x + ring.width);
+    expect(count.y).toBeLessThan(ring.y + ring.height);
 
     await seed(page, { streak: 8, freezes: 2, minutesToday: 12 });
     await expect(
