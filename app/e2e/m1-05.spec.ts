@@ -9,7 +9,7 @@ const STEPS: Record<string, number> = { half: 1, whole: 2 };
 function solve(question: string): string {
   const tap = /Tap (\S+) to continue/.exec(question);
   if (tap) return tap[1]!;
-  const letter = /^The letter (after|before) ([A-G])\?$/.exec(question);
+  const letter = /^The note (after|before) ([A-G]) in the musical alphabet\?$/.exec(question);
   if (letter) {
     const i = LETTERS.indexOf(letter[2]!) + (letter[1] === 'after' ? 1 : -1);
     return LETTERS[(i + 7) % 7]!;
@@ -46,7 +46,9 @@ test.describe('D3 "Note-wheel steps"', () => {
     await page.getByTestId('start-session').click();
 
     // Guided worked examples first: the answer is shown on the neck.
-    await expect(promptText(page)).toHaveText('The letter after C is D. Tap D to continue.');
+    await expect(promptText(page)).toHaveText(
+      'The note after C in the musical alphabet is D. Tap D to continue.',
+    );
     const panel = page.getByTestId('context-panel');
     await expect(panel.getByTestId('note-wheel')).toBeVisible();
     await expect(panel.getByTestId('half-step-B-C')).toBeVisible();
@@ -68,7 +70,7 @@ test.describe('D3 "Note-wheel steps"', () => {
     }
 
     // Unguided recall: the neck shows only the starting note, never the answer.
-    await expect(promptText(page)).toHaveText('The letter after C?');
+    await expect(promptText(page)).toHaveText('The note after C in the musical alphabet?');
     expect(await neckTexts(page)).toEqual(['C']);
     await expect(panel.getByTestId('wheel-note-D')).not.toHaveAttribute('data-role');
 

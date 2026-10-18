@@ -2,11 +2,14 @@ import { useEffect } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import type { GuideLevel } from '../../engine/model';
 import { neckWindow } from '../../shell/size-class';
+import type { Position } from '../../theory';
 import type { DrillRenderProps } from '../types';
 import { NoteWheel } from './NoteWheel';
 import {
+  d3AnswerPc,
   d3FeedbackPositions,
   d3KeyToAnswer,
+  d3TapAnswer,
   d3WorkedExample,
   type D3Answer,
   type D3Prompt,
@@ -16,6 +19,8 @@ import styles from './D3View.module.css';
 /**
  * D3 view: the question and note buttons, the note wheel in the context
  * panel, and the step drawn on the low E string (design §6 D3, §7 session).
+ * The neck is an answer surface too: tapping the note on any string answers,
+ * since finding it on the neck is the skill (research/02, target context).
  */
 export function D3View({
   prompt,
@@ -44,6 +49,14 @@ export function D3View({
     return () => window.removeEventListener('keydown', onKey);
   }, [feedback, onAnswer, pref, choices]);
 
+  const tap = (pos: Position) => {
+    if (feedback) return;
+    onAnswer(d3TapAnswer(pos, tuning, pref));
+  };
+
+  const focus = Math.max(prompt.fromPosition.fret, prompt.expectedPosition.fret);
+  const range = neckWindow(sizeClass, focus);
+
   const level: GuideLevel = guided ? 3 : guideLevel;
   const start: FretMarker = {
     ...prompt.fromPosition,
@@ -52,8 +65,9 @@ export function D3View({
     forceLabel: true,
   };
   let markers: FretMarker[] = [start];
+  const given = feedback ? d3AnswerPc(feedback.answer) : null;
   if (feedback) {
-    const pos = d3FeedbackPositions(prompt, feedback);
+    const pos = d3FeedbackPositions(prompt, feedback, tuning, range);
     markers = [
       start,
       ...pos.expected.map((p): FretMarker => ({
@@ -65,7 +79,7 @@ export function D3View({
       ...pos.given.map((p): FretMarker => ({
         ...p,
         style: 'wrong',
-        label: feedback.answer,
+        label: given ?? undefined,
         forceLabel: true,
       })),
     ];
@@ -82,9 +96,6 @@ export function D3View({
   // names and fret numbers (level ≥ 2) could spell it, so cap at inlays only.
   const neckLevel: GuideLevel = feedback || guided ? level : (Math.min(level, 1) as GuideLevel);
 
-  const focus = Math.max(prompt.fromPosition.fret, prompt.expectedPosition.fret);
-  const range = neckWindow(sizeClass, focus);
-
   // The session hands over its context panel only when it should be shown
   // (help on, guide level > 0, not compact); D3 fills it with the note wheel.
   const context = aside ? (
@@ -97,14 +108,14 @@ export function D3View({
         {...(feedback
           ? {
               expected: prompt.expectedPc,
-              ...(feedback.result.correct ? {} : { given: feedback.answer }),
+              ...(feedback.result.correct || !given ? {} : { given }),
             }
           : {})}
       />
       {level >= 2 && (
         <p>
           No sharp between <strong>B–C</strong> and <strong>E–F</strong>: they are a half step
-          apart. Every other pair of letters is a whole step.
+          apart. Every other pair of neighbours in the musical alphabet is a whole step.
         </p>
       )}
       {level >= 3 && <p>On one string, a half step is one fret and a whole step is two.</p>}
@@ -124,11 +135,14 @@ export function D3View({
               prompt.question
             )}
           </p>
+          <p className={styles.hint} data-testid="d3-hint">
+            {!feedback && 'Tap the note on any string of the neck, or press a button.'}
+          </p>
           <div className={styles.choices} role="group" aria-labelledby="drill-prompt">
             {choices.map((c, i) => {
               const state = !feedback
                 ? undefined
-                : c === feedback.answer
+                : c === given
                   ? feedback.result.correct
                     ? 'correct'
                     : 'wrong'
@@ -161,7 +175,8 @@ export function D3View({
           markers={markers}
           guideLevel={neckLevel}
           accidentalPref={pref}
-          label={`Fretboard, ${prompt.from} marked on string ${prompt.fromPosition.string}`}
+          onTapCell={tap}
+          label={`Fretboard, ${prompt.from} marked on string ${prompt.fromPosition.string}. Tap the answer on any string.`}
         />
       </div>
       {/* iPad portrait: the context panel sits below the neck. */}

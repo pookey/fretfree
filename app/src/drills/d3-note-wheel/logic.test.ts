@@ -3,17 +3,21 @@ import { SKILLS } from '../../engine/skills';
 import { DROP_D_TUNING, STANDARD_TUNING, chromaOf, type AccidentalPref } from '../../theory';
 import type { DrillContext, DrillFeedback } from '../types';
 import {
+  d3AnswerPc,
   d3CanTest,
   d3Check,
   d3Choices,
   d3ConceptOf,
+  d3DescribeAnswer,
   d3FeedbackPositions,
   d3GivenPosition,
   d3KeyToAnswer,
   d3MakePrompt,
   d3Question,
   d3Sounds,
+  d3TapAnswer,
   d3WorkedExample,
+  type D3Answer,
   type D3Prompt,
 } from './logic';
 
@@ -28,7 +32,7 @@ const ctx = (over: Partial<DrillContext> = {}): DrillContext => ({
 const make = (id: string, over: Partial<DrillContext> = {}) =>
   d3MakePrompt({ id, skillId: 'F1.test' }, ctx(over));
 
-function fb(prompt: D3Prompt, answer: string): DrillFeedback<string> {
+function fb(prompt: D3Prompt, answer: D3Answer): DrillFeedback<D3Answer> {
   return { answer, result: d3Check(prompt, answer) };
 }
 
@@ -75,17 +79,19 @@ describe('D3 prompts', () => {
 
   it('walks the musical alphabet for letter items', () => {
     const cases: [string, string, number, string][] = [
-      ['letter:+1@G', 'A', 2, 'The letter after G?'],
-      ['letter:+1@B', 'C', 1, 'The letter after B?'],
-      ['letter:-1@C', 'B', -1, 'The letter before C?'],
-      ['letter:-1@A', 'G', -2, 'The letter before A?'],
-      ['letter:+2@E', 'G', 3, '2 letters after E?'],
-      ['letter:-3@D', 'A', -5, '3 letters before D?'],
+      ['letter:+1@G', 'A', 2, 'The note after G in the musical alphabet?'],
+      ['letter:+1@B', 'C', 1, 'The note after B in the musical alphabet?'],
+      ['letter:-1@C', 'B', -1, 'The note before C in the musical alphabet?'],
+      ['letter:-1@A', 'G', -2, 'The note before A in the musical alphabet?'],
+      ['letter:+2@E', 'G', 3, '2 notes after E in the musical alphabet?'],
+      ['letter:-3@D', 'A', -5, '3 notes before D in the musical alphabet?'],
     ];
     for (const [id, pc, semitones, question] of cases) {
       const p = make(id);
       expect([p.expectedPc, p.semitones, p.question], id).toEqual([pc, semitones, question]);
       expect(p.choices).toEqual(['C', 'D', 'E', 'F', 'G', 'A', 'B']);
+      // Learner-facing copy says "note", never "letter" (M1-27).
+      expect(p.question).not.toMatch(/letter/i);
     }
   });
 
@@ -96,7 +102,9 @@ describe('D3 prompts', () => {
 
   it('writes the worked example from the question', () => {
     expect(d3WorkedExample(make('step:+2@E'))).toBe('A whole step above E is F#.');
-    expect(d3WorkedExample(make('letter:+1@G'))).toBe('The letter after G is A.');
+    expect(d3WorkedExample(make('letter:+1@G'))).toBe(
+      'The note after G in the musical alphabet is A.',
+    );
   });
 
   it('narrows step choices to a window around the start at scope 0', () => {
@@ -169,12 +177,96 @@ describe('D3 checking and feedback', () => {
 
   it('shows the answer, and the wrong choice, on the neck', () => {
     const p = make('step:+1@E');
-    expect(d3FeedbackPositions(p, fb(p, 'F'))).toEqual({
+    expect(d3FeedbackPositions(p, fb(p, 'F'), STANDARD_TUNING)).toEqual({
       expected: [{ string: 6, fret: 1 }],
       given: [],
     });
-    expect(d3FeedbackPositions(p, fb(p, 'F#')).given).toEqual([{ string: 6, fret: 2 }]);
-    expect(d3FeedbackPositions(p, fb(p, '?')).given).toEqual([]);
+    expect(d3FeedbackPositions(p, fb(p, 'F#'), STANDARD_TUNING).given).toEqual([
+      { string: 6, fret: 2 },
+    ]);
+    expect(d3FeedbackPositions(p, fb(p, '?'), STANDARD_TUNING).given).toEqual([]);
+  });
+});
+
+describe('D3 neck taps', () => {
+  const tap = (string: number, fret: number, accidentalPref: AccidentalPref = 'sharp') =>
+    d3TapAnswer({ string, fret }, STANDARD_TUNING, accidentalPref);
+
+  it('names the tapped cell with the preference', () => {
+    expect(tap(3, 0)).toEqual({ position: { string: 3, fret: 0 }, pc: 'G', name: 'G3' });
+    expect(tap(6, 2, 'flat')).toMatchObject({ pc: 'Gb', name: 'Gb2' });
+    expect(d3TapAnswer({ string: 6, fret: 0 }, DROP_D_TUNING, 'sharp').pc).toBe('D');
+    expect(d3AnswerPc(tap(1, 1))).toBe('F');
+    expect(d3AnswerPc('C#')).toBe('C#');
+  });
+
+  it('counts a tap on any cell of the answer note, like its button', () => {
+    const p = make('step:+2@E');
+    for (const [s, f] of [
+      [6, 2],
+      [6, 14],
+      [4, 4],
+      [1, 2],
+    ] as const) {
+      expect(d3Check(p, tap(s, f)), `s${s}f${f}`).toEqual(d3Check(p, 'F#'));
+    }
+    expect(d3Check(p, tap(6, 2, 'flat'))).toEqual({ correct: true, expected: 'F#' });
+    expect(d3Check(p, tap(3, 0))).toEqual(d3Check(p, 'G'));
+  });
+
+  it('accepts only the natural for musical-alphabet items', () => {
+    const p = make('letter:+1@E');
+    expect(d3Check(p, tap(6, 1)).correct).toBe(true);
+    // The sharp a fret above F is wrong, as is any sharp or flat cell.
+    expect(d3Check(p, tap(6, 2))).toEqual({ correct: false, expected: 'F', confusedWith: 'F#' });
+    expect(d3Check(p, tap(5, 1)).correct).toBe(false);
+    // An enharmonic spelling of a natural (E♯ for F) is not the natural.
+    expect(d3Check(p, 'E#').correct).toBe(false);
+    expect(d3Check(make('step:+1@E'), 'E#').correct).toBe(true);
+  });
+
+  it('marks a wrong tap and the answer on the tapped string, nearest the tap', () => {
+    const p = make('step:+2@E');
+    // String 3 fret 0 is G; its only F# on frets 0–15 is fret 11.
+    expect(d3FeedbackPositions(p, fb(p, tap(3, 0)), STANDARD_TUNING)).toEqual({
+      expected: [
+        { string: 6, fret: 2 },
+        { string: 3, fret: 11 },
+      ],
+      given: [{ string: 3, fret: 0 }],
+    });
+    // String 1 fret 3 is G: F# is fret 2, the neighbouring cell.
+    expect(d3FeedbackPositions(p, fb(p, tap(1, 3)), STANDARD_TUNING).expected[1]).toEqual({
+      string: 1,
+      fret: 2,
+    });
+    // Within the drawn window only: on frets 3–7 string 1 has no F#.
+    expect(
+      d3FeedbackPositions(p, fb(p, tap(1, 3)), STANDARD_TUNING, { from: 3, to: 7 }).expected,
+    ).toEqual([{ string: 6, fret: 2 }]);
+  });
+
+  it('marks a right tap as the answer, without repeating the drawn step', () => {
+    const p = make('step:+2@E');
+    expect(d3FeedbackPositions(p, fb(p, tap(4, 4)), STANDARD_TUNING)).toEqual({
+      expected: [
+        { string: 6, fret: 2 },
+        { string: 4, fret: 4 },
+      ],
+      given: [],
+    });
+    expect(d3FeedbackPositions(p, fb(p, tap(6, 2)), STANDARD_TUNING)).toEqual({
+      expected: [{ string: 6, fret: 2 }],
+      given: [],
+    });
+  });
+
+  it('plays the tapped note when wrong, and records the cell', () => {
+    const p = make('step:+2@E');
+    expect(d3Sounds(p, fb(p, tap(3, 0)))).toEqual({ expected: ['E2', 'F#2'], given: ['G3'] });
+    expect(d3Sounds(p, fb(p, tap(1, 2)))).toEqual({ expected: ['E2', 'F#2'] });
+    expect(d3DescribeAnswer(tap(3, 0))).toBe('G@s3f0');
+    expect(d3DescribeAnswer('G')).toBe('G');
   });
 
   it('keys the confusion matrix by the answer note', () => {

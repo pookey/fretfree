@@ -6,7 +6,7 @@ import type { SizeClass } from '../../shell/size-class';
 import { getDrill } from '../registry';
 import type { DrillFeedback } from '../types';
 import { D3View } from './D3View';
-import { d3Check, d3MakePrompt, type D3Prompt } from './logic';
+import { d3Check, d3MakePrompt, d3TapAnswer, type D3Answer, type D3Prompt } from './logic';
 
 const prompt = (id: string, accidentalPref: 'sharp' | 'flat' = 'sharp', scopeLevel = 0) =>
   d3MakePrompt(
@@ -18,7 +18,7 @@ interface Opts {
   guideLevel?: GuideLevel;
   guided?: boolean;
   sizeClass?: SizeClass;
-  feedback?: DrillFeedback<string> | null;
+  feedback?: DrillFeedback<D3Answer> | null;
   withAside?: boolean;
 }
 
@@ -43,6 +43,16 @@ function renderView(p: D3Prompt, opts: Opts = {}) {
 const neck = () => screen.getByRole('group', { name: /^Fretboard/ });
 const neckTexts = () =>
   Array.from(neck().querySelectorAll('text')).map((t) => t.textContent?.trim() ?? '');
+const cell = (string: number, fret: number) =>
+  neck().querySelector(`[data-cell="s${string}f${fret}"]`) as Element;
+const marker = (style: string, string: number, fret: number) =>
+  neck().querySelector(
+    `[data-testid="marker-${style}"][data-string="${string}"][data-fret="${fret}"]`,
+  );
+const tapFeedback = (p: D3Prompt, string: number, fret: number): DrillFeedback<D3Answer> => {
+  const answer = d3TapAnswer({ string, fret }, STANDARD_TUNING, p.pref);
+  return { answer, result: d3Check(p, answer) };
+};
 
 describe('<D3View>', () => {
   it('is registered as the note-wheel drill', () => {
@@ -89,7 +99,7 @@ describe('<D3View>', () => {
 
   it('shows the answer in the guided worked example', () => {
     renderView(prompt('letter:+1@G'), { guided: true, guideLevel: 0 });
-    expect(screen.getByText(/The letter after G is A\./)).toBeInTheDocument();
+    expect(screen.getByText(/The note after G in the musical alphabet is A\./)).toBeInTheDocument();
     expect(neckTexts()).toContain('A');
   });
 
@@ -104,6 +114,60 @@ describe('<D3View>', () => {
     expect(within(wheel).getByTestId('wheel-note-G')).toHaveAttribute('data-role', 'given');
   });
 
+  it('answers by tapping the note on any string of the neck', () => {
+    const p = prompt('step:+2@E');
+    const { onAnswer } = renderView(p);
+    expect(screen.getByTestId('d3-hint')).toHaveTextContent(/Tap the note on any string/);
+    // String 4 fret 4 is F#: a different string from the drawn step.
+    fireEvent.pointerDown(cell(4, 4));
+    fireEvent.keyDown(cell(3, 0), { key: 'Enter' });
+    expect(onAnswer.mock.calls).toEqual([
+      [{ position: { string: 4, fret: 4 }, pc: 'F#', name: 'F#3' }],
+      [{ position: { string: 3, fret: 0 }, pc: 'G', name: 'G3' }],
+    ]);
+  });
+
+  it('keeps note names out of the tap targets before answering', () => {
+    for (const id of ['letter:+1@G', 'step:+2@E']) {
+      const { unmount } = renderView(prompt(id), { guideLevel: 3 });
+      const cells = within(neck()).getAllByRole('button');
+      expect(cells.length).toBeGreaterThan(0);
+      for (const c of cells) {
+        expect(c.getAttribute('aria-label'), id).toMatch(/^string \d, fret \d+$/);
+      }
+      unmount();
+    }
+  });
+
+  it('ignores taps once answered', () => {
+    const p = prompt('step:+2@E');
+    const { onAnswer } = renderView(p, { feedback: tapFeedback(p, 4, 4) });
+    fireEvent.pointerDown(cell(4, 5));
+    expect(onAnswer).not.toHaveBeenCalled();
+    expect(screen.getByTestId('d3-hint')).toHaveTextContent('');
+  });
+
+  it('marks a wrong tap as wrong and the answer as correct', () => {
+    const p = prompt('step:+2@E');
+    renderView(p, { feedback: tapFeedback(p, 3, 0) });
+    expect(marker('wrong', 3, 0)).toHaveTextContent('G');
+    expect(marker('correct', 6, 2)).toHaveTextContent('F#');
+    expect(marker('correct', 3, 11)).toHaveTextContent('F#');
+    expect(screen.getByRole('button', { name: 'G' })).toHaveAttribute('data-state', 'wrong');
+    expect(screen.getByRole('button', { name: 'F#' })).toHaveAttribute('data-state', 'expected');
+    const wheel = screen.getByTestId('note-wheel');
+    expect(within(wheel).getByTestId('wheel-note-G')).toHaveAttribute('data-role', 'given');
+  });
+
+  it('marks a right tap as correct', () => {
+    const p = prompt('step:+2@E');
+    renderView(p, { feedback: tapFeedback(p, 4, 4) });
+    expect(marker('correct', 4, 4)).toHaveTextContent('F#');
+    expect(marker('correct', 6, 2)).toBeInTheDocument();
+    expect(neck().querySelector('[data-testid="marker-wrong"]')).toBeNull();
+    expect(screen.getByRole('button', { name: 'F#' })).toHaveAttribute('data-state', 'correct');
+  });
+
   it('fills the context panel with the note wheel, highlighting B–C and E–F', () => {
     renderView(prompt('step:+1@E'));
     const panel = screen.getByTestId('context-panel');
@@ -113,6 +177,9 @@ describe('<D3View>', () => {
     // The answer is not marked on the wheel before answering.
     expect(within(panel).getByTestId('wheel-note-F')).not.toHaveAttribute('data-role');
     expect(panel).toHaveTextContent(/No sharp between B–C and E–F/);
+    expect(panel).toHaveTextContent(/neighbours in the musical alphabet/);
+    expect(panel.textContent).not.toMatch(/letter/i);
+    expect(within(panel).getByRole('img').getAttribute('aria-label')).not.toMatch(/letter/i);
   });
 
   it('fades the context panel with the guide level', () => {

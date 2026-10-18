@@ -55,7 +55,7 @@ export function NoteWheel({ guideLevel, pref, start, expected, given }: NoteWhee
       className={styles.wheel}
       viewBox="0 0 200 200"
       role="img"
-      aria-label="Note wheel: B–C and E–F are half steps; every other pair of letters is a whole step"
+      aria-label="Note wheel: B–C and E–F are half steps; every other pair of neighbours in the musical alphabet is a whole step"
       data-testid="note-wheel"
       data-guide-level={guideLevel}
     >

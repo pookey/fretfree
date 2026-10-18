@@ -76,7 +76,7 @@ test.describe('M1-25 recall prompts hide the answer', () => {
     await page.getByTestId('start-session').click();
 
     const question = await answerWorkedExamplesUntil(page, (text) => text.endsWith('?'));
-    const from = /([A-G]#?)\?$/.exec(question)?.[1];
+    const from = /([A-G]#?)(?: in the musical alphabet)?\?$/.exec(question)?.[1];
     expect(from).toBeTruthy();
     await expect(page.getByTestId('marker-target')).toHaveCount(0);
     await expect(page.getByTestId('marker-correct')).toHaveCount(0);

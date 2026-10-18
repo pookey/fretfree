@@ -7,6 +7,7 @@ import {
   midiAt,
   midiToFretNote,
   type AccidentalPref,
+  type FretRange,
   type Position,
   type Tuning,
 } from '../../theory';
@@ -16,7 +17,8 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * D3 "Note-wheel steps" (design §6): "a whole step above E?". Tests the F1
  * items: `letter:±n@X` (the musical alphabet) and `step:±n@X` (half and whole
  * steps). Answers are spelled with the accidental preference, so a half step
- * above E is F (never E♯) and a whole step below F is D♯ or E♭.
+ * above E is F (never E♯) and a whole step below F is D♯ or E♭. The learner
+ * answers with a button, a key, or by tapping the note anywhere on the neck.
  */
 
 export const D3_ID = 'note-wheel';
@@ -45,8 +47,31 @@ export interface D3Prompt {
   pref: AccidentalPref;
 }
 
-/** The answer is a pitch class, as typed or tapped. */
-export type D3Answer = string;
+/** A tapped cell on the neck, named with the accidental preference. */
+export interface D3Tap {
+  position: Position;
+  pc: string;
+  /** Scientific pitch name, e.g. `G3`, so feedback plays the tapped note. */
+  name: string;
+}
+
+/** The answer: a pitch class from a button or key, or a tapped cell. */
+export type D3Answer = string | D3Tap;
+
+export function d3AnswerPc(answer: D3Answer): string {
+  return typeof answer === 'string' ? answer : answer.pc;
+}
+
+export function d3TapAnswer(position: Position, tuning: Tuning, pref: AccidentalPref): D3Tap {
+  const note = midiToFretNote(midiAt(position, tuning), pref);
+  return { position, pc: note.pc, name: note.name };
+}
+
+/** Stored as `answerGiven`: the pitch class, plus the cell for a tap (`G@s3f0`). */
+export function d3DescribeAnswer(answer: D3Answer): string {
+  if (typeof answer === 'string') return answer;
+  return `${answer.pc}@s${answer.position.string}f${answer.position.fret}`;
+}
 
 /**
  * Scope levels: 0 = a 7-button chromatic window around the starting note
@@ -61,6 +86,9 @@ export const D3_WINDOW = 3;
 /** The string the step is drawn on: the low E string, where F2 starts. */
 export const D3_STRING = 6;
 
+/** Every fret D3 can draw: feedback positions stay within this by default. */
+const FULL_NECK: FretRange = { from: 0, to: 15 };
+
 const ALPHABET = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
@@ -74,9 +102,12 @@ function stepName(semitones: number): string {
 
 export function d3Question(kind: D3Kind, from: string, offset: number): string {
   if (kind === 'step') return `${stepName(offset)} ${offset > 0 ? 'above' : 'below'} ${from}?`;
+  // "Note", not "letter": learners read "letter" as jargon. "In the musical
+  // alphabet" keeps it apart from half steps (the note after C is not C♯).
   const size = Math.abs(offset);
   const which = offset > 0 ? 'after' : 'before';
-  return size === 1 ? `The letter ${which} ${from}?` : `${size} letters ${which} ${from}?`;
+  const notes = size === 1 ? 'The note' : `${size} notes`;
+  return `${notes} ${which} ${from} in the musical alphabet?`;
 }
 
 /** The worked-example line for the first, guided rep of a new item. */
@@ -169,10 +200,12 @@ function sameChroma(a: string, b: string): boolean {
 }
 
 export function d3Check(prompt: D3Prompt, answer: D3Answer): DrillCheck {
-  const correct = sameChroma(answer, prompt.expectedPc);
+  const pc = d3AnswerPc(answer);
+  // A musical-alphabet answer is a natural: never its enharmonic sharp or flat.
+  const correct = sameChroma(pc, prompt.expectedPc) && (prompt.kind !== 'letter' || isNatural(pc));
   return correct
     ? { correct, expected: prompt.expectedPc }
-    : { correct, expected: prompt.expectedPc, confusedWith: answer };
+    : { correct, expected: prompt.expectedPc, confusedWith: pc };
 }
 
 /**
@@ -202,6 +235,7 @@ export function d3Sounds(prompt: D3Prompt, fb: DrillFeedback<D3Answer>): DrillSo
   // The start, then the answer: the step is heard as well as seen (research/02 rule 10).
   const expected = [prompt.fromName, prompt.expectedName];
   if (fb.result.correct) return { expected };
+  if (typeof fb.answer !== 'string') return { expected, given: [fb.answer.name] };
   const pos = d3GivenPosition(prompt, fb.answer);
   if (!pos) return { expected };
   const midi = prompt.fromMidi + pos.fret - prompt.fromPosition.fret;
@@ -209,13 +243,44 @@ export function d3Sounds(prompt: D3Prompt, fb: DrillFeedback<D3Answer>): DrillSo
   return { expected, given: [given.name] };
 }
 
+/** The answer's fret on `string` nearest `fret`, within `range`. */
+function nearestAnswer(
+  prompt: D3Prompt,
+  { string, fret }: Position,
+  tuning: Tuning,
+  range: FretRange,
+): Position | null {
+  const open = midiAt({ string, fret: 0 }, tuning);
+  const chroma = chromaOf(prompt.expectedPc);
+  let best: Position | null = null;
+  for (let f = range.from; f <= range.to; f++) {
+    if (mod(open + f - chroma, 12) !== 0) continue;
+    if (!best || Math.abs(f - fret) < Math.abs(best.fret - fret)) best = { string, fret: f };
+  }
+  return best;
+}
+
+/**
+ * The step stays drawn on the low E string. A tap also marks the answer on
+ * the tapped string, nearest the tap, so a miss is seen where it was made.
+ */
 export function d3FeedbackPositions(
   prompt: D3Prompt,
   fb: DrillFeedback<D3Answer>,
+  tuning: Tuning,
+  range: FretRange = FULL_NECK,
 ): { expected: Position[]; given: Position[] } {
   const expected = [prompt.expectedPosition];
+  const { answer } = fb;
+  if (typeof answer !== 'string') {
+    const near = nearestAnswer(prompt, answer.position, tuning, range);
+    const same = (p: Position) =>
+      p.string === prompt.expectedPosition.string && p.fret === prompt.expectedPosition.fret;
+    if (near && !same(near)) expected.push(near);
+    return { expected, given: fb.result.correct ? [] : [answer.position] };
+  }
   if (fb.result.correct) return { expected, given: [] };
-  const given = d3GivenPosition(prompt, fb.answer);
+  const given = d3GivenPosition(prompt, answer);
   return { expected, given: given ? [given] : [] };
 }
 
