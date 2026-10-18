@@ -576,7 +576,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - A choice drill that varies keys and positions (rule 12).
 
 ### M3-07 · Chord-diagram component (chart view)
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **Design:** §8 chart view
 - **Owns:** `app/src/components/chord-diagram/**`
