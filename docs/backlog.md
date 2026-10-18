@@ -382,7 +382,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Tap drill. Any correct position in the active region is accepted. G–B shift items are interleaved deliberately.
 
 ### M2-07 · Worked-example framework, plus G–B shift content
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-16
 - **Design:** §7 Learn (skill detail), research/02 rule 8
 - **Owns:** `app/src/learn/worked-examples/**`, `app/src/screens/learn/SkillDetail.tsx`, `app/e2e/m2-07.spec.ts`
