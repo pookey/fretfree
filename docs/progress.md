@@ -2,6 +2,34 @@
 
 ## Current status
 
+**Third shift, second report (2026-10-18, 23:40). 59 work packages live. 10 shipped since the 20:15 report. Production at https://fretfree.app is healthy: smoke passed after every ship.**
+
+Shipped since 20:15:
+- **User feedback:**
+  - **M1-34:** Learn rings show learning and stable separately. The centre number is always captioned.
+  - **M1-35:** the session summary shows learning and stable, keeps "come back tomorrow" primary, and scopes the review forecast to today's items.
+  - **M1-37:** hotfix, built by another session at the user's request. Adds D39 "Fret landmarks", so the F3 lessons no longer open to an empty session, plus an empty-lesson guard and a registry rule tying pending drills to open WPs.
+  - **M1-36:** a dev-build-only "unlock every skill" switch that never touches real progress.
+- **M1 QA follow-ups:**
+  - **M1-30:** a visible streak-repair card.
+  - **M1-31:** fretboard contrast in the light theme and for the nut labels.
+  - **M1-32:** the iPad-portrait mastery map no longer clips fret 12.
+  - **M1-33:** the summary's Done stays on screen on phones held sideways.
+- **M7-01:** the sync model and merge rules, the first M7 package. Stable IDs for legacy rows, so syncing can't duplicate history. Schema v2 with change tracking. The protocol in `docs/design/sync.md`, with atomic sequencing and consistent pulls.
+- **M2-14:** the **M2 milestone QA**. M2's definition of done is checked off below.
+
+**User decisions this evening:** M7 approved (the FretworkSync stack: Cognito, HTTP API with Lambda, DynamoDB). The DNS names are confirmed as only fretfree.app and www.fretfree.app. The M1 definition-of-done table was corrected: F3 wasn't actually served until M1-37.
+
+**New work filed:** M1-38 (copy polish), M1-39 (dev unlock in Explore, plus LAN testing docs), and M2-17 to M2-20 from the M2 QA (interleaving near-tie reviews, per-drill context panels starting with D4, Progress for interval and octave work, D5/D6 iPad-portrait layout). In flight: M2-17.
+
+**Parallelism (251 samples, 20:15–23:40):** average 2.8 in flight, peak 4. The ceiling ran 1–3, held down by load from verifies (load1 3–60).
+
+**Incidents:** no stop-the-line events and no usage-limit pauses. One lane verify failure (M1-36) was a race that was already in the M1-24 first-week spec. It moved the mocked clock before the session had started, so under load one minute went uncounted, right at the 10-minute goal edge. The spec now waits for the first prompt (fixed inside M1-36). Reviews caught several issues before they shipped: sync IDs that would have duplicated history across devices, a database upgrade that would abort on a corrupt date, a mis-scoped CSS block and missing keyboard and screen-reader access in D39, and copy that implied skipping days was fine.
+
+**Process:** the PM now keeps durable notes in `.orchestrator/pm-notes.md` and relies on auto-compaction overnight (SKILL §0 and §9). Other sessions hand work to the PM as branches, and M1-37 went through review and the lane as an out-of-band WP.
+
+---
+
 **Third shift, first report (2026-10-18, 20:15). 49 work packages live. 9 shipped this shift, plus the infra session's domain retirement and new pages. Production at https://fretfree.app is healthy: smoke passed after every ship.**
 
 Shipped this shift: M2-09 (placement test), **M1-28** (hotfix, user-reported: feedback and Continue always on screen), M3-02 (C4 key spelling + D7 "Spell it"), **M1-29** (user request: "Add to Home Screen" onboarding step and Today card), M3-03 (C5 chord-construction skills), M3-07 (chord-diagram component), M1-24 (**M1 milestone QA**: a first-week e2e on a mocked clock, a streak-repair e2e, and a 96-shot screenshot pass on production; the M1 definition of done is checked off below) and M3-05 (C6 CAGED skills + D9 "Build the shape at a root"). From the infra session: **guitar.dwellsee.com retired** (alias, certificate SAN and records removed; the certificate was replaced), Settings as its own `/settings` page, and a new `/privacy` page.
