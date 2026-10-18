@@ -46,9 +46,10 @@ async function seedDue(itemIds: readonly string[]) {
   await db.cards.bulkPut(
     itemIds.map((id, i) =>
       // Earlier items were seen longer ago, so they are less retrievable and come first.
+      // A week apart, so they aren't near-ties that the session builder mixes.
       scheduler.seedKnownCard(
         { id, skillId: 'C3.thirds' },
-        new Date(clock.getTime() - (40 - i) * DAY),
+        new Date(clock.getTime() - (40 - 7 * i) * DAY),
         5,
       ),
     ),

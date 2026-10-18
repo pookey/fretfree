@@ -280,6 +280,11 @@ export class SessionRunner {
           return picker.pick(item)?.conceptOf(item, ctx) ?? null;
         },
         factOf: (item) => factOf(item, tuning),
+        drillOf: (itemId) => {
+          const skillId = skillOf.get(itemId);
+          return skillId === undefined ? null : (picker.pick({ id: itemId, skillId })?.id ?? null);
+        },
+        rng: deps.rng ?? Math.random,
         ...(maxItems !== undefined ? { maxItems } : {}),
       });
       // The due and new queue ran dry: top up with stretch items, never stable ones (§3.7).
