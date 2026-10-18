@@ -379,7 +379,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m1-31.spec.ts`) screenshots the session neck in both themes on iPad landscape for review; existing Fretboard tests stay green.
 
 ### M1-32 · iPad portrait: the Progress mastery map clips its 12th fret
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §7 Progress, §7 size classes
 - **Owns:** `app/src/components/heatmap/FretboardHeatmap.tsx`, `app/src/components/heatmap/Heatmap.module.css`, `app/src/components/heatmap/Heatmap.test.tsx`, `app/e2e/m1-32.spec.ts`
