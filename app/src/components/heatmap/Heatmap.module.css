@@ -9,7 +9,8 @@
 }
 
 /* When the neck can't fit at 44pt cells it scrolls sideways; a fade on the
-   side with more to see, plus the hint below, says so. */
+   side with more to see, plus the hint below, says so. The fade stays narrow
+   so fret 12 is clear of it on a 15-fret neck at its minimum scale. */
 .edges {
   position: relative;
   min-width: 0;
@@ -21,7 +22,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 3rem;
+  width: 1.5rem;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.2s ease-out;

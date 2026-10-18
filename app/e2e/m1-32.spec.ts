@@ -132,18 +132,29 @@ test.describe('M1-32 the mastery map fits its panel', () => {
     const map = await openMap(page);
     const container = map.getByTestId('heatmap-scroll');
     const edges = container.locator('..');
+    const neck = map.getByRole('group', { name: 'Fretboard mastery map' });
     const overflow = await container.evaluate((el) => el.scrollWidth - el.clientWidth);
     test.skip(overflow <= 1, 'the whole neck fits here');
 
     await expect(edges).toHaveAttribute('data-more-right', 'true');
     await expect(edges).toHaveAttribute('data-more-left', 'false');
+    // Frets up to 12 stay clear of the right-hand fade, not just inside the box.
+    const fade = await edges.evaluate((el) => parseFloat(getComputedStyle(el, '::after').width));
+    expect(fade).toBeGreaterThan(0);
+    const box = (await container.boundingBox())!;
+    for (const target of [
+      map.locator('[data-testid="heat-tile"][data-cell="s1f12"]'),
+      neck.getByRole('button', { name: /^string 1, fret 12\b/ }),
+      neck.getByTestId('heat-fret-12'),
+    ]) {
+      const b = (await target.boundingBox())!;
+      expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width - fade);
+    }
     await container.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
     await expect(edges).toHaveAttribute('data-more-right', 'false');
     await expect(edges).toHaveAttribute('data-more-left', 'true');
-    const neck = map.getByRole('group', { name: 'Fretboard mastery map' });
     const last = await neck.getAttribute('data-fret-to');
     const label = (await neck.getByTestId(`heat-fret-${last}`).boundingBox())!;
-    const box = (await container.boundingBox())!;
     expect(label.x + label.width).toBeLessThanOrEqual(box.x + box.width + 1);
     await expectNoHorizontalOverflow(page);
   });
