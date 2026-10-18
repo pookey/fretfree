@@ -412,7 +412,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The pure adaptive algorithm is unit-tested.
 
 ### M2-10 · Daily quests
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-10
 - **Design:** §3.7 quests
 - **Owns:** `app/src/engine/gamification/quests/**`, `app/src/screens/today/cards/quests.tsx`, `app/e2e/m2-10.spec.ts`
