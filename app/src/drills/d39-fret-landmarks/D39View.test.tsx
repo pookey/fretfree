@@ -144,6 +144,17 @@ describe('<D39View>', () => {
     expect(onAnswer).toHaveBeenCalledWith(3);
   });
 
+  it('leaves Enter and Space on another button to that button', () => {
+    const { onAnswer } = renderView(prompt('find-marker:f3'));
+    render(<button type="button">End session</button>);
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(cell(3, 0)).toHaveFocus();
+    const quit = screen.getByRole('button', { name: 'End session' });
+    fireEvent.keyDown(quit, { key: 'Enter' });
+    fireEvent.keyDown(quit, { key: ' ' });
+    expect(onAnswer).not.toHaveBeenCalled();
+  });
+
   it('answers once when Enter lands on the focused cell itself', () => {
     const { onAnswer } = renderView(prompt('find-marker:f5'));
     fireEvent.keyDown(window, { key: 'End' });

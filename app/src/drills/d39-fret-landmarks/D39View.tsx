@@ -73,6 +73,8 @@ export function D39View({
       // A focused cell answers its own Enter (and prevents the default).
       if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
       if ((e.key === 'Enter' || e.key === ' ') && focusFret !== null) {
+        // Focus moved on to a button or link (End session, Show help): it handles its own key.
+        if (e.target instanceof Element && e.target.closest('button, a, input')) return;
         e.preventDefault();
         onAnswer(focusFret);
         return;
