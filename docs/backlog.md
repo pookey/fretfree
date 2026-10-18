@@ -508,7 +508,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ## M4: Harmony, progressions and ear
 
 ### M4-01 · [contract] Harmony theory
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **Owns:** `app/src/theory/harmony.ts`, `app/src/theory/harmony.test.ts`
 - **Acceptance:**
