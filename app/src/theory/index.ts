@@ -5,3 +5,6 @@ export * from './intervals';
 export * from './harmony';
 export * from './scales';
 export * from './chords';
+export * from './pentatonic';
+export * from './arpeggios';
+export * from './function';
