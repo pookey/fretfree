@@ -203,7 +203,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Pure aggregation is unit-tested.
 
 ### M1-15 · Guide fading across drills, and blind mode
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-04
 - **Design:** §3.5
 - **Owns:** `app/src/engine/guides.ts`, `app/src/engine/guides.test.ts`, `app/src/drills/d1-name-the-note/**`, `app/src/screens/progress/panels/settings.tsx`
