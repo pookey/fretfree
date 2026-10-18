@@ -1,12 +1,6 @@
 import { expect, test } from '@playwright/test';
-import {
-  F1_SKILLS,
-  answer,
-  expectNoHorizontalOverflow,
-  freshStart,
-  masterSkills,
-  targetNote,
-} from './helpers';
+import { answer, expectNoHorizontalOverflow, freshStart, targetNote } from './helpers';
+import { focusSession } from './helpers/focus';
 
 test.describe('smoke @smoke', () => {
   test('loads, navigates every section and serves the manifest', async ({ page, request }) => {
@@ -32,8 +26,7 @@ test.describe('smoke @smoke', () => {
 
   test('can answer a drill prompt', async ({ page }) => {
     await freshStart(page);
-    await masterSkills(page, F1_SKILLS);
-    await page.getByTestId('start-session').click();
+    await focusSession(page, 'F2.string6-naturals');
     const note = await targetNote(page);
     await answer(page, note);
     await expect(page.getByTestId('feedback-correct')).toBeVisible();

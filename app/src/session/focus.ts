@@ -37,10 +37,7 @@ export function practiseHref(skillId: string): string {
 }
 
 /** The focus in a session URL's query, keeping only IDs the skills know. Null for none. */
-export function parseFocus(
-  params: URLSearchParams,
-  skills: readonly Skill[],
-): SessionFocus | null {
+export function parseFocus(params: URLSearchParams, skills: readonly Skill[]): SessionFocus | null {
   const known = new Set(skills.map((s) => s.id));
   const skillIds = [...new Set(params.getAll(FOCUS_PARAM))].filter((id) => known.has(id));
   const wanted = new Set(params.getAll(ITEM_PARAM));

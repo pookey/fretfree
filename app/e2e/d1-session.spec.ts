@@ -1,14 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { F1_SKILLS, answer, freshStart, masterSkills, targetNote } from './helpers';
+import { answer, freshStart, targetNote } from './helpers';
+import { focusSession } from './helpers/focus';
 
 test.describe('D1 "Name the highlighted note" session', () => {
   test('runs a scheduled session, persists answers and survives a reload', async ({ page }) => {
     await freshStart(page);
-    await masterSkills(page, F1_SKILLS);
-    // 16 notes on strings 6 and 5, 14 notes to find on them (D2), and the
-    // 14 musical-alphabet items.
-    await expect(page.getByTestId('new-count')).toHaveText('44');
-    await page.getByTestId('start-session').click();
+    // String 6's naturals open with a block of D1 items.
+    await focusSession(page, 'F2.string6-naturals');
 
     // First pass: guided worked examples show the note name on the neck.
     await expect(page.getByText(/^This is/)).toBeVisible();
@@ -48,8 +46,7 @@ test.describe('D1 "Name the highlighted note" session', () => {
 
   test('accepts hardware-keyboard answers and Space to continue', async ({ page }) => {
     await freshStart(page);
-    await masterSkills(page, F1_SKILLS);
-    await page.getByTestId('start-session').click();
+    await focusSession(page, 'F2.string6-naturals');
     const note = await targetNote(page);
     await page.keyboard.press(note.length === 1 ? note.toLowerCase() : `Shift+${note[0]}`);
     await expect(page.getByTestId('feedback-correct')).toBeVisible();

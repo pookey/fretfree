@@ -24,7 +24,10 @@ const deps = (over: Partial<RunnerDeps> = {}): RunnerDeps => ({
 });
 
 const skill = (id: string) => SKILLS.find((s) => s.id === id) as Skill;
-const notes = (id: string) => skill(id).items().filter((i) => parseNoteItemId(i.id));
+const notes = (id: string) =>
+  skill(id)
+    .items()
+    .filter((i) => parseNoteItemId(i.id));
 
 /** Every planned entry, walking the queue without answering. */
 function plan(r: SessionRunner) {
@@ -76,7 +79,9 @@ describe('focused sessions', () => {
     );
 
     const entries = plan(
-      await SessionRunner.start(deps({ focus: { skillIds: ['F2.string6-naturals'], itemIds: [] } })),
+      await SessionRunner.start(
+        deps({ focus: { skillIds: ['F2.string6-naturals'], itemIds: [] } }),
+      ),
     );
     expect(entries.every((e) => e.skillId === 'F2.string6-naturals')).toBe(true);
     const kinds = entries.map((e) => e.kind);
