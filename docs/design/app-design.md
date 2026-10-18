@@ -38,6 +38,7 @@ Topic IDs (F1, C6, I1, …) refer to the curriculum map in research/03.
 | Concern | Decision | Why |
 |---|---|---|
 | Platform | **PWA** (installable to the home screen), **iPad-first**, with Capacitor for a later App Store build | Targets iPadOS Safari and standalone mode; iPhone also works from the same codebase. Deploys to `fretfree.app` immediately. iPadOS Safari supports Web Audio, the mic (getUserMedia), IndexedDB and standalone display. |
+| Install | Onboarding opens with an **"Install FretFree"** step (first, before anything is saved), and Today carries the same tip as a dismissible card. Both show only where the app can be installed and isn't standalone: Safari on iPad (and iPhone), Chrome and Edge on iOS 16.4+ via their share menus, and an Install button where `beforeinstallprompt` fires (Chromium desktop, Android). | **Storage caveat** (checked 2026-10-18 against WebKit's own statements, not on a device): a Home Screen web app on iOS/iPadOS has its own cookies and storage, separate from Safari. WebKit calls this by design ([bug 181849](https://bugs.webkit.org/show_bug.cgi?id=181849); WWDC23 session 10120), and nothing in the iOS 26 notes changes it; iOS 26 only makes every site added to the Home Screen open as a web app by default (an "Open as Web App" toggle on the Add sheet). So the step asks learners to install first and finish setup in the installed app. Progress made in the browser doesn't carry over: the step and card offer Export (Progress → Your data) for importing in the installed app. Once sync (M7) exists, signing in is the alternative. A Home Screen app also has its own days-of-use counter for WebKit's 7-day eviction of script-written storage, which is why installing keeps progress safer. |
 | UI | **React 19 + TypeScript (strict) + Vite** | Mature ecosystem and familiar to agents. |
 | Styling | CSS modules or vanilla-extract with design tokens; safe-area insets; `prefers-color-scheme` | — |
 | Routing | React Router (or TanStack Router) | — |
@@ -183,6 +184,7 @@ Achievement { id, unlockedAt }
 
 Onboarding takes under 3 minutes, and every step is skippable:
 
+0. **Install** (only where the app can be installed and isn't standalone): add FretFree to the Home Screen and finish setup there, or continue in the browser (§2).
 1. **Hand and tuning:** right- or left-handed; standard, Drop D, or DADGAD later.
 2. **Goal:** "Play songs with friends" (pop / singer-songwriter), "Solo and improvise" (rock-blues), "Jazz", or "Understand everything" (general). The goal reorders frontier skills and picks example progressions and repertoire.
 3. **Reading music:** two multi-select questions. **"What can you already read?"** and **"What would you like to learn to read?"**, each offering Tab and Standard notation (both, one or neither; neither is the default). The copy says the neck is taught by name, position and sound either way, and that reading is extra. The answers never lock anything away:
@@ -323,6 +325,7 @@ There are 5 sections: **Today**, **Learn**, **Explore**, **Progress** and **Sett
 - Daily quests, the due count, new items queued, and freezes held.
 - The iPad sidebar always shows the streak and daily-goal ring.
 - Quick drills: "2-minute fretboard warm-up" and "Ear only (no guitar)".
+- An **install tip** under the hero, under the same conditions as the onboarding step (§2). "Not now" hides it on this device.
 
 ### Learn
 
