@@ -156,6 +156,9 @@ export const MODULES: readonly Module[] = [
     misconception: 'Theory-heavy learners neglect timing.',
   },
   {
+    // Design §5 also lists I6 progression ear under Progressions. Each topic
+    // belongs to one module here, so I6 lives only in Ear; the songs profile
+    // promotes Ear as well, which keeps progression ear near Progressions.
     id: 'ear',
     title: 'Ear',
     topics: ['I6'],

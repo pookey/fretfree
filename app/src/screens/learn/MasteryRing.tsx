@@ -7,7 +7,7 @@ const C = 2 * Math.PI * R;
 /**
  * A mastery ring (design §3.7 mastery map, §7 Learn). The state is carried by
  * shape as well as colour: a tick when mastered, a padlock when locked, a
- * dashed track when the module isn't built yet, the percentage otherwise.
+ * dashed track when the module isn't built yet, the stable share otherwise.
  */
 export function MasteryRing({
   fraction,
@@ -22,10 +22,14 @@ export function MasteryRing({
   size?: 'medium' | 'large';
 }) {
   const pct = percent(fraction);
+  // "Stable", not "mastered": mastery also needs answers within the speed
+  // target (design §3.4), so a full ring alone doesn't claim it.
   const spoken =
     state === 'soon'
       ? `${label}: coming soon`
-      : `${label}: ${pct}% mastered${state === 'locked' ? ', locked' : ''}`;
+      : state === 'mastered'
+        ? `${label}: mastered`
+        : `${label}: ${pct}% stable${state === 'locked' ? ', locked' : ''}`;
   return (
     <svg
       className={styles.ring}

@@ -58,7 +58,8 @@ function ModuleCard({
           <span className={styles.moduleTitle}>{module.title}</span>
           <span className={styles.moduleMeta}>
             {MODULE_STATE_LABEL[view.state]}
-            {skills > 0 && ` · ${view.masteredSkills}/${skills} skills · ${percent(view.mastery)}%`}
+            {skills > 0 &&
+              ` · ${view.masteredSkills}/${skills} skills · ${percent(view.mastery)}% stable`}
           </span>
         </span>
       </Link>
@@ -127,7 +128,7 @@ export function LearnScreen() {
         {selected && (
           <div className={styles.detailPane}>
             {compact && (
-              <Link to="/learn" className={styles.back}>
+              <Link to="/learn" replace className={styles.back}>
                 ← All modules
               </Link>
             )}

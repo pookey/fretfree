@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter, RouterProvider, createMemoryRouter } from 'react-router';
 import { createEmptyCard } from 'ts-fsrs';
 import { useAppStore } from '../../app-store';
 import { DEFAULT_SETTINGS, getSkill } from '../../engine';
@@ -39,7 +39,9 @@ describe('<LearnScreen>', () => {
     renderAt();
     await loaded();
     const map = screen.getByRole('region', { name: 'Modules' });
-    expect(within(map).getAllByRole('link', { name: /mastered|coming soon/ }).length).toBe(18);
+    expect(within(map).getAllByRole('link', { name: /stable|mastered|coming soon/ }).length).toBe(
+      18,
+    );
     const detail = screen.getByTestId('module-detail');
     expect(within(detail).getByRole('heading', { level: 2 })).toHaveTextContent('Neck basics');
     expect(screen.getByTestId('module-notes-1')).toHaveAttribute('aria-current', 'true');
@@ -136,16 +138,35 @@ describe('<LearnScreen>', () => {
     fireEvent.click(screen.getByRole('link', { name: '← All modules' }));
     expect(screen.getByRole('region', { name: 'Modules' })).toBeInTheDocument();
   });
+
+  it('goes back to the map without leaving the detail in history on compact', async () => {
+    setWidth(390, 844);
+    const router = createMemoryRouter([{ path: '/learn', element: <LearnScreen /> }], {
+      initialEntries: ['/learn'],
+    });
+    render(<RouterProvider router={router} />);
+    await loaded();
+    fireEvent.click(screen.getByTestId('module-notes-1'));
+    fireEvent.click(screen.getByRole('link', { name: '← All modules' }));
+    // A back gesture from the map must not reopen the detail it just left.
+    await act(() => router.navigate(-1));
+    expect(router.state.location.search).toBe('');
+    expect(screen.queryByTestId('module-detail')).toBeNull();
+  });
 });
 
 describe('<MasteryRing>', () => {
   it('speaks its state and shows the percentage only while in progress', () => {
     const { rerender } = render(<MasteryRing fraction={0.42} state="open" label="X" />);
-    expect(screen.getByRole('img')).toHaveAccessibleName('X: 42% mastered');
+    expect(screen.getByRole('img')).toHaveAccessibleName('X: 42% stable');
     expect(screen.getByText('42%')).toBeInTheDocument();
     rerender(<MasteryRing fraction={0.2} state="locked" label="X" />);
-    expect(screen.getByRole('img')).toHaveAccessibleName('X: 20% mastered, locked');
+    expect(screen.getByRole('img')).toHaveAccessibleName('X: 20% stable, locked');
     expect(screen.queryByText('20%')).toBeNull();
+    rerender(<MasteryRing fraction={1} state="open" label="X" />);
+    expect(screen.getByRole('img')).toHaveAccessibleName('X: 100% stable');
+    rerender(<MasteryRing fraction={1} state="mastered" label="X" />);
+    expect(screen.getByRole('img')).toHaveAccessibleName('X: mastered');
     rerender(<MasteryRing fraction={0} state="open" label="X" />);
     expect(document.querySelectorAll('circle')).toHaveLength(1);
   });
