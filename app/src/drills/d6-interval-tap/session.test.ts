@@ -112,7 +112,9 @@ describe('D6 in a session', () => {
     const p = cur.prompt as D6Prompt;
     const res = await r.answer({ string: 2, fret: p.shapeTarget.fret - 1 }, 900);
     expect(res.result.correct).toBe(false);
-    expect(await db.confusions.toArray()).toEqual([{ a: 'M3', b: 'M3 (G–B shift)', count: 1 }]);
+    const rows = await db.confusions.toArray();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ a: 'M3', b: 'M3 (G–B shift)', count: 1 });
   });
 
   it('pairs a shifted shape with an unshifted one once they are confused (rule 6)', async () => {
