@@ -327,6 +327,13 @@ describe('D4 compact layout', () => {
       { from: 5, to: 9 },
       { from: 10, to: 12 },
     ]);
+    // Starting from the dot's region, then outward.
+    expect(d4Regions({ from: 0, to: 12 }, 10)).toEqual([
+      { from: 10, to: 12 },
+      { from: 5, to: 9 },
+      { from: 0, to: 4 },
+    ]);
+    expect(d4Regions({ from: 0, to: 12 }, 7).map((r) => r.from)).toEqual([5, 0, 10]);
     const bounds = { from: 0, to: 12 };
     expect(d4RegionWindow(regions[0]!, bounds)).toEqual({ from: 0, to: 4 });
     expect(d4RegionWindow(regions[2]!, bounds)).toEqual({ from: 8, to: 12 });

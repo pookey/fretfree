@@ -65,7 +65,8 @@ export function D4View({
   }
 
   const every = prompt.mode === 'every';
-  const regions = every && compact ? d4Regions(prompt.activeRange) : [prompt.activeRange];
+  const regions =
+    every && compact ? d4Regions(prompt.activeRange, prompt.source.fret) : [prompt.activeRange];
   const regionIndex = Math.min(view.region, regions.length - 1);
   const region = regions[regionIndex] as FretRange;
   const lastRegion = regionIndex === regions.length - 1;
@@ -173,17 +174,25 @@ export function D4View({
           <p className={styles.prompt} id="drill-prompt" data-testid="d4-prompt">
             {question}
           </p>
-          <p className={styles.explain} data-testid="d4-explain">
-            {feedback
-              ? d4Explain(prompt, feedback)
-              : !compact && `Start from the ${prompt.pc} in the square and use octave shapes.`}
-          </p>
+          {/* Compact screens keep the height for the neck: no hint line before an answer. */}
+          {(feedback || !compact) && (
+            <p className={styles.explain} data-testid="d4-explain">
+              {feedback
+                ? d4Explain(prompt, feedback)
+                : `Start from the ${prompt.pc} in the square and use octave shapes.`}
+            </p>
+          )}
           {every && (
             <div className={styles.actions}>
               <p className={styles.count} data-testid="d4-count" aria-live="polite">
                 Found {found}
                 {d4ShowsCount(guideLevel, guided) && ` of ${prompt.targets.length}`}
               </p>
+              {compact && (
+                <p className={styles.caption} data-testid="d4-region">
+                  Region {regionIndex + 1} of {regions.length}
+                </p>
+              )}
               {!feedback && (
                 <button type="button" className={styles.done} onClick={done}>
                   {lastRegion ? 'Done' : 'Next frets'}
@@ -220,11 +229,6 @@ export function D4View({
           }
         />
       </div>
-      {compact && every && (
-        <p className={styles.caption} data-testid="d4-region">
-          Region {regionIndex + 1} of {regions.length}
-        </p>
-      )}
       {/* iPad portrait: the context panel sits below the neck. */}
       {sizeClass === 'regular' && aside}
     </div>

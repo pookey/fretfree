@@ -394,13 +394,28 @@ function clampWindow(from: number, bounds: FretRange, size: number): FretRange {
   return { from: start, to: start + width - 1 };
 }
 
-/** Consecutive regions covering the range, for region-by-region rounds (design §7 iPhone). */
-export function d4Regions(range: FretRange, size = D4_REGION_FRETS): FretRange[] {
+/**
+ * Regions covering the range, for region-by-region rounds (design §7
+ * iPhone). The round starts in the region holding `startFret` (the dot, so
+ * octave shapes can be read from it) and then works outward, nearest first.
+ */
+export function d4Regions(
+  range: FretRange,
+  startFret = range.from,
+  size = D4_REGION_FRETS,
+): FretRange[] {
   const out: FretRange[] = [];
   for (let from = range.from; from <= range.to; from += size) {
     out.push({ from, to: Math.min(range.to, from + size - 1) });
   }
-  return out;
+  const start = Math.max(
+    0,
+    out.findIndex((r) => inRange(startFret, r)),
+  );
+  return out
+    .map((r, i) => ({ r, d: Math.abs(i - start) }))
+    .sort((a, b) => a.d - b.d)
+    .map(({ r }) => r);
 }
 
 /** The frets on screen for a region: a full-size window, so a short last region keeps its cell size. */

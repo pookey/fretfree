@@ -210,9 +210,12 @@ describe('<D4View> every octave', () => {
 
   it('moves on from a region with "Next frets", or ends the round if one is left', () => {
     const p = prompt('octaves:C');
-    // The dot is string 6 fret 8; frets 0–4 still hold C at s2f1 and s5f3.
+    // The dot is string 6 fret 8; frets 5–9 also hold C at s3f5 and s1f8.
     expect(p.source).toEqual(at(6, 8));
     const { onAnswer } = view(p, { sizeClass: 'compact' });
+    // The round starts in the dot's region.
+    expect(screen.getByTestId('d4-prompt')).toHaveTextContent('Tap every C in frets 5–9');
+    expect(markers('root')).toEqual([at(6, 8)]);
     fireEvent.click(screen.getByRole('button', { name: 'Next frets' }));
     expect(onAnswer).toHaveBeenCalledWith([]);
   });

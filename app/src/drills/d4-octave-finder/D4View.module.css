@@ -105,8 +105,17 @@
   justify-content: flex-start;
 }
 
+/* One wrapped row (prompt, count, button) so the neck keeps the height. */
 .drill[data-size-class='compact'] .top {
-  gap: var(--space-2);
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
+}
+
+.drill[data-size-class='compact'] .explain {
+  flex-basis: 100%;
 }
 
 .drill[data-size-class='compact'] .prompt {
@@ -115,5 +124,5 @@
 
 /* Best-effort iPhone: keep the zoomed neck within short landscape viewports. */
 .drill[data-size-class='compact'] .neckArea svg {
-  max-height: calc(100dvh - 11rem);
+  max-height: calc(100dvh - 7rem);
 }
