@@ -330,7 +330,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Exhaustive tests. Exported from `theory/index.ts`, as an append-only edit.
 
 ### M2-02 · C1 octave skills
-- **Status:** todo
+- **Status:** done
 - **Deps:** M2-01
 - **Owns:** `app/src/engine/skills/c1.ts`, `app/src/engine/skills/c1.test.ts`
 - **Acceptance:**
