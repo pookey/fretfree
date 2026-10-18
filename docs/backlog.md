@@ -392,7 +392,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - "Practise this now" starts a focused session.
 
 ### M2-08 · Learned confusion matrix
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-17
 - **Design:** §3.3 step 3
 - **Owns:** `app/src/engine/session.ts` (hotspot), `app/src/engine/confusions.ts`, `app/src/engine/confusions.test.ts`
