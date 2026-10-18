@@ -40,7 +40,8 @@ export function SessionScreen() {
   const fsrsWeights = settings.fsrsParams?.w;
   const scheduler = useMemo(() => createScheduler({ weights: fsrsWeights }), [fsrsWeights]);
   const loaded = useAppStore((s) => s.loaded);
-  const overlay = useOverlay();
+  // Read once, so the switch flipped mid-session (in another tab) can't restart it.
+  const [overlay] = useState(useOverlay());
   const sizeClass = useSizeClass();
   const compactFrets = useCompactWindowFrets();
   const compact = sizeClass === 'compact';

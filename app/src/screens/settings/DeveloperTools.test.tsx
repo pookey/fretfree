@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { useAppStore } from '../../app-store';
 import { DEFAULT_SETTINGS } from '../../engine';
 import { getDb, putSkillState } from '../../storage';
+import { SessionScreen } from '../../session/SessionScreen';
 import { LearnScreen } from '../learn/LearnScreen';
 import { DevUnlockBadge, DeveloperTools } from './DeveloperTools';
 import { SettingsGroups } from './SettingsGroups';
@@ -36,7 +37,7 @@ beforeEach(() => {
 
 afterEach(async () => {
   localStorage.clear();
-  await Promise.all([db.cards.clear(), db.reviewLogs.clear(), db.skillStates.clear()]);
+  await Promise.all(db.tables.map((t) => t.clear()));
 });
 
 describe('<DeveloperTools> (development builds)', () => {
@@ -110,6 +111,24 @@ describe('<DeveloperTools> (development builds)', () => {
     expect(triads()).toHaveAttribute('data-status', 'locked');
     expect(screen.getByTestId('module-chords')).toHaveAttribute('data-state', 'locked');
     expect(await learnerData()).toEqual(before);
+  });
+
+  it('keeps the overlay a session started with, even if the switch flips', async () => {
+    localStorage.setItem(KEY, '1');
+    useAppStore.setState({ loaded: true });
+    render(
+      <MemoryRouter initialEntries={['/session?skill=C5.triads']}>
+        <SessionScreen />
+      </MemoryRouter>,
+    );
+    // Off in another tab while the session is still starting.
+    act(() => {
+      localStorage.removeItem(KEY);
+      window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
+    });
+    expect(await screen.findByTestId('d7-subject')).toBeInTheDocument();
+    expect(screen.queryByTestId('session-empty')).toBeNull();
+    expect(await db.sessionLogs.count()).toBe(1);
   });
 
   it('survives blocked storage', () => {
