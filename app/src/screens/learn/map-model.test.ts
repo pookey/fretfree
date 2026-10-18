@@ -181,6 +181,13 @@ describe('percent', () => {
     expect(percent(-1)).toBe(0);
     expect(percent(2)).toBe(100);
   });
+
+  it('rounds any progress up to at least 1%', () => {
+    expect(percent(0.001)).toBe(1);
+    expect(percent(0.004)).toBe(1);
+    expect(percent(0.016)).toBe(2);
+    expect(percent(0)).toBe(0);
+  });
 });
 
 describe('skillRingState', () => {

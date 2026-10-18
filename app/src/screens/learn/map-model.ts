@@ -140,9 +140,13 @@ export const SKILL_STATUS_LABEL: Readonly<Record<SkillStatus, string>> = {
   mastered: 'Mastered',
 };
 
-/** A 0–1 fraction as a whole, clamped percentage. */
+/**
+ * A 0–1 fraction as a whole, clamped percentage. Any progress shows as at
+ * least 1%, so one item in a large skill doesn't read as none.
+ */
 export function percent(fraction: number): number {
-  return Math.round(Math.max(0, Math.min(1, fraction)) * 100);
+  const pct = Math.round(Math.max(0, Math.min(1, fraction)) * 100);
+  return fraction > 0 ? Math.max(1, pct) : pct;
 }
 
 /** A skill's ring state: its status in the module states' terms. */
