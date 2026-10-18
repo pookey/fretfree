@@ -66,6 +66,17 @@ export const ENGINE_CONFIG = {
       /** Each earlier answer to the same item today multiplies XP by this. */
       repeatDecay: 0.5,
     },
+    /** Achievement thresholds (design §3.7 achievements). */
+    achievements: {
+      /** How many of the latest reviews an achievement check looks at. */
+      recentReviews: 50,
+      /**
+       * "Speed demon": the median of correct, unguided answers among the
+       * recent reviews is under `medianMs`. `minAnswers` unguided answers at
+       * `minAccuracy` or better keep it a fluency signal, not luck or guessing.
+       */
+      speedDemon: { medianMs: 1200, minAnswers: 30, minAccuracy: 0.9 },
+    },
   },
 } as const;
 
