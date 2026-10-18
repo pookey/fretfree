@@ -1,0 +1,1615 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Fret Free brand options</title>
+    <meta
+      name="description"
+      content="Five brand directions for Fret Free (fretfree.app), with a mix-and-match picker."
+    />
+    <meta name="robots" content="noindex" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Preview only: every family here is SIL Open Font License 1.1. -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Fraunces:opsz,wght@9..144,400..700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600;700&family=Nunito:wght@500..900&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #1c1d21;
+        --raised: #25262b;
+        --sunken: #17181b;
+        --border: #393a41;
+        --text: #ededef;
+        --muted: #a5a6ae;
+        --focus: #56b4e9;
+        --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      }
+      @media (prefers-color-scheme: light) {
+        :root:not([data-theme='dark']) {
+          color-scheme: light;
+          --bg: #f6f6f7;
+          --raised: #ffffff;
+          --sunken: #ececee;
+          --border: #d9d9de;
+          --text: #1c1d21;
+          --muted: #585a63;
+          --focus: #0072b2;
+        }
+      }
+      :root[data-theme='light'] {
+        color-scheme: light;
+        --bg: #f6f6f7;
+        --raised: #ffffff;
+        --sunken: #ececee;
+        --border: #d9d9de;
+        --text: #1c1d21;
+        --muted: #585a63;
+        --focus: #0072b2;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 400 1rem/1.5 var(--sans);
+        overflow-x: hidden;
+      }
+      h1,
+      h2,
+      h3,
+      h4,
+      p {
+        margin: 0;
+      }
+      a {
+        color: inherit;
+      }
+      :focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 3px;
+        border-radius: 4px;
+      }
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      .wrap {
+        max-width: 80rem;
+        margin: 0 auto;
+        padding: 0 max(1rem, env(safe-area-inset-left)) 0 max(1rem, env(safe-area-inset-right));
+      }
+      @media (min-width: 48rem) {
+        .wrap {
+          padding: 0 2.5rem;
+        }
+      }
+
+      /* Top bar */
+      .bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding-top: 1.25rem;
+        padding-bottom: 1.25rem;
+      }
+      .bar .domain {
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 3px;
+        background: var(--raised);
+      }
+      .seg button {
+        font: inherit;
+        font-size: 0.875rem;
+        min-height: 2.25rem;
+        padding: 0 0.875rem;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .seg button[aria-pressed='true'] {
+        background: var(--text);
+        color: var(--bg);
+      }
+
+      /* Intro */
+      .intro {
+        padding: 2rem 0 3rem;
+        display: grid;
+        gap: 2.5rem;
+      }
+      @media (min-width: 64rem) {
+        .intro {
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: end;
+        }
+      }
+      .intro h1 {
+        font-size: clamp(2.25rem, 5vw, 3.75rem);
+        line-height: 1.05;
+        letter-spacing: -0.025em;
+        font-weight: 700;
+        max-width: 14ch;
+      }
+      .intro p {
+        margin-top: 1.25rem;
+        color: var(--muted);
+        font-size: 1.125rem;
+        max-width: 38rem;
+      }
+      .dock {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.25rem 1.5rem;
+        padding: 1.5rem 1.75rem;
+        border-radius: 2rem;
+        background: #2b2c33;
+        list-style: none;
+        margin: 0;
+      }
+      .dock a {
+        display: grid;
+        justify-items: center;
+        gap: 0.4rem;
+        text-decoration: none;
+        color: #f2f2f4;
+        font-size: 0.8125rem;
+        width: 5.5rem;
+        text-align: center;
+      }
+      .dock a:hover .tile {
+        transform: translateY(-2px);
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .dock .tile {
+          transition: transform 0.15s ease;
+        }
+      }
+
+      .fixed {
+        border-top: 1px solid var(--border);
+        padding: 1.5rem 0 3rem;
+        display: grid;
+        gap: 1rem;
+      }
+      @media (min-width: 64rem) {
+        .fixed {
+          grid-template-columns: 18rem 1fr;
+        }
+      }
+      .fixed h2 {
+        font-size: 1.125rem;
+      }
+      .fixed > div > p {
+        color: var(--muted);
+        margin-top: 0.35rem;
+        font-size: 0.9375rem;
+      }
+      .fixed ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+        gap: 0.75rem;
+      }
+      .fixed li {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.9375rem;
+      }
+      .fixed li span:last-child {
+        color: var(--muted);
+      }
+      .fixed li b {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      /* Direction sections */
+      .dir {
+        border-top: 1px solid var(--border);
+        padding: 3rem 0 3.5rem;
+        scroll-margin-top: 1rem;
+      }
+      .dir-head {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.25rem 1.25rem;
+        align-items: center;
+      }
+      .dir-id {
+        grid-row: span 2;
+        width: 3.25rem;
+        height: 3.25rem;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 1.25rem;
+      }
+      .dir-head h2 {
+        font-size: clamp(1.875rem, 4vw, 2.75rem);
+        line-height: 1.1;
+      }
+      .dir-head p {
+        color: var(--muted);
+        font-size: 1.0625rem;
+      }
+      .dir-actions {
+        margin-top: 1.25rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+      }
+      .btn-ghost {
+        font: inherit;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        min-height: 2.75rem;
+        padding: 0 1.125rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--raised);
+        color: var(--text);
+        cursor: pointer;
+      }
+      .btn-ghost:hover {
+        border-color: var(--muted);
+      }
+
+      .row {
+        display: grid;
+        gap: 1.25rem;
+        margin-top: 2rem;
+      }
+      .row-2 {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+      }
+      .row-3 {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+      }
+      .panel {
+        border-radius: 1.25rem;
+        overflow: hidden;
+        min-width: 0;
+        box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.22);
+      }
+      .cap {
+        display: block;
+        font-size: 0.8125rem;
+        color: var(--muted);
+        margin-top: 0.5rem;
+      }
+
+      .lockups {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+        gap: 1.25rem;
+      }
+      .lockup {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        padding: 2.25rem 1.75rem;
+        min-height: 9rem;
+      }
+      .lockup .wm {
+        font-size: clamp(2rem, 4.2vw, 2.75rem);
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      .about h3 {
+        font-size: 1rem;
+        margin-bottom: 0.4rem;
+      }
+      .about p {
+        color: var(--muted);
+        max-width: 36rem;
+      }
+      .about dl {
+        margin: 1.25rem 0 0;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.5rem 1.25rem;
+        font-size: 0.9375rem;
+      }
+      .about dt {
+        color: var(--muted);
+      }
+      .about dd {
+        margin: 0;
+      }
+
+      .swatches {
+        display: grid;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+      }
+      .swatch-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .swatch-row > span:first-child {
+        width: 3rem;
+        font-size: 0.8125rem;
+        color: var(--muted);
+      }
+      .sw {
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 0.6rem;
+        border: 1px solid rgb(128 128 128 / 0.35);
+      }
+
+      .home {
+        background: #2b2c33;
+        color: #f2f2f4;
+        padding: 1.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.75rem;
+        align-items: flex-end;
+        justify-content: space-around;
+      }
+      .home figure {
+        margin: 0;
+        display: grid;
+        justify-items: center;
+        gap: 0.45rem;
+        font-size: 0.8125rem;
+      }
+      .home figcaption {
+        color: #c8c9cf;
+      }
+      .tabs {
+        display: grid;
+        gap: 0.75rem;
+        width: 100%;
+      }
+      .tab {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #3a3b43;
+        border-radius: 0.6rem;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.8125rem;
+        max-width: 15rem;
+      }
+      .tab span:last-child {
+        color: #b9bac2;
+        margin-left: auto;
+      }
+      .tile {
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+      }
+      .tile svg {
+        display: block;
+      }
+
+      /* Mocks: each one paints itself from its palette, independent of the page theme. */
+      .mock {
+        background: var(--m-bg);
+        color: var(--m-text);
+        font-family: var(--m-body);
+        padding: 1.5rem;
+        height: 100%;
+      }
+      .mock .muted {
+        color: var(--m-muted);
+      }
+      .mock .disp {
+        font-family: var(--m-disp);
+        font-weight: var(--m-disp-w);
+        font-stretch: var(--m-disp-s);
+        letter-spacing: var(--m-disp-t);
+      }
+      .mock-btn {
+        display: inline-flex;
+        align-items: center;
+        min-height: 2.75rem;
+        padding: 0 1.25rem;
+        border-radius: var(--m-radius);
+        background: var(--m-btn);
+        color: var(--m-btn-text);
+        font-weight: 700;
+        font-size: 0.9375rem;
+      }
+      .today-top {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .today-top .disp {
+        font-size: 1.5rem;
+      }
+      .streak {
+        margin-left: auto;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        padding: 0.3rem 0.7rem;
+        border-radius: 999px;
+        border: 1.5px solid var(--m-accent);
+        color: var(--m-accent);
+      }
+      .today-card {
+        margin-top: 1.1rem;
+        background: var(--m-raised);
+        border: 1px solid var(--m-border);
+        border-radius: calc(min(var(--m-radius), 1rem) + 0.4rem);
+        padding: 1.1rem;
+        display: grid;
+        gap: 0.8rem;
+      }
+      .today-card .disp {
+        font-size: 1.75rem;
+        line-height: 1.1;
+      }
+      .today-card svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .toast {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        background: var(--m-raised);
+        border: 1px solid var(--m-border);
+        border-radius: 999px;
+        padding: 0.55rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+      .toast i {
+        width: 0.6rem;
+        height: 0.6rem;
+        border-radius: 50%;
+        background: var(--m-accent);
+        flex: none;
+      }
+
+      .land-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .land-nav .disp {
+        font-size: 1.125rem;
+      }
+      .land-nav a {
+        margin-left: auto;
+        font-size: 0.875rem;
+        color: var(--m-accent);
+      }
+      .land h3 {
+        margin-top: 2rem;
+        font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+        line-height: 1.08;
+        max-width: 16ch;
+      }
+      .land p {
+        margin-top: 0.85rem;
+        max-width: 32ch;
+      }
+      .land-cta {
+        margin-top: 1.4rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.9rem 1.25rem;
+        align-items: center;
+      }
+      .land-cta a {
+        color: var(--m-accent);
+        font-weight: 600;
+        font-size: 0.9375rem;
+      }
+      .land small {
+        display: block;
+        margin-top: 1.5rem;
+        font-size: 0.8125rem;
+      }
+
+      .voice {
+        margin-top: 2rem;
+        display: grid;
+        gap: 1.25rem;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+      }
+      .voice figure {
+        margin: 0;
+        border-left: 3px solid var(--border);
+        padding-left: 1rem;
+      }
+      .voice figcaption {
+        font-size: 0.8125rem;
+        color: var(--muted);
+        margin-bottom: 0.3rem;
+      }
+      .voice blockquote {
+        margin: 0;
+        font-size: 1.0625rem;
+      }
+
+      /* Shared sections */
+      .shared {
+        border-top: 1px solid var(--border);
+        padding: 3rem 0 3.5rem;
+      }
+      .shared > h2 {
+        font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+        line-height: 1.15;
+      }
+      .shared > p {
+        color: var(--muted);
+        margin-top: 0.5rem;
+        max-width: 40rem;
+      }
+      .taglines {
+        margin: 1.75rem 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 0.25rem;
+      }
+      .taglines li {
+        display: grid;
+        grid-template-columns: 2.25rem 1fr;
+        gap: 0 0.75rem;
+        padding: 0.9rem 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .taglines .n {
+        font-weight: 700;
+        color: var(--muted);
+        grid-row: span 2;
+      }
+      .taglines q {
+        quotes: none;
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+      .taglines span:last-child {
+        color: var(--muted);
+        font-size: 0.9375rem;
+      }
+
+      .casing {
+        margin-top: 1.75rem;
+        display: grid;
+        gap: 1.5rem;
+      }
+      .casing-row h3 {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+      }
+      .casing-row h3 span {
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .casing-samples {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 2rem;
+        align-items: baseline;
+      }
+      .casing-samples span {
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        white-space: nowrap;
+      }
+
+      /* Picker */
+      .picker {
+        display: grid;
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+      @media (min-width: 64rem) {
+        .picker {
+          grid-template-columns: 26rem 1fr;
+          align-items: start;
+        }
+        .picker-preview {
+          position: sticky;
+          top: 1rem;
+        }
+      }
+      fieldset {
+        border: 0;
+        margin: 0;
+        padding: 0;
+        min-width: 0;
+      }
+      legend {
+        font-weight: 700;
+        margin-bottom: 0.6rem;
+        padding: 0;
+      }
+      .opts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .opts-col {
+        display: grid;
+      }
+      .opt input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .opt span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 2.75rem;
+        padding: 0.35rem 0.85rem 0.35rem 0.45rem;
+        border-radius: 0.8rem;
+        border: 1.5px solid var(--border);
+        background: var(--raised);
+        cursor: pointer;
+        font-size: 0.9375rem;
+      }
+      .opts-col .opt span {
+        padding-left: 0.85rem;
+        border-radius: 0;
+        border-width: 0 0 1px;
+        background: transparent;
+      }
+      .opt input:checked + span {
+        border-color: var(--text);
+        box-shadow: inset 0 0 0 1px var(--text);
+      }
+      .opts-col .opt input:checked + span {
+        box-shadow: inset 3px 0 0 var(--text);
+        border-color: var(--border);
+        font-weight: 600;
+      }
+      .opt input:focus-visible + span {
+        outline: 3px solid var(--focus);
+        outline-offset: 2px;
+      }
+      .opt .k {
+        font-weight: 700;
+        width: 1.25rem;
+        text-align: center;
+      }
+      .dots {
+        display: inline-flex;
+      }
+      .dots i {
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        border: 1px solid rgb(128 128 128 / 0.4);
+        margin-right: -0.3rem;
+      }
+      .controls {
+        display: grid;
+        gap: 1.5rem;
+      }
+      .summary {
+        margin-top: 1.25rem;
+        display: grid;
+        gap: 0.6rem;
+        background: var(--raised);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1rem;
+      }
+      .summary output {
+        font-weight: 600;
+        word-break: break-word;
+      }
+      .summary .copy-row {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .copy {
+        font: inherit;
+        font-weight: 700;
+        min-height: 2.75rem;
+        padding: 0 1.25rem;
+        border-radius: 999px;
+        border: 0;
+        background: var(--text);
+        color: var(--bg);
+        cursor: pointer;
+      }
+      #copy-status {
+        color: var(--muted);
+        font-size: 0.875rem;
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 2rem 0 3rem;
+        color: var(--muted);
+        font-size: 0.875rem;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript
+      ><p class="wrap">
+        This preview draws its logos with JavaScript. Turn it on to see the options.
+      </p></noscript
+    >
+    <header class="wrap bar">
+      <span class="domain">fretfree.app</span>
+      <div class="seg" role="group" aria-label="Colour theme">
+        <button type="button" data-theme-set="auto">Auto</button>
+        <button type="button" data-theme-set="light">Light</button>
+        <button type="button" data-theme-set="dark">Dark</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="wrap intro" aria-labelledby="title">
+        <div>
+          <h1 id="title">Fret Free brand options</h1>
+          <p>
+            Five directions for fretfree.app. Each is complete on its own. To combine parts, use the
+            picker at the bottom, then copy the summary line and send it back.
+          </p>
+        </div>
+        <nav aria-label="Directions">
+          <ul class="dock" id="dock"></ul>
+        </nav>
+      </section>
+
+      <section class="wrap fixed" aria-labelledby="fixed-title">
+        <div>
+          <h2 id="fixed-title">Colours that stay the same</h2>
+          <p>
+            In drills these mean something, so no direction changes them. Brand colours are chosen
+            to stay clear of them.
+          </p>
+        </div>
+        <ul>
+          <li>
+            <span class="sw" style="background: #e69f00"></span
+            ><span><b>Orange</b> root, circle marker</span>
+          </li>
+          <li>
+            <span class="sw" style="background: #56b4e9"></span
+            ><span><b>Sky blue</b> chord tone, square marker</span>
+          </li>
+          <li>
+            <span class="sw" style="background: #009e73"></span
+            ><span><b>Bluish green</b> correct</span>
+          </li>
+          <li>
+            <span class="sw" style="background: #d55e00"></span><span><b>Vermillion</b> wrong</span>
+          </li>
+        </ul>
+      </section>
+
+      <div id="directions"></div>
+
+      <section class="wrap shared" aria-labelledby="tag-title">
+        <h2 id="tag-title">Tagline shortlist</h2>
+        <p>The numbers are for the picker. Each line leads with something different.</p>
+        <ol class="taglines" id="taglines"></ol>
+      </section>
+
+      <section class="wrap shared" aria-labelledby="case-title">
+        <h2 id="case-title">How to write the name</h2>
+        <p>
+          The same three spellings in each direction's typeface. Two words reads as the "don't fret"
+          pun. One word looks more like a product name and matches the domain.
+        </p>
+        <div class="casing" id="casing"></div>
+      </section>
+
+      <section class="wrap shared" aria-labelledby="pick-title" id="picker">
+        <h2 id="pick-title">Mix and match</h2>
+        <p>
+          Choose each part separately. The preview updates as you go. Copy the line at the bottom
+          and paste it back to me.
+        </p>
+        <div class="picker">
+          <form class="controls" id="controls" onsubmit="return false;"></form>
+          <div class="picker-preview" id="preview" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap">
+      Draft brand work for Fret Free, a free and open-source fretboard trainer. Fonts are previewed
+      from Google Fonts, all under the SIL Open Font License 1.1.
+    </footer>
+
+    <script>
+      'use strict';
+
+      const SYSTEM = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif";
+
+      const TYPES = {
+        A: {
+          name: 'Bricolage Grotesque',
+          disp: "'Bricolage Grotesque', " + SYSTEM,
+          w: 750,
+          s: '100%',
+          t: '-0.035em',
+          body: SYSTEM,
+          note: 'Bricolage Grotesque for display (SIL OFL 1.1). System UI for text, which is San Francisco on iPad.',
+        },
+        B: {
+          name: 'Fraunces',
+          disp: "'Fraunces', Georgia, serif",
+          w: 600,
+          s: '100%',
+          t: '-0.015em',
+          body: SYSTEM,
+          note: 'Fraunces for display (SIL OFL 1.1). System UI for text.',
+        },
+        C: {
+          name: 'Archivo Condensed',
+          disp: "'Archivo', " + SYSTEM,
+          w: 850,
+          s: '72%',
+          t: '0',
+          body: "'Archivo', " + SYSTEM,
+          note: 'Archivo at a condensed width for display and normal width for text (SIL OFL 1.1). One family, two widths.',
+        },
+        D: {
+          name: 'Nunito',
+          disp: "'Nunito', ui-rounded, " + SYSTEM,
+          w: 850,
+          s: '100%',
+          t: '-0.02em',
+          body: "'Nunito', ui-rounded, " + SYSTEM,
+          note: 'Nunito throughout (SIL OFL 1.1). It is close to the SF Pro Rounded the app already uses.',
+        },
+        E: {
+          name: 'IBM Plex',
+          disp: "'IBM Plex Sans', " + SYSTEM,
+          w: 600,
+          s: '100%',
+          t: '-0.02em',
+          body: "'IBM Plex Sans', " + SYSTEM,
+          mono: "'IBM Plex Mono', ui-monospace, monospace",
+          note: 'IBM Plex Sans for everything, Plex Mono only for commands (SIL OFL 1.1).',
+        },
+      };
+
+      // Each mode: page colours, button, and the three colours a mark is drawn with
+      // (ink: main strokes, hi: highlight, cut: knock-outs). tile: the app icon.
+      const PALETTES = {
+        A: {
+          name: 'Plum',
+          dark: {
+            bg: '#15131c',
+            raised: '#201c2a',
+            border: '#352e44',
+            text: '#f2eef7',
+            muted: '#aca4b9',
+            accent: '#dd92c9',
+            btn: '#dd92c9',
+            btnText: '#15131c',
+            ink: '#f2eef7',
+            hi: '#dd92c9',
+            cut: '#15131c',
+          },
+          light: {
+            bg: '#f6f4f9',
+            raised: '#ffffff',
+            border: '#e1dbea',
+            text: '#1c1724',
+            muted: '#5f566c',
+            accent: '#8e3b78',
+            btn: '#8e3b78',
+            btnText: '#ffffff',
+            ink: '#1c1724',
+            hi: '#8e3b78',
+            cut: '#f6f4f9',
+          },
+          tile: { bg: '#8e3b78', ink: '#ffffff', hi: '#ffcdea', cut: '#8e3b78' },
+          radius: '0.75rem',
+        },
+        B: {
+          name: 'Rosewood and pearl',
+          dark: {
+            bg: '#1a1210',
+            raised: '#271c18',
+            border: '#3d2d26',
+            text: '#f4ece6',
+            muted: '#bba99d',
+            accent: '#dcd4ee',
+            btn: '#e6def5',
+            btnText: '#1a1210',
+            ink: '#d9c3b0',
+            hi: '#dcd4ee',
+            cut: '#1a1210',
+          },
+          light: {
+            bg: '#f3f1f5',
+            raised: '#ffffff',
+            border: '#ddd6e0',
+            text: '#24170f',
+            muted: '#6a574c',
+            accent: '#7a3e2e',
+            btn: '#6b3a2c',
+            btnText: '#ffffff',
+            ink: '#5a3226',
+            hi: '#b7a4d8',
+            cut: '#f3f1f5',
+          },
+          tile: { bg: '#3e231a', ink: '#c9a98f', hi: '#ece5f7', cut: '#3e231a' },
+          radius: '0.5rem',
+        },
+        C: {
+          name: 'Ultraviolet',
+          dark: {
+            bg: '#121320',
+            raised: '#1b1d2f',
+            border: '#2c2f48',
+            text: '#eef0fa',
+            muted: '#9ca3c0',
+            accent: '#aca2ff',
+            btn: '#aca2ff',
+            btnText: '#121320',
+            ink: '#eef0fa',
+            hi: '#aca2ff',
+            cut: '#121320',
+          },
+          light: {
+            bg: '#f5f5fb',
+            raised: '#ffffff',
+            border: '#dcdeec',
+            text: '#121320',
+            muted: '#4c5168',
+            accent: '#4b3fd1',
+            btn: '#4b3fd1',
+            btnText: '#ffffff',
+            ink: '#121320',
+            hi: '#4b3fd1',
+            cut: '#f5f5fb',
+          },
+          tile: { bg: '#4b3fd1', ink: '#ffffff', hi: '#cbc5ff', cut: '#4b3fd1' },
+          radius: '0.25rem',
+        },
+        D: {
+          name: 'Sunflower',
+          dark: {
+            bg: '#1b1626',
+            raised: '#261f35',
+            border: '#3a3050',
+            text: '#f7f2ff',
+            muted: '#b4aaca',
+            accent: '#f5c542',
+            btn: '#f5c542',
+            btnText: '#1b1626',
+            ink: '#f7f2ff',
+            hi: '#f5c542',
+            cut: '#1b1626',
+          },
+          light: {
+            bg: '#f7f5fa',
+            raised: '#ffffff',
+            border: '#e3deea',
+            text: '#2a2038',
+            muted: '#5f5574',
+            accent: '#765600',
+            btn: '#f5c542',
+            btnText: '#2a2038',
+            ink: '#2a2038',
+            hi: '#f2b92b',
+            cut: '#2a2038',
+          },
+          tile: { bg: '#2a2038', ink: '#f5c542', hi: '#f5c542', cut: '#2a2038' },
+          radius: '999px',
+        },
+        E: {
+          name: 'Graphite',
+          dark: {
+            bg: '#1e2124',
+            raised: '#282c30',
+            border: '#3a3f45',
+            text: '#eceef0',
+            muted: '#a7adb4',
+            accent: '#eceef0',
+            btn: '#eceef0',
+            btnText: '#1e2124',
+            ink: '#eceef0',
+            hi: '#eceef0',
+            cut: '#1e2124',
+          },
+          light: {
+            bg: '#ffffff',
+            raised: '#f4f5f6',
+            border: '#dfe2e5',
+            text: '#1e2124',
+            muted: '#5a6068',
+            accent: '#1e2124',
+            btn: '#1e2124',
+            btnText: '#ffffff',
+            ink: '#1e2124',
+            hi: '#1e2124',
+            cut: '#ffffff',
+          },
+          tile: { bg: '#ffffff', ink: '#1e2124', hi: '#1e2124', cut: '#ffffff' },
+          radius: '0.375rem',
+        },
+      };
+
+      const MARKS = {
+        A: {
+          name: 'Open-string ring',
+          alt: 'An open-string circle above a guitar nut and six strings',
+        },
+        B: { name: '12th-fret inlay', alt: 'Two pearl inlay dots between two frets' },
+        C: { name: 'Fret tally', alt: 'Four fret bars crossed by a fifth stroke, like a tally' },
+        D: { name: 'Smiling pick', alt: 'A guitar pick with a smile' },
+        E: { name: 'Chord-chart F', alt: 'A chord chart whose dots spell the letter F' },
+      };
+
+      const TAGLINES = [
+        [
+          'Learn the whole neck. Free, open, nothing to install.',
+          'The plain promise: what it does and what it costs.',
+        ],
+        ["Don't fret. Just open it and play.", 'Leans on the pun and the no-install point.'],
+        [
+          'Know every note on the neck, without counting.',
+          'Leads with the outcome. Speed is part of knowing.',
+        ],
+        ['Ten minutes a day. Free forever.', 'Leads with the habit and the price.'],
+        ['The fretboard, learned the way memory works.', 'Leads with the learning science.'],
+        ['Open the page. Pick up the guitar.', 'Two steps, and nothing else is needed.'],
+      ];
+
+      const CASINGS = ['Fret Free', 'FretFree', 'fretfree'];
+
+      const DIRS = [
+        {
+          id: 'A',
+          name: 'Open String',
+          concept: 'The note you play without fretting anything. Fret free, literally.',
+          rationale:
+            'Chord charts mark an open string with a small circle above the nut. Guitarists read it instantly, and it says the name without a pun. Plum keeps well clear of the drill colours and is rare among music apps.',
+          casing: 'Fret Free',
+          tagline: 6,
+          voice: {
+            hero: 'Open the page. Pick up the guitar.',
+            empty: 'Nothing due today. Play something you like, or start a new set.',
+            toast: 'Seven days running. Same time tomorrow?',
+          },
+        },
+        {
+          id: 'B',
+          name: 'Inlay',
+          concept: 'Mother-of-pearl dots at the 12th fret: the octave, the place you learn from.',
+          rationale:
+            "Crafted and warm, closest to the app's current rosewood look, so it costs the least to adopt. Fraunces gives it a luthier's-workshop feel. The pearl is a near-neutral, so it never competes with drill colours.",
+          casing: 'Fret Free',
+          tagline: 5,
+          voice: {
+            hero: 'The fretboard, learned the way memory works.',
+            empty: 'Your reviews are done for today. The neck will keep.',
+            toast: "Seven days in a row. That's how it sticks.",
+          },
+        },
+        {
+          id: 'C',
+          name: 'Daily Reps',
+          concept: 'Four frets and a fifth stroke: a practice tally, one rep at a time.',
+          rationale:
+            'A training-log feel for the habit loop: short, timed, every day. Condensed type fits long note names in tight spaces on iPhone. Ultraviolet reads as energetic without borrowing the orange and green that mean "root" and "correct".',
+          casing: 'FretFree',
+          tagline: 4,
+          voice: {
+            hero: 'Ten minutes a day. Every note, at speed.',
+            empty: 'All reps done. Back tomorrow for the next set.',
+            toast: 'Day 7. Keep the chain going.',
+          },
+        },
+        {
+          id: 'D',
+          name: "Don't Fret",
+          concept: 'A pick with a smile. Learning the neck should feel light.',
+          rationale:
+            'The friendliest option, and the one most like Duolingo. It suits beginners and the celebration moments. Sunflower is the boldest brand colour here. It sits next to the drill orange, so it stays in chrome and never appears on the neck.',
+          casing: 'fretfree',
+          tagline: 2,
+          voice: {
+            hero: "Don't fret. It's free, and it's already open.",
+            empty: 'Nothing to review. Go noodle for a bit.',
+            toast: 'A whole week! Your fingers noticed.',
+          },
+        },
+        {
+          id: 'E',
+          name: 'Chord Chart',
+          concept: 'An F drawn the way guitarists draw everything: dots on a chart.',
+          rationale:
+            'Plain, technical and honest, like good open-source tools. No brand colour at all, so the four drill colours are the only colour in the app. It is the easiest to self-host, fork and theme.',
+          casing: 'fretfree',
+          tagline: 1,
+          voice: {
+            hero: 'A free, open-source fretboard trainer. It runs in your browser.',
+            empty: '0 cards due. Next review in 3 hours.',
+            toast: 'Streak: 7 days.',
+          },
+        },
+      ];
+
+      // ---------- Marks (64 × 64 viewBox) ----------
+      let uid = 0;
+      function markSVG(kind, c, size, label) {
+        const small = size <= 20;
+        const mid = size <= 36;
+        const aria = label
+          ? `role="img" aria-label="${label}"`
+          : 'aria-hidden="true" focusable="false"';
+        let body = '';
+        if (kind === 'A') {
+          const xs = small ? [] : mid ? [14, 26, 38, 50] : [10, 18.8, 27.6, 36.4, 45.2, 54];
+          const sw = mid ? 4 : 2.6;
+          body =
+            `<circle cx="32" cy="${small ? 18 : 15}" r="${small ? 10 : 8.5}" fill="none" stroke="${c.hi}" stroke-width="${small ? 7 : 5}"/>` +
+            `<rect x="7" y="${small ? 36 : 30}" width="50" height="${small ? 11 : 7}" rx="3.5" fill="${c.ink}"/>` +
+            xs
+              .map(
+                (x) =>
+                  `<line x1="${x}" y1="37" x2="${x}" y2="59" stroke="${c.ink}" stroke-width="${sw}" stroke-linecap="round"/>`,
+              )
+              .join('') +
+            (xs.length
+              ? `<rect x="7" y="47" width="50" height="${mid ? 3.5 : 2.5}" rx="1.25" fill="${c.ink}" opacity=".7"/>`
+              : '');
+        } else if (kind === 'B') {
+          const id = 'pearl' + ++uid;
+          body =
+            `<defs><radialGradient id="${id}" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="${c.hi}"/><stop offset=".8" stop-color="${c.hi}" stop-opacity=".85"/><stop offset="1" stop-color="#c9e3df"/></radialGradient></defs>` +
+            `<rect x="5" y="5" width="${small ? 7 : 5}" height="54" rx="2.5" fill="${c.ink}"/>` +
+            `<rect x="${small ? 52 : 54}" y="5" width="${small ? 7 : 5}" height="54" rx="2.5" fill="${c.ink}"/>` +
+            [20, 44]
+              .map(
+                (y) =>
+                  `<circle cx="32" cy="${y}" r="${small ? 11 : 9.5}" fill="url(#${id})" stroke="${c.ink}" stroke-opacity=".35" stroke-width="1.5"/>`,
+              )
+              .join('');
+        } else if (kind === 'C') {
+          const w = small ? 8 : 6;
+          body =
+            [11, 22, 33, 44]
+              .map(
+                (x) =>
+                  `<rect x="${x}" y="9" width="${w}" height="46" rx="${w / 2}" fill="${c.ink}"/>`,
+              )
+              .join('') +
+            `<line x1="6" y1="47" x2="58" y2="17" stroke="${c.cut}" stroke-width="${small ? 12 : 11}" stroke-linecap="round"/>` +
+            `<line x1="6" y1="47" x2="58" y2="17" stroke="${c.hi}" stroke-width="${small ? 8 : 6.5}" stroke-linecap="round"/>`;
+        } else if (kind === 'D') {
+          body =
+            `<path d="M32 59C22 49 7 33 8 20 9 9 20 5 32 5s23 4 24 15c1 13-14 29-24 39Z" fill="${c.hi}"/>` +
+            `<path d="M20 25q12 13 24 0" fill="none" stroke="${c.cut}" stroke-width="${small ? 7 : 5}" stroke-linecap="round"/>`;
+        } else {
+          const xs = [14, 26, 38, 50];
+          const ys = [12, 26, 40, 54];
+          const dots = [
+            [14, 19],
+            [26, 19],
+            [38, 19],
+            [14, 33],
+            [26, 33],
+            [14, 47],
+          ];
+          body =
+            (small
+              ? ''
+              : xs
+                  .map(
+                    (x) =>
+                      `<line x1="${x}" y1="12" x2="${x}" y2="54" stroke="${c.ink}" stroke-opacity=".5" stroke-width="2"/>`,
+                  )
+                  .join('') +
+                ys
+                  .map(
+                    (y, i) =>
+                      `<line x1="14" y1="${y}" x2="50" y2="${y}" stroke="${c.ink}" stroke-opacity="${i ? 0.5 : 1}" stroke-width="${i ? 2 : 5}"/>`,
+                  )
+                  .join('')) +
+            dots
+              .map(
+                ([x, y]) => `<circle cx="${x}" cy="${y}" r="${small ? 7 : 4.6}" fill="${c.hi}"/>`,
+              )
+              .join('');
+        }
+        return `<svg ${aria} width="${size}" height="${size}" viewBox="0 0 64 64">${body}</svg>`;
+      }
+
+      function tile(kind, pal, size, label) {
+        const t = PALETTES[pal].tile;
+        const inner = Math.round(size * (size <= 20 ? 0.8 : 0.62));
+        const r = Math.round(size * 0.2237);
+        return `<span class="tile" style="width:${size}px;height:${size}px;border-radius:${r}px;background:${t.bg}${t.bg === '#ffffff' ? ';box-shadow:inset 0 0 0 1px #dfe2e5' : ''}">${markSVG(kind, t, inner, label)}</span>`;
+      }
+
+      // ---------- Mocks ----------
+      function vars(pal, mode, type) {
+        const p = PALETTES[pal][mode];
+        const ty = TYPES[type];
+        return [
+          `--m-bg:${p.bg}`,
+          `--m-raised:${p.raised}`,
+          `--m-border:${p.border}`,
+          `--m-text:${p.text}`,
+          `--m-muted:${p.muted}`,
+          `--m-accent:${p.accent}`,
+          `--m-btn:${p.btn}`,
+          `--m-btn-text:${p.btnText}`,
+          `--m-radius:${PALETTES[pal].radius}`,
+          `--m-disp:${ty.disp}`,
+          `--m-disp-w:${ty.w}`,
+          `--m-disp-s:${ty.s}`,
+          `--m-disp-t:${ty.t}`,
+          `--m-body:${ty.body}`,
+        ].join(';');
+      }
+
+      function wordmark(type, casing, extra = '') {
+        const ty = TYPES[type];
+        return `<span class="wm" style="font-family:${ty.disp};font-weight:${ty.w};font-stretch:${ty.s};letter-spacing:${ty.t};${extra}">${casing}</span>`;
+      }
+
+      function lockup(c, mode) {
+        const p = PALETTES[c.pal][mode];
+        return `<div class="panel lockup" style="background:${p.bg};color:${p.text}">${markSVG(c.mark, p, 56, MARKS[c.mark].alt)}${wordmark(c.type, c.casing)}</div>`;
+      }
+
+      function neck(p) {
+        const strings = [8, 17.6, 27.2, 36.8, 46.4, 56];
+        return (
+          `<svg viewBox="0 0 240 64" role="img" aria-label="A short stretch of fretboard with a root and a chord tone marked">` +
+          `<rect x="0" y="2" width="240" height="60" rx="6" fill="${p.bg}"/>` +
+          [6, 60, 114, 168, 222]
+            .map(
+              (x, i) =>
+                `<rect x="${x}" y="4" width="${i ? 2.5 : 6}" height="56" fill="${p.muted}" opacity="${i ? 0.6 : 0.9}"/>`,
+            )
+            .join('') +
+          strings
+            .map(
+              (y, i) =>
+                `<line x1="6" y1="${y}" x2="234" y2="${y}" stroke="${p.text}" stroke-opacity=".55" stroke-width="${0.8 + i * 0.3}"/>`,
+            )
+            .join('') +
+          `<circle cx="87" cy="27.2" r="8" fill="#e69f00"/>` +
+          `<rect x="133" y="38.4" width="16" height="16" rx="2" fill="#56b4e9"/>` +
+          `</svg>`
+        );
+      }
+
+      function today(c) {
+        const p = PALETTES[c.pal].dark;
+        return `<div class="panel mock" style="${vars(c.pal, 'dark', c.type)}">
+          <div class="today-top">${markSVG(c.mark, p, 28)}<span class="disp">Today</span><span class="streak">7-day streak</span></div>
+          <div class="today-card">
+            <div><div class="disp">12 reviews due</div><div class="muted">About 6 minutes</div></div>
+            ${neck(p)}
+            <div><span class="mock-btn">Start session</span></div>
+          </div>
+          <div class="toast" role="note"><i></i>${c.voice.toast}</div>
+          <p class="muted" style="margin-top:.9rem;font-size:.875rem">Empty state: ${c.voice.empty}</p>
+        </div>`;
+      }
+
+      function landing(c, mode = 'light') {
+        const p = PALETTES[c.pal][mode];
+        return `<div class="panel mock land" style="${vars(c.pal, mode, c.type)}">
+          <div class="land-nav">${markSVG(c.mark, p, 28)}<span class="disp">${c.casing}</span><a href="#picker" tabindex="-1">Self-host it</a></div>
+          <h3 class="disp">${c.voice.hero}</h3>
+          <p class="muted">Free and open source. Nothing to install, and it works offline on iPad, iPhone and desktop.</p>
+          <div class="land-cta"><span class="mock-btn">Start practising</span><a href="#picker" tabindex="-1">Add to Home Screen</a></div>
+          <small class="muted">Optional: sign in with your email to sync across devices.</small>
+        </div>`;
+      }
+
+      function swatches(pal) {
+        const row = (mode, label) => {
+          const p = PALETTES[pal][mode];
+          return `<div class="swatch-row"><span>${label}</span>${[
+            p.bg,
+            p.raised,
+            p.text,
+            p.muted,
+            p.accent,
+          ]
+            .map((h) => `<span class="sw" style="background:${h}" title="${h}"></span>`)
+            .join(
+              '',
+            )}<span class="visually-hidden">${label}: ${[p.bg, p.raised, p.text, p.muted, p.accent].join(', ')}</span></div>`;
+        };
+        return `<div class="swatches">${row('dark', 'Dark')}${row('light', 'Light')}</div>`;
+      }
+
+      function icons(mark, pal, name) {
+        return `<div class="panel home">
+          <figure>${tile(mark, pal, 180, MARKS[mark].alt + ', app icon')}<figcaption>180 px</figcaption></figure>
+          <figure>${tile(mark, pal, 76)}<figcaption>${name}</figcaption></figure>
+          <div class="tabs">
+            <div class="tab">${tile(mark, pal, 16)}<span>${name}</span><span>16 px</span></div>
+            <div class="tab">${tile(mark, pal, 32)}<span>Favicon</span><span>32 px</span></div>
+          </div>
+        </div>`;
+      }
+
+      // ---------- Direction sections ----------
+      function dirCombo(d) {
+        return {
+          mark: d.id,
+          pal: d.id,
+          type: d.id,
+          casing: d.casing,
+          tagline: d.tagline,
+          voice: d.voice,
+        };
+      }
+
+      function renderDirections() {
+        document.getElementById('dock').innerHTML = DIRS.map(
+          (d) =>
+            `<li><a href="#dir-${d.id}">${tile(d.id, d.id, 76)}<span>${d.id}: ${d.name}</span></a></li>`,
+        ).join('');
+
+        document.getElementById('directions').innerHTML = DIRS.map((d) => {
+          const c = dirCombo(d);
+          const ty = TYPES[d.id];
+          return `<section class="wrap dir" id="dir-${d.id}" aria-labelledby="dir-${d.id}-h">
+            <div class="dir-head">
+              <span class="dir-id" aria-hidden="true">${d.id}</span>
+              <h2 id="dir-${d.id}-h" style="font-family:${ty.disp};font-weight:${ty.w};font-stretch:${ty.s};letter-spacing:${ty.t}"><span class="visually-hidden">Direction ${d.id}: </span>${d.name}</h2>
+              <p>${d.concept}</p>
+            </div>
+
+            <div class="row row-2">
+              <div class="lockups">${lockup(c, 'dark')}${lockup(c, 'light')}</div>
+              <div class="about">
+                <h3>Why this works</h3>
+                <p>${d.rationale}</p>
+                <dl>
+                  <dt>Mark</dt><dd>${MARKS[d.id].name}</dd>
+                  <dt>Colour</dt><dd>${PALETTES[d.id].name}</dd>
+                  <dt>Type</dt><dd>${ty.note}</dd>
+                  <dt>Tagline</dt><dd>${TAGLINES[d.tagline - 1][0]}</dd>
+                </dl>
+                ${swatches(d.id)}
+              </div>
+            </div>
+
+            <div class="row row-3">
+              ${icons(d.id, d.id, d.casing)}
+              ${today(c)}
+              ${landing(c)}
+            </div>
+
+            <div class="voice">
+              <figure><figcaption>Landing headline</figcaption><blockquote>${d.voice.hero}</blockquote></figure>
+              <figure><figcaption>Nothing due</figcaption><blockquote>${d.voice.empty}</blockquote></figure>
+              <figure><figcaption>Streak toast</figcaption><blockquote>${d.voice.toast}</blockquote></figure>
+            </div>
+
+            <div class="dir-actions">
+              <button type="button" class="btn-ghost" data-use="${d.id}">Load ${d.id} into the picker</button>
+            </div>
+          </section>`;
+        }).join('');
+
+        document.getElementById('taglines').innerHTML = TAGLINES.map(
+          ([t, why], i) => `<li><span class="n">${i + 1}</span><q>${t}</q><span>${why}</span></li>`,
+        ).join('');
+
+        document.getElementById('casing').innerHTML = CASINGS.map(
+          (
+            cs,
+          ) => `<div class="casing-row"><h3>${cs} <span>${cs === 'Fret Free' ? 'two words' : cs === 'FretFree' ? 'one word, camel case' : 'one word, lowercase'}</span></h3>
+            <div class="casing-samples">${Object.keys(TYPES)
+              .map((k) => wordmark(k, cs).replace('class="wm"', `title="${TYPES[k].name}"`))
+              .join('')}</div></div>`,
+        ).join('');
+      }
+
+      // ---------- Picker ----------
+      const KEY = 'fretfree-brand-picks';
+      const defaults = { mark: 'A', pal: 'A', type: 'A', tagline: 6, casing: 'Fret Free' };
+      let picks = { ...defaults };
+      try {
+        const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+        if (saved && typeof saved === 'object') picks = { ...defaults, ...saved };
+      } catch (e) {}
+      function save() {
+        try {
+          localStorage.setItem(KEY, JSON.stringify(picks));
+        } catch (e) {}
+      }
+
+      function group(name, legend, options, col) {
+        return `<fieldset><legend>${legend}</legend><div class="${col ? 'opts opts-col' : 'opts'}">${options
+          .map(
+            (o) =>
+              `<label class="opt"><input type="radio" name="${name}" value="${o.value}" ${String(picks[name]) === String(o.value) ? 'checked' : ''}/><span>${o.html}</span></label>`,
+          )
+          .join('')}</div></fieldset>`;
+      }
+
+      function renderControls() {
+        const keys = Object.keys(MARKS);
+        document.getElementById('controls').innerHTML =
+          group(
+            'mark',
+            'Mark',
+            keys.map((k) => ({
+              value: k,
+              html: `${markSVG(k, PALETTES.E[currentMode()], 28, null)}<b class="k">${k}</b>${MARKS[k].name}`,
+            })),
+          ) +
+          group(
+            'pal',
+            'Palette',
+            keys.map((k) => {
+              const p = PALETTES[k];
+              return {
+                value: k,
+                html: `<span class="dots" aria-hidden="true"><i style="background:${p.dark.bg}"></i><i style="background:${p.tile.bg}"></i><i style="background:${p.dark.accent}"></i><i style="background:${p.light.bg}"></i></span><b class="k">${k}</b>${p.name}`,
+              };
+            }),
+          ) +
+          group(
+            'type',
+            'Type',
+            keys.map((k) => ({
+              value: k,
+              html: `<b class="k">${k}</b><span style="all:unset;font-family:${TYPES[k].disp};font-weight:${TYPES[k].w};font-stretch:${TYPES[k].s};font-size:1.125rem">${TYPES[k].name}</span>`,
+            })),
+          ) +
+          group(
+            'tagline',
+            'Tagline',
+            TAGLINES.map((t, i) => ({ value: i + 1, html: `<b class="k">${i + 1}</b>${t[0]}` })),
+            true,
+          ) +
+          group(
+            'casing',
+            'Name',
+            CASINGS.map((cs) => ({ value: cs, html: cs })),
+          );
+      }
+
+      function summaryText() {
+        return `Mark: ${picks.mark} · Palette: ${picks.pal} · Type: ${picks.type} · Tagline: ${picks.tagline} · Casing: ${picks.casing}`;
+      }
+
+      function renderPreview() {
+        const line = TAGLINES[picks.tagline - 1][0];
+        const base = DIRS.find((d) => d.id === picks.pal);
+        const c = { ...picks, voice: { ...base.voice, hero: line } };
+        document.getElementById('preview').innerHTML = `
+          <div class="row" style="margin-top:0">
+            <div class="lockups">${lockup(c, 'dark')}${lockup(c, 'light')}</div>
+            <div class="row row-2" style="margin-top:0">
+              ${icons(c.mark, c.pal, c.casing)}
+              ${landing(c, currentMode())}
+            </div>
+          </div>
+          <div class="summary">
+            <label for="summary-line" style="font-size:.875rem;color:var(--muted)">Your picks</label>
+            <output id="summary-line">${summaryText()}</output>
+            <div class="copy-row"><button type="button" class="copy" id="copy">Copy picks</button><span id="copy-status" role="status"></span></div>
+          </div>`;
+      }
+
+      document.addEventListener('change', (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLInputElement) || t.type !== 'radio') return;
+        picks[t.name] = t.name === 'tagline' ? Number(t.value) : t.value;
+        save();
+        renderPreview();
+      });
+
+      document.addEventListener('click', async (e) => {
+        const use = e.target.closest('[data-use]');
+        if (use) {
+          const d = DIRS.find((x) => x.id === use.dataset.use);
+          picks = { mark: d.id, pal: d.id, type: d.id, tagline: d.tagline, casing: d.casing };
+          save();
+          renderControls();
+          renderPreview();
+          const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+          document
+            .getElementById('picker')
+            .scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+          document.querySelector('#controls input:checked')?.focus({ preventScroll: true });
+          return;
+        }
+        if (e.target.id === 'copy') {
+          const status = document.getElementById('copy-status');
+          const text = summaryText();
+          try {
+            await navigator.clipboard.writeText(text);
+            status.textContent = 'Copied.';
+          } catch (err) {
+            const out = document.getElementById('summary-line');
+            const range = document.createRange();
+            range.selectNodeContents(out);
+            const sel = getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+            status.textContent = 'Selected. Press Command-C to copy.';
+          }
+        }
+        const set = e.target.closest('[data-theme-set]');
+        if (set) applyTheme(set.dataset.themeSet, true);
+      });
+
+      // ---------- Theme ----------
+      function currentMode() {
+        const t = document.documentElement.dataset.theme;
+        if (t === 'light' || t === 'dark') return t;
+        return matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+      function applyTheme(choice, persist) {
+        if (choice === 'auto') delete document.documentElement.dataset.theme;
+        else document.documentElement.dataset.theme = choice;
+        document
+          .querySelectorAll('[data-theme-set]')
+          .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themeSet === choice)));
+        if (persist) {
+          try {
+            localStorage.setItem(KEY + '-theme', choice);
+          } catch (e) {}
+        }
+        renderControls();
+        renderPreview();
+      }
+      matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+        renderControls();
+        renderPreview();
+      });
+
+      let theme = 'auto';
+      try {
+        theme = localStorage.getItem(KEY + '-theme') || 'auto';
+      } catch (e) {}
+      renderDirections();
+      applyTheme(theme, false);
+    </script>
+  </body>
+</html>
