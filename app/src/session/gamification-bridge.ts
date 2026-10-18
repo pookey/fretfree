@@ -19,6 +19,7 @@ import {
   type LocalDate,
 } from '../engine/gamification';
 import { commitGamification, getGamification, type FretworkDB } from '../storage';
+import { isPlacementLog } from '../placement/save';
 
 /**
  * The bridge between a practice session and the gamification engine (design
@@ -112,14 +113,15 @@ const tables = (db: FretworkDB) => [db.gamification, db.dailyProgress, db.gamifi
 /**
  * Earlier answers to `itemId` on the learner's local date of `at`: guided
  * new-block reps, retries and reappearances all count, so XP decays as
- * `xpForAnswer` intends. Call it before the answer itself is recorded.
+ * `xpForAnswer` intends. Placement-test probes don't count: trying the test
+ * mustn't cost XP (§3.7). Call it before the answer itself is recorded.
  */
 export async function answersToday(db: FretworkDB, itemId: string, at: Date): Promise<number> {
   const today = toLocalDate(at);
   return db.reviewLogs
     .where('itemId')
     .equals(itemId)
-    .filter((l) => toLocalDate(l.at) === today)
+    .filter((l) => toLocalDate(l.at) === today && !isPlacementLog(l))
     .count();
 }
 

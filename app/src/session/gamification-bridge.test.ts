@@ -110,11 +110,11 @@ describe('stretchEntries', () => {
 
 describe('answersToday', () => {
   it('counts earlier answers to the item on the local date only', async () => {
-    const log = (itemId: string, when: Date) =>
+    const log = (itemId: string, when: Date, drillType = 'd') =>
       db.reviewLogs.add({
         itemId,
         skillId: 's',
-        drillType: 'd',
+        drillType,
         correct: true,
         responseMs: 500,
         rating: Rating.Good,
@@ -126,6 +126,8 @@ describe('answersToday', () => {
     await log('x', at(18, 0, 0));
     await log('x', at(18, 21));
     await log('y', at(18, 10));
+    // A placement-test probe isn't a session answer.
+    await log('x', at(18, 9), 'placement:d');
     expect(await answersToday(db, 'x', at(18, 22))).toBe(2);
     expect(await answersToday(db, 'y', at(18, 22))).toBe(1);
     expect(await answersToday(db, 'z', at(18, 22))).toBe(0);
