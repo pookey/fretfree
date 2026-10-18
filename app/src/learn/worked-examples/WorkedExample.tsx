@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useAppStore } from '../../app-store';
 import { playNotes } from '../../audio/audio';
 import { Fretboard } from '../../components/fretboard/Fretboard';
@@ -36,12 +36,22 @@ export function WorkedExample({ example }: { example: Example }) {
   const complete = isComplete(state);
   const pcAt = (p: Position) => noteAt(p, STANDARD_TUNING, settings.accidentalPref).pc;
 
-  // Sound + visual + name on every answer (research/02 rule 10).
+  const neckRef = useRef<HTMLDivElement>(null);
   const { tapped } = state;
+
+  // A new step starts with the neck scrolled back to its low end.
   useEffect(() => {
-    if (!tapped) return;
-    void playNotes(exampleSounds(step), { muted: !settings.soundOn, volume: settings.volume });
-  }, [tapped, step, settings.soundOn, settings.volume]);
+    if (neckRef.current) neckRef.current.scrollLeft = 0;
+  }, [state.step]);
+
+  const onTap = (pos: Position) => {
+    const next = tapCell(example, state, pos);
+    setState(next);
+    // Sound + visual + name on every answer (research/02 rule 10), once per answer.
+    if (next.tapped && !state.tapped) {
+      void playNotes(exampleSounds(step), { muted: !settings.soundOn, volume: settings.volume });
+    }
+  };
 
   const outcome = tapped ? outcomeOf(step, tapped) : null;
   let feedback: ReactNode = null;
@@ -55,7 +65,10 @@ export function WorkedExample({ example }: { example: Example }) {
     feedback = (
       <div className={styles.wrong} data-testid="example-wrong">
         <p>
-          <strong className={styles.wrongLead}>✗ That’s {pcAt(tapped)}.</strong> {step.explain}
+          <strong className={styles.wrongLead}>
+            ✗ That’s {outcome === 'trap' && step.trap ? step.trap.name : pcAt(tapped)}.
+          </strong>{' '}
+          {step.explain}
         </p>
         {outcome === 'trap' && step.trap && (
           <aside className={styles.callout} aria-label="Watch out for" data-testid="example-trap">
@@ -105,15 +118,15 @@ export function WorkedExample({ example }: { example: Example }) {
           Hint: {step.hint}
         </p>
       )}
-      <div className={styles.neck}>
+      <div className={styles.neck} ref={neckRef}>
         <Fretboard
           tuning={STANDARD_TUNING}
-          fretRange={stepRange(step)}
+          fretRange={stepRange(step, example.range)}
           handedness={settings.handedness}
           guideLevel={stageGuideLevel(stage)}
           accidentalPref={settings.accidentalPref}
           markers={exampleMarkers(example, state, { pref: settings.accidentalPref })}
-          onTapCell={(pos) => setState((s) => tapCell(example, s, pos))}
+          onTapCell={onTap}
           label="Worked example neck"
         />
       </div>

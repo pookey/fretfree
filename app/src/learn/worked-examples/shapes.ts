@@ -1,3 +1,4 @@
+import { Interval, Note } from 'tonal';
 import {
   STANDARD_TUNING,
   intervalFromRoot,
@@ -70,12 +71,15 @@ export function shapeStep(root: Position, interval: IntervalName, toString: numb
   if (!shape.gbShift) return step;
   // Going up the strings the shift adds a fret, so the unshifted shape is one fret lower.
   const at = { string: toString, fret: answer.fret + (toString < root.string ? -1 : 1) };
-  const got = intervalInfo(intervalFromRoot(root, at, tuning)).long;
+  const got = intervalInfo(intervalFromRoot(root, at, tuning));
+  // Spell it as the interval it really forms from the root, so name and interval agree.
+  const name = Note.transpose(rootPc, Interval.fromSemitones(got.semitones));
   return {
     ...step,
     trap: {
       at,
-      message: `Fret ${at.fret} is the shape without the G–B shift. That's ${pcAt(at)}: ${withArticle(got)}, not ${withArticle(target.long)}.`,
+      name,
+      message: `Fret ${at.fret} is the shape without the G–B shift. That's ${name}: ${withArticle(got.long)}, not ${withArticle(target.long)}.`,
     },
   };
 }

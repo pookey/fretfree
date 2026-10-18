@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useAppStore } from '../../app-store';
 import { playNotes } from '../../audio/audio';
 import { DEFAULT_SETTINGS } from '../../engine';
@@ -9,6 +9,7 @@ import { WorkedExample } from './WorkedExample';
 vi.mock('../../audio/audio', () => ({ playNotes: vi.fn(() => Promise.resolve()) }));
 
 const gb = WORKED_EXAMPLES.find((e) => e.id === 'c2-gb-octaves')!;
+const thirds = WORKED_EXAMPLES.find((e) => e.id === 'c3-gb-thirds')!;
 
 const neck = () => screen.getByRole('group', { name: 'Worked example neck' });
 const tap = (string: number, fret: number) =>
@@ -94,13 +95,36 @@ describe('<WorkedExample>', () => {
     expect(screen.queryByTestId('example-done')).toBeNull();
   });
 
-  it('respects sound settings and accidental spelling', () => {
-    useAppStore.setState({
-      settings: { ...DEFAULT_SETTINGS, soundOn: false, accidentalPref: 'flat' },
-    });
+  it('respects the sound setting, and plays once per answer', () => {
+    useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, soundOn: false } });
     render(<WorkedExample example={gb} />);
-    expect(screen.getByTestId('marker-ghost')).toHaveTextContent('Gb');
     tap(2, 8);
+    expect(playNotes).toHaveBeenCalledTimes(1);
     expect(playNotes).toHaveBeenCalledWith(['G3', 'G4'], { muted: true, volume: 0.8 });
+    // Changing settings after the answer doesn't replay it; nor does a second tap.
+    act(() => useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, volume: 0.3 } }));
+    tap(2, 8);
+    expect(playNotes).toHaveBeenCalledTimes(1);
+  });
+
+  it('spells the trap as its interval, whatever the accidental preference', () => {
+    useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, accidentalPref: 'sharp' } });
+    render(<WorkedExample example={thirds} />);
+    // C → fret 4 on the B string is a minor 3rd: Eb, even for a sharps learner.
+    expect(screen.getByTestId('marker-ghost')).toHaveTextContent('Eb');
+    tap(2, 5);
+    next();
+    tap(2, 9);
+    expect(screen.getByTestId('example-wrong')).toHaveTextContent('✗ That’s Ab.');
+    expect(screen.getByTestId('example-trap')).toHaveTextContent("That's Ab: a minor 3rd");
+  });
+
+  it('spells other wrong taps with the learner’s preference', () => {
+    useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, accidentalPref: 'flat' } });
+    render(<WorkedExample example={gb} />);
+    tap(2, 8);
+    next();
+    tap(1, 6);
+    expect(screen.getByTestId('example-wrong')).toHaveTextContent('✗ That’s Bb.');
   });
 });

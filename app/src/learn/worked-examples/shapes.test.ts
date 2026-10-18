@@ -31,6 +31,7 @@ describe('shapeStep', () => {
     expect(step.explain).toMatch(/major 3rd above G, not a 4th/);
     expect(step.trap).toEqual({
       at: { string: 2, fret: 7 },
+      name: 'F#',
       message:
         "Fret 7 is the shape without the G–B shift. That's F#: a major 7th, not a perfect octave.",
     });
@@ -40,8 +41,10 @@ describe('shapeStep', () => {
     const step = shapeStep({ string: 3, fret: 5 }, 'M3', 2);
     expect(step.prompt).toBe('Find the major 3rd above C on string 2.');
     expect(step.answer).toEqual({ string: 2, fret: 5 });
+    // Spelt as the minor 3rd it forms above C: Eb, not D#.
+    expect(step.trap?.name).toBe('Eb');
     expect(step.trap?.message).toBe(
-      "Fret 4 is the shape without the G–B shift. That's D#: a minor 3rd, not a major 3rd.",
+      "Fret 4 is the shape without the G–B shift. That's Eb: a minor 3rd, not a major 3rd.",
     );
   });
 
