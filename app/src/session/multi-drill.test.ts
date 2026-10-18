@@ -132,6 +132,18 @@ describe('new blocks', () => {
     expect(seen.slice(4).some((c) => c.entry.guided)).toBe(false);
     expect(new Set(seen.map((c) => c.entry.itemId)).size).toBe(4);
   });
+
+  it('fade toward the in-session guide level as it fades (M1-15)', async () => {
+    const r = await SessionRunner.start(deps({ drills: [D1], maxItems: 16 }));
+    const levels: number[] = [];
+    while (!r.isOver) {
+      levels.push((await play(r, 900)).guideLevel);
+      r.next();
+    }
+    // Worked examples don't count. Every 5 fluent recalls fade the skill a level
+    // (3 → 2 after the 9th prompt, 2 → 1 after the 14th), and the reps follow it.
+    expect(levels).toEqual([3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1]);
+  });
 });
 
 describe('in-session learning steps', () => {

@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, ENGINE_CONFIG, SKILLS, createScheduler } from '../engine';
+import {
+  DEFAULT_SETTINGS,
+  ENGINE_CONFIG,
+  SKILLS,
+  blockGuideLevel,
+  createScheduler,
+} from '../engine';
 import { DRILLS } from '../drills/registry';
 import type { D1Prompt } from '../drills/d1-name-the-note/logic';
 import { FretworkDB, getSkillStates } from '../storage';
@@ -73,9 +79,15 @@ describe('SessionRunner guide fading', () => {
 
     const r2 = await SessionRunner.start(deps());
     await skipWorkedExamples(r2);
-    expect(r2.currentPrompt()!.guideLevel).toBe(2);
+    // Session 2 opens on new items: their reps fade from full guides to the
+    // carried level, which the last (independent) rep shows (M1-17).
+    const reps = ENGINE_CONFIG.session.newBlockReps;
+    const first = r2.currentPrompt()!;
+    expect(first.guideLevel).toBe(blockGuideLevel(first.entry.rep!, reps, 2));
     // Fresh streak per session: one fluent answer short of a fade keeps level 2.
     for (let i = 0; i < fadeAfterFluent - 1; i++) await answer(r2, true);
+    // Slow correct answers neither fade nor restore; walk on to the independent rep.
+    while (r2.currentPrompt()!.entry.rep !== reps) await answer(r2, true, 9000);
     expect(r2.currentPrompt()!.guideLevel).toBe(2);
   });
 });
