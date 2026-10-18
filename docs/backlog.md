@@ -287,7 +287,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ## M2: Octaves and intervals
 
 ### M2-01 · [contract] Interval and octave theory
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **Design:** §8, research/03 C1/C3
 - **Owns:** `app/src/theory/intervals.ts`, `app/src/theory/intervals.test.ts`
