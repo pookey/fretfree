@@ -25,7 +25,7 @@ Topic IDs (F1, C6, I1, …) refer to the curriculum map in research/03.
 ## 1. Product principles
 
 1. **Practice, not reading.** Every screen in a session asks the learner to answer something. Explanations are short worked examples that lead straight into practice.
-2. **The app decides what to practise; the learner decides what they want.** FSRS scheduling and the adaptive scope are always on. Goals, genre, session length and notation preference are the learner's choice.
+2. **The app decides what to practise; the learner decides what they want.** FSRS scheduling and the adaptive scope are always on. Goals, genre, session length and what they read or want to learn to read are the learner's choice.
 3. **Speed is part of knowing.** A note you have to count up to has not been learned yet. Every answer is timed and graded against a personal target.
 4. **Sound, sight and name together.** Each answer plays the pitch and shows its name and position.
 5. **Fade the training wheels.** Visual guides (dots, labels, inlays, highlighted roots) fade as competence grows.
@@ -135,7 +135,7 @@ Immediate correct-answer feedback after each response stays on at every level.
 ### 3.6 Data model (Dexie)
 
 ```ts
-Settings  { handedness, tuning, notation: 'none'|'tab'|'staff', goal, sessionMinutes, latencyBaselineMs, micEnabled, accidentalPref }
+Settings  { handedness, tuning, reading: { reads: { tab, staff }, learn: { tab, staff } }, goal, sessionMinutes, latencyBaselineMs, micEnabled, accidentalPref }
 Card      { itemId, skillId, fsrs: ts-fsrs Card, createdAt, lastReviewedAt }
 ReviewLog { id, itemId, drillType, correct, responseMs, rating, hintUsed, answerGiven, at }
 SkillState{ skillId, status: 'locked'|'unlocked'|'practising'|'mastered', guideLevel, rollingAccuracy }
@@ -145,6 +145,7 @@ SessionLog{ id, startedAt, endedAt, itemsSeen, accuracy }
 
 - Export and import as JSON.
 - Schema versioning via Dexie migrations from day one.
+- `reading` flags are booleans and all default to false. Settings is a single row, so `reading` replaced the older `notation: 'none'|'tab'|'staff'` without a schema version: `getSettings` maps a stored legacy value on read (`'tab'` → `reads.tab`, `'staff'` → `reads.staff`, `'none'` → nothing), and the next save drops it.
 
 ### 3.7 Gamification (Duolingo-style, evidence-guarded)
 
@@ -184,7 +185,11 @@ Onboarding takes under 3 minutes, and every step is skippable:
 
 1. **Hand and tuning:** right- or left-handed; standard, Drop D, or DADGAD later.
 2. **Goal:** "Play songs with friends" (pop / singer-songwriter), "Solo and improvise" (rock-blues), "Jazz", or "Understand everything" (general). The goal reorders frontier skills and picks example progressions and repertoire.
-3. **Notation preference:** none, tab, or standard staff. This turns staff↔fretboard drills on or off.
+3. **Reading music:** two multi-select questions. **"What can you already read?"** and **"What would you like to learn to read?"**, each offering Tab and Standard notation (both, one or neither; neither is the default). The copy says the neck is taught by name, position and sound either way, and that reading is extra. The answers never lock anything away:
+   - **Track R** (standard notation, §12) is promoted when the learner reads or wants to learn standard notation, or has the jazz or general goal.
+   - The **M9 tab track** is promoted when the learner wants to learn tab.
+   - **Staff ↔ fretboard** drills are on when the learner reads or is learning standard notation; **tab ↔ fretboard** drills when they read or are learning tab.
+   - Every reading track stays soft-unlocked and previewable for everyone, whatever they picked.
 4. **Daily time:** 5, 10 or 15 minutes.
 5. **Latency calibration:** about 20 seconds of "tap the lit dot".
 6. **Placement test (optional):** adaptive probes of F1, F2, C2, C3, C5 and C8 that seed cards.
@@ -214,7 +219,7 @@ The About screen explains the evidence honestly: *"This app adapts to what you k
 | **Rhythm (parallel track)** | F4: tap and strum timing | — |
 | **Ear (parallel track)** | I6 interval, quality and progression ID | from day one |
 | **M-Meter (future, M8)** | T1–T7: time signatures, simple vs compound, counting, meter by ear, accents, pickups and repeats | F4 / D20 rhythm track |
-| **M-Reading (future, M8)** | R1–R7: staff reading for guitar (treble 8vb), staff ↔ fretboard by position, rhythm notation, sight-reading | F2 (strings 6 and 5) and T1. Promoted for `notation: staff` and the jazz and general goals |
+| **M-Reading (future, M8)** | R1–R7: staff reading for guitar (treble 8vb), staff ↔ fretboard by position, rhythm notation, sight-reading | F2 (strings 6 and 5) and T1. Promoted when the learner reads or wants to learn standard notation (`reading.reads.staff` or `reading.learn.staff`), and for the jazz and general goals. Soft-unlocked and previewable for everyone (§4) |
 
 Following the research, **M-Harmony and M-Progressions open early**, in parallel with the fretboard modules, because playing songs drives motivation.
 
@@ -416,7 +421,7 @@ There are 4 sections: **Today**, **Learn**, **Explore** and **Progress**. Settin
 
 ## 12. Future: reading notation and time signatures (M8)
 
-The **Time signatures** track (T) is valuable for everyone. The **Reading** track (R) is optional and promoted by the learner's notation preference and goals (§4). Both reuse the same engine: items, FSRS, speed grading, adaptive scope and guide fading.
+The **Time signatures** track (T) is valuable for everyone. The **Reading** track (R) is optional. It is promoted when the learner reads or wants to learn standard notation, or has the jazz or general goal, and stays soft-unlocked and previewable for everyone else (§4). Tab reading is its own small track (M9), promoted when the learner wants to learn tab. Both reuse the same engine: items, FSRS, speed grading, adaptive scope and guide fading.
 
 **Rendering.** **VexFlow** (MIT) for staves, clefs, key signatures, notes, rests, beams and tuplets. Guitar parts use treble clef 8vb. Optionally show tab under the staff (VexFlow `TabStave`) at higher guide levels; it fades away as reading improves.
 

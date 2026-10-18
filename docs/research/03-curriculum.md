@@ -53,7 +53,7 @@ Every topic ID below is used throughout the design (`docs/design/`).
 
 ### Track R: Reading standard notation (future, M8)
 
-Guitar music is written in **treble clef sounding an octave lower** (treble 8vb). Reading matters most for players heading toward jazz, session or classical work, or formal study. It's lower priority for rock and pop players who learn by ear or from tab. That's why it's a **separate optional track**, promoted when the learner picks `notation: staff` or the Jazz or "Understand everything" goals.
+Guitar music is written in **treble clef sounding an octave lower** (treble 8vb). Reading matters most for players heading toward jazz, session or classical work, or formal study. It's lower priority for rock and pop players who learn by ear or from tab. That's why it's a **separate optional track**, promoted when the learner already reads or wants to learn standard notation (onboarding asks both, design §4), or picks the Jazz or "Understand everything" goals. It stays soft-unlocked and previewable for everyone, so no answer locks it away. Tab reading is a separate small track (M9), promoted when the learner wants to learn tab; staff ↔ fretboard and tab ↔ fretboard drills are on when the learner reads or is learning that notation.
 
 | ID | Topic | Learner can DO (quizzable) |
 |---|---|---|
