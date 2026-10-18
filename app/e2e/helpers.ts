@@ -70,6 +70,9 @@ export async function freshStart(page: Page, path = '/'): Promise<void> {
 /** The F1 note-wheel skills, which lead a fresh session's frontier. */
 export const F1_SKILLS = ['F1.alphabet', 'F1.b-c-e-f', 'F1.half-steps', 'F1.whole-steps'];
 
+/** The F3 fret-landmark skills (D39), which join a fresh session right after F2. */
+export const F3_SKILLS = ['F3.markers', 'F3.repeat-12'];
+
 /** Mark skills mastered so sessions skip them (e.g. to reach D1 from a fresh start). */
 export async function masterSkills(page: Page, skillIds: readonly string[]): Promise<void> {
   await page.evaluate(async (ids) => {

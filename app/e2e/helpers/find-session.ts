@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { F1_SKILLS, freshStart, masterSkills, noteName } from '../helpers';
+import { F1_SKILLS, F3_SKILLS, freshStart, masterSkills, noteName } from '../helpers';
 
 // Reaching D2 "Find the note" from a fresh start (the same setup as m1-04).
 
@@ -56,12 +56,13 @@ export async function seedKnownNotes(page: Page): Promise<void> {
 
 export async function startFindSession(page: Page): Promise<void> {
   await freshStart(page);
-  // The F1 note-wheel skills (D3) lead a fresh session; skip them.
-  await masterSkills(page, F1_SKILLS);
+  // The F1 note-wheel (D3) and F3 landmark (D39) skills lead a fresh session; skip them.
+  await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS]);
   await seedKnownNotes(page);
   await page.reload();
-  // 7 naturals to find on each of strings 6 and 5, plus the 14 musical-alphabet items.
-  await expect(page.getByTestId('new-count')).toHaveText('28');
+  // 7 naturals to find on each of strings 6 and 5, the 14 musical-alphabet items
+  // and the 10 fret-marker items: new counts every root skill, mastered or not.
+  await expect(page.getByTestId('new-count')).toHaveText('38');
   await page.getByTestId('start-session').click();
   await expect(page.getByTestId('d2-prompt')).toBeVisible();
 }

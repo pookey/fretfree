@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   F1_SKILLS,
+  F3_SKILLS,
   answer,
   expectNoHorizontalOverflow,
   freshStart,
@@ -125,7 +126,7 @@ test.describe('M1-12 session celebrations', () => {
     page,
   }) => {
     await freshStart(page);
-    await masterSkills(page, F1_SKILLS);
+    await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS]);
     await seed(page, { slowHistory: true });
     await page.getByTestId('start-session').click();
 
@@ -166,7 +167,7 @@ test.describe('M1-12 session celebrations', () => {
   test('confetti fires for a milestone and never blocks the summary', async ({ page }) => {
     await freshStart(page);
     // C4 opens once F1 is mastered; keep its new keys out of this one-item session.
-    await masterSkills(page, [...F1_SKILLS, ...C4_SKILLS]);
+    await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS, ...C4_SKILLS]);
     await seed(page, { string6Due: true });
     await page.getByTestId('start-session').click();
     // The only item is the due review of fret 12; the session ends after it.
@@ -186,7 +187,7 @@ test.describe('M1-12 session celebrations', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await freshStart(page);
     // C4 opens once F1 is mastered; keep its new keys out of this one-item session.
-    await masterSkills(page, [...F1_SKILLS, ...C4_SKILLS]);
+    await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS, ...C4_SKILLS]);
     await seed(page, { string6Due: true });
     await page.getByTestId('start-session').click();
     // The only item is the due review of fret 12; the session ends after it.
@@ -199,7 +200,7 @@ test.describe('M1-12 session celebrations', () => {
 
   test('the combo resets quietly after a miss and the summary fits @smoke', async ({ page }) => {
     await freshStart(page);
-    await masterSkills(page, F1_SKILLS);
+    await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS]);
     await page.getByTestId('start-session').click();
     for (let i = 0; i < 7; i++) await answerCorrectly(page);
     await expect(page.getByTestId('combo')).toHaveText('3 in a row');

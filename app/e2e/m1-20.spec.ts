@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   F1_SKILLS,
+  F3_SKILLS,
   answer,
   expectNoHorizontalOverflow,
   freshStart,
@@ -53,7 +54,7 @@ async function expectBottomSheet(page: Page, testId: string): Promise<void> {
 
 async function startD1Session(page: Page): Promise<void> {
   await freshStart(page);
-  await masterSkills(page, F1_SKILLS);
+  await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS]);
   await page.getByTestId('start-session').click();
   await expect(page.getByTestId('marker-target')).toBeVisible();
 }
