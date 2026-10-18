@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { SKILLS, noteItemId, type Skill } from '../../../engine';
+import { SKILLS, noteItemId, type Skill, type SkillStatus } from '../../../engine';
+import { getDb, putSkillState } from '../../../storage';
+import { Fretboard } from '../../../components/fretboard/Fretboard';
 import { focusHref, noteSkillIds } from '../../../session/focus';
 import { DROP_D_TUNING, chromaOf, midiAt, type IntervalName } from '../../../theory';
 import {
@@ -9,9 +11,18 @@ import {
   View,
   explorerContent,
   explorerMarkers,
+  frontierSkillIds,
   intervalSkillIds,
   quizFocus,
 } from './fretboard-explorer';
+
+/** Every registered skill open, as for a learner who has unlocked them all. */
+const ALL_OPEN: ReadonlySet<string> = new Set(SKILLS.map((s) => s.id));
+
+/** A fresh learner: nothing stored, so only the first skills are on the frontier. */
+const FRESH = frontierSkillIds(SKILLS, new Map());
+
+const C3_SHOWN_BY_C7 = ['C3.thirds', 'C3.fourths-fifths', 'C3.sevenths'];
 
 const at = (markers: ReturnType<typeof explorerMarkers>, string: number, fret: number) =>
   markers.find((m) => m.string === string && m.fret === fret);
@@ -149,16 +160,38 @@ describe('quizFocus', () => {
   });
 
   it('quizzes the interval shapes a pick shows for degrees and intervals', () => {
-    const chord = quizFocus(explorerContent(0, 'chord:7'), 'intervals').skillIds;
-    expect(chord).toEqual(['C3.thirds', 'C3.fourths-fifths', 'C3.sevenths']);
-    const scale = quizFocus(explorerContent(0, 'scale:major'), 'degrees').skillIds;
+    const chord = quizFocus(explorerContent(0, 'chord:7'), 'intervals', ALL_OPEN).skillIds;
+    expect(chord).toEqual(C3_SHOWN_BY_C7);
+    const scale = quizFocus(explorerContent(0, 'scale:major'), 'degrees', ALL_OPEN).skillIds;
     expect(scale).toEqual(expect.arrayContaining(['C3.seconds', 'C3.sixths', 'C3.thirds']));
   });
 
   it('falls back to the notes when no interval skill fits', () => {
     const notes = [skill('N', [noteItemId({ string: 6, fret: 1 })], ['name-the-note'])];
-    expect(quizFocus(explorerContent(0, 'chord:7'), 'degrees', notes)).toEqual({
+    expect(quizFocus(explorerContent(0, 'chord:7'), 'degrees', new Set(['N']), notes)).toEqual({
       skillIds: ['N'],
+    });
+  });
+
+  it('quizzes the notes while C3 is locked, as for a fresh learner (rule 7)', () => {
+    expect(FRESH.has('C3.thirds')).toBe(false);
+    for (const labels of ['degrees', 'intervals'] as const) {
+      expect(quizFocus(explorerContent(0, 'chord:7'), labels, FRESH)).toEqual({
+        skillIds: noteSkillIds(SKILLS),
+      });
+    }
+    // Before the frontier loads, nothing counts as open.
+    expect(quizFocus(explorerContent(0, 'chord:7'), 'degrees')).toEqual({
+      skillIds: noteSkillIds(SKILLS),
+    });
+  });
+
+  it('quizzes only the C3 skills on the frontier', () => {
+    // Practising 3rds soft-unlocks 4ths and 5ths; 7ths wait for those.
+    const stored = new Map<string, SkillStatus>([['C3.thirds', 'practising']]);
+    const frontier = frontierSkillIds(SKILLS, stored);
+    expect(quizFocus(explorerContent(0, 'chord:7'), 'intervals', frontier)).toEqual({
+      skillIds: ['C3.thirds', 'C3.fourths-fifths'],
     });
   });
 
@@ -169,17 +202,36 @@ describe('quizFocus', () => {
       [CHORD_TONES_DRILL],
     );
     const skills = [...SKILLS, d37];
-    expect(quizFocus(explorerContent(1, 'chord:7'), 'names', skills)).toEqual({
+    const open = new Set([...ALL_OPEN, 'C5.tones']);
+    expect(quizFocus(explorerContent(1, 'chord:7'), 'names', open, skills)).toEqual({
       itemIds: ['chord-tones:3@Db7', 'chord-tones:C#7'],
     });
     // No item names the chord: the whole D37 skill.
-    expect(quizFocus(explorerContent(4, 'chord:m7b5'), 'degrees', skills)).toEqual({
+    expect(quizFocus(explorerContent(4, 'chord:m7b5'), 'degrees', open, skills)).toEqual({
       skillIds: ['C5.tones'],
     });
     // Scales don't open D37.
-    expect(quizFocus(explorerContent(0, 'scale:major'), 'names', skills)).toEqual({
+    expect(quizFocus(explorerContent(0, 'scale:major'), 'names', open, skills)).toEqual({
       skillIds: noteSkillIds(SKILLS),
     });
+    // A locked D37 isn't offered: the quiz falls through.
+    expect(quizFocus(explorerContent(1, 'chord:7'), 'names', FRESH, skills)).toEqual({
+      skillIds: noteSkillIds(SKILLS),
+    });
+  });
+});
+
+describe('frontierSkillIds', () => {
+  it('derives statuses in registry order, as the runner does', () => {
+    expect(FRESH.has('F2.string6-naturals')).toBe(true);
+    const mastered = new Map<string, SkillStatus>(
+      ['F1.half-steps', 'F1.whole-steps', 'C1.octaves'].map((id) => [id, 'mastered']),
+    );
+    const frontier = frontierSkillIds(SKILLS, mastered);
+    expect(frontier.has('C3.thirds')).toBe(true);
+    expect(frontier.has('C3.fourths-fifths')).toBe(false);
+    // Mastered skills are no longer the frontier.
+    expect(frontier.has('C1.octaves')).toBe(false);
   });
 });
 
@@ -196,6 +248,10 @@ describe('intervalSkillIds', () => {
 });
 
 describe('<View>', () => {
+  afterEach(async () => {
+    await getDb().skillStates.clear();
+  });
+
   function renderView() {
     render(
       <MemoryRouter>
@@ -260,9 +316,63 @@ describe('<View>', () => {
     expect(
       neck.querySelector('[data-testid="marker-seventh"][data-string="6"][data-fret="1"]'),
     ).toHaveTextContent('m7');
-    expect(quiz()).toHaveAttribute(
-      'href',
-      focusHref({ skillIds: ['C3.thirds', 'C3.fourths-fifths', 'C3.sevenths'] }),
+    // A fresh learner hasn't unlocked the interval shapes: the quiz stays on the notes.
+    expect(quiz()).toHaveAttribute('href', focusHref({ skillIds: noteSkillIds(SKILLS) }));
+
+    // Back to a scale: the chord's degree markers and legend go.
+    fireEvent.change(screen.getByRole('combobox', { name: 'Show' }), {
+      target: { value: 'scale:major-pentatonic' },
+    });
+    expect(screen.getByTestId('explorer-name')).toHaveTextContent('G major pentatonic');
+    const scaleNeck = screen.getByRole('group', { name: 'G major pentatonic across the neck' });
+    for (const style of ['third', 'fifth', 'seventh']) {
+      expect(scaleNeck.querySelector(`[data-testid="marker-${style}"]`)).toBeNull();
+    }
+    expect(scaleNeck.querySelector('[data-testid="marker-tone"]')).not.toBeNull();
+    expect(
+      within(screen.getByRole('list', { name: 'Legend' }))
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['Root', 'Scale note']);
+  });
+
+  it('quizzes the interval shapes once the learner practises them', async () => {
+    for (const skillId of C3_SHOWN_BY_C7) {
+      await putSkillState(getDb(), {
+        skillId,
+        status: 'practising',
+        guideLevel: 3,
+        rollingAccuracy: 0,
+      });
+    }
+    renderView();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Show' }), {
+      target: { value: 'chord:7' },
+    });
+    fireEvent.click(screen.getByRole('radio', { name: 'Intervals' }));
+    await waitFor(() =>
+      expect(quiz()).toHaveAttribute('href', focusHref({ skillIds: C3_SHOWN_BY_C7 })),
     );
+    fireEvent.click(screen.getByRole('radio', { name: 'Note names' }));
+    expect(quiz()).toHaveAttribute('href', focusHref({ skillIds: noteSkillIds(SKILLS) }));
+  });
+
+  it('shrinks long labels to fit the 5th triangle', () => {
+    render(
+      <Fretboard
+        fretRange={{ from: 0, to: 5 }}
+        markers={[
+          { string: 6, fret: 1, style: 'fifth', label: 'F##' },
+          { string: 5, fret: 1, style: 'fifth', label: 'B#' },
+          { string: 4, fret: 1, style: 'seventh', label: 'F##' },
+        ]}
+      />,
+    );
+    const label = (string: number) =>
+      document.querySelector(`[data-string="${string}"][data-fret="1"] text`);
+    expect(label(6)).toHaveTextContent('F##');
+    expect(label(6)?.getAttribute('class')).toBeTruthy();
+    expect(label(5)?.getAttribute('class')).toBeNull();
+    expect(label(4)?.getAttribute('class')).toBeNull();
   });
 });

@@ -273,8 +273,14 @@ export function Fretboard({
               <circle cx={cell.cx} cy={cy} r={18} />
             )}
             {text && (
-              // A triangle's centroid sits below its box centre.
-              <text x={cell.cx} y={m.style === 'fifth' ? cy + 3 : cy} dy="0.35em">
+              // A triangle's centroid sits below its box centre, and it narrows
+              // towards the top, so long labels (F##) shrink to fit.
+              <text
+                x={cell.cx}
+                y={m.style === 'fifth' ? cy + 3 : cy}
+                dy="0.35em"
+                className={m.style === 'fifth' && text.length > 2 ? styles.longLabel : undefined}
+              >
                 {text}
               </text>
             )}
@@ -310,7 +316,7 @@ export function Fretboard({
 
 /** An upward triangle around a marker centre, wide enough at mid-height for a label. */
 function trianglePoints(cx: number, cy: number): string {
-  return `${cx},${cy - 23} ${cx + 23},${cy + 16} ${cx - 23},${cy + 16}`;
+  return `${cx},${cy - 24} ${cx + 26},${cy + 17} ${cx - 26},${cy + 17}`;
 }
 
 /** A flat-sided hexagon around a marker centre. */

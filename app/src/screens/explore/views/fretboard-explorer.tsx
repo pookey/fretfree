@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useAppStore } from '../../../app-store';
 import {
@@ -6,8 +6,16 @@ import {
   type FretMarker,
   type MarkerStyle,
 } from '../../../components/fretboard/Fretboard';
-import { SKILLS, parseItemId, type Skill } from '../../../engine';
+import {
+  SKILLS,
+  deriveStatus,
+  isFrontier,
+  parseItemId,
+  type Skill,
+  type SkillStatus,
+} from '../../../engine';
 import { focusHref, noteSkillIds, type SessionFocus } from '../../../session/focus';
+import { getDb, getSkillStates } from '../../../storage';
 import {
   INTERVALS,
   STANDARD_TUNING,
@@ -284,20 +292,45 @@ export function intervalSkillIds(
 }
 
 /**
+ * The skills a session may serve new items from (unlocked or practising), as
+ * the runner derives them: in registry order, so prerequisites resolve first.
+ */
+export function frontierSkillIds(
+  skills: readonly Skill[],
+  stored: ReadonlyMap<string, SkillStatus>,
+): Set<string> {
+  const statuses = new Map(stored);
+  const out = new Set<string>();
+  for (const skill of skills) {
+    const status = deriveStatus(skill, statuses, stored.get(skill.id));
+    statuses.set(skill.id, status);
+    if (isFrontier(status)) out.add(skill.id);
+  }
+  return out;
+}
+
+/**
  * "Quiz me on this" (design §7): a focused session on what the explorer
  * shows. A chord opens D37 on that chord when a skill offers it; otherwise
  * degrees and intervals quiz the interval shapes they show, and note names
  * the notes on the neck. Skills are found by what they drill, so new ones
  * join without editing this view.
+ *
+ * Gating stays on in a focused session (research/02 rule 7), so D37 and the
+ * interval shapes are offered only once on the learner's `frontier`; until
+ * then (or while it loads) the quiz falls back to the notes, which a new
+ * learner can practise.
  */
 export function quizFocus(
   content: ExplorerContent,
   labels: LabelMode,
+  frontier: ReadonlySet<string> = new Set(),
   skills: readonly Skill[] = SKILLS,
 ): Partial<SessionFocus> {
   const { chord } = content;
+  const open = skills.filter((s) => frontier.has(s.id));
   if (chord) {
-    const d37 = skills.filter((s) => s.drillTypes.includes(CHORD_TONES_DRILL));
+    const d37 = open.filter((s) => s.drillTypes.includes(CHORD_TONES_DRILL));
     const itemIds = d37
       .flatMap((s) => s.items())
       .filter((i) => itemNamesChord(i.id, content.root, chord))
@@ -311,7 +344,7 @@ export function quizFocus(
         .filter((t) => t.semitones > 0)
         .map((t) => (INTERVALS[t.semitones] as IntervalInfo).name),
     );
-    const ids = intervalSkillIds(skills, shown);
+    const ids = intervalSkillIds(open, shown);
     if (ids.length > 0) return { skillIds: ids };
   }
   return { skillIds: noteSkillIds(skills) };
@@ -348,6 +381,23 @@ function Swatch({ style }: { style: MarkerStyle }) {
   );
 }
 
+/** The learner's frontier skills, read once from storage; empty until loaded. */
+function useFrontier(): ReadonlySet<string> {
+  const [frontier, setFrontier] = useState<ReadonlySet<string>>(() => new Set());
+  useEffect(() => {
+    let live = true;
+    void getSkillStates(getDb()).then((states) => {
+      if (!live) return;
+      const stored = new Map([...states.values()].map((s) => [s.skillId, s.status]));
+      setFrontier(frontierSkillIds(SKILLS, stored));
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  return frontier;
+}
+
 export function View() {
   const { handedness, accidentalPref, tuning: tuningId } = useAppStore((s) => s.settings);
   const [rootChroma, setRootChroma] = useState(0);
@@ -364,7 +414,8 @@ export function View() {
     () => explorerMarkers(content, labels, EXPLORER_RANGE, tuning),
     [content, labels, tuning],
   );
-  const quizHref = focusHref(quizFocus(content, labels));
+  const frontier = useFrontier();
+  const quizHref = focusHref(quizFocus(content, labels, frontier));
   const legend = [...new Set(content.tones.map((t) => t.style))];
   const kindName = content.chord ? chordKindInfo(content.chord).name : null;
 

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectNoHorizontalOverflow, freshStart } from './helpers';
+import { expectNoHorizontalOverflow, freshStart, masterSkills } from './helpers';
 
 // Fretboard explorer v2 (design §7 Explore): pick a key, scale or chord, then
 // label it by note name, degree or interval across the whole neck. A chord
@@ -62,12 +62,9 @@ test.describe('M2-12 fretboard explorer', () => {
     await page.getByText('Intervals', { exact: true }).click();
     await expect(marker(page, 'seventh', 6, 1)).toHaveText('m7');
     await expect(marker(page, 'third', 6, 7)).toHaveText('M3');
-    await expect(page.getByRole('link', { name: 'Quiz me on this' })).toHaveAttribute(
-      'href',
-      '/session?skill=C3.thirds&skill=C3.fourths-fifths&skill=C3.sevenths',
-    );
     await page.getByText('Note names', { exact: true }).click();
     await expect(marker(page, 'seventh', 6, 1)).toHaveText('F');
+    await page.getByText('Degrees', { exact: true }).click();
 
     // iPad keeps neck cells at 44pt or more (design §7).
     const sizes = await page
@@ -80,11 +77,32 @@ test.describe('M2-12 fretboard explorer', () => {
     }
     await expectNoHorizontalOverflow(page);
 
-    // "Quiz me on this" starts a focused session (no D37 yet: the notes).
+    // "Quiz me on this" starts a focused session. A fresh learner hasn't
+    // unlocked the interval shapes (rule 7), and D37 doesn't exist yet, so
+    // even by degree it quizzes the notes rather than an empty session.
+    await expect(page.getByRole('link', { name: 'Quiz me on this' })).toHaveAttribute(
+      'href',
+      NOTE_SKILLS,
+    );
     await page.getByRole('link', { name: 'Quiz me on this' }).click();
     await expect(page).toHaveURL(new RegExp(`${NOTE_SKILLS.replace(/[.?]/g, '\\$&')}$`));
     await expect(page.getByTestId('session')).toBeVisible();
     await expect(page.getByText(/^This is/)).toBeVisible();
+  });
+
+  test('quizzes the interval shapes once they are unlocked', async ({ page }) => {
+    await freshStart(page, '/explore');
+    // C3.thirds opens once its prerequisites are mastered; 4ths and 5ths wait for it.
+    await masterSkills(page, ['F1.half-steps', 'F1.whole-steps', 'C1.octaves']);
+    await pick(page, 'G', 'Dominant seventh');
+    await page.getByText('Intervals', { exact: true }).click();
+    const quiz = page.getByRole('link', { name: 'Quiz me on this' });
+    await expect(quiz).toHaveAttribute('href', '/session?skill=C3.thirds');
+    await quiz.click();
+    await expect(page).toHaveURL(/\/session\?skill=C3\.thirds$/);
+    await expect(page.getByTestId('session')).toBeVisible();
+    // A real C3 drill, not an empty session.
+    await expect(page.getByTestId('d5-drill')).toBeVisible();
   });
 
   test('a chord on a phone @smoke', async ({ page }) => {

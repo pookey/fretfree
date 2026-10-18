@@ -156,3 +156,7 @@
 .seventh polygon {
   fill: var(--chord-seventh);
 }
+
+.marker text.longLabel {
+  font-size: 13px;
+}
