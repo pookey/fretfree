@@ -611,7 +611,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Unit tests: a seeded batch from three skills interleaves, the same rng gives the same order, and an item that is clearly more overdue still comes first.
 
 ### M2-18 · Per-drill context panels, starting with D4 octave shapes
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §6 (drill plugin interface), §7 session context panel
 - **Owns:** `app/src/drills/types.ts` (contract hub: additive optional field only), `app/src/session/SessionScreen.tsx` (hotspot: the aside only), `app/src/drills/d4-octave-finder/ContextPanel.tsx`, `app/src/drills/d4-octave-finder/ContextPanel.module.css`, `app/src/drills/d4-octave-finder/ContextPanel.test.tsx`, `app/e2e/m2-18.spec.ts`
