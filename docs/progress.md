@@ -40,8 +40,12 @@ What exists:
 
 ## Questions for the user
 
-1. **Name.** "Fretwork" is still a working title, but it's now in the PWA manifest, the README and the home-screen label. Keep it?
-2. **Dependency approvals.** Workers propose new dependencies instead of adding them. The orchestrator adds licence-compatible ones (MIT/ISC/BSD/Apache/0BSD) itself, e.g. chords-db in M3-09. Say if you'd rather approve each one.
+None open.
+
+### Answered
+
+- **Name:** keep "Fretwork" (user, 2026-10-18).
+- **Dependencies:** the orchestrator may add licence-compatible dependencies (MIT/ISC/BSD/Apache-2.0/0BSD) itself, without asking each time (user, 2026-10-18).
 
 ## Parallelism log
 

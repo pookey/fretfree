@@ -109,7 +109,7 @@ $O/integrate.sh <WP>
 - Each worker gets a port block (`state.mjs alloc-port`, from 5200 in steps of 10). Workers run `PORT=<base> pnpm dev`.
 - `pnpm e2e` goes through `scripts/e2e-slot.sh`: a machine-wide lock-dir semaphore with **2** Playwright slots by default (`E2E_SLOTS`), each with its own preview port. If e2e waits dominate, keep it at 2 and lower the worker ceiling rather than raising the slot count.
 - Every worktree shares one pnpm store (the default). `pnpm install --frozen-lockfile --prefer-offline` is fast.
-- **Dependency changes:** workers propose them in their reports and don't add them. Add approved dependencies yourself, in a tiny WP-free commit on `main`, shipped through the lane. Then tell in-flight workers to `git rebase main` at their next natural break.
+- **Dependency changes:** workers propose them in their reports and don't add them. The user has pre-approved licence-compatible dependencies (MIT/ISC/BSD/Apache-2.0/0BSD), so you can add them without asking. Add them yourself, in a tiny WP-free commit on `main`, shipped through the lane. Then tell in-flight workers to `git rebase main` at their next natural break.
 - The backlog's git status only moves `todo → done` (or `blocked`), committed by the lane. In-flight states (`working`, `reviewing`, `fixing`, `integrating`) live in `state.json`, so `main` stays clean.
 
 ## 5. Herdr layout
