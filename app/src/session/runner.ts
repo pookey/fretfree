@@ -288,7 +288,7 @@ export class SessionRunner {
           if (skillId === undefined) return null;
           return picker.pick({ id: itemId, skillId }, lastDrill.get(itemId))?.id ?? null;
         },
-        rng: deps.rng ?? Math.random,
+        rng: deps.rng,
         ...(maxItems !== undefined ? { maxItems } : {}),
       });
       // The due and new queue ran dry: top up with stretch items, never stable ones (§3.7).
