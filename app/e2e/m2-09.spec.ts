@@ -3,11 +3,28 @@ import { expectNoHorizontalOverflow, firstLaunch, noteName } from './helpers';
 
 // M2-09: the placement test (design §3.4, §4 step 6). An adaptive probe of
 // F1, F2, C2 and C3 (every topic a drill can serve) at the end of onboarding
-// seeds what the learner already knows.
+// seeds what the learner already knows. Topics join as their drills land, so
+// the expert answers every probe kind it knows and says "Not sure" to others.
 
 // An independent answer key (deliberately not imported from app code).
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 const CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const OPEN_MIDI: Record<number, number> = { 1: 64, 2: 59, 3: 55, 4: 50, 5: 45, 6: 40 };
+const INTERVAL_SEMITONES: Record<string, number> = {
+  m2: 1,
+  M2: 2,
+  m3: 3,
+  M3: 4,
+  P4: 5,
+  TT: 6,
+  P5: 7,
+  m6: 8,
+  M6: 9,
+  m7: 10,
+  M7: 11,
+};
+/** The most probes any one skill is asked (the largest tier). */
+const MAX_PROBES_PER_SKILL = 6;
 const CHECK_UP_DAYS = 10;
 // Calibration is step 6 of 7; the placement test is last.
 const STEPS = 7;
@@ -28,8 +45,8 @@ async function openPlacementStep(page: Page) {
 
 type Answer = { kind: 'button'; label: string } | { kind: 'cell'; string: number; fret: number };
 
-/** The right answer to a probe, from its item ID. */
-function solve(itemId: string): Answer {
+/** The right answer to a probe, from its item ID (and the neck, for D6); null if unknown. */
+async function solve(page: Page, itemId: string): Promise<Answer | null> {
   const letter = /^letter:([+-]\d+)@([A-G])$/.exec(itemId);
   if (letter) {
     const i = LETTERS.indexOf(letter[2]!) + Number(letter[1]);
@@ -45,6 +62,17 @@ function solve(itemId: string): Answer {
   // D5 names the interval the two dots make; its buttons are the interval names.
   const interval = /^interval-name:([mMPT][1-8T])@s\d→s\d$/.exec(itemId);
   if (interval) return { kind: 'button', label: interval[1]! };
+  // D6 taps the interval above the shown root, on the item's upper string.
+  const tap = /^interval:([mMPT][1-8T])@s(\d)→s(\d)$/.exec(itemId);
+  if (tap) {
+    const root = dialog(page).getByTestId('marker-root').first();
+    const rs = Number(await root.getAttribute('data-string'));
+    const rf = Number(await root.getAttribute('data-fret'));
+    expect(rs).toBe(Number(tap[2]));
+    const string = Number(tap[3]);
+    const fret = OPEN_MIDI[rs]! + rf + INTERVAL_SEMITONES[tap[1]!]! - OPEN_MIDI[string]!;
+    return { kind: 'cell', string, fret };
+  }
   const find = /^find:([A-G]#?)@s(\d)$/.exec(itemId);
   if (find) {
     const string = Number(find[2]);
@@ -52,11 +80,16 @@ function solve(itemId: string): Answer {
       if (noteName(string, fret) === find[1]) return { kind: 'cell', string, fret };
     }
   }
-  throw new Error(`Unexpected probe: ${itemId}`);
+  return null;
 }
 
-async function answerRight(page: Page, itemId: string) {
-  const a = solve(itemId);
+/** Answer correctly, or say "Not sure" to a probe kind this key doesn't know. Returns if answered. */
+async function answerRight(page: Page, itemId: string): Promise<boolean> {
+  const a = await solve(page, itemId);
+  if (!a) {
+    await dialog(page).getByRole('button', { name: 'Not sure' }).click();
+    return false;
+  }
   if (a.kind === 'button') {
     await dialog(page)
       .locator('[role="group"][aria-labelledby="drill-prompt"]')
@@ -69,6 +102,7 @@ async function answerRight(page: Page, itemId: string) {
       .click();
   }
   await expect(dialog(page).getByTestId('feedback-correct')).toBeVisible();
+  return true;
 }
 
 async function stored(page: Page) {
@@ -86,7 +120,9 @@ async function stored(page: Page) {
       });
     const cards = await all<{ skillId: string; fsrs: { stability: number } }>('cards');
     const states = await all<{ skillId: string; status: string }>('skillStates');
-    const logs = await all<{ correct: boolean }>('reviewLogs');
+    const logs = await all<{ skillId: string }>('reviewLogs');
+    const perSkill: Record<string, number> = {};
+    for (const l of logs) perSkill[l.skillId] = (perSkill[l.skillId] ?? 0) + 1;
     db.close();
     return {
       cards: cards.length,
@@ -97,6 +133,7 @@ async function stored(page: Page) {
         .map((s) => s.skillId)
         .sort(),
       logs: logs.length,
+      perSkill,
     };
   });
 }
@@ -106,7 +143,7 @@ test.describe('M2-09 placement test', () => {
     page,
   }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'The full flow runs on the iPad projects.');
-    // Up to ~40 probes; leave room for a loaded machine.
+    // Dozens of probes; leave room for a loaded machine.
     test.setTimeout(120_000);
     await page.clock.install();
     await openPlacementStep(page);
@@ -118,7 +155,8 @@ test.describe('M2-09 placement test', () => {
 
     const result = page.getByTestId('placement-result');
     const seen: string[] = [];
-    for (let n = 0; n < 60 && !(await result.isVisible()); n++) {
+    let answered = 0;
+    for (let n = 0; n < 200 && !(await result.isVisible()); n++) {
       const id = (await probe(page).getAttribute('data-item'))!;
       seen.push(id);
       if (n === 0) {
@@ -128,7 +166,7 @@ test.describe('M2-09 placement test', () => {
         expect(cell!.width).toBeGreaterThanOrEqual(44);
         expect(cell!.height).toBeGreaterThanOrEqual(44);
       }
-      await answerRight(page, id);
+      if (await answerRight(page, id)) answered++;
       await page.clock.runFor(AUTO_ADVANCE_MS);
       await expect(probe(page).or(result)).toBeVisible();
       if (await probe(page).isVisible()) {
@@ -137,11 +175,17 @@ test.describe('M2-09 placement test', () => {
     }
     await page.clock.resume();
 
-    // It probed every topic, a few items each, not every item.
-    for (const kind of [/^letter:/, /^step:/, /^note@/, /^find:/, /^interval-name:/]) {
+    // It probed every topic, a few items per skill, not every item.
+    for (const kind of [
+      /^letter:/,
+      /^step:/,
+      /^note@/,
+      /^find:/,
+      /^interval-name:/,
+      /^interval:/,
+    ]) {
       expect(seen.some((id) => kind.test(id))).toBe(true);
     }
-    expect(seen.length).toBeLessThan(45);
 
     await expect(result).toHaveText(/You already know these/);
     await expect(result).toHaveText(new RegExp(`in about ${CHECK_UP_DAYS} days`));
@@ -159,7 +203,9 @@ test.describe('M2-09 placement test', () => {
     expect(db.mastered).toEqual(
       expect.arrayContaining(['F2.string5-naturals', 'F2.string6-naturals', 'C2.all-notes']),
     );
-    expect(db.logs).toBe(seen.length);
+    // Every answer is logged ("Not sure" isn't), and no skill took more than its tier's probes.
+    expect(db.logs).toBe(answered);
+    for (const n of Object.values(db.perSkill)) expect(n).toBeLessThanOrEqual(MAX_PROBES_PER_SKILL);
 
     await page.getByTestId('onboarding-choice').getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
