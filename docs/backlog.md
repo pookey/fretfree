@@ -367,7 +367,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Skills per interval group (3rds, 5ths, 7ths …) with G–B shift items. Prerequisites: F1 (and C1, softly).
 
 ### M2-05 · D5 "Name the interval from two dots"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M2-04
 - **Owns:** `app/src/drills/d5-interval-name/**`, `app/e2e/m2-05.spec.ts`
 - **Acceptance:**
