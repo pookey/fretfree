@@ -287,7 +287,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - RTL tests cover guide levels 0–3 × guided/unguided/feedback. An e2e test (`m1-25.spec.ts`, tagged `@smoke`) checks that after the worked example, the unguided prompt for a fresh learner doesn't show the answer on the neck.
 
 ### M1-26 · Reading question: what you can read, and what you want to learn
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §3.6, §4, §12, research/03 Track R
 - **Owns:** `app/src/onboarding/steps/notation.tsx`, `app/src/onboarding/options.ts`, `app/src/onboarding/steps/steps.test.tsx`, `app/src/engine/model.ts`, `app/src/storage/repository.ts`, `app/src/storage/storage.test.ts`, `docs/design/app-design.md`, `docs/research/03-curriculum.md`, `app/e2e/m1-26.spec.ts`
