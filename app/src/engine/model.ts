@@ -1,4 +1,5 @@
 import type { Card as FsrsCard, Rating } from 'ts-fsrs';
+import type { FittedFsrsParams } from './refit';
 import { isIntervalName, type IntervalName, type Position } from '../theory';
 
 /** Design §3.1 / §3.6. */
@@ -106,6 +107,8 @@ export interface Settings {
   onboardedAt: Date | null;
   /** Hide the fret inlays too at guide level 0 (design §3.5). */
   blindMode: boolean;
+  /** Per-user FSRS weights, refit after ~1,000 reviews (engine/refit.ts); `null` = defaults. */
+  fsrsParams: FittedFsrsParams | null;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -121,6 +124,7 @@ export const DEFAULT_SETTINGS: Settings = {
   volume: 0.8,
   onboardedAt: null,
   blindMode: false,
+  fsrsParams: null,
 };
 
 // --- Item IDs -------------------------------------------------------------

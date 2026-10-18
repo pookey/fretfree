@@ -1,4 +1,12 @@
-import { State, createEmptyCard, fsrs, generatorParameters, type FSRS, type Grade } from 'ts-fsrs';
+import {
+  State,
+  checkParameters,
+  createEmptyCard,
+  fsrs,
+  generatorParameters,
+  type FSRS,
+  type Grade,
+} from 'ts-fsrs';
 import { ENGINE_CONFIG } from './config';
 import type { CardRecord, Item } from './model';
 
@@ -14,14 +22,35 @@ export interface Scheduler {
   isDue(card: CardRecord, now: Date): boolean;
 }
 
-export function createScheduler(
-  opts: { requestRetention?: number; maximumIntervalDays?: number; enableFuzz?: boolean } = {},
-): Scheduler {
+export interface SchedulerOptions {
+  requestRetention?: number;
+  maximumIntervalDays?: number;
+  enableFuzz?: boolean;
+  /**
+   * The learner's refit FSRS weights (`Settings.fsrsParams.w`, engine/refit.ts).
+   * Absent, null or malformed (e.g. a hand-edited import): the ts-fsrs defaults.
+   */
+  weights?: readonly number[] | null;
+}
+
+/** `weights` if ts-fsrs accepts them, else undefined (the defaults). */
+function validWeights(weights: readonly number[] | null | undefined): number[] | undefined {
+  if (!weights) return undefined;
+  try {
+    return [...checkParameters(weights)];
+  } catch {
+    return undefined;
+  }
+}
+
+export function createScheduler(opts: SchedulerOptions = {}): Scheduler {
+  const w = validWeights(opts.weights);
   const f = fsrs(
     generatorParameters({
       request_retention: opts.requestRetention ?? ENGINE_CONFIG.fsrs.requestRetention,
       maximum_interval: opts.maximumIntervalDays ?? ENGINE_CONFIG.fsrs.maximumIntervalDays,
       enable_fuzz: opts.enableFuzz ?? true,
+      ...(w ? { w } : {}),
     }),
   );
 
