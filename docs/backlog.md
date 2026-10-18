@@ -213,7 +213,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Immediate correct-answer feedback stays on at every level.
 
 ### M1-16 · Learn screen: module cards, mastery rings and goal ordering
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-01, M1-03
 - **Design:** §5, §7 Learn, §4 goal
 - **Owns:** `app/src/screens/learn/**`, `app/src/routes/learn.route.tsx`, `app/src/engine/frontier.ts`, `app/src/engine/frontier.test.ts`, `app/e2e/m1-16.spec.ts`
