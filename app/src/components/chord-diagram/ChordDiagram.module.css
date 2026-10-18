@@ -1,0 +1,116 @@
+/* Shares the neck's tokens and marker vocabulary (Fretboard.module.css). */
+
+.figure {
+  margin: 0;
+  width: 100%;
+  max-width: 20rem;
+}
+
+.name {
+  margin-bottom: var(--space-1);
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+}
+
+.chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.wood {
+  fill: var(--wood);
+  stroke: var(--wood-dark);
+  stroke-width: 2;
+}
+
+.nut {
+  fill: #efe6d6;
+}
+
+.wire {
+  stroke: var(--fret-wire);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.string {
+  stroke: var(--string);
+  opacity: 0.9;
+}
+
+.position,
+.stringName {
+  fill: var(--text-muted);
+  font-size: 15px;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+.position {
+  font-weight: 700;
+}
+
+.stringName {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* A barre is neutral so the dots on it keep their root and degree colours. */
+.barre {
+  fill: var(--inlay);
+  opacity: 0.7;
+}
+
+.dot text {
+  font-size: 16px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: #10141a;
+}
+
+.dot text.longLabel {
+  font-size: 12px;
+}
+
+.root rect {
+  fill: var(--root);
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.tone circle,
+.third circle {
+  fill: var(--tone);
+}
+
+.fifth polygon {
+  fill: var(--chord-fifth);
+}
+
+.seventh polygon {
+  fill: var(--chord-seventh);
+}
+
+/* Open and muted markers sit on the page above the nut. */
+.open circle {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 2.5;
+}
+
+.openRoot rect {
+  fill: none;
+  stroke: var(--root);
+  stroke-width: 3;
+}
+
+.muted line {
+  stroke: var(--text-muted);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
