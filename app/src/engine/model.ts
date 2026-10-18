@@ -57,7 +57,12 @@ export interface SkillStateRecord {
 export interface ConfusionRecord {
   a: string;
   b: string;
+  /** Lifetime number of times the pair was confused. */
   count: number;
+  /** The decayed weight as of `lastAt` (engine/confusions.ts). Absent on older rows. */
+  weight?: number;
+  /** When the pair was last confused. Absent on older rows. */
+  lastAt?: Date;
 }
 
 export interface SessionLogRecord {

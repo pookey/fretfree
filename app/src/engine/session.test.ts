@@ -8,7 +8,6 @@ import {
   dueReviews,
   inLearningStep,
   newItemBlock,
-  pairConfusables,
   planNewBlocks,
   scheduleRetry,
   sessionLength,
@@ -251,44 +250,6 @@ describe('blockBoundary', () => {
     expect(blockBoundary(q, 2)).toBe(5);
     expect(blockBoundary(q, 6)).toBe(6);
     expect(blockBoundary(q, 9)).toBe(7);
-  });
-});
-
-describe('pairConfusables', () => {
-  const entry = (itemId: string): SessionEntry => ({
-    itemId,
-    skillId: 'sk',
-    kind: 'review',
-    guided: false,
-  });
-  const concept = (id: string) => id[0] ?? null;
-
-  it('moves a later partner right after its pair', () => {
-    const out = pairConfusables(
-      ['E1', 'X1', 'X2', 'F1'].map(entry),
-      [{ a: 'E', b: 'F', count: 1 }],
-      concept,
-    );
-    expect(out.map((e) => e.itemId)).toEqual(['E1', 'F1', 'X1', 'X2']);
-  });
-
-  it('moves an earlier partner next to its pair', () => {
-    const out = pairConfusables(
-      ['F1', 'X1', 'X2', 'E1'].map(entry),
-      [{ a: 'E', b: 'F', count: 1 }],
-      concept,
-    );
-    expect(out.map((e) => e.itemId)).toEqual(['X1', 'X2', 'E1', 'F1']);
-  });
-
-  it('ignores pairs that are absent or have no count', () => {
-    const base = ['E1', 'X1'].map(entry);
-    expect(pairConfusables(base, [{ a: 'E', b: 'F', count: 2 }], concept)).toEqual(base);
-    expect(
-      pairConfusables(['E1', 'X', 'F1'].map(entry), [{ a: 'E', b: 'F', count: 0 }], concept).map(
-        (e) => e.itemId,
-      ),
-    ).toEqual(['E1', 'X', 'F1']);
   });
 });
 

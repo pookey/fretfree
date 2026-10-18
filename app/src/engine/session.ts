@@ -1,5 +1,6 @@
 import { State } from 'ts-fsrs';
 import { ENGINE_CONFIG } from './config';
+import { confusionMatrix, pairConfusables } from './confusions';
 import type { CardRecord, ConfusionRecord, GuideLevel, Item } from './model';
 import type { Scheduler } from './scheduler';
 
@@ -36,8 +37,9 @@ export interface SessionPlanInput {
   /** Unseen items from frontier skills, already ordered by goal priority. */
   frontier: readonly Item[];
   scheduler: Scheduler;
+  /** Learned confusions. Merged with the seed pairs and decayed to `now`. */
   confusions?: readonly ConfusionRecord[];
-  /** Maps an item to the concept its confusions are keyed by (e.g. its pitch class). */
+  /** Maps an item to the concept its confusions are keyed by (e.g. its pitch class). Enables pairing. */
   conceptOf?: (itemId: string) => string | null;
   /** The fact an item tests and its direction. New blocks are followed by their facts' other direction. */
   factOf?: (item: Item) => FactRef | null;
@@ -142,45 +144,24 @@ export function blockGuideLevel(rep: number, reps: number, skillLevel: GuideLeve
 }
 
 /**
- * Step 3: move confusable items next to each other so the learner has to
- * discriminate them (research/02 rule 6). Only affects review entries.
+ * Spread blocks evenly among reviews, starting with a short warm-up of
+ * reviews. A block never splits a confusable pair (`joined`, see
+ * `pairConfusables`).
  */
-export function pairConfusables(
-  entries: readonly SessionEntry[],
-  confusions: readonly ConfusionRecord[],
-  conceptOf: (itemId: string) => string | null,
+function interleave(
+  reviews: SessionEntry[],
+  blocks: SessionEntry[][],
+  joined: ReadonlySet<number>,
 ): SessionEntry[] {
-  const out = [...entries];
-  const pairs = [...confusions].filter((c) => c.count > 0).sort((x, y) => y.count - x.count);
-  const moved = new Set<number>();
-  for (const { a, b } of pairs) {
-    const ia = out.findIndex(
-      (e, i) => e.kind === 'review' && !moved.has(i) && conceptOf(e.itemId) === a,
-    );
-    const ib = out.findIndex(
-      (e, i) => e.kind === 'review' && !moved.has(i) && conceptOf(e.itemId) === b,
-    );
-    if (ia < 0 || ib < 0) continue;
-    const [entry] = out.splice(ib, 1);
-    const target = ib < ia ? ia : ia + 1;
-    out.splice(target, 0, entry as SessionEntry);
-    const placedB = target;
-    const placedA = ib < ia ? ia - 1 : ia;
-    moved.add(placedA);
-    moved.add(placedB);
-  }
-  return out;
-}
-
-/** Spread blocks evenly among reviews, starting with a short warm-up of reviews. */
-function interleave(reviews: SessionEntry[], blocks: SessionEntry[][]): SessionEntry[] {
   if (blocks.length === 0) return reviews;
   const out: SessionEntry[] = [];
   const gap = Math.floor(reviews.length / (blocks.length + 1));
   let r = 0;
   for (const block of blocks) {
-    out.push(...reviews.slice(r, r + gap));
-    r += gap;
+    let end = Math.min(reviews.length, r + gap);
+    if (joined.has(end - 1)) end++;
+    out.push(...reviews.slice(r, end));
+    r = end;
     out.push(...block);
   }
   out.push(...reviews.slice(r));
@@ -222,11 +203,11 @@ export function buildSession(input: SessionPlanInput): SessionEntry[] {
     }
   }
 
-  const paired =
-    input.confusions && input.conceptOf
-      ? pairConfusables(reviews, input.confusions, input.conceptOf)
-      : reviews;
-  return interleave(paired, blocks);
+  // Step 3: seed and learned confusions, so pairing works from the first session.
+  const { entries: paired, joined } = input.conceptOf
+    ? pairConfusables(reviews, confusionMatrix(input.confusions ?? [], input.now), input.conceptOf)
+    : { entries: reviews, joined: new Set<number>() };
+  return interleave(paired, blocks, joined);
 }
 
 /** A wrong answer is retried a few items later in the same session (design §7). */

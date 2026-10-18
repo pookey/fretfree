@@ -181,7 +181,7 @@ describe('cards and reviews', () => {
     });
     expect(await allCards(db)).toHaveLength(1);
     expect(await reviewCount(db)).toBe(3);
-    expect(await allConfusions(db)).toEqual([{ a: 'A', b: 'G', count: 2 }]);
+    expect(await allConfusions(db)).toEqual([{ a: 'A', b: 'G', count: 2, weight: 2, lastAt: now }]);
   });
 
   it('finds due cards but never unreviewed new cards', async () => {

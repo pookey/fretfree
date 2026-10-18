@@ -1,4 +1,5 @@
 import { State } from 'ts-fsrs';
+import { bumpConfusion } from '../engine/confusions';
 import {
   DEFAULT_SETTINGS,
   type CardRecord,
@@ -83,7 +84,7 @@ export async function recordAnswer(db: FretworkDB, write: AnswerWrite): Promise<
     if (write.confusion && write.confusion.expected !== write.confusion.given) {
       const [a, b] = [write.confusion.expected, write.confusion.given].sort() as [string, string];
       const existing = await db.confusions.get([a, b]);
-      await db.confusions.put({ a, b, count: (existing?.count ?? 0) + 1 });
+      await db.confusions.put(bumpConfusion(existing ?? { a, b, count: 0 }, write.log.at));
     }
   });
 }
