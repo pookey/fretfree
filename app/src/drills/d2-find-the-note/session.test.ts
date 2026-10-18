@@ -8,6 +8,9 @@ import { D2_ID, type D2Prompt } from './logic';
 
 /** D2 through the real session runner (plan → prompt → grade → FSRS → persist). */
 
+// The note skills D2 serves; earlier topics (F1, served by D3) would lead the frontier.
+const NOTE_SKILLS = SKILLS.filter((s) => s.topic === 'F2' || s.topic === 'C2');
+
 let db: FretworkDB;
 let n = 0;
 const clock = new Date('2026-10-18T09:00:00Z');
@@ -23,7 +26,7 @@ afterEach(async () => {
 /** Every note@ item already known and not due, so the session serves find items. */
 async function seedNoteCards() {
   const scheduler = createScheduler({ enableFuzz: false });
-  const notes = SKILLS.flatMap((s) => s.items()).filter((i) => parseNoteItemId(i.id));
+  const notes = NOTE_SKILLS.flatMap((s) => s.items()).filter((i) => parseNoteItemId(i.id));
   await db.cards.bulkPut(notes.map((i) => scheduler.seedKnownCard(i, clock, 30)));
 }
 
@@ -32,7 +35,7 @@ async function start() {
     db,
     scheduler: createScheduler({ enableFuzz: false }),
     settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 500 },
-    skills: SKILLS,
+    skills: NOTE_SKILLS,
     drills: DRILLS,
     now: () => clock,
     maxItems: 12,

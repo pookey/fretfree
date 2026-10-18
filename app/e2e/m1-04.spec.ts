@@ -1,5 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectNoHorizontalOverflow, freshStart, noteName } from './helpers';
+import {
+  F1_SKILLS,
+  expectNoHorizontalOverflow,
+  freshStart,
+  masterSkills,
+  noteName,
+} from './helpers';
 
 // D2 "Find the note" (design §6 D2, §7 session, §8): tap the named note on
 // the named string.
@@ -57,10 +63,12 @@ async function seedKnownNotes(page: Page): Promise<void> {
 
 async function startFindSession(page: Page): Promise<void> {
   await freshStart(page);
+  // The F1 note-wheel skills (D3) lead a fresh session; skip them.
+  await masterSkills(page, F1_SKILLS);
   await seedKnownNotes(page);
   await page.reload();
-  // 7 naturals to find on each of strings 6 and 5.
-  await expect(page.getByTestId('new-count')).toHaveText('14');
+  // 7 naturals to find on each of strings 6 and 5, plus the 14 musical-alphabet items.
+  await expect(page.getByTestId('new-count')).toHaveText('28');
   await page.getByTestId('start-session').click();
   await expect(page.getByTestId('d2-prompt')).toBeVisible();
 }
