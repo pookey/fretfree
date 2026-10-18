@@ -7,7 +7,15 @@ import type { FretRange, Position } from '../../theory';
  * becomes the baseline. The view owns the clock and passes times in.
  */
 
-export type CalibrationConfig = typeof ENGINE_CONFIG.calibration;
+/** `ENGINE_CONFIG.calibration`, widened so tests can tune it. */
+export interface CalibrationConfig {
+  trials: number;
+  warmupTrials: number;
+  foreperiodMs: { min: number; max: number };
+  validMs: { min: number; max: number };
+  outlierIqr: number;
+  minSamples: number;
+}
 
 /** The median of `xs`, or null when empty. */
 export function median(xs: readonly number[]): number | null {
