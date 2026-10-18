@@ -28,6 +28,7 @@ import {
 } from '../engine';
 import type { CardKind, GamificationEvent } from '../engine/gamification';
 import { orderFrontier } from '../engine/frontier';
+import { SessionGuides } from '../engine/guides';
 import type { AnyDrillType, DrillCheck, DrillSounds } from '../drills/types';
 import {
   allCards,
@@ -128,6 +129,7 @@ export class SessionRunner {
   private goalReached = false;
   private readonly startedAt: Date;
   private readonly targets;
+  private readonly guides: SessionGuides;
   private finished: SessionSummary | null = null;
 
   private constructor(
@@ -147,6 +149,7 @@ export class SessionRunner {
       }
     }
     this.targets = speedTargets(deps.settings.latencyBaselineMs);
+    this.guides = new SessionGuides(this.targets);
   }
 
   static async start(deps: RunnerDeps): Promise<SessionRunner> {
@@ -361,6 +364,12 @@ export class SessionRunner {
       rollingAccuracy: 0,
     };
     if (state.status === 'unlocked' || state.status === 'locked') state.status = 'practising';
+    // Guides fade and return within the session too (design §3.5).
+    state.guideLevel = this.guides.record(item.skillId, state.guideLevel, {
+      correct: result.correct,
+      responseMs,
+      hintUsed: entry.guided,
+    });
     this.skillStates.set(item.skillId, state);
     this.touchedSkills.add(item.skillId);
 
@@ -408,9 +417,13 @@ export class SessionRunner {
       const graded = logs.filter((l) => !l.hintUsed);
       const accuracy = rollingAccuracy(graded.map((l) => l.correct));
       const rt = median(graded.filter((l) => l.correct).map((l) => l.responseMs));
-      const before = { ...state };
+      const before = { ...state, guideLevel: this.guides.startLevel(skillId, state.guideLevel) };
       state.rollingAccuracy = accuracy;
-      if (graded.length >= ENGINE_CONFIG.adaptive.minAnswers) {
+      // The across-session step only applies when the session itself left the level alone.
+      if (
+        graded.length >= ENGINE_CONFIG.adaptive.minAnswers &&
+        state.guideLevel === before.guideLevel
+      ) {
         state.guideLevel = nextGuideLevel(state.guideLevel, accuracy, rt, this.targets);
       }
       if (skill) {
