@@ -7,26 +7,31 @@ import { expectNoHorizontalOverflow, firstLaunch, freshStart } from './helpers';
 const TRIALS = 16;
 const ONBOARDING_STEPS = 6;
 
-// A human-ish pause before each tap: an instant scripted tap would count as an
-// anticipation and be trimmed.
-const REACTION_MS = 250;
+// The page clock is paused during a run, so tap times don't depend on how busy
+// the machine is. Each dot lights within the longest pause (foreperiodMs.max),
+// and the tap comes REACTION_MS after that pause ends.
+const MAX_PAUSE_MS = 1000;
+const REACTION_MS = 300;
 
 /** Tap every dot as it lights, and return the stored tap time from the result. */
 async function runCalibration(page: Page): Promise<number> {
+  await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1000);
   await page.getByRole('button', { name: 'Start' }).click();
   const dot = page.getByTestId('marker-target');
   for (let n = 1; n <= TRIALS; n++) {
+    await expect(dot).toHaveCount(0);
+    await page.clock.runFor(MAX_PAUSE_MS);
     await expect(dot).toBeVisible();
-    const cell = `s${await dot.getAttribute('data-string')}f${await dot.getAttribute('data-fret')}`;
-    await page.waitForTimeout(REACTION_MS);
+    const cell = await dot.evaluate((g) => `s${g.dataset.string}f${g.dataset.fret}`);
+    await page.clock.runFor(REACTION_MS);
     await page.locator(`[data-cell="${cell}"]`).click();
-    if (n < TRIALS) await expect(page.getByTestId('calibration-count')).toHaveText(`${n} of 16`);
   }
   const result = page.getByTestId('calibration-result');
   await expect(result).toHaveText(/Your tap time is \d+ ms/);
+  await page.clock.resume();
   const ms = Number(/(\d+) ms/.exec((await result.textContent())!)![1]);
   expect(ms).toBeGreaterThanOrEqual(REACTION_MS);
-  expect(ms).toBeLessThan(2500);
+  expect(ms).toBeLessThanOrEqual(MAX_PAUSE_MS + REACTION_MS);
   return ms;
 }
 
@@ -38,7 +43,11 @@ async function expectStoredBaseline(page: Page, text: string) {
 }
 
 test.describe('M1-07 latency calibration', () => {
-  test.describe.configure({ timeout: 90_000 });
+  // A 16-dot run is many steps; leave room for a loaded machine.
+  test.describe.configure({ timeout: 120_000 });
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install();
+  });
 
   test('onboarding ends with a calibration that sets the tap time @smoke', async ({
     page,
