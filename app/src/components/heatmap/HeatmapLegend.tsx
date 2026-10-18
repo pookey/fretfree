@@ -4,7 +4,7 @@ import styles from './Heatmap.module.css';
 
 /**
  * The key to the mastery map: one swatch per stability band (low → high), plus
- * the two non-colour cues, an empty cell and a faded dashed "slow" tile.
+ * the two non-colour cues, an empty cell and a hatched, dashed "slow" tile.
  */
 export function HeatmapLegend({
   bounds,
@@ -38,7 +38,7 @@ export function HeatmapLegend({
         </li>
         <li>
           <span className={`${styles.swatch} ${styles.swatchSlow}`} aria-hidden="true" />
-          Faded and dashed: slow (median answer over {(targetMs / 1000).toFixed(1)}s)
+          Hatched and dashed: slow (median answer over {(targetMs / 1000).toFixed(1)}s)
         </li>
       </ul>
     </div>

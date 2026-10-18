@@ -1,4 +1,4 @@
-import { useMemo, type KeyboardEvent } from 'react';
+import { useId, useMemo, type KeyboardEvent } from 'react';
 import type { Handedness } from '../../engine/model';
 import {
   STANDARD_TUNING,
@@ -30,7 +30,7 @@ export interface FretboardHeatmapProps {
 
 /**
  * The mastery map (design §7 Progress): the neck from <Fretboard>'s geometry,
- * with one tile per cell. Colour = stability band, a faded dashed tile = slow
+ * with one tile per cell. Colour = stability band, a hatched dashed tile = slow
  * (median answer over target), no tile = not practised yet. Every cell is a
  * button so its stats are a tap (or Enter) away.
  */
@@ -55,6 +55,7 @@ export function FretboardHeatmap({
   const labelX = left ? g.width + LABEL_W / 2 : -LABEL_W / 2;
   const width = g.width + LABEL_W;
   const selectedCell = selected ? g.cell(selected.fret) : undefined;
+  const hatchId = `heat-hatch-${useId().replace(/[^\w-]/g, '')}`;
 
   const onKey = (e: KeyboardEvent, pos: Position) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -74,6 +75,18 @@ export function FretboardHeatmap({
       data-fret-to={fretRange.to}
       data-handedness={handedness}
     >
+      <defs>
+        {/* Dims slow tiles without shifting their hue, so the band still reads. */}
+        <pattern
+          id={hatchId}
+          width={8}
+          height={8}
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(45)"
+        >
+          <rect className={styles.hatch} width={4} height={8} />
+        </pattern>
+      </defs>
       <rect
         className={styles.wood}
         x={neckLeft}
@@ -139,21 +152,28 @@ export function FretboardHeatmap({
         g.cells.map((c) => {
           const cell = byKey.get(`${s}:${c.fret}`);
           if (!cell || cell.band === null) return null;
+          const tile = {
+            x: c.x + INSET_X,
+            y: g.stringY(s) - STRING_GAP / 2 + INSET_Y,
+            width: c.w - INSET_X * 2,
+            height: STRING_GAP - INSET_Y * 2,
+            rx: 8,
+          };
           return (
-            <rect
-              key={`t${s}-${c.fret}`}
-              className={styles.tile}
-              x={c.x + INSET_X}
-              y={g.stringY(s) - STRING_GAP / 2 + INSET_Y}
-              width={c.w - INSET_X * 2}
-              height={STRING_GAP - INSET_Y * 2}
-              rx={8}
-              style={{ fill: heatColour(cell.band) }}
-              data-testid="heat-tile"
-              data-band={cell.band}
-              data-slow={cell.slow}
-              data-cell={`s${s}f${c.fret}`}
-            />
+            <g key={`t${s}-${c.fret}`}>
+              <rect
+                {...tile}
+                className={styles.tile}
+                style={{ fill: heatColour(cell.band) }}
+                data-testid="heat-tile"
+                data-band={cell.band}
+                data-slow={cell.slow}
+                data-cell={`s${s}f${c.fret}`}
+              />
+              {cell.slow && (
+                <rect {...tile} className={styles.slow} style={{ fill: `url(#${hatchId})` }} />
+              )}
+            </g>
           );
         }),
       )}

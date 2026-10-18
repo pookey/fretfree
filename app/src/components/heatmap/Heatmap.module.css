@@ -1,6 +1,6 @@
 /* The Progress mastery map (design §7). Tiles use the viridis scale from
-   palette.ts; "slow" is shown by fading and a dashed outline, not by colour
-   alone. */
+   palette.ts; "slow" is shown by a dimming hatch and a dashed outline, not
+   by colour alone. */
 
 .neck {
   display: block;
@@ -58,10 +58,20 @@
 }
 
 .tile[data-slow='true'] {
-  fill-opacity: 0.4;
+  stroke: none;
+}
+
+/* Slow: a dark hatch dims the tile (its hue still shows between the
+   stripes) and a dashed outline marks it by shape too. */
+.slow {
   stroke: var(--text);
   stroke-width: 2.5;
   stroke-dasharray: 6 4;
+  pointer-events: none;
+}
+
+.hatch {
+  fill: rgb(14 12 10 / 0.62);
 }
 
 .selected {
@@ -144,7 +154,9 @@
 }
 
 .swatchSlow {
-  background: rgb(34 168 132 / 0.4);
+  background:
+    repeating-linear-gradient(45deg, rgb(14 12 10 / 0.62) 0 0.2rem, transparent 0.2rem 0.4rem),
+    #22a884;
   border: 2px dashed var(--text);
 }
 
