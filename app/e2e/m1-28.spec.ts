@@ -9,6 +9,14 @@ import { seedDueItems } from './helpers/octaves';
 // screen without scrolling, takes the focus, and Enter continues.
 
 const PHONE_PORTRAIT = { width: 393, height: 659 };
+/** A narrow phone on its side (iPhone SE class), where a long message is likeliest to wrap. */
+const SMALL_PHONE_LANDSCAPE = { width: 667, height: 375 };
+
+/** A phone on its side (isShortLandscape): the bar covers the header row, not the foot. */
+function shortLandscape(page: Page): boolean {
+  const vp = page.viewportSize()!;
+  return vp.width > vp.height && vp.height < 500;
+}
 
 interface DrillCase {
   drill: string;
@@ -87,9 +95,9 @@ const CASES: DrillCase[] = [
   },
 ];
 
-async function startRecall(page: Page, c: DrillCase): Promise<void> {
+async function startRecall(page: Page, c: DrillCase, guideLevel: 0 | 2 = 0): Promise<void> {
   await freshStart(page);
-  await seedDueItems(page, [{ itemId: c.itemId, skillId: c.skillId }], 0);
+  await seedDueItems(page, [{ itemId: c.itemId, skillId: c.skillId }], guideLevel);
   await focusSession(page, c.skillId);
   await expect(c.ready(page)).toBeVisible();
 }
@@ -123,6 +131,12 @@ async function wrongThenEnter(page: Page, c: DrillCase): Promise<void> {
   await expect(page.getByTestId('feedback-wrong')).toContainText(/^That was /);
   await expectContinueOnScreen(page);
   expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+  if (shortLandscape(page)) {
+    // Over the header, the bar stays on one line and clear of the neck.
+    const bar = (await page.getByTestId('feedback-bar').boundingBox())!;
+    const neckBox = (await neck(page).boundingBox())!;
+    expect(bar.y + bar.height).toBeLessThanOrEqual(neckBox.y + 1);
+  }
 
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('feedback-wrong')).toHaveCount(0);
@@ -136,7 +150,7 @@ async function wrongThenEnter(page: Page, c: DrillCase): Promise<void> {
  */
 async function expectBarClearOfDrill(page: Page): Promise<void> {
   const vp = page.viewportSize()!;
-  const atTop = vp.width > vp.height && vp.height < 500;
+  const atTop = shortLandscape(page);
   await page.evaluate(
     (top) => window.scrollTo(0, top ? 0 : document.documentElement.scrollHeight),
     atTop,
@@ -194,17 +208,66 @@ test.describe('M1-28 wrong-answer feedback stays on screen', () => {
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
   });
 
-  test('on a phone in either orientation, every drill @smoke', async ({ page }, info) => {
+  test('the wrong message meets AA contrast on its bar, dark and light', async ({ page }, info) => {
+    test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
+    const d1 = CASES[0]!;
+    for (const colorScheme of ['dark', 'light'] as const) {
+      await page.emulateMedia({ colorScheme });
+      await startRecall(page, d1);
+      await (await d1.wrong(page)).click();
+      await expectContinueOnScreen(page);
+      const ratio = await page.getByTestId('feedback-wrong').evaluate((p) => {
+        const rgb = (c: string) => (c.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+        const lum = (c: string) => {
+          const [r, g, b] = rgb(c).map((v) => {
+            const x = v / 255;
+            return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+        };
+        const fg = lum(getComputedStyle(p).color);
+        const bg = lum(
+          getComputedStyle(p.closest('[data-testid="feedback-bar"]')!).backgroundColor,
+        );
+        return (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+      });
+      expect(ratio, colorScheme).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  test('on a phone, the help sheet stays readable beside a wrong answer @smoke', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name !== 'iphone-smoke', 'phone flow');
-    const landscape = page.viewportSize()!;
-    for (const c of CASES) {
-      for (const size of [landscape, PHONE_PORTRAIT]) {
+    await page.setViewportSize(PHONE_PORTRAIT);
+    // Guides at 2, so the sheet ends with the half-step note.
+    await startRecall(page, CASES[0]!, 2);
+    await page.getByRole('button', { name: 'Show help' }).click();
+    const sheet = page.getByTestId('context-panel');
+    await expect(sheet).toBeVisible();
+    await (await CASES[0]!.wrong(page)).click();
+    await expectContinueOnScreen(page);
+    await expect(sheet).toBeVisible();
+
+    // Scrolled to its end, the sheet's last line sits above the bar.
+    const last = await sheet.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      return el.lastElementChild!.getBoundingClientRect().bottom;
+    });
+    const bar = (await page.getByTestId('feedback-bar').boundingBox())!;
+    expect(last).toBeLessThanOrEqual(bar.y + 1);
+  });
+
+  for (const c of CASES) {
+    test(`${c.drill} on a phone, on its side and upright @smoke`, async ({ page }, info) => {
+      test.skip(info.project.name !== 'iphone-smoke', 'phone flow');
+      for (const size of [page.viewportSize()!, SMALL_PHONE_LANDSCAPE, PHONE_PORTRAIT]) {
         await page.setViewportSize(size);
         await startRecall(page, c);
         await expectBarClearOfDrill(page);
         await page.evaluate(() => window.scrollTo(0, 0));
         await wrongThenEnter(page, c);
       }
-    }
-  });
+    });
+  }
 });

@@ -64,7 +64,10 @@ async function answerWrong(): Promise<HTMLElement> {
   expect(await screen.findByTestId('feedback-wrong')).toHaveTextContent(
     "That was G. You'll see it again shortly.",
   );
-  return screen.getByRole('button', { name: 'Continue' });
+  const button = screen.getByRole('button', { name: 'Continue' });
+  // The effect that focuses Continue also listens for Enter and Space.
+  await waitFor(() => expect(button).toHaveFocus());
+  return button;
 }
 
 async function expectNextPrompt(): Promise<void> {
