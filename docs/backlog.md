@@ -37,6 +37,8 @@ Status values: `todo` · `in-progress` · `review` · `done` · `blocked`. Only 
 | Engine / session (hotspots) | 15, 17 | 08, 09, 13 | — | 06 | 02 | — |
 | Quality | 19, 20, 24 | 14 | 12 | 11 | 08 | 10 |
 
+**M9 (tab reading)** was added from user feedback (2026-10-18). It's a small track, so a learner who picks "I'd like to learn to read tab" gets real lessons. It has no `After` and runs in normal priority order (after ready M1–M6 work, ahead of the deferred M8).
+
 **M8 (future: reading and meter)** has its own section at the end. Its timing-engine contract (M8-01) is shared with M6-08 and scheduled early. The rest follows M6 via soft `After` ordering.
 
 Milestones group features; they are **not** release gates. Every merged WP ships (`pnpm ship`). Packages from later milestones may start as soon as their dependencies are `done`.
@@ -284,9 +286,28 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - No other text on the neck reveals the answer in an unguided prompt. In particular, the string-name label at the nut is hidden for the target's string when the target is at fret 0 or 12.
   - RTL tests cover guide levels 0–3 × guided/unguided/feedback. An e2e test (`m1-25.spec.ts`, tagged `@smoke`) checks that after the worked example, the unguided prompt for a fresh learner doesn't show the answer on the neck.
 
+### M1-26 · Reading question: what you can read, and what you want to learn
+- **Status:** todo
+- **Deps:** none
+- **Design:** §3.6, §4, §12, research/03 Track R
+- **Owns:** `app/src/onboarding/steps/notation.tsx`, `app/src/onboarding/options.ts`, `app/src/onboarding/steps/steps.test.tsx`, `app/src/engine/model.ts`, `app/src/storage/repository.ts`, `app/src/storage/storage.test.ts`, `docs/design/app-design.md`, `docs/research/03-curriculum.md`, `app/e2e/m1-26.spec.ts`
+- **Acceptance:**
+  - User feedback: "Do you read music? Tab / standard / none" sounds as if Fretwork won't teach the ones you don't pick. The step now asks two things, and both are multi-select:
+    - **"What can you already read?"** Tab, Standard notation (both allowed; neither is fine and is the default).
+    - **"What would you like to learn to read?"** Tab, Standard notation (both allowed; neither is fine).
+  - The copy says the neck is taught by name, position and sound either way, and that reading is extra.
+  - `Settings.notation` is replaced by `reading: { reads: { tab, staff }, learn: { tab, staff } }` (booleans). Defaults are all false. `DEFAULT_SETTINGS` and the types change in `engine/model.ts`.
+  - `getSettings` maps stored legacy values on read: `'tab'` → reads.tab, `'staff'` → reads.staff, `'none'` → nothing. There's no Dexie schema version, because settings is a single row. Unit-test the mapping and a round trip.
+  - Design §3.6, §4, §5 (M-Reading row) and §12, plus research/03 Track R, describe the new rule:
+    - Track R (staff) is promoted when the learner reads or wants to learn standard notation, or has the jazz or general goal.
+    - The M9 tab track is promoted when they want to learn tab.
+    - Staff ↔ fretboard and tab ↔ fretboard drills are on when the learner reads or is learning that notation.
+    - Every reading track stays soft-unlocked and previewable for everyone.
+  - RTL tests for the step (multi-select, both, neither, skip) and an e2e test (`@smoke`) on the onboarding flow.
+
 ### M1-24 · M1 milestone QA
 - **Status:** todo
-- **Deps:** M1-01, M1-02, M1-03, M1-04, M1-05, M1-06, M1-07, M1-08, M1-09, M1-10, M1-11, M1-12, M1-13, M1-14, M1-15, M1-16, M1-17, M1-18, M1-19, M1-20, M1-22
+- **Deps:** M1-01, M1-02, M1-03, M1-04, M1-05, M1-06, M1-07, M1-08, M1-09, M1-10, M1-11, M1-12, M1-13, M1-14, M1-15, M1-16, M1-17, M1-18, M1-19, M1-20, M1-22, M1-25, M1-26
 - **Design:** §11 M1 definition of done
 - **Owns:** `docs/progress.md`, `app/e2e/m1-24.spec.ts`
 - **Acceptance:**
@@ -887,12 +908,12 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
 
 ### M8-21 · Promote Tracks R and T in onboarding and the frontier
 - **Status:** todo
-- **Deps:** M8-05, M8-09, M1-16, M1-06
+- **Deps:** M8-05, M8-09, M1-16, M1-06, M1-26
 - **After:** M6-10
 - **Owns:** `app/src/engine/frontier.ts`, `app/src/engine/frontier.test.ts`, `app/src/onboarding/steps/notation.tsx`
 - **Acceptance:**
-  - Track T is in everyone's frontier after F4. Track R is promoted for `notation: staff` and for the jazz and general goals, and otherwise stays optional (soft-unlocked and previewable).
-  - Staff ↔ fretboard drills turn on only when the notation preference allows.
+  - Track T is in everyone's frontier after F4. Track R is promoted when the learner reads or wants to learn standard notation (`reading.reads.staff || reading.learn.staff`, from M1-26), and for the jazz and general goals. Otherwise it stays optional (soft-unlocked and previewable).
+  - Staff ↔ fretboard drills turn on when the learner reads or is learning standard notation.
 
 ### M8-22 · Reading and meter achievements
 - **Status:** todo
@@ -909,3 +930,64 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
 - **Acceptance:**
   - Check the §11 M8 definition of done: staff → fretboard fluent in open and 5th position, and 4/4, 3/4 and 6/8 identified and counted.
   - A production screenshot pass, and a progress update.
+
+## M9: Tab reading
+
+A short track for learners who want to read tab. Tab maps straight onto skills Fretwork already teaches (string numbers and fret positions), so the track is small: read tab → find it on the neck, neck → write it as tab, then read short phrases. The same engine applies: items, FSRS, speed grading, interleaving, worked examples and guide fading.
+
+### M9-01 · [contract] Tab model and `<TabStaff>` component
+- **Status:** todo
+- **Deps:** none
+- **Design:** `docs/design/tab-track.md` (this WP writes it), §8
+- **Owns:** `app/src/theory/tab.ts`, `app/src/theory/tab.test.ts`, `app/src/components/tab/**`, `docs/design/tab-track.md`, `app/e2e/m9-01.spec.ts`
+- **Acceptance:**
+  - Pure tab model: tab line ↔ string (top line = string 1, high E, matching the theory numbering), fret tokens, and a short phrase as a sequence of {string, fret} events. Parse and format plain-text tab (`e|--3--|`). Exhaustive tests.
+  - `<TabStaff>`: an SVG with six lines and fret numbers on the lines. It supports highlighting, flashing and ≥44pt tap targets (for picking a line), and string-name labels at the left that guide fading can hide. Dark-first tokens, Okabe–Ito highlights, VoiceOver labels ("string 3, fret 5"). No new dependencies (no VexFlow).
+  - `docs/design/tab-track.md` describes the track, its items and drills, the guide levels for tab (string names on the lines fade away), and how it relates to M8 R7 (tab ↔ staff).
+  - RTL tests and an iPad e2e render check.
+
+### M9-02 · Tab skills, and D33 "Tab → neck"
+- **Status:** todo
+- **Deps:** M9-01, M1-03
+- **Design:** `docs/design/tab-track.md`, §6
+- **Owns:** `app/src/engine/skills/tab.ts`, `app/src/engine/skills/tab.test.ts`, `app/src/drills/d33-tab-to-neck/**`, `app/e2e/m9-02.spec.ts`
+- **Acceptance:**
+  - Skill topic file(s), auto-registered, with items for reading a single tab note on each string. The items are introduced string by string, then interleaved across strings and frets 0–12.
+  - D33 shows one note on `<TabStaff>`, and the learner taps that cell on the neck. Speed-aware grading. The first rep of a new item is a worked example. A queried note's answer is never shown on the neck before the answer (the M1-25 rule).
+  - Pure logic is in `logic.ts` (unit-tested). RTL plus e2e (`@smoke` happy path).
+
+### M9-03 · D34 "Neck → tab"
+- **Status:** todo
+- **Deps:** M9-02
+- **Design:** `docs/design/tab-track.md`, §6
+- **Owns:** `app/src/drills/d34-neck-to-tab/**`, `app/e2e/m9-03.spec.ts`
+- **Acceptance:**
+  - A highlighted cell on the neck. The learner picks the tab line, then the fret number (choice buttons plus keyboard). Both parts are graded, and a wrong line is distinguished from a wrong fret in the feedback.
+  - Uses the M9-02 items in the reverse direction (bidirectional items, as F2/C2 do). Worked example on first exposure. RTL plus e2e.
+
+### M9-04 · D35 "Read a tab phrase"
+- **Status:** todo
+- **Deps:** M9-02
+- **Design:** `docs/design/tab-track.md`, §6, §9
+- **Owns:** `app/src/drills/d35-tab-phrase/**`, `app/e2e/m9-04.spec.ts`
+- **Acceptance:**
+  - A short phrase (3–6 notes, 1–3 strings, within one position) on `<TabStaff>`. The learner taps the notes on the neck in order. A cursor shows the current note. A wrong tap shows the right cell and continues.
+  - After a correct phrase, it plays back with the existing audio (lazy Tone.js). Phrases are generated from the learner's known items, so new items stay blocked (research/02).
+  - RTL plus e2e.
+
+### M9-05 · Tab track in Learn and the frontier
+- **Status:** todo
+- **Deps:** M1-16, M1-26, M9-02
+- **Design:** `docs/design/tab-track.md`, §3, §4
+- **Owns:** `app/src/engine/frontier.ts`, `app/src/engine/frontier.test.ts`, `app/e2e/m9-05.spec.ts`
+- **Acceptance:**
+  - The tab track is promoted in the frontier when `reading.learn.tab` is set. Otherwise it stays soft-unlocked and previewable. A learner who already reads tab can test out with a short probe.
+  - It appears as a module card on Learn with a mastery ring. Unit tests for the frontier rules, and an e2e test of "chose learn tab in onboarding → tab module promoted on Learn".
+
+### M9-06 · M9 milestone QA
+- **Status:** todo
+- **Deps:** M9-01, M9-02, M9-03, M9-04, M9-05
+- **Owns:** `docs/progress.md`, `app/e2e/m9-06.spec.ts`
+- **Acceptance:**
+  - An end-to-end test: onboarding with "learn tab" → a tab session using D33, D34 and D35 → mastery progress on Learn.
+  - A production screenshot pass on the iPad profiles and iPhone, plus a progress update.
