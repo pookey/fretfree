@@ -70,7 +70,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Local-date helpers (`YYYY-MM-DD` in the device time zone, DST-safe) are tested.
 
 ### M1-03 · F1 and F3 skills, plus bidirectional F2/C2 items
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **Design:** §3.1, research/03 F1–F3
 - **Owns:** `app/src/engine/skills/f1.ts`, `app/src/engine/skills/f3.ts`, `app/src/engine/skills/f2.ts`, `app/src/engine/skills/c2.ts`, `app/src/engine/skills/*.test.ts`, `app/src/engine/model.ts` (item-ID helpers only)
