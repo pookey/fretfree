@@ -1,6 +1,6 @@
-/* Daily quests (design §7 Today, §3.7). Three across at regular-wide, one
-   column on narrower widths. Done quests change shape (a tick) as well as
-   colour. */
+/* Daily quests (design §7 Today, §3.7). One row per quest, with the meter
+   beside the copy when the row is wide (regular-wide iPad) and below it on
+   narrow ones. Done quests change shape (a tick) as well as colour. */
 .quests {
   display: grid;
   gap: var(--space-3);
@@ -29,14 +29,14 @@
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .quest {
+  container-type: inline-size;
   display: flex;
   gap: var(--space-3);
-  align-items: flex-start;
+  align-items: center;
   padding: var(--space-4);
   border-radius: var(--radius-m);
   border: 1px solid var(--border);
@@ -67,8 +67,20 @@
 .body {
   flex: 1;
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-1) var(--space-4);
+  align-items: center;
   min-width: 0;
+}
+
+@container (min-width: 32rem) {
+  .body {
+    grid-template-columns: 1fr minmax(10rem, 14rem);
+  }
+
+  .meter {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
 }
 
 .title {
