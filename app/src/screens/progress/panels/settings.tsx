@@ -1,5 +1,6 @@
 import { useAppStore } from '../../../app-store';
 import type { Settings } from '../../../engine';
+import { CalibrationSetting } from '../../../onboarding/calibration/CalibrationSetting';
 import styles from '../../screens.module.css';
 
 export const id = 'settings';
@@ -42,6 +43,7 @@ export function Panel() {
         />
         Sound
       </label>
+      <CalibrationSetting />
     </div>
   );
 }
