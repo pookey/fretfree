@@ -120,7 +120,8 @@ The evidence is `app/e2e/m1-24.spec.ts`. It runs on all four Playwright profiles
 | §11 scope or criterion | Status | Evidence |
 |---|---|---|
 | Onboarding: handedness, goals, daily goal, latency calibration | ✅ | `m1-06`, `m1-07`, `m1-26`, `m1-24` |
-| F1–F3 and C2 through D1, D2 and D3 | ✅ | `d1-session`, `m1-04`, `m1-05`, `m1-27` |
+| F1, F2 and C2 through D1, D2 and D3 | ✅ | `d1-session`, `m1-04`, `m1-05`, `m1-27` |
+| F3 (fret markers, the 12th-fret repeat) | ❌ | Corrected 2026-10-18: no drill served F3, so its lessons opened to an empty "Session complete". Fixed by M1-37 (D39). |
 | Full session loop (multi-drill, learning steps, time budget) | ✅ | `m1-17`, `m1-24` |
 | Today (hero, quests, quick drills) | ✅ | `m1-11`, `m1-18`, `m2-10` |
 | Progress heatmap | ✅ | `m1-14`, `m1-24` (fills in from real sessions) |

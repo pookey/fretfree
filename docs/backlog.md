@@ -436,6 +436,18 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - A visible "Developer: all skills unlocked" badge shows while it's on, so screenshots and QA never mistake it for real progress.
   - E2E (`m1-36.spec.ts`, iPad landscape, dev server): toggle on, start a Chords focus session, toggle off, Chords is locked again.
 
+### M1-37 · [hotfix] D39 "Fret landmarks", and a guard against empty lessons
+- **Status:** blocked
+- **Deps:** M1-34
+- **Design:** §6 (drill catalogue), §7 Learn and session, research/02
+- **Owns:** `app/src/drills/d39-fret-landmarks/`, `app/src/drills/registry.test.ts`, `app/src/screens/learn/LearnScreen.tsx`, `app/src/screens/learn/SkillDetail.tsx`, `app/src/screens/learn/SkillDetail.test.tsx`, `app/src/screens/learn/map-model.ts`, `app/src/screens/learn/map-model.test.ts`, `app/src/session/SessionScreen.tsx`, `app/src/session/SessionScreen.module.css`, `app/src/session/SessionScreen.test.tsx`, `app/e2e/m1-37.spec.ts`, `docs/design/app-design.md` (§6 row only)
+- **Acceptance:**
+  - User-reported bug (2026-10-18): "Fret markers 3, 5, 7, 9 and 12" (`F3.markers`) and `F3.repeat-12` open straight to "Session complete" with 0 items. Both skills name drill `fret-landmarks`, which was never designed, filed or built. `registry.test.ts`'s PENDING allowlist let it through because entries weren't tied to a WP.
+  - **New drill D39 `fret-landmarks`** (`drills/d39-fret-landmarks/`): `marker:fN` (name the spotlit marker), `find-marker:fN` (tap it) and `repeat:±12@fN` (which fret has the same notes an octave away). Add a design §6 row.
+  - **Prevention:** every PENDING entry in `drills/registry.test.ts` names a backlog WP that exists and isn't done, and a registered drill left in PENDING fails. Drills and skills must name each other.
+  - **Guard:** Learn hides "Practise this now" for skills that no built drill can serve (`SkillView.practisable`, via the drill picker). The session screen shows "Nothing to practise right now" instead of finishing an empty session, and awards no XP or streak.
+  - **Being built out of band** by another session (`guitar-nosync-f6`, branch `fix/f3-fret-landmarks`) and handed to the PM. It's `blocked` so the planner doesn't spawn a second worker on it. It gets a fresh review and goes through the lane like any WP. It overlaps M1-34 (Learn files) and M1-36 (`map-model.ts`): whoever lands second rebases.
+
 ## M2: Octaves and intervals
 
 ### M2-01 · [contract] Interval and octave theory
