@@ -168,8 +168,8 @@ function PlacementSettings() {
     <Group title="Placement test">
       <Hint id={hint}>
         Already play a bit? A {Math.round(ENGINE_CONFIG.placement.budgetMs / 60_000)}-minute test
-        skips material you already know, including topics added since you started. It can’t
-        make you lose progress.
+        skips material you already know, including topics added since you started. It can’t make you
+        lose progress.
       </Hint>
       <div className={local.actions}>
         <Link to="/placement" className={styles.secondaryButton} aria-describedby={hint}>
