@@ -351,7 +351,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Prerequisites: F2 (soft).
 
 ### M2-03 · D4 "Octave finder" drill (multi-target)
-- **Status:** todo
+- **Status:** done
 - **Deps:** M2-02
 - **Design:** §6 D4, §7 (iPad multi-target drills)
 - **Owns:** `app/src/drills/d4-octave-finder/**`, `app/e2e/m2-03.spec.ts`
