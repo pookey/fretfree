@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { focusSession } from './focus';
 
 /** Every skill whose topic comes before C3, so a fresh session starts on intervals. */
 export const SKILLS_BEFORE_C3 = [
@@ -107,15 +108,14 @@ export async function seedIntervals(
 }
 
 /**
- * Start a session from Today and wait for D6. A banner (the install hint) can
- * appear after a reload and push the link down mid-click, so retry until the
- * session opens.
+ * Start a session focused on C3 (or some of its skills) and wait for D6. The
+ * focus keeps other topics' new and due items out, so the spec doesn't depend
+ * on which skills come before C3; gating still applies, so seed first.
  */
-export async function startIntervalSession(page: Page): Promise<void> {
-  await expect(async () => {
-    if (!new URL(page.url()).pathname.endsWith('/session')) {
-      await page.getByTestId('start-session').click({ timeout: 2_000 });
-    }
-    await expect(page.getByTestId('d6-prompt')).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 15_000 });
+export async function startIntervalSession(
+  page: Page,
+  skills: readonly string[] = C3_SKILLS,
+): Promise<void> {
+  await focusSession(page, skills);
+  await expect(page.getByTestId('d6-prompt')).toBeVisible();
 }

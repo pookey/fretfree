@@ -127,7 +127,7 @@ test.describe('M2-06 D6 interval tap', () => {
     // Everything before C3 is done, and the name-it direction of the thirds is
     // known, so the first new block is C3.thirds' tap items (D6).
     await seedIntervals(page, { mastered: SKILLS_BEFORE_C3, cards: KNOWN_THIRDS_NAMES });
-    await startIntervalSession(page);
+    await startIntervalSession(page, ['C3.thirds']);
 
     await expect(promptText(page)).toHaveText(
       'This is the minor 3rd above the root: string 5, 2 frets toward the nut. Tap it to continue.',
