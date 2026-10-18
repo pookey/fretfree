@@ -1,0 +1,185 @@
+.screen {
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  padding: calc(var(--space-5) + var(--safe-top)) calc(var(--space-5) + var(--safe-right))
+    calc(var(--space-5) + var(--safe-bottom)) calc(var(--space-5) + var(--safe-left));
+}
+
+/* Regular-wide first: one roomy card, stats in a single row of four. */
+.card {
+  margin: auto;
+  width: 100%;
+  max-width: 46rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  text-align: center;
+}
+
+.head h1 {
+  font-size: 2.25rem;
+  margin: 0;
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-2);
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.875rem;
+}
+
+.context {
+  margin: var(--space-2) 0 0;
+  color: var(--text-muted);
+}
+
+.gains {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.check {
+  color: var(--correct);
+  margin-right: var(--space-2);
+}
+
+.moments {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.moment {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-l);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  text-align: left;
+}
+
+.moment strong {
+  display: block;
+}
+
+.detail {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* Each moment has its own glyph, so colour is never the only cue. */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  background: var(--surface);
+}
+
+.icon[data-shape='star'] {
+  color: var(--accent);
+}
+
+.icon[data-shape='bolt'] {
+  color: var(--tone);
+}
+
+.icon[data-shape='chain'] {
+  color: var(--correct);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.stats > div {
+  padding: var(--space-4) var(--space-2);
+  border-radius: var(--radius-l);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+}
+
+.stats dt {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.stats dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.note {
+  margin: calc(-1 * var(--space-3)) 0 0;
+  color: var(--text-muted);
+}
+
+.spacing {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 34rem;
+  align-self: center;
+}
+
+.done {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  min-width: 10rem;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-m);
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+/* Compact (iPhone, narrow Split View): two-by-two stats, tighter spacing. */
+@media (max-width: 743px), (max-height: 499px) {
+  .screen {
+    padding: calc(var(--space-3) + var(--safe-top)) calc(var(--space-4) + var(--safe-right))
+      calc(var(--space-3) + var(--safe-bottom)) calc(var(--space-4) + var(--safe-left));
+  }
+
+  .card {
+    gap: var(--space-4);
+  }
+
+  .head h1 {
+    font-size: 1.625rem;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats dd {
+    font-size: 1.5rem;
+  }
+}
