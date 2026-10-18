@@ -1,0 +1,198 @@
+/* The Progress mastery map (design §7). Tiles use the viridis scale from
+   palette.ts; "slow" is shown by fading and a dashed outline, not by colour
+   alone. */
+
+.neck {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.wood {
+  fill: var(--wood);
+  stroke: var(--wood-dark);
+  stroke-width: 2;
+}
+
+.inlay {
+  fill: var(--inlay);
+  opacity: 0.35;
+}
+
+.nut {
+  fill: #efe6d6;
+}
+
+.wire {
+  stroke: var(--fret-wire);
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.6;
+}
+
+.string {
+  stroke: var(--string);
+  opacity: 0.5;
+}
+
+.fretNumber,
+.stringNumber {
+  fill: var(--text-muted);
+  font-size: 15px;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.stringNumber {
+  font-weight: 700;
+}
+
+.tile {
+  stroke: rgb(255 255 255 / 0.55);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.tile[data-slow='true'] {
+  fill-opacity: 0.4;
+  stroke: var(--text);
+  stroke-width: 2.5;
+  stroke-dasharray: 6 4;
+}
+
+.selected {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 3;
+  pointer-events: none;
+}
+
+.hit {
+  fill: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.hit:focus-visible {
+  fill: rgb(86 180 233 / 0.25);
+  stroke: var(--tone);
+  stroke-width: 2;
+}
+
+@media (hover: hover) {
+  .hit:hover {
+    fill: rgb(255 255 255 / 0.08);
+  }
+}
+
+/* --- Around the neck ---------------------------------------------------- */
+
+.panel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.neckScroll {
+  overflow-x: auto;
+}
+
+.legend {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.legendTitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.scale,
+.cues {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  font-size: 0.875rem;
+}
+
+.scale li,
+.cues li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.swatch {
+  flex: none;
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.3rem;
+  border: 1.5px solid rgb(255 255 255 / 0.55);
+}
+
+.swatchEmpty {
+  background: var(--wood);
+  border-color: var(--wood-dark);
+}
+
+.swatchSlow {
+  background: rgb(34 168 132 / 0.4);
+  border: 2px dashed var(--text);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--space-4);
+}
+
+.detail,
+.forecast {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: var(--space-4);
+}
+
+.detailTitle {
+  margin: 0 0 var(--space-3);
+  font-size: 1.0625rem;
+}
+
+.facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: var(--space-3);
+}
+
+.facts dt {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.forecast ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.muted {
+  margin: 0;
+  color: var(--text-muted);
+}
