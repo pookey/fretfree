@@ -28,10 +28,10 @@ describe('C3 skills', () => {
     expect(orders).toEqual([...orders].sort((a, b) => a - b));
   });
 
-  it('needs F1 first, then unlocks each group softly from the one before', () => {
+  it('opens softly after F1 and C1, then unlocks each group from the one before', () => {
     const [first, ...rest] = skills;
-    expect(first!.prerequisites).toEqual(['F1.half-steps', 'F1.whole-steps']);
-    expect(first!.softUnlock).toBe(false);
+    expect(first!.prerequisites).toEqual(['F1.half-steps', 'F1.whole-steps', 'C1.octaves']);
+    expect(first!.softUnlock).toBe(true);
     rest.forEach((s, i) => {
       expect(s.prerequisites).toEqual([skills[i]!.id]);
       expect(s.softUnlock).toBe(true);

@@ -73,10 +73,12 @@ export const skills: Skill[] = GROUPS.map((g, i) => ({
   topic: 'C3',
   order: 1300 + i * 10,
   title: g.title,
-  // Intervals are counted in half and whole steps (F1). Later groups follow
-  // the first once it is merely practising.
-  prerequisites: i === 0 ? ['F1.half-steps', 'F1.whole-steps'] : [(GROUPS[i - 1] as Group).id],
-  softUnlock: i > 0,
+  // Intervals are counted in half and whole steps (F1), and octave shapes
+  // (C1) frame them. `softUnlock` is per skill, so the first group opens once
+  // F1 and C1 are practising; later groups follow the one before likewise.
+  prerequisites:
+    i === 0 ? ['F1.half-steps', 'F1.whole-steps', 'C1.octaves'] : [(GROUPS[i - 1] as Group).id],
+  softUnlock: true,
   drillTypes: DRILLS,
   items: memo(() => itemsOf(g.id, c3Shapes(g.intervals).flatMap(shapeItemIds))),
 }));
