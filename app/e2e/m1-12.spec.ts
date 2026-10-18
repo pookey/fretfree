@@ -1,5 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
-import { answer, expectNoHorizontalOverflow, freshStart, targetNote, wrongNote } from './helpers';
+import {
+  F1_SKILLS,
+  answer,
+  expectNoHorizontalOverflow,
+  freshStart,
+  masterSkills,
+  targetNote,
+  wrongNote,
+} from './helpers';
 
 // M1-12: session celebrations (design §3.7, §3.3 step 5).
 
@@ -108,6 +116,7 @@ test.describe('M1-12 session celebrations', () => {
     page,
   }) => {
     await freshStart(page);
+    await masterSkills(page, F1_SKILLS);
     await seed(page, { slowHistory: true });
     await page.getByTestId('start-session').click();
 
@@ -147,6 +156,7 @@ test.describe('M1-12 session celebrations', () => {
 
   test('confetti fires for a milestone and never blocks the summary', async ({ page }) => {
     await freshStart(page);
+    await masterSkills(page, F1_SKILLS);
     await seed(page, { string6Due: true });
     await page.getByTestId('start-session').click();
     // The only item is the due review of fret 12; the session ends after it.
@@ -165,6 +175,7 @@ test.describe('M1-12 session celebrations', () => {
   test('confetti is off under reduced motion; the milestone copy stays', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await freshStart(page);
+    await masterSkills(page, F1_SKILLS);
     await seed(page, { string6Due: true });
     await page.getByTestId('start-session').click();
     // The only item is the due review of fret 12; the session ends after it.
@@ -177,6 +188,7 @@ test.describe('M1-12 session celebrations', () => {
 
   test('the combo resets quietly after a miss and the summary fits @smoke', async ({ page }) => {
     await freshStart(page);
+    await masterSkills(page, F1_SKILLS);
     await page.getByTestId('start-session').click();
     for (let i = 0; i < 7; i++) await answerCorrectly(page);
     await expect(page.getByTestId('combo')).toHaveText('3 in a row');
