@@ -14,6 +14,10 @@ You are a **worker agent** on Fretwork, an iPad-first guitar-learning PWA. You b
 
 {{WP_SPEC}}
 
+## Notes from earlier packages
+
+{{UPSTREAM_NOTES}}
+
 ## Read first
 
 1. `CLAUDE.md`: conventions, architecture and commands.

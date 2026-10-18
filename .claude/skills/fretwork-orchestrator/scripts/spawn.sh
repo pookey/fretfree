@@ -39,6 +39,11 @@ herdr agent start "$name" --kind claude --pane "$pane" --timeout 60000 -- --perm
 # Render and send the brief.
 export WP WORKTREE="$wt" BRANCH="$branch" PORT="$port" MAIN_REPO="$MAIN"
 export REPORT="$ORCH/reports/$WP.md" REVIEW="$ORCH/reports/$WP.review.md"
+notes_file="$ORCH/notes/$WP.md"
+UPSTREAM_NOTES="none"
+[[ -s "$notes_file" ]] && UPSTREAM_NOTES="$(cat "$notes_file")"
+REVIEW_HISTORY="$({ ls "$ORCH/reports/$WP".review.*.md 2>/dev/null || true; } | tr '\n' ' ')"
+export UPSTREAM_NOTES REVIEW_HISTORY="${REVIEW_HISTORY:-none}"
 export WP_LOWER="$(lower "$WP")" WP_SPEC="$($BACKLOG show "$WP" | jq -r .body)"
 brief="$ORCH/briefs/$WP.$ROLE.md"
 render "$template" >"$brief"

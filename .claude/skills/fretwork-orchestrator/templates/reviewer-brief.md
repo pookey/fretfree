@@ -35,6 +35,10 @@ You are a **fresh reviewer**. A worker agent has finished work package {{WP}} on
 
 Report only actionable findings with file:line, not style nits that Prettier or ESLint would catch.
 
+**Scope your verdict to this package.** If an issue really belongs to a later package's implementation (the backlog names who owns what), put it under "Downstream notes" addressed to that package. The orchestrator forwards it into that worker's brief. Don't block this package for it.
+
+**Re-reviews.** If earlier reviews exist (`{{REVIEW_HISTORY}}`), first confirm each earlier must-fix is resolved, then look for regressions the fixes introduced. Raise *new* must-fix items on a re-review only for serious defects: broken acceptance criteria, real bugs, or learning-science violations.
+
 ## Output contract
 
 Write **`{{REVIEW}}`**:
@@ -46,6 +50,8 @@ VERDICT: APPROVE | CHANGES
 - <file:line: problem → what to do>   (empty if APPROVE)
 ## Should fix
 - <optional improvements worth doing now>
+## Downstream notes
+- <WP-ID>: <guidance for that later package>   (or "none")
 ## Notes
 <anything the orchestrator should know>
 ```

@@ -79,6 +79,8 @@ Repeat until the backlog is done or you must stop (§6):
 - If the report says `STATUS: BLOCKED`, read the question. If it's a product decision for the user, add it to `docs/progress.md` → "Questions for the user", mark the WP `blocked` (`node $O/backlog.mjs set-status <WP> blocked` and commit), clean it up, and move on. Otherwise answer it in a prompt to the worker.
 - Otherwise run `$O/spawn.sh <WP> reviewer`. It runs **in parallel** with other workers.
 
+**Downstream notes.** Reviewers address issues that belong to later packages under "Downstream notes". `cleanup.sh` copies them to `.orchestrator/notes/<target>.md`, and `spawn.sh` includes them in that worker's brief. Add notes yourself the same way when you learn something a later package needs.
+
 **b. Reviewer finishes** (its agent is idle and `.orchestrator/reports/<WP>.review.md` exists):
 - `VERDICT: APPROVE` → close the reviewer pane (`herdr pane close <reviewer pane>`) and integrate (step c).
 - `VERDICT: CHANGES` → close the reviewer pane, then `$O/send-brief.sh <WP> fix`. When the worker reports again, spawn a fresh reviewer. If you get exit 7, see §6.

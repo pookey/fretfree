@@ -7,7 +7,7 @@ WORKTREES="$ORCH/worktrees"
 STATE="node $SKILL_DIR/scripts/state.mjs"
 BACKLOG="node $SKILL_DIR/scripts/backlog.mjs"
 MAX_PANES_PER_TAB="${MAX_PANES_PER_TAB:-4}"
-mkdir -p "$ORCH/reports" "$ORCH/briefs" "$ORCH/logs" "$WORKTREES"
+mkdir -p "$ORCH/reports" "$ORCH/briefs" "$ORCH/logs" "$ORCH/notes" "$WORKTREES"
 
 die() { echo "orchestrator: $*" >&2; exit 1; }
 need_herdr() { [[ "${HERDR_ENV:-}" == 1 ]] || die "not running inside Herdr (HERDR_ENV != 1)"; }
