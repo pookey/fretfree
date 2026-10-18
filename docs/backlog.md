@@ -104,7 +104,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The drill is unit-tested and keyboard-answerable (A–G, Shift for sharps).
 
 ### M1-06 · Onboarding flow shell
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-01
 - **Design:** §4
 - **Owns:** `app/src/onboarding/**` (except steps owned by M1-07), `app/src/routes/onboarding.route.tsx`, `app/src/App.tsx`, `app/src/routes/registry.ts`, `app/e2e/m1-06.spec.ts`
