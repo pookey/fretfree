@@ -151,7 +151,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Tests are exhaustive over calendar edge cases (DST, month and year boundaries, a gap of several days).
 
 ### M1-10 · Daily progress wiring
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-08, M1-09
 - **Design:** §3.7 engine wiring
 - **Owns:** `app/src/session/runner.ts` (hotspot), `app/src/session/gamification-bridge.ts`, `app/src/session/*.test.ts`
