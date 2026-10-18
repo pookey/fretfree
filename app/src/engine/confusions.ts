@@ -34,6 +34,9 @@ export const SEED_CONFUSIONS: readonly (readonly [string, string])[] = [
   ['P4', 'TT'],
   ['TT', 'P5'],
   ['triad:maj', 'triad:min'],
+  // Chord kinds (C5, D7: `chord:<kind>`): the b7 of 7 vs the 7 of maj7, and m7 vs m7b5.
+  ['chord:7', 'chord:maj7'],
+  ['chord:m7', 'chord:m7b5'],
   ['caged:C', 'caged:A'],
   ['prog:I-V-vi-IV', 'prog:vi-IV-I-V'],
 ];
