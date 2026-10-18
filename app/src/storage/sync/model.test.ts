@@ -6,6 +6,7 @@ import {
   canonical,
   decodeSyncRecord,
   encodeSyncRecord,
+  isDate,
   isSyncTable,
   lwwGroups,
   syncId,
@@ -77,6 +78,13 @@ describe('canonical form and wire encoding', () => {
     expect(canonical({ b: 1, a: [undefined, new Date(0)], c: undefined })).toBe(
       '{"a":[null,{"$date":"1970-01-01T00:00:00.000Z"}],"b":1}',
     );
+  });
+
+  it('tags only real dates, not objects that inherit Date.prototype', () => {
+    expect(isDate(new Date(0))).toBe(true);
+    const imposter = Object.assign(Object.create(Date.prototype) as object, { n: 1 });
+    expect(isDate(imposter)).toBe(false);
+    expect(canonical({ at: imposter })).toBe('{"at":{"n":1}}');
   });
 
   it('round-trips a record through JSON', () => {

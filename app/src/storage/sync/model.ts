@@ -203,8 +203,17 @@ export function canonical(value: unknown): string {
   return JSON.stringify(toCanonical(value));
 }
 
+/**
+ * A real date, checked by brand rather than `instanceof`: a substituted
+ * `Date` (Playwright's fake clock) also claims objects that merely inherit
+ * `Date.prototype`, and their methods throw.
+ */
+export function isDate(value: unknown): value is Date {
+  return Object.prototype.toString.call(value) === '[object Date]';
+}
+
 function toCanonical(value: unknown): unknown {
-  if (value instanceof Date) return { [DATE_TAG]: value.toISOString() };
+  if (isDate(value)) return { [DATE_TAG]: value.toISOString() };
   if (Array.isArray(value)) return value.map((v) => (v === undefined ? null : toCanonical(v)));
   if (value && typeof value === 'object') {
     const obj = value as Record<string, unknown>;

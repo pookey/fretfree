@@ -1,5 +1,6 @@
 import {
   canonical,
+  isDate,
   lwwGroups,
   tableSpec,
   type FieldRule,
@@ -147,7 +148,7 @@ function combine(rule: Exclude<FieldRule, 'lww'>, a: unknown, b: unknown): unkno
 }
 
 function asTime(value: unknown): number {
-  return value instanceof Date ? value.getTime() : new Date(value as string).getTime();
+  return isDate(value) ? value.getTime() : new Date(value as string).getTime();
 }
 
 function asStrings(value: unknown): string[] {
