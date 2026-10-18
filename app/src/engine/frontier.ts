@@ -204,13 +204,6 @@ export const GOAL_PROFILES: Readonly<Record<Goal, readonly string[]>> = {
   general: [],
 };
 
-export const GOAL_LABELS: Readonly<Record<Goal, string>> = {
-  songs: 'Play songs with friends',
-  improvise: 'Solo and improvise',
-  jazz: 'Jazz',
-  general: 'Understand everything',
-};
-
 /** A module's priority under a goal: lower comes first. */
 export function moduleRank(moduleId: string, goal: Goal): number {
   const promoted = GOAL_PROFILES[goal];

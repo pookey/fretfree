@@ -1,0 +1,296 @@
+/* Learn (design §7): the module map on the left and the detail pane on the
+   right on iPad; one pane at a time on compact. */
+.learn {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.learn[data-size-class='regular-wide'],
+.learn[data-size-class='regular'] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+}
+
+.goal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-3);
+  color: var(--text-muted);
+}
+
+.goal select {
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+}
+
+.modules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: var(--space-3);
+}
+
+.moduleCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 4.5rem;
+  padding: var(--space-3);
+  border-radius: var(--radius-l);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .moduleCard:hover {
+    background: var(--surface);
+  }
+}
+
+.moduleCard[aria-current='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  background: var(--surface);
+}
+
+.moduleCard:focus-visible {
+  outline: 3px solid var(--tone);
+  outline-offset: 2px;
+}
+
+/* Locked and future modules still open (soft unlocking); they're only quieter. */
+.moduleCard[data-state='locked'] .moduleTitle,
+.moduleCard[data-state='soon'] .moduleTitle {
+  color: var(--text-muted);
+}
+
+.moduleText {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.moduleTitle {
+  font-weight: 700;
+  font-size: 1.0625rem;
+}
+
+.moduleMeta {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+/* Stays in view while the map scrolls. */
+.detailPane {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.learn[data-size-class='regular-wide'] .detailPane,
+.learn[data-size-class='regular'] .detailPane {
+  position: sticky;
+  top: 0;
+  max-height: calc(100dvh - var(--safe-top) - var(--space-6));
+  overflow-y: auto;
+}
+
+.back {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.detail {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  padding: var(--space-5);
+}
+
+.detail > p {
+  margin: var(--space-3) 0;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.detailTitle {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.detailState {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.note {
+  padding: var(--space-3);
+  border-radius: var(--radius-m);
+  border: 1px dashed var(--border);
+}
+
+.callout {
+  margin: var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 0.25rem solid var(--accent);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+}
+
+.callout h3 {
+  margin: 0 0 var(--space-1);
+  font-size: 0.9375rem;
+}
+
+.callout p {
+  margin: 0;
+}
+
+.skillsHeading {
+  font-size: 1.125rem;
+  margin: var(--space-5) 0 var(--space-3);
+}
+
+.skills {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.skill {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+}
+
+.skillTitle {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.skillMeta {
+  margin: var(--space-1) 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.skillCopy {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.topic {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.0625rem 0.5rem;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent);
+}
+
+/* Mastery rings: colour plus shape (tick, padlock, dashed track). */
+.ring {
+  --ring-fill: var(--tone);
+  display: block;
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  overflow: visible;
+}
+
+.ring[data-size='large'] {
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.ring[data-state='mastered'] {
+  --ring-fill: var(--correct);
+}
+
+.ringTrack,
+.ringFill {
+  fill: none;
+  stroke-width: 5;
+}
+
+.ringTrack {
+  stroke: var(--border);
+}
+
+.ring[data-state='soon'] .ringTrack,
+.ring[data-state='locked'] .ringTrack {
+  stroke-dasharray: 3 3;
+}
+
+.ringFill {
+  stroke: var(--ring-fill);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ring[data-state='locked'] .ringFill {
+  opacity: 0.6;
+}
+
+.ringGlyph {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ring[data-state='mastered'] .ringGlyph {
+  stroke: var(--correct);
+  stroke-width: 3;
+}
+
+.ringText {
+  fill: var(--text);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ringFill {
+    transition: none;
+  }
+}

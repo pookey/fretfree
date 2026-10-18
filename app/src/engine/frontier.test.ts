@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  GOAL_LABELS,
   GOAL_PROFILES,
   MODULES,
   moduleOfTopic,
@@ -40,10 +39,9 @@ describe('module catalogue', () => {
     for (const s of SKILLS) expect(moduleOfTopic(s.topic), s.id).toBeDefined();
   });
 
-  it('has a label and only known modules in every goal profile', () => {
+  it('has only known modules in every goal profile', () => {
     const known = new Set(MODULES.map((m) => m.id));
     for (const goal of GOALS) {
-      expect(GOAL_LABELS[goal]).toBeTruthy();
       const promoted = GOAL_PROFILES[goal];
       expect(new Set(promoted).size).toBe(promoted.length);
       for (const id of promoted) expect(known.has(id), `${goal}: ${id}`).toBe(true);
