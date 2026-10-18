@@ -89,6 +89,7 @@
     --tone: #0072b2;
     --correct: #007a59;
     --wrong: #b84f00;
-    --dim: rgb(247 245 250 / 0.6);
+    /* The neck tokens (--wood … --dim) have no light values: the wood looks
+       the same in both themes, so inactive frets darken in both. */
   }
 }
