@@ -121,19 +121,19 @@ describe('progressText', () => {
 
   it('explains spacing for a first session: learning, nothing stable yet', () => {
     expect(progressText(p({ learning: 14 }))).toBe(
-      '14 items learning. They become stable as you recall them over the next few days; your next review is Tuesday.',
+      "14 items learning. They become stable as you recall them over the next few days; today's items come back Tuesday.",
     );
     expect(progressText(p({ learning: 1 }))).toBe(
-      '1 item learning. It becomes stable as you recall it over the next few days; your next review is Tuesday.',
+      "1 item learning. It becomes stable as you recall it over the next few days; today's items come back Tuesday.",
     );
   });
 
   it('names items that became stable without counting them twice', () => {
     expect(progressText(p({ learning: 14, stable: 3, becameStable: 3 }))).toBe(
-      '14 items learning, 3 of them newly stable. The rest become stable as you recall them over the next few days; your next review is Tuesday.',
+      "14 items learning, 3 of them newly stable. The rest become stable as you recall them over the next few days; today's items come back Tuesday.",
     );
     expect(progressText(p({ learning: 6, stable: 5, becameStable: 2 }))).toBe(
-      '6 items learning, 5 of them stable (2 new today). The other one becomes stable as you recall it over the next few days; your next review is Tuesday.',
+      "6 items learning, 5 of them stable (2 new today). The other one becomes stable as you recall it over the next few days; today's items come back Tuesday.",
     );
     expect(progressText(p({ learning: 9, stable: 4 }))).toMatch(
       /^9 items learning, 4 of them stable\. The rest/,
@@ -142,20 +142,22 @@ describe('progressText', () => {
 
   it('celebrates an all-stable session', () => {
     expect(progressText(p({ learning: 3, stable: 3, becameStable: 3 }))).toBe(
-      '3 items became stable today. Each recall stretches the gap, and your next review is Tuesday.',
+      "3 items became stable today. Each recall stretches the gap, and today's items come back Tuesday.",
     );
     expect(progressText(p({ learning: 5, stable: 5, becameStable: 2 }))).toMatch(
       /^5 items are stable, 2 of them new today\./,
     );
     expect(
       progressText(p({ learning: 1, stable: 1, nextReview: { date: '2026-11-03', inDays: 16 } })),
-    ).toBe('1 item is stable. Each recall stretches the gap, and your next review is 3 November.');
+    ).toBe(
+      "1 item is stable. Each recall stretches the gap, and today's items come back on 3 November.",
+    );
   });
 
   it('frames an all-miss session without loss', () => {
     const text = progressText(p({ nextReview: { date: '2026-10-19', inDays: 1 } }));
     expect(text).toBe(
-      'One correct recall starts an item learning, and your next review is tomorrow.',
+      "One correct recall starts an item learning, and today's items come back tomorrow.",
     );
     expect(text).not.toMatch(/lost|fail|0/);
   });

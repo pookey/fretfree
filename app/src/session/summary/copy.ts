@@ -81,12 +81,15 @@ function items(n: number): string {
 /**
  * Today's items on the Learn map's scale, with the retention forecast
  * (research/02 rules 11 and 15): "14 items learning. They become stable as
- * you recall them over the next few days; your next review is Tuesday."
+ * you recall them over the next few days; today's items come back Tuesday."
  * Never framed as a loss. Null when nothing was answered.
  */
 export function progressText(p: SessionProgress): string | null {
   if (!p.nextReview) return null;
-  const when = `your next review is ${reviewDayText(p.nextReview)}.`;
+  // Scoped to these items: the daily return ("Come back tomorrow") stays the
+  // message, and other skills may be due sooner.
+  const day = reviewDayText(p.nextReview);
+  const when = `today's items come back ${p.nextReview.inDays >= 7 ? `on ${day}` : day}.`;
   const { learning: n, stable: s, becameStable: b } = p;
   if (n === 0) return `One correct recall starts an item learning, and ${when}`;
   const rest = n - s;

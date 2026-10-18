@@ -47,7 +47,7 @@ async function firstSession(page: Page): Promise<void> {
 }
 
 const NEXT_REVIEW =
-  /your next review is (tomorrow|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|\d{1,2} [A-Z][a-z]+)\.$/;
+  /today's items come back (tomorrow|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|on \d{1,2} [A-Z][a-z]+)\.$/;
 
 async function expectLearningSummary(page: Page): Promise<void> {
   await expect(page.getByTestId('summary-accuracy')).toHaveText('100%');

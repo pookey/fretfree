@@ -150,7 +150,7 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
     expect(screen.getByTestId('summary-stable')).toHaveTextContent('0');
     expect(screen.getByTestId('summary-improved')).toHaveTextContent('14');
     expect(screen.getByTestId('summary-progress')).toHaveTextContent(
-      '14 items learning. They become stable as you recall them over the next few days; your next review is Tuesday.',
+      "14 items learning. They become stable as you recall them over the next few days; today's items come back Tuesday.",
     );
     // The spacing explanation stays, and Done stays last.
     expect(screen.getByTestId('summary-spacing')).toHaveTextContent(/^Come back tomorrow/);
@@ -169,7 +169,7 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
     expect(screen.getByTestId('summary-learning')).toHaveTextContent('12');
     expect(screen.getByTestId('summary-stable')).toHaveTextContent('3');
     expect(screen.getByTestId('summary-progress')).toHaveTextContent(
-      /^12 items learning, 3 of them newly stable\. The rest become stable .* your next review is tomorrow\.$/,
+      /^12 items learning, 3 of them newly stable\. The rest become stable .* today's items come back tomorrow\.$/,
     );
   });
 
@@ -187,7 +187,7 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
     expect(screen.getByTestId('summary-learning')).toHaveTextContent('8');
     expect(screen.getByTestId('summary-stable')).toHaveTextContent('0');
     expect(screen.getByTestId('summary-progress')).toHaveTextContent(
-      '8 items are stable. Each recall stretches the gap, and your next review is 3 November.',
+      "8 items are stable. Each recall stretches the gap, and today's items come back on 3 November.",
     );
   });
 
