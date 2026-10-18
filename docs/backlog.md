@@ -312,7 +312,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m1-28.spec.ts`, all iPad projects, iPhone tagged `@smoke`): answer wrong in each registered drill reachable through `focusSession` and assert that Continue's bounding box lies inside the viewport with no scrolling (`window.scrollY` unchanged), and that Enter continues. RTL covers focus and keyboard.
 
 ### M1-29 · "Add to Home Screen": an onboarding step and a Today card
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §2 (installed PWA on iPad), §4 onboarding, §7 Today
 - **Owns:** `app/src/onboarding/steps/install.tsx`, `app/src/onboarding/steps/install.module.css`, `app/src/screens/today/cards/install.tsx`, `app/src/screens/today/cards/install.module.css`, `app/src/shell/install.ts`, `app/src/shell/InstallHint.tsx`, `app/src/shell/InstallHint.module.css`, `app/src/shell/AppShell.tsx` (hotspot), `app/e2e/m1-29.spec.ts`
