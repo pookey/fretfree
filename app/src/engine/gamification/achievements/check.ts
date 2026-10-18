@@ -3,15 +3,18 @@ import type { AchievementContext, AchievementDefinition } from '../types';
 /**
  * The achievements newly unlocked by `ctx` (design §3.7 achievements). Pure.
  *
- * Contract for M1-13, which replaces this stub: return, in `order`, every
- * definition whose `isUnlocked(ctx)` holds and whose id is not in `unlocked`.
- * The caller persists them with `unlockAchievements`, which logs an
+ * Returns, sorted by `order` (then `id`), every definition whose
+ * `isUnlocked(ctx)` holds and whose id is not in `unlocked`. Already-unlocked
+ * badges are never re-evaluated, so a badge, once earned, stays earned. The
+ * caller persists them with `unlockAchievements`, which logs an
  * `achievement-unlocked` event for each.
  */
 export function checkAchievements(
-  _ctx: AchievementContext,
-  _unlocked: ReadonlySet<string>,
-  _definitions: readonly AchievementDefinition[],
+  ctx: AchievementContext,
+  unlocked: ReadonlySet<string>,
+  definitions: readonly AchievementDefinition[],
 ): AchievementDefinition[] {
-  return [];
+  return definitions
+    .filter((d) => !unlocked.has(d.id) && d.isUnlocked(ctx))
+    .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 }
