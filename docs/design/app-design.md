@@ -280,6 +280,11 @@ interface DrillType<P = unknown, A = unknown> {
 - **The neck is an answer surface.** Finding the note on the neck is the skill, so tapping any cell whose pitch class is the answer counts as that answer. It goes through the same grading, response time and FSRS path as a button. A wrong tap marks the tapped cell as wrong. The answer is marked correct on the low E string, where the step is drawn, and on the tapped string nearest the tap. Musical-alphabet items accept only the natural, so a sharp or flat cell is wrong. The note buttons and the A–G keys stay.
 - Before an unguided answer, only the starting note is labelled on the neck, and the tap targets' accessible labels name a string and fret but never a note (M1-25).
 
+**D4 items and grading:**
+
+- **Single shapes** (`octave:s6f5→s4`): a dot is shown and the learner taps its octave on one string, the octave nearest in fret. Tapping the fret the shape would land on with the G–B shift the other way round (unshifted across it, or shifted where there is none) is logged as a confusion between the two shapes, so they get interleaved.
+- **Every octave** (`octaves:G`, skill `C1.every-octave`): one G is shown, and the learner taps every other G in frets 0–12. This is its own item, one card per pitch class, so the multi-target round is scheduled by FSRS like any other fact. Each tap is marked at once. The round answers at the last G, at the first wrong tap, or on "Done". It is graded on completion time per target (the drill's `gradedResponseMs`), so the usual speed targets apply. The iPad runs it over the whole neck (frets 13–15 dimmed). Compact screens run it region by region, about 5 frets at a time, starting in the dot's region.
+
 **Mic constraint:** pitch identifies the pitch, not the string. Mic drills therefore do one of three things:
 
 - accept any correct position,
