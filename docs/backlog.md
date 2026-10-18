@@ -300,7 +300,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Design §6 D3 records both changes. Unit tests cover the new wording and tap → answer mapping. An e2e test (`m1-27.spec.ts`, iPad projects, happy path tagged `@smoke`) answers one prompt by tapping the neck.
 
 ### M1-28 · [hotfix] Wrong-answer feedback and Continue always on screen
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §7 session, research/02 (immediate feedback)
 - **Owns:** `app/src/session/SessionScreen.tsx`, `app/src/session/SessionScreen.module.css`, `app/src/session/SessionScreen.test.tsx`, `app/e2e/m1-28.spec.ts`
