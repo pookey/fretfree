@@ -1,0 +1,37 @@
+/* One card per started topic: a ring and its counts. Two or three columns on
+   iPad, one on a phone. */
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topic {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: var(--space-4);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.meta {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  margin: 0;
+  color: var(--text-muted);
+}
