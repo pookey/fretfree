@@ -7,6 +7,5 @@ coverage/
 playwright-report/
 test-results/
 infra/cdk.out/
-.orchestrator/state.json
-.orchestrator/worktrees/
+.orchestrator/
 infra/cdk.context.json

@@ -14,14 +14,17 @@ if [[ "$branch" != main && "${ALLOW_BRANCH:-}" != 1 ]]; then
   fail "ship runs on main (currently $branch); ALLOW_BRANCH=1 to override"
 fi
 
-log "Secret scan"
+# Callers (the orchestrator's integration lane) can learn which phase failed.
+phase() { [[ -n "${SHIP_PHASE_FILE:-}" ]] && echo "$1" >"$SHIP_PHASE_FILE"; log "$2"; }
+
+phase scan "Secret scan"
 ./scripts/secret-scan.sh
-log "Verify"
+phase verify "Verify"
 pnpm verify
 # Record the verified SHA (shared by all worktrees) so the pre-push hook can reuse it.
 git rev-parse HEAD >> "$(git rev-parse --git-common-dir)/fretwork-verified"
-log "Deploy"
+phase deploy "Deploy"
 SKIP_BUILD=1 ./scripts/deploy.sh   # pnpm verify already built app/dist
-log "Smoke"
+phase smoke "Smoke"
 ./scripts/smoke.sh
-log "Shipped $(git rev-parse --short HEAD) to https://$SITE_DOMAIN"
+phase shipped "Shipped $(git rev-parse --short HEAD) to https://$SITE_DOMAIN"

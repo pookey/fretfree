@@ -1,0 +1,676 @@
+# Backlog
+
+Work packages (WPs) for M1–M6 (design §11). The `fretwork-orchestrator` skill reads this file, so **keep the format exact**.
+
+## How this backlog is shaped for parallelism
+
+- **Small:** each WP is ½–2 hours of agent work.
+- **Contracts first.** WPs marked **[contract]** land types, registries and interfaces that others build against. Run them first and merge them fast.
+- **Vertical slices in new files.** A drill is a new `app/src/drills/<id>/` folder (auto-registered). A skill topic is a new `app/src/engine/skills/<topic>.ts` (auto-registered). Screens, Today cards, Progress panels, Explore views and onboarding steps all become one-file-per-entry registries in M1-01.
+- **Owns** lists the files and folders a WP may create or change. Two WPs whose Owns overlap must not run at the same time. Globs mean "this folder".
+- **Hotspots** are shared files that only one in-flight WP may touch at a time, whatever the Owns say:
+  - `app/src/session/runner.ts`
+  - `app/src/storage/db.ts` (schema versions)
+  - `app/src/engine/session.ts`
+  - `app/src/shell/AppShell.tsx`
+  - `package.json` / `pnpm-lock.yaml` (dependency changes)
+- Every WP adds its own e2e spec as `app/e2e/<wp-id>.spec.ts` (lower-case ID, e.g. `m1-04.spec.ts`) when it has UI. iPad projects get the full flow; tag a phone-relevant happy path `@smoke`.
+- **Definition of done for every WP:**
+  - its acceptance criteria are met;
+  - tests are added;
+  - `pnpm verify` is green in the worktree;
+  - the learning-science rules in research/02 are respected;
+  - iPad-first layout (design §7) is followed.
+
+Status values: `todo` · `in-progress` · `review` · `done` · `blocked`. Only the orchestrator edits statuses.
+
+## Milestone overview and lanes
+
+| Lane | M1 | M2 | M3 | M4 | M5 | M6 |
+|---|---|---|---|---|---|---|
+| Contracts | 01, 02 | 01 | 01 | 01 | 01 | 01 |
+| Drills (new folders) | 04, 05 | 03, 05, 06 | 02, 04, 05, 06 | 02–04, 07, 08 | 05, 06 | 02–04, 08, 09 |
+| Skills content (new files) | 03 | 02, 04 | 02, 03, 05 | 02, 04, 05, 07 | — | 02–07 |
+| Gamification | 08–10, 12, 13 | 10 | — | — | 07 | — |
+| Screens / UX | 06, 07, 11, 14, 16, 18, 22 | 07, 11, 12 | 07–11 | 05, 09, 10 | 03, 04 | — |
+| Engine / session (hotspots) | 15, 17 | 08, 09, 13 | — | 06 | 02 | — |
+| Quality | 19, 20, 24 | 14 | 12 | 11 | 08 | 10 |
+
+Milestones group features; they are **not** release gates. Every merged WP ships (`pnpm ship`). Packages from later milestones may start as soon as their dependencies are `done`.
+
+---
+
+## M1: Fretboard notes MVP
+
+### M1-01 · [contract] One-file-per-entry registries for routes, Today cards, Progress panels, Explore views and onboarding steps
+- **Status:** todo
+- **Deps:** —
+- **Design:** §7
+- **Owns:** `app/src/App.tsx`, `app/src/routes/**`, `app/src/screens/**`, `app/src/shell/nav.ts`, `app/e2e/m1-01.spec.ts`
+- **Acceptance:**
+  - Routes are discovered from `app/src/routes/*.route.tsx` via `import.meta.glob`. Each file exports `{ path, element, nav?: { label, icon, order }, layout: 'shell' | 'fullscreen' }`. Today, Learn, Explore, Progress and Session move to route files. The sidebar and tab bar read nav entries from the registry.
+  - Today composes cards from `app/src/screens/today/cards/*.tsx`. Each card exports `{ id, order, Card }`. The hero and stats become cards.
+  - Progress composes panels from `app/src/screens/progress/panels/*.tsx`. Stats, settings and data export become panels.
+  - Explore lists views from `app/src/screens/explore/views/*.tsx` (`{ id, title, order, View }`). The current fretboard explorer becomes the first view.
+  - `app/src/onboarding/steps/*.tsx` registry contract (`{ id, order, title, Step, skippable: true }`). An empty registry is fine; M1-06 fills it.
+  - Unit tests cover registry ordering. The existing e2e suite passes unchanged, and `m1-01.spec.ts` checks that nav is generated from the registry.
+
+### M1-02 · [contract] Gamification contracts and repository
+- **Status:** todo
+- **Deps:** —
+- **Design:** §3.7
+- **Owns:** `app/src/engine/gamification/types.ts`, `app/src/engine/gamification/index.ts`, `app/src/storage/gamification-repo.ts`, `app/src/storage/gamification-repo.test.ts`
+- **Acceptance:**
+  - Types are defined for XP events, a `GamificationEvent` union (answer, session-complete, goal-met, streak-extended, freeze-used, streak-repaired, achievement-unlocked, quest-completed) and achievement and quest definitions.
+  - Pure function signatures are documented, with stubbed modules that the M1-08/09/13 WPs fill: `xpForAnswer`, `applyDay`, `checkAchievements`.
+  - The repository functions read and write `gamification`, `dailyProgress`, `achievements` and `gamificationEvents` (tables already in schema v1). Every event is logged via `logEvent`.
+  - Local-date helpers (`YYYY-MM-DD` in the device time zone, DST-safe) are tested.
+
+### M1-03 · F1 and F3 skills, plus bidirectional F2/C2 items
+- **Status:** todo
+- **Deps:** —
+- **Design:** §3.1, research/03 F1–F3
+- **Owns:** `app/src/engine/skills/f1.ts`, `app/src/engine/skills/f3.ts`, `app/src/engine/skills/f2.ts`, `app/src/engine/skills/c2.ts`, `app/src/engine/skills/*.test.ts`, `app/src/engine/model.ts` (item-ID helpers only)
+- **Acceptance:**
+  - F1 skills (musical alphabet steps, half and whole steps, B–C/E–F) generate `step:+2@E`-style items.
+  - F3 skills (marker landmarks 3/5/7/9/12, the 12th-fret repeat) generate items.
+  - F2 and C2 add name→position items (`find:G@s5`) next to the existing position→name items, per research/02 rule 1.
+  - Item-ID helpers and parsers live in `model.ts`, with round-trip tests.
+  - Every item ID is stable and unique, and prerequisites form a DAG (tested).
+
+### M1-04 · D2 "Find the note" drill (tap the neck)
+- **Status:** todo
+- **Deps:** M1-03
+- **Design:** §6 D2, §7 session, §8
+- **Owns:** `app/src/drills/d2-find-the-note/**`, `app/e2e/m1-04.spec.ts`
+- **Acceptance:**
+  - The drill tests `find:<pc>@s<n>` items. The learner taps the cell on the given string. Scope levels (one string → region → whole neck) feed the adaptive controller.
+  - On iPad the whole neck is shown, with the active region dimmed outside it. Compact uses a sliding 5-fret window.
+  - Wrong taps show both positions and play both notes. Guided first reps show the target.
+  - Keyboard path: arrow keys move a focus cell and Enter taps. VoiceOver labels don't leak the answer.
+  - The pure logic is unit-tested (≥90%). The e2e test covers a full prompt on the iPad profiles.
+
+### M1-05 · D3 "Note-wheel steps" drill
+- **Status:** todo
+- **Deps:** M1-03
+- **Design:** §6 D3
+- **Owns:** `app/src/drills/d3-note-wheel/**`, `app/e2e/m1-05.spec.ts`
+- **Acceptance:**
+  - The prompt reads like "a whole step above E?". Choices follow the accidental preference and are spelled correctly.
+  - The context panel shows the note wheel, highlighting B–C and E–F. It fades with the guide level.
+  - The drill is unit-tested and keyboard-answerable (A–G, Shift for sharps).
+
+### M1-06 · Onboarding flow shell
+- **Status:** todo
+- **Deps:** M1-01
+- **Design:** §4
+- **Owns:** `app/src/onboarding/**` (except steps owned by M1-07), `app/src/routes/onboarding.route.tsx`, `app/e2e/m1-06.spec.ts`
+- **Acceptance:**
+  - First launch routes to onboarding. Steps: handedness and tuning, goal, daily goal (Casual 5 / Regular 10 / Serious 15 / Intense 20), notation, session length.
+  - Every step is skippable, and the whole flow takes under 3 minutes. Choices persist to settings and gamification.
+  - The iPad layout is two-pane (explanation on the left, choice on the right) at regular-wide.
+  - The About copy explains "adapts to what you know, not a learning style".
+  - The e2e test completes and skips the onboarding.
+
+### M1-07 · Latency calibration step
+- **Status:** todo
+- **Deps:** M1-06
+- **Design:** §3.2, §4 step 5
+- **Owns:** `app/src/onboarding/steps/calibration.tsx`, `app/src/onboarding/calibration/**`, `app/e2e/m1-07.spec.ts`
+- **Acceptance:**
+  - About 20 seconds of "tap the lit dot" on the neck. The baseline is the median tap latency, trimmed of outliers, stored in `settings.latencyBaselineMs`.
+  - It can be re-run from Progress → Settings.
+  - The pure statistics are unit-tested.
+
+### M1-08 · XP engine
+- **Status:** todo
+- **Deps:** M1-02
+- **Design:** §3.7 XP
+- **Owns:** `app/src/engine/gamification/xp.ts`, `app/src/engine/gamification/xp.test.ts`
+- **Acceptance:**
+  - XP per answer is weighted toward learning value. Due reviews and new items earn more than over-practised stable cards. There is a small fluent bonus. Wrong answers earn base XP.
+  - XP from a card decays if the card has already been drilled today.
+  - All weights live in `engine/config.ts` (append a `gamification` block).
+  - Property-style tests show that grinding a stable card can never out-earn doing due reviews.
+
+### M1-09 · Streak engine: daily goal, freezes, weekend amulet, repair
+- **Status:** todo
+- **Deps:** M1-02
+- **Design:** §3.7 streak rows
+- **Owns:** `app/src/engine/gamification/streak.ts`, `app/src/engine/gamification/streak.test.ts`
+- **Acceptance:**
+  - A pure `applyDay(state, dayProgress, date)` returns the new state plus events.
+  - Meeting the daily goal extends the streak. The learner earns 1 freeze per 7-day streak, holds at most 2, and freezes are used automatically on a missed day.
+  - The weekend amulet skips Saturday and Sunday. A repair window of 48 hours allows a restore via a double session.
+  - Milestones fire at 7, 30, 100 and 365 days.
+  - Tests are exhaustive over calendar edge cases (DST, month and year boundaries, a gap of several days).
+
+### M1-10 · Daily progress wiring
+- **Status:** todo
+- **Deps:** M1-08, M1-09
+- **Design:** §3.7 engine wiring
+- **Owns:** `app/src/session/runner.ts` (hotspot), `app/src/session/gamification-bridge.ts`, `app/src/session/*.test.ts`
+- **Acceptance:**
+  - Each answer adds XP. Session minutes accumulate into today's `DailyProgress`. `goalMet` flips when the daily goal is reached, and the streak state updates on session finish.
+  - Every event is logged. When the due and new queue runs dry, the builder tops up with interleaved frontier "stretch" items, never with non-due stable cards.
+  - Runner tests cover the goal being reached mid-session.
+
+### M1-11 · Today hero and sidebar streak
+- **Status:** todo
+- **Deps:** M1-01, M1-02
+- **Design:** §7 Today, §3.7
+- **Owns:** `app/src/screens/today/cards/hero.tsx`, `app/src/components/goal-ring/**`, `app/src/shell/StreakBadge.tsx`, `app/e2e/m1-11.spec.ts`
+- **Acceptance:**
+  - The streak flame and counter plus the daily-goal ring are the Today hero. Freezes held and the due/new counts are shown.
+  - The iPad sidebar always shows the streak and ring. They are compact in the icon sidebar and absent on the phone tab bar.
+  - The ring animates unless reduced motion is on. It meets WCAG AA contrast and has VoiceOver labels.
+
+### M1-12 · Session celebrations
+- **Status:** todo
+- **Deps:** M1-08
+- **Design:** §3.7 celebrations, §3.3 step 5
+- **Owns:** `app/src/session/summary/**`, `app/src/components/confetti/**`, `app/e2e/m1-12.spec.ts`
+- **Acceptance:**
+  - The summary screen shows XP earned, items improved, accuracy, "perfect session" and "new personal-best speed", plus "come back tomorrow" spacing copy.
+  - A combo counter appears during the session.
+  - Confetti fires only for milestones and is disabled under reduced motion.
+  - The copy celebrates competence ("you now know string 6 to fret 12").
+
+### M1-13 · First achievements
+- **Status:** todo
+- **Deps:** M1-02
+- **Design:** §3.7 achievements
+- **Owns:** `app/src/engine/gamification/achievements/**`, `app/src/screens/progress/panels/achievements.tsx`, `app/e2e/m1-13.spec.ts`
+- **Acceptance:**
+  - One file per achievement definition (auto-registered): "String 6 master", "String 5 master", "Whole neck (C2)", "Speed demon (median < 1.2 s)", and streak 7/30/100/365.
+  - `checkAchievements` is pure and tested. Unlocks persist with a toast and appear in the Progress panel.
+  - Achievements are tied to mastery, not activity counts.
+
+### M1-14 · Progress fretboard heatmap
+- **Status:** todo
+- **Deps:** M1-01
+- **Design:** §7 Progress
+- **Owns:** `app/src/screens/progress/panels/heatmap.tsx`, `app/src/components/heatmap/**`, `app/e2e/m1-14.spec.ts`
+- **Acceptance:**
+  - The full neck shows per-cell mastery: colour = stability, dimmed = slow (median RT > target).
+  - The colours form a colour-blind-safe sequential scale with a legend. Tapping a cell shows its stats.
+  - It includes a retention forecast ("you'll remember ~92% of string 5 next week") computed from FSRS retrievability.
+  - Pure aggregation is unit-tested.
+
+### M1-15 · Guide fading across drills, and blind mode
+- **Status:** todo
+- **Deps:** M1-04
+- **Design:** §3.5
+- **Owns:** `app/src/engine/guides.ts`, `app/src/engine/guides.test.ts`, `app/src/drills/d1-name-the-note/**`, `app/src/screens/progress/panels/settings.tsx`
+- **Acceptance:**
+  - Guide level changes within a session as well as across sessions: fade after N consecutive fluent answers, restore after errors.
+  - D1 and the neck honour levels 0–3 exactly as in the §3.5 table. A blind-mode setting hides inlays at level 0.
+  - Immediate correct-answer feedback stays on at every level.
+
+### M1-16 · Learn screen: module cards, mastery rings and goal ordering
+- **Status:** todo
+- **Deps:** M1-01, M1-03
+- **Design:** §5, §7 Learn, §4 goal
+- **Owns:** `app/src/screens/learn/**`, `app/src/routes/learn.route.tsx`, `app/src/engine/frontier.ts`, `app/src/engine/frontier.test.ts`, `app/e2e/m1-16.spec.ts`
+- **Acceptance:**
+  - The module map from §5 shows mastery rings. Locked modules can be previewed (soft unlocking).
+  - On iPad it is two-pane: the map on the left, skill detail on the right.
+  - The goal profile reorders frontier skills (pure `orderFrontier(skills, goal)`, tested). The session builder consumes it via its existing `frontier` input.
+
+### M1-17 · Multi-drill sessions and in-session learning steps
+- **Status:** todo
+- **Deps:** M1-04, M1-05, M1-10
+- **Design:** §3.3
+- **Owns:** `app/src/session/runner.ts` (hotspot), `app/src/engine/session.ts` (hotspot), `app/src/session/drill-picker.ts`
+- **Acceptance:**
+  - Each item is served by an appropriate drill (D1/D2/D3, bidirectional), varying the drill for the same fact (rule 12).
+  - Learning-step cards that FSRS makes due within minutes reappear later in the same session.
+  - New blocks get a worked example, then 3–5 guided-to-independent reps.
+  - The session ends at the time budget and shows the remaining time.
+
+### M1-18 · Today quick drills
+- **Status:** todo
+- **Deps:** M1-01, M1-17
+- **Design:** §7 Today
+- **Owns:** `app/src/screens/today/cards/quick-drills.tsx`, `app/e2e/m1-18.spec.ts`
+- **Acceptance:**
+  - "2-minute fretboard warm-up" starts a short session limited to due fretboard items, or frontier items when nothing is due.
+  - Session options are passed through route state. The runner already supports `maxItems`.
+
+### M1-19 · Offline, install and performance gates
+- **Status:** todo
+- **Deps:** M1-01
+- **Design:** §10
+- **Owns:** `scripts/check-bundle.mjs`, `app/e2e/m1-19.spec.ts`, `app/src/shell/InstallHint.tsx`, root `package.json` (verify script only; hotspot)
+- **Acceptance:**
+  - The e2e test proves the app works offline after first load (`context.setOffline(true)`, a full session).
+  - The first-load JS budget (≤250 KB gzip, excluding lazily loaded audio) is checked in `pnpm verify`.
+  - An iPad "Add to Home Screen" hint appears in Safari, and not in standalone mode.
+  - A Lighthouse PWA/a11y check runs locally (documented and scripted) and passes.
+
+### M1-20 · Compact (iPhone) polish
+- **Status:** todo
+- **Deps:** M1-04
+- **Design:** §7 (iPhone best-effort)
+- **Owns:** `app/src/shell/size-class.ts`, `app/src/shell/ScreenLayout.tsx`, `app/e2e/m1-20.spec.ts`
+- **Acceptance:**
+  - Short landscape phones get a wider neck window (more frets, letterboxed) rather than a tall 5-fret one.
+  - The session context panel becomes a sheet on compact.
+  - Multi-target drills fall back to region-by-region on compact.
+  - The iPhone smoke project stays green with no horizontal overflow.
+
+### M1-22 · Settings, sound and About
+- **Status:** todo
+- **Deps:** M1-01
+- **Design:** §4, §9, §1
+- **Owns:** `app/src/screens/progress/panels/settings.tsx`, `app/src/routes/about.route.tsx`, `app/src/screens/about/**`, `app/e2e/m1-22.spec.ts`
+- **Acceptance:**
+  - Settings include accidental preference, volume slider, sound on/off, tuning (standard or Drop D), notation, session length, daily goal, weekend amulet, and re-running calibration.
+  - The About page covers the evidence-based approach and privacy (no analytics, local data).
+- **Note:** M1-15 also adds the blind-mode toggle to `settings.tsx`. Don't run M1-15 and M1-22 at the same time.
+
+### M1-24 · M1 milestone QA
+- **Status:** todo
+- **Deps:** M1-01, M1-02, M1-03, M1-04, M1-05, M1-06, M1-07, M1-08, M1-09, M1-10, M1-11, M1-12, M1-13, M1-14, M1-15, M1-16, M1-17, M1-18, M1-19, M1-20, M1-22
+- **Design:** §11 M1 definition of done
+- **Owns:** `docs/progress.md`, `app/e2e/m1-24.spec.ts`
+- **Acceptance:**
+  - An end-to-end "first week" e2e test: onboarding → three daily sessions with a mocked clock → streak 3, a due-review session, and the heatmap updated.
+  - A production screenshot pass on all profiles.
+  - The M1 definition of done is checked off in `docs/progress.md`.
+
+---
+
+## M2: Octaves and intervals
+
+### M2-01 · [contract] Interval and octave theory
+- **Status:** todo
+- **Deps:** —
+- **Design:** §8, research/03 C1/C3
+- **Owns:** `app/src/theory/intervals.ts`, `app/src/theory/intervals.test.ts`
+- **Acceptance:**
+  - `intervalBetween(posA, posB)` returns the interval name, and `positionForInterval(root, interval, string)` handles the G–B shift.
+  - Interval shapes (m2–P8) are generated for every string pair.
+  - Exhaustive tests. Exported from `theory/index.ts`, as an append-only edit.
+
+### M2-02 · C1 octave skills
+- **Status:** todo
+- **Deps:** M2-01
+- **Owns:** `app/src/engine/skills/c1.ts`, `app/src/engine/skills/c1.test.ts`
+- **Acceptance:**
+  - Octave-shape skills include G–B shift variants. Items look like `octave:s6f5→s4`.
+  - Prerequisites: F2 (soft).
+
+### M2-03 · D4 "Octave finder" drill (multi-target)
+- **Status:** todo
+- **Deps:** M2-02
+- **Design:** §6 D4, §7 (iPad multi-target drills)
+- **Owns:** `app/src/drills/d4-octave-finder/**`, `app/e2e/m2-03.spec.ts`
+- **Acceptance:**
+  - On iPad, "tap every G" works across the whole neck, with per-target feedback and timing graded on completion time.
+  - On compact it runs region by region.
+
+### M2-04 · C3 interval-shape skills
+- **Status:** todo
+- **Deps:** M2-01
+- **Owns:** `app/src/engine/skills/c3.ts`, `app/src/engine/skills/c3.test.ts`
+- **Acceptance:**
+  - Skills per interval group (3rds, 5ths, 7ths …) with G–B shift items. Prerequisites: F1 (and C1, softly).
+
+### M2-05 · D5 "Name the interval from two dots"
+- **Status:** todo
+- **Deps:** M2-04
+- **Owns:** `app/src/drills/d5-interval-name/**`, `app/e2e/m2-05.spec.ts`
+- **Acceptance:**
+  - Choice drill. Distractors scale with the scope level. Answering plays both notes.
+  - The context panel shows an interval legend that fades with the guide level.
+
+### M2-06 · D6 "Tap the M3/P5/b7 from a root"
+- **Status:** todo
+- **Deps:** M2-04
+- **Owns:** `app/src/drills/d6-interval-tap/**`, `app/e2e/m2-06.spec.ts`
+- **Acceptance:**
+  - Tap drill. Any correct position in the active region is accepted. G–B shift items are interleaved deliberately.
+
+### M2-07 · Worked-example framework, plus G–B shift content
+- **Status:** todo
+- **Deps:** M1-16
+- **Design:** §7 Learn (skill detail), research/02 rule 8
+- **Owns:** `app/src/learn/worked-examples/**`, `app/src/screens/learn/SkillDetail.tsx`, `app/e2e/m2-07.spec.ts`
+- **Acceptance:**
+  - One file per skill (auto-registered) defines a 30-second interactive example that fades its guides: worked → faded → independent.
+  - Includes G–B shift and octave examples, plus a misconception callout from research/03.
+  - "Practise this now" starts a focused session.
+
+### M2-08 · Learned confusion matrix
+- **Status:** todo
+- **Deps:** M1-17
+- **Design:** §3.3 step 3
+- **Owns:** `app/src/engine/session.ts` (hotspot), `app/src/engine/confusions.ts`, `app/src/engine/confusions.test.ts`
+- **Acceptance:**
+  - Seed pairs (E/F, B/C, maj/min, C/A shapes) are merged with learned confusions, which decay over time.
+  - Pairing places confusable items within 1–2 slots of each other without starving due reviews.
+  - Tests cover the pairing guarantees.
+
+### M2-09 · Placement test
+- **Status:** todo
+- **Deps:** M1-06, M1-17
+- **Design:** §3.4, §4 step 6
+- **Owns:** `app/src/placement/**`, `app/src/onboarding/steps/placement.tsx`, `app/e2e/m2-09.spec.ts`
+- **Acceptance:**
+  - An adaptive probe of about 3 minutes covering F1, F2, C2 (C3, C5 and C8 once those skills exist; written to extend).
+  - Known items are seeded at stability ≈ 10 days via `seedKnownCard`. The test is skippable.
+  - The pure adaptive algorithm is unit-tested.
+
+### M2-10 · Daily quests
+- **Status:** todo
+- **Deps:** M1-10
+- **Design:** §3.7 quests
+- **Owns:** `app/src/engine/gamification/quests/**`, `app/src/screens/today/cards/quests.tsx`, `app/e2e/m2-10.spec.ts`
+- **Acceptance:**
+  - 3 rotating quests a day, drawn deterministically from the date, with one file per quest.
+  - Quests nudge toward weak areas and interleaving (e.g. "10 fluent answers on strings 3–4").
+  - Completion gives bonus XP and is logged.
+
+### M2-11 · Focused sessions ("Practise this now", "Quiz me on this")
+- **Status:** todo
+- **Deps:** M1-17
+- **Owns:** `app/src/session/runner.ts` (hotspot), `app/src/session/focus.ts`, `app/e2e/m2-11.spec.ts`
+- **Acceptance:**
+  - The runner accepts a skill or item filter. Focused sessions still use FSRS ordering and interleave within the focus.
+  - The "Quiz me on this" buttons in Explore and Learn use it.
+
+### M2-12 · Explore: fretboard explorer v2
+- **Status:** todo
+- **Deps:** M1-01, M2-01
+- **Design:** §7 Explore
+- **Owns:** `app/src/screens/explore/views/fretboard-explorer.tsx`, `app/e2e/m2-12.spec.ts`
+- **Acceptance:**
+  - Pick a key, scale or chord, then toggle note names, degrees or intervals.
+  - Uses the whole neck on iPad, plus "Quiz me on this".
+
+### M2-13 · Per-user FSRS parameter refit
+- **Status:** todo
+- **Deps:** M1-17
+- **Design:** research/02 rule 1
+- **Owns:** `app/src/engine/refit.ts`, `app/src/engine/refit.test.ts`, `app/src/engine/scheduler.ts`
+- **Acceptance:**
+  - After about 1,000 reviews, FSRS parameters are refit from the local review log (ts-fsrs optimiser or a documented fallback).
+  - Parameters persist in settings, and the scheduler uses them. Behaviour is unchanged below the threshold (tested).
+
+### M2-14 · M2 milestone QA
+- **Status:** todo
+- **Deps:** M2-01, M2-02, M2-03, M2-04, M2-05, M2-06, M2-07, M2-08, M2-09, M2-10, M2-11, M2-12, M2-13
+- **Owns:** `docs/progress.md`, `app/e2e/m2-14.spec.ts`
+- **Acceptance:**
+  - A cross-drill e2e test, a production screenshot pass, and a progress update.
+
+---
+
+## M3: Chords and CAGED
+
+### M3-01 · [contract] Scale, chord and CAGED theory v2
+- **Status:** todo
+- **Deps:** —
+- **Owns:** `app/src/theory/chords.ts`, `app/src/theory/scales.ts`, `app/src/theory/shapes.ts`, `app/src/theory/*.test.ts`
+- **Acceptance:**
+  - Major-scale degrees and key spelling, plus chord spelling (triads, maj7/7/m7/m7b5, sus, add9) via tonal.
+  - Minor and dominant-7 CAGED templates, and triad cores of each CAGED shape.
+  - Exhaustive tests.
+
+### M3-02 · C4 skills plus D7 "Spell it"
+- **Status:** todo
+- **Deps:** M3-01
+- **Owns:** `app/src/engine/skills/c4.ts`, `app/src/drills/d7-spell-it/**`, `app/e2e/m3-02.spec.ts`
+- **Acceptance:**
+  - Ordered-choice spelling of keys and chords. Enharmonic spelling is enforced, with a clear explanation when it's wrong.
+
+### M3-03 · C5 chord-construction skills
+- **Status:** todo
+- **Deps:** M3-01
+- **Owns:** `app/src/engine/skills/c5.ts`, `app/src/engine/skills/c5.test.ts`
+- **Acceptance:**
+  - Skills run triads → 7ths → sus/add. Prerequisites: C3 and C4. The "7 vs maj7" misconception gets confusable pairing.
+
+### M3-04 · D8 "Find the chord tone in a shape"
+- **Status:** todo
+- **Deps:** M3-03, M3-05
+- **Owns:** `app/src/drills/d8-chord-tone/**`, `app/e2e/m3-04.spec.ts`
+- **Acceptance:**
+  - Tap the 3rd or b7 inside a displayed shape. The shape outline follows the guide level.
+
+### M3-05 · C6 CAGED skills plus D9 "Build the shape at a root"
+- **Status:** todo
+- **Deps:** M3-01
+- **Owns:** `app/src/engine/skills/c6.ts`, `app/src/drills/d9-build-caged/**`, `app/e2e/m3-05.spec.ts`
+- **Acceptance:**
+  - Partial shapes and triad cores come first (research/03). The learner taps the template at a given root.
+  - The whole neck is shown on iPad, with C vs A shape confusable pairing.
+
+### M3-06 · D10 "Which shape, and which comes next?"
+- **Status:** todo
+- **Deps:** M3-05
+- **Owns:** `app/src/drills/d10-which-shape/**`, `app/e2e/m3-06.spec.ts`
+- **Acceptance:**
+  - A choice drill that varies keys and positions (rule 12).
+
+### M3-07 · Chord-diagram component (chart view)
+- **Status:** todo
+- **Deps:** —
+- **Design:** §8 chart view
+- **Owns:** `app/src/components/chord-diagram/**`
+- **Acceptance:**
+  - A vertical SVG chord diagram that shares the fretboard styling: barres, fingerings, root highlighting.
+  - Unit and RTL tests.
+
+### M3-08 · Explore: CAGED visualiser
+- **Status:** todo
+- **Deps:** M1-01, M3-01
+- **Owns:** `app/src/screens/explore/views/caged.tsx`, `app/e2e/m3-08.spec.ts`
+- **Acceptance:**
+  - Pick a chord to see an animated chain of the 5 shapes, with triad cores highlighted. Respects reduced motion. Includes "Quiz me on this".
+
+### M3-09 · Explore: chord finder
+- **Status:** todo
+- **Deps:** M1-01, M3-07
+- **Owns:** `app/src/screens/explore/views/chord-finder.tsx`, `app/e2e/m3-09.spec.ts`
+- **Acceptance:**
+  - Tap notes to name the chord (`Chord.detect`). Type a symbol to see voicings. The chords-db licence (MIT) is checked before adding it.
+
+### M3-10 · Worked examples for C4–C6
+- **Status:** todo
+- **Deps:** M2-07, M3-01
+- **Owns:** `app/src/learn/worked-examples/c4-*.tsx`, `app/src/learn/worked-examples/c5-*.tsx`, `app/src/learn/worked-examples/c6-*.tsx`
+- **Acceptance:**
+  - Examples plus misconception callouts ("CAGED is a map, not 5 grips").
+
+### M3-11 · Session context-panel registry
+- **Status:** todo
+- **Deps:** M3-07
+- **Design:** §7 session context panel
+- **Owns:** `app/src/session/context/**`, `app/src/session/SessionScreen.tsx`
+- **Acceptance:**
+  - Drills declare their context panels: key and diatonic chords, current chord diagram, CAGED chain mini-map, interval legend.
+  - The panel content follows guide fading and is hidden at level 0.
+
+### M3-12 · M3 milestone QA
+- **Status:** todo
+- **Deps:** M3-01, M3-02, M3-03, M3-04, M3-05, M3-06, M3-07, M3-08, M3-09, M3-10, M3-11
+- **Owns:** `docs/progress.md`, `app/e2e/m3-12.spec.ts`
+- **Acceptance:**
+  - A production screenshot pass and a progress update.
+
+---
+
+## M4: Harmony, progressions and ear
+
+### M4-01 · [contract] Harmony theory
+- **Status:** todo
+- **Deps:** —
+- **Owns:** `app/src/theory/harmony.ts`, `app/src/theory/harmony.test.ts`
+- **Acceptance:**
+  - Diatonic chords per key, Roman and Nashville numerals, a progression catalogue (research/03 C9, including rotations), capo and transposition maths, and the circle of fifths.
+
+### M4-02 · C8 skills plus D11 "Roman numeral ↔ chord"
+- **Status:** todo
+- **Deps:** M4-01
+- **Owns:** `app/src/engine/skills/c8.ts`, `app/src/drills/d11-numerals/**`, `app/e2e/m4-02.spec.ts`
+
+### M4-03 · C9 skills plus D12 "Progression builder"
+- **Status:** todo
+- **Deps:** M4-01
+- **Owns:** `app/src/engine/skills/c9.ts`, `app/src/drills/d12-progression-builder/**`, `app/e2e/m4-03.spec.ts`
+- **Acceptance:**
+  - Drag chords into slots and transpose. Pointer and keyboard drag both work on iPad. The rotation misconception gets pairing.
+
+### M4-04 · C10 skills plus D13 "Capo calculator"
+- **Status:** todo
+- **Deps:** M4-01
+- **Owns:** `app/src/engine/skills/c10.ts`, `app/src/drills/d13-capo/**`, `app/e2e/m4-04.spec.ts`
+
+### M4-05 · I3 skills plus interactive circle of fifths
+- **Status:** todo
+- **Deps:** M4-01, M1-01
+- **Owns:** `app/src/engine/skills/i3.ts`, `app/src/screens/explore/views/circle-of-fifths.tsx`, `app/e2e/m4-05.spec.ts`
+
+### M4-06 · Audio engine v2
+- **Status:** todo
+- **Deps:** —
+- **Design:** §9
+- **Owns:** `app/src/audio/**`
+- **Acceptance:**
+  - A plucked or sampled guitar tone, chord strums, and progression scheduling on the Tone Transport.
+  - Volume and silent mode. It stays lazily loaded and inside the budget.
+
+### M4-07 · I6 ear skills plus D14 "Hear it → identify"
+- **Status:** todo
+- **Deps:** M4-01, M4-06
+- **Owns:** `app/src/engine/skills/i6.ts`, `app/src/drills/d14-ear-identify/**`, `app/e2e/m4-07.spec.ts`
+
+### M4-08 · D15 "Hear it → find it on the neck"
+- **Status:** todo
+- **Deps:** M4-06, M1-04
+- **Owns:** `app/src/drills/d15-ear-find/**`, `app/e2e/m4-08.spec.ts`
+
+### M4-09 · Explore: progression player
+- **Status:** todo
+- **Deps:** M4-01, M4-06, M1-01
+- **Owns:** `app/src/screens/explore/views/progression-player.tsx`, `app/e2e/m4-09.spec.ts`
+
+### M4-10 · "Ear only" quick drill and "start with sound" path
+- **Status:** todo
+- **Deps:** M4-07, M1-18, M1-06
+- **Owns:** `app/src/screens/today/cards/ear-only.tsx`, `app/src/onboarding/steps/start-with-sound.tsx`
+
+### M4-11 · M4 milestone QA
+- **Status:** todo
+- **Deps:** M4-01, M4-02, M4-03, M4-04, M4-05, M4-06, M4-07, M4-08, M4-09, M4-10
+- **Owns:** `docs/progress.md`, `app/e2e/m4-11.spec.ts`
+
+---
+
+## M5: Mic mode
+
+### M5-01 · [contract] Pitch-input API
+- **Status:** todo
+- **Deps:** —
+- **Design:** §9 input
+- **Owns:** `app/src/mic/types.ts`, `app/src/mic/index.ts`
+- **Acceptance:**
+  - A `PitchSource` interface ({frequency, clarity} stream, stable-note events ≥80ms, start/stop on a user gesture) and a fake source for tests.
+
+### M5-02 · AudioWorklet pitch detector (pitchy)
+- **Status:** todo
+- **Deps:** M5-01
+- **Owns:** `app/src/mic/worklet/**`, `app/src/mic/detector.ts`, `app/src/mic/*.test.ts`
+- **Acceptance:**
+  - Synthetic-signal tests for accuracy and octave errors. Permission is requested only when the learner enables mic mode.
+
+### M5-03 · Tuner screen
+- **Status:** todo
+- **Deps:** M5-02, M1-01
+- **Owns:** `app/src/routes/tuner.route.tsx`, `app/src/screens/tuner/**`, `app/e2e/m5-03.spec.ts`
+
+### M5-04 · Mic onboarding and settings
+- **Status:** todo
+- **Deps:** M5-02, M1-06
+- **Owns:** `app/src/onboarding/steps/mic.tsx`, `app/src/screens/progress/panels/mic.tsx`
+
+### M5-05 · D16 "Play the note"
+- **Status:** todo
+- **Deps:** M5-01
+- **Design:** §6 mic constraint
+- **Owns:** `app/src/drills/d16-play-note/**`, `app/e2e/m5-05.spec.ts`
+- **Acceptance:**
+  - Modes: any position, region-restricted, or pitch class only. E2E uses the fake pitch source.
+
+### M5-06 · D17 "Play the interval, arpeggio or scale"
+- **Status:** todo
+- **Deps:** M5-01
+- **Owns:** `app/src/drills/d17-play-sequence/**`, `app/e2e/m5-06.spec.ts`
+
+### M5-07 · Mic quests and achievements
+- **Status:** todo
+- **Deps:** M2-10, M1-13, M5-05
+- **Owns:** `app/src/engine/gamification/quests/try-mic.ts`, `app/src/engine/gamification/achievements/mic-*.ts`
+
+### M5-08 · M5 milestone QA
+- **Status:** todo
+- **Deps:** M5-01, M5-02, M5-03, M5-04, M5-05, M5-06, M5-07
+- **Owns:** `docs/progress.md`
+
+---
+
+## M6: Intermediate
+
+### M6-01 · [contract] Intermediate theory
+- **Status:** todo
+- **Deps:** M3-01
+- **Owns:** `app/src/theory/pentatonic.ts`, `app/src/theory/arpeggios.ts`, `app/src/theory/function.ts`, `app/src/theory/*.test.ts`
+- **Acceptance:**
+  - Pentatonic boxes ↔ CAGED, arpeggio shapes, 5-position major scale, minor harmony (harmonic-minor V) and chord function / substitutions.
+
+### M6-02 · C7 pentatonic skills and box-overlay drill
+- **Status:** todo
+- **Deps:** M6-01
+- **Owns:** `app/src/engine/skills/c7.ts`, `app/src/drills/d-pentatonic-box/**`
+
+### M6-03 · I1 skills plus D18 "Triad inversions on a string set"
+- **Status:** todo
+- **Deps:** M6-01
+- **Owns:** `app/src/engine/skills/i1.ts`, `app/src/drills/d18-inversions/**`
+
+### M6-04 · D19 "Voice-leading puzzle"
+- **Status:** todo
+- **Deps:** M6-03
+- **Owns:** `app/src/drills/d19-voice-leading/**`
+
+### M6-05 · I2 arpeggio skills (reusing D8)
+- **Status:** todo
+- **Deps:** M6-01, M3-04
+- **Owns:** `app/src/engine/skills/i2.ts`
+
+### M6-06 · I4 and I5 minor-harmony and function skills, plus choice drills
+- **Status:** todo
+- **Deps:** M6-01, M4-01
+- **Owns:** `app/src/engine/skills/i4.ts`, `app/src/engine/skills/i5.ts`, `app/src/drills/d-function/**`
+
+### M6-07 · I7 major scale in 5 positions
+- **Status:** todo
+- **Deps:** M6-01
+- **Owns:** `app/src/engine/skills/i7.ts`
+
+### M6-08 · F4 rhythm track plus D20 "Tap and strum rhythm"
+- **Status:** todo
+- **Deps:** M4-06
+- **Owns:** `app/src/engine/skills/f4.ts`, `app/src/drills/d20-rhythm/**`, `app/src/audio/metronome.ts`
+
+### M6-09 · D21 "Visualise it" (mental practice)
+- **Status:** todo
+- **Deps:** M3-05
+- **Owns:** `app/src/drills/d21-visualise/**`
+
+### M6-10 · M6 milestone QA
+- **Status:** todo
+- **Deps:** M6-01, M6-02, M6-03, M6-04, M6-05, M6-06, M6-07, M6-08, M6-09
+- **Owns:** `docs/progress.md`

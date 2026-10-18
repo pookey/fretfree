@@ -1,0 +1,1 @@
+Review round for {{WP}}: the reviewer requested changes. Read `{{REVIEW}}` and fix every "Must fix" item (and "Should fix" items if they are quick), on branch `{{BRANCH}}` in `{{WORKTREE}}`. Add or adjust tests, run `pnpm verify` until it passes, commit, then update `{{REPORT}}` (add a "## Review fixes" section). Final message: `REPORTED {{WP}}`.

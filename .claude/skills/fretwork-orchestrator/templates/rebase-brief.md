@@ -1,0 +1,1 @@
+Integration of {{WP}} failed: {{REASON}}. In `{{WORKTREE}}` on branch `{{BRANCH}}`: run `git rebase main`, resolve conflicts while keeping both sides' intent (other packages have landed on main since you started), run `pnpm verify` until it passes, and make sure the tree is clean. Then add a "## Integration fix" section to `{{REPORT}}`. Final message: `REPORTED {{WP}}`.
