@@ -6,7 +6,7 @@ You run inside a Herdr pane (`HERDR_ENV=1`). You coordinate. Workers write the f
 
 ## What exists (M0)
 
-- **Live app:** https://guitar.dwellsee.com. It is a PWA with offline precache, and `scripts/smoke.sh` passes against it.
+- **Live app:** https://fretfree.app. It is a PWA with offline precache, and `scripts/smoke.sh` passes against it.
 - **Code** (`app/src`; see `CLAUDE.md` for the architecture):
   - pure `theory/` and `engine/`, with FSRS scheduling, speed-aware grading, the session builder, adaptive scope, mastery and guide fading;
   - Dexie `storage/` (schema v1, including the gamification tables);
@@ -48,7 +48,7 @@ Invoke the **fretwork-orchestrator** skill and run its loop:
 
 ## Deployment expectations
 
-- **Every merged work package ships.** The integration lane (`integrate.sh`) is serialized: rebase → fast-forward `main` → mark done → `pnpm ship` (verify, deploy to AWS, smoke-test https://guitar.dwellsee.com) → push `main`.
+- **Every merged work package ships.** The integration lane (`integrate.sh`) is serialized: rebase → fast-forward `main` → mark done → `pnpm ship` (verify, deploy to AWS, smoke-test https://fretfree.app) → push `main`.
 - **A broken ship stops the line.**
   - A failed verify resets `main`, and nothing is shipped.
   - A failed deploy or smoke test means production may be broken. Merge nothing else until it's fixed or reverted and re-shipped (SKILL §3c).
@@ -64,7 +64,7 @@ Write the question under **"Questions for the user"** in `docs/progress.md`, com
 - a package fails 3 attempts;
 - a product, scope or cost decision comes up, such as a paid service, an App Store or Apple developer account, analytics, or changing the design rules;
 - production can't be restored by revert + ship;
-- AWS needs anything beyond the `FretworkSite` stack, or DNS beyond `guitar.dwellsee.com`;
+- AWS needs anything beyond the `FretworkSite` stack, or DNS beyond the site's own names;
 - a trust prompt appears outside `.orchestrator/worktrees/`;
 - you would need to force-push, create repos or remotes, or delete resources this project didn't create.
 

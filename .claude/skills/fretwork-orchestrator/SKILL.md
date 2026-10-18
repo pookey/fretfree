@@ -107,7 +107,7 @@ $O/integrate.sh <WP>
 3. Otherwise **revert**: `git revert --no-edit <merge range>`, then `pnpm ship`, then push. Send the WP back with `send-brief.sh <WP> rebase "<what broke in production>"`.
 4. Record a `stop-the-line` event, and note it in `docs/progress.md` if it took more than one attempt.
 
-**Every merged WP ships.** There are no GitHub Actions. `pnpm ship` runs locally (secret scan → `pnpm verify` → `scripts/deploy.sh` with the `smartthings-hp` profile → `scripts/smoke.sh` against https://fretfree.app, which also checks that guitar.dwellsee.com still serves and www redirects). Only then does `integrate.sh` push `main`. The pre-push hook reuses the verified SHA, so it's instant.
+**Every merged WP ships.** There are no GitHub Actions. `pnpm ship` runs locally (secret scan → `pnpm verify` → `scripts/deploy.sh` with the `smartthings-hp` profile → `scripts/smoke.sh` against https://fretfree.app, which also checks that www redirects). Only then does `integrate.sh` push `main`. The pre-push hook reuses the verified SHA, so it's instant.
 
 ## 4. Shared-resource rules
 
@@ -138,7 +138,7 @@ Stop spawning, finish or park in-flight work, and write the situation to `docs/p
 
 ## 7. Safety
 
-- Never touch DNS records other than the site's own names (`fretfree.app`, `www.fretfree.app`, `guitar.dwellsee.com`) and their ACM validation records, which CDK manages. The `fretfree.app` zone also holds the FretworkEmail and FretworkBrand records; leave them to those stacks.
+- Never touch DNS records other than the site's own names (`fretfree.app`, `www.fretfree.app`) and their ACM validation records, which CDK manages. The `fretfree.app` zone also holds the FretworkEmail and FretworkBrand records; leave them to those stacks.
 - Never delete AWS resources this project didn't create. Never commit AWS account IDs, zone IDs, ARNs or secrets: the lane runs `scripts/secret-scan.sh` and so does the pre-push hook.
 - Push only `main` to `origin`, never force-push, and create no other remotes, repos, GitHub Actions or GitHub secrets.
 - Never close panes or tabs you didn't create. Never run `herdr server stop`.

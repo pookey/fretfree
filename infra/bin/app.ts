@@ -9,7 +9,7 @@ const app = new App();
 // runtime and is never committed.
 const siteDomain = app.node.tryGetContext('siteDomain') as string;
 const zoneDomain = app.node.tryGetContext('zoneDomain') as string;
-// Space-separated `domain:zone` pairs (scripts/lib.sh SITE_ALIAS_DOMAINS etc.).
+// Space-separated `domain:zone` pairs (scripts/lib.sh SITE_REDIRECT_DOMAINS).
 const extraDomains = (key: string): ExtraDomain[] =>
   String(app.node.tryGetContext(key) ?? '')
     .split(/\s+/)
@@ -26,7 +26,6 @@ new SiteStack(app, 'FretworkSite', {
   env,
   siteDomain,
   zoneDomain,
-  aliasDomains: extraDomains('siteAliasDomains'),
   redirectDomains: extraDomains('siteRedirectDomains'),
   description: `Fretwork PWA static site for ${siteDomain}`,
 });

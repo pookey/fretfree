@@ -37,7 +37,7 @@ Topic IDs (F1, C6, I1, …) refer to the curriculum map in research/03.
 
 | Concern | Decision | Why |
 |---|---|---|
-| Platform | **PWA** (installable to the home screen), **iPad-first**, with Capacitor for a later App Store build | Targets iPadOS Safari and standalone mode; iPhone also works from the same codebase. Deploys to `fretfree.app` immediately (previously `guitar.dwellsee.com`, which stays as an alias with a "moved" notice). iPadOS Safari supports Web Audio, the mic (getUserMedia), IndexedDB and standalone display. |
+| Platform | **PWA** (installable to the home screen), **iPad-first**, with Capacitor for a later App Store build | Targets iPadOS Safari and standalone mode; iPhone also works from the same codebase. Deploys to `fretfree.app` immediately. iPadOS Safari supports Web Audio, the mic (getUserMedia), IndexedDB and standalone display. |
 | UI | **React 19 + TypeScript (strict) + Vite** | Mature ecosystem and familiar to agents. |
 | Styling | CSS modules or vanilla-extract with design tokens; safe-area insets; `prefers-color-scheme` | — |
 | Routing | React Router (or TanStack Router) | — |
@@ -50,7 +50,7 @@ Topic IDs (F1, C6, I1, …) refer to the curriculum map in research/03.
 | Chord diagrams | Our own SVG (svguitar for reference) | Consistent styling with the fretboard |
 | PWA | vite-plugin-pwa (Workbox), full offline precache | — |
 | Testing | Vitest (unit). Playwright: **primary** profiles iPad Pro 11" landscape + portrait and iPad mini landscape (full e2e + visual). **Secondary**: iPhone 15 landscape, smoke e2e only (core flow works, nothing overflows). | iPad first |
-| Infra | **AWS CDK (TypeScript)**, deployed **locally** (`pnpm ship`; no GitHub Actions): S3 (private) + CloudFront (OAC) + ACM + Route53 for `fretfree.app` (alias `guitar.dwellsee.com`, `www` redirect) | AWS profile `smartthings-hp`, hosted zones looked up by name. Optional, context-gated stacks: `FretworkEmail` (SES, eu-west-1) and `FretworkBrand` |
+| Infra | **AWS CDK (TypeScript)**, deployed **locally** (`pnpm ship`; no GitHub Actions): S3 (private) + CloudFront (OAC) + ACM + Route53 for `fretfree.app` (`www` redirects) | AWS profile `smartthings-hp`, hosted zones looked up by name. Optional, context-gated stacks: `FretworkEmail` (SES, eu-west-1) and `FretworkBrand` |
 | Backend | **None for v1.** Optional sync (Cognito plus a small API) is a later milestone. | Keeps v1 simple and private |
 
 ## 3. Learning engine (the core)
@@ -421,7 +421,7 @@ There are 4 sections: **Today**, **Learn**, **Explore** and **Progress**. Settin
 
 | Milestone | Scope | Definition of done |
 |---|---|---|
-| **M0 Foundations** | Repo, tooling, app shell, design tokens, fretboard component and model, engine core (ts-fsrs wrapper, grading, session builder skeleton), Dexie storage, drill plugin interface with D1 as reference, CDK infra, deploy script, orchestration skill | `pnpm verify` is green; a skeleton is live at https://guitar.dwellsee.com |
+| **M0 Foundations** | Repo, tooling, app shell, design tokens, fretboard component and model, engine core (ts-fsrs wrapper, grading, session builder skeleton), Dexie storage, drill plugin interface with D1 as reference, CDK infra, deploy script, orchestration skill | `pnpm verify` is green; a skeleton is live at https://fretfree.app |
 | **M1 Fretboard notes MVP** | Onboarding (handedness, goal, daily goal, latency calibration), F1–F3 and C2 via D1, D2 and D3, full session loop, Today, Progress heatmap, guide fading, **core gamification** (daily goal, streak with freezes, weekend amulet and repair, XP, session celebrations, first achievements) | A real learner can do daily sessions on **iPad** (landscape and portrait), offline, as an installed PWA. The iPhone smoke flow passes. |
 | **M2 Octaves and intervals** | C1, C3 via D4–D6, G–B shift content, confusable pairing, placement test | — |
 | **M3 Chords and CAGED** | C4, C5, C6 via D7–D10, Explore (CAGED visualiser, chord finder), worked examples | — |

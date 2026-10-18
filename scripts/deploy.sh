@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build → cdk deploy → s3 sync (with cache headers) → CloudFront invalidation.
-# Env: AWS_PROFILE, SITE_DOMAIN, HOSTED_ZONE_DOMAIN, SITE_ALIAS_DOMAINS,
-# SITE_REDIRECT_DOMAINS, SKIP_BUILD=1, SKIP_INFRA=1.
+# Env: AWS_PROFILE, SITE_DOMAIN, HOSTED_ZONE_DOMAIN, SITE_REDIRECT_DOMAINS,
+# SKIP_BUILD=1, SKIP_INFRA=1.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 cd "$ROOT"
@@ -20,7 +20,7 @@ if [[ "${SKIP_INFRA:-}" != 1 ]]; then
   (cd infra && pnpm exec cdk deploy "$STACK_NAME" \
     --require-approval never \
     -c siteDomain="$SITE_DOMAIN" -c zoneDomain="$HOSTED_ZONE_DOMAIN" \
-    -c siteAliasDomains="$SITE_ALIAS_DOMAINS" -c siteRedirectDomains="$SITE_REDIRECT_DOMAINS" \
+    -c siteRedirectDomains="$SITE_REDIRECT_DOMAINS" \
     --outputs-file cdk.out/outputs.json)
 fi
 

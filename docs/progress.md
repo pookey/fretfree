@@ -8,17 +8,17 @@ Shipped in the second shift: M2-02, M2-04, M9-01, M1-15, **M1-27** (user feedbac
 
 In flight at the handover: M2-09 (placement test; re-verifying after drift from D5/D6), M3-02 (C4 + D7 "Spell it"; fix round 1), **M1-28** (hotfix, user-reported: the feedback and Continue button must always be on screen; fix round 1, a dark-mode contrast issue) and **M1-29** (user request: an "Add to Home Screen" onboarding step and Today card, because an iOS Home Screen app doesn't share Safari's storage).
 
-**User requests logged in the second shift:** chord lessons (M3-04 widened, M3-13 to M3-15), M7 accounts and sync (blocked, see the questions), M1-28 and M1-29. From the infra session, still to land: retiring guitar.dwellsee.com, a `/privacy` page, and Settings as its own `/settings` page.
+**User requests logged in the second shift:** chord lessons (M3-04 widened, M3-13 to M3-15), M7 accounts and sync (blocked, see the questions), M1-28 and M1-29. From the infra session, still to land: retiring the previous domain, a `/privacy` page, and Settings as its own `/settings` page.
 
 **Parallelism (292 samples, 14:05–18:00):** average 5.3 active workers, peak 7, idle-slot share 0.02. The ceiling stepped 6 → 7 → 1 (15 changes), driven by load from concurrent verifies and the infra session's Lighthouse runs. It's at 1 now and `health.sh` suggests 2.
 
 **Incidents:** no stop-the-line events and no usage-limit pauses. There were four lane verify failures, all with `main` reset and nothing broken shipped: two load timeouts (M1-17, M1-20, fixed by raising timeouts), one in M2-05, and drift in M2-09 (D5/D6 made the placement test probe C3 intervals). Three rebase conflicts (M1-20, M1-17, M1-18) were each resolved by the worker. The lane was paused once for the rebrand to land. Drift from new drills was the top cause of failures, so specs now have to start sessions with `focusSession`.
 
-**DNS rule (please confirm):** SKILL §7 lets the PM touch only the site's own DNS names. Because production moved, that list was widened to `fretfree.app` and `www.fretfree.app` (plus their ACM validation records). You haven't explicitly confirmed the widening. guitar.dwellsee.com drops off the list once its retirement lands.
+**DNS rule (please confirm):** SKILL §7 lets the PM touch only the site's own DNS names. Because production moved, that list was widened to `fretfree.app` and `www.fretfree.app` (plus their ACM validation records). You haven't explicitly confirmed the widening.
 
 ---
 
-**Site moved to https://fretfree.app (2026-10-18).** The infra session deployed it, and the PM landed it (`dc40c1e`..`a7868e4`). guitar.dwellsee.com still serves the same build, with a "moved" notice and an export button, because progress is stored per origin. www.fretfree.app 301s to the apex. Smoke checks all three names. Retiring the old name later means moving it from `SITE_ALIAS_DOMAINS` to `SITE_REDIRECT_DOMAINS`, once learners have had time to export. **Incident during the move:** for about 15–20 minutes production served an `index.html` that pointed to a deleted bundle. `deploy.sh`'s `s3 sync` skipped a same-size entry file whose bucket copy was newer, and the `--delete` pass then removed the bundle it referenced. Fixed in `a7868e4` (entry files are always copied).
+**Site moved to https://fretfree.app (2026-10-18).** The infra session deployed it, and the PM landed it (`dc40c1e`..`a7868e4`). www.fretfree.app 301s to the apex, and smoke checks both. The previous domain had only one user (the owner), so it was retired outright the same day, with no redirect. **Incident during the move:** for about 15–20 minutes production served an `index.html` that pointed to a deleted bundle. `deploy.sh`'s `s3 sync` skipped a same-size entry file whose bucket copy was newer, and the `--delete` pass then removed the bundle it referenced. Fixed in `a7868e4` (entry files are always copied).
 
 **Second shift, first report (2026-10-18, 14:05). 32 work packages live. 9 shipped this shift. Production healthy: smoke passes after every ship.**
 
@@ -71,7 +71,7 @@ In flight: none. All work in progress was drained before the handoff.
 
 **M0 foundations (2026-10-18).**
 
-- Live at https://guitar.dwellsee.com. `scripts/smoke.sh` passes, and so does the Playwright `@smoke` suite against production on all four profiles.
+- Live at https://fretfree.app. `scripts/smoke.sh` passes, and so does the Playwright `@smoke` suite against production on all four profiles.
 - `pnpm verify` is green on `main`: 148 unit tests (≈99% line coverage on theory, engine, storage, drills and session), 5 infra tests and 20 e2e tests.
 
 What exists:
@@ -115,7 +115,7 @@ What exists:
 - **iPhone landscape neck.** The neck is letterboxed to fit the short screen, so its cells fall below 44pt there. That's acceptable for best-effort phone support because D1 answers with buttons. M1-20 adds a wider compact window.
 - **Session layout on iPad landscape.** The context panel sits beside the prompt and answer buttons, and the 15-fret neck spans the full width below them. With the panel alongside the neck instead, the cells shrank to about 37pt; e2e caught this.
 - **TypeScript 6.0, not 7.0.** typescript-eslint doesn't support TS 7 yet.
-- **DNS.** Besides the `guitar` A/AAAA aliases, CDK created the ACM DNS-validation CNAME (`_….guitar.dwellsee.com`). No other records in the zone were touched.
+- **DNS.** Besides the site's A/AAAA aliases, CDK creates only the ACM DNS-validation CNAMEs. No other records are touched.
 - **The S3 bucket is `RETAIN`ed** if the stack is deleted, so production content can't vanish by accident.
 - **Backlog statuses in git move only `todo → done/blocked`.** In-flight states live in `.orchestrator/state.json`, so `main` stays clean for `pnpm ship`.
 - **The pre-push hook** verifies the pushed SHA in a temporary clean worktree. It skips docs-only pushes and reuses SHAs that `pnpm ship` has already verified.
@@ -147,7 +147,7 @@ The trust-folder prompt never appeared, because worktrees under the trusted repo
 2. ~~**Email sender.**~~ **Answered (2026-10-18, via the infra session):** `no-reply@fretfree.app` ("Fret Free"), from the separate `FretworkEmail` stack, which owns the fretfree.app SES identity, DKIM, MAIL FROM and DMARC. SES production access is granted in eu-west-1.
 3. **Privacy.** Emails and progress would be stored in AWS us-east-1. Is a short privacy note on the About page enough, or do you want a separate privacy policy page? *Partly answered: the infra session is adding a `/privacy` page (linked from About and Settings), and M7-06 would extend it to cover sync.*
 
-**DNS safety rule (2026-10-18):** the PM may touch only the site's own DNS names. That list was widened from guitar.dwellsee.com to `fretfree.app` and `www.fretfree.app` (plus ACM validation) when production moved. OK to keep it that way?
+**DNS safety rule (2026-10-18):** the PM may touch only the site's own DNS names. It now lists `fretfree.app` and `www.fretfree.app` (plus ACM validation), since production moved. OK to keep it that way?
 
 ### Answered
 

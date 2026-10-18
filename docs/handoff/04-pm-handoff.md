@@ -11,7 +11,7 @@ You are taking over as the **build agent / project manager** for the app, now br
 
 ## Where things stand
 
-- **Live:** https://fretfree.app (the apex). `www.fretfree.app` 301s to it. **guitar.dwellsee.com is being retired** (see "Cross-session work"). Until that lands it's an alias that shows a "moved" notice.
+- **Live:** https://fretfree.app (the apex). `www.fretfree.app` 301s to it. The previous domain is retired (see "Cross-session work").
 - **Done: 41 WPs.** Run `node $O/backlog.mjs list --status done`. `main` is shipped and pushed. The lane is idle with an empty queue.
 - **In flight** (worker panes are in Herdr tabs `fretwork-workers-*`; reviewer panes are all closed):
 
@@ -30,7 +30,7 @@ Another Claude session owns domain, email and brand infra for the user. It **nev
 
 - **Landed this shift:** the FretworkEmail stack (SES on fretfree.app, sending from eu-west-1 with production access), the FretworkBrand preview (brand.fretfree.app), the move to fretfree.app (with an s3-sync deploy bug fixed in `a7868e4`), and the FretFree rebrand (palette, Clear Sans, mark, copy).
 - **In progress there now** (user requests, coming to you to land):
-  1. Retire guitar.dwellsee.com completely: the alias, certificate SAN and records, MovedNotice/`MOVED_HOSTS`, `SITE_ALIAS_DOMAINS`, and docs. It's a single plain `pnpm ship`, with no lane pause needed. When it lands, check that SKILL.md §7's DNS rule lists only `fretfree.app` and `www.fretfree.app` (plus ACM validation).
+  1. Retire the previous domain completely: the alias, certificate SAN and records, MovedNotice/`MOVED_HOSTS`, `SITE_ALIAS_DOMAINS`, and docs. It's a single plain `pnpm ship`, with no lane pause needed. When it lands, check that SKILL.md §7's DNS rule lists only `fretfree.app` and `www.fretfree.app` (plus ACM validation).
   2. A `/privacy` page, linked from About and Settings.
   3. Settings becomes its own `/settings` page and nav entry (five sections), with "Your data" moved there. Design §7 is updated.
   - Overlaps: `m1-07.spec.ts` (M2-09 and M1-29 also edit it) and AppShell (M1-29 owns `AppShell.tsx`; the other session edits `AppShell.module.css`, routes and nav). Whoever lands second rebases.

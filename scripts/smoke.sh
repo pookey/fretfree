@@ -60,11 +60,6 @@ check retry bash -c "curl -sSf '$url/progress' | grep -q '<div id=\"root\">'"
 desc="HTTP redirects to HTTPS"
 check bash -c "[[ \$(curl -sS -o /dev/null -w '%{http_code}' 'http://$SITE_DOMAIN/') =~ ^30[1278]$ ]]"
 
-for pair in $SITE_ALIAS_DOMAINS; do
-  alias="${pair%%:*}"
-  desc="$alias also serves the app (HTTPS 200, same build)"
-  check retry bash -c "curl -sSf 'https://$alias/' | grep -q '<div id=\"root\">'"
-done
 for pair in $SITE_REDIRECT_DOMAINS; do
   from="${pair%%:*}"
   desc="$from redirects (301) to $url, keeping the path"

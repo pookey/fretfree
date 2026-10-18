@@ -22,7 +22,7 @@ You are the **foundations agent** for "Fretwork" (working title), an **iPad-firs
 | Repo | this folder, `main` branch. **Public open-source repo** at github.com/pookey/fretwork (`origin`, MIT). Push `main` after each logical commit. Never force-push `main`. Don't create other remotes or repos. |
 | Toolchain | Node 22, pnpm, bun, gh, Xcode CLI present; AWS CLI v2 |
 | AWS | profile **`smartthings-hp`** (default region eu-west-1). The account ID comes from the profile at runtime; **never commit it** |
-| Domain | **`guitar.dwellsee.com`**. Route53 hosted zone `dwellsee.com` exists in that account; look it up by domain name at deploy time and **never commit the zone ID**. There is currently no `guitar` record. **Never modify other records in that zone.** |
+| Domain | **`fretfree.app`**. Its Route53 hosted zone exists in that account; look it up by domain name at deploy time and **never commit the zone ID**. **Never modify records the site's stacks don't own.** |
 | CDK | not installed globally. Use it as a dev dependency (`pnpm exec cdk`). Bootstrap the account/region if needed. CloudFront's ACM certificate must be in **us-east-1**; the simplest option is to put the whole stack in us-east-1. Tag everything `Project=guitar`. |
 
 ## M0 deliverables
@@ -69,7 +69,7 @@ Use sensible cache headers: hashed assets immutable; `index.html` and the servic
 
 ### 4. Infra, local delivery and first deploy
 
-- Deploy the skeleton to **https://guitar.dwellsee.com** with `scripts/deploy.sh` using `AWS_PROFILE=smartthings-hp`.
+- Deploy the skeleton to **https://fretfree.app** with `scripts/deploy.sh` using `AWS_PROFILE=smartthings-hp`.
 - Verify it with `scripts/smoke.sh`: an HTTPS 200, a valid certificate, and the manifest served. This proves the pipeline before the build agent relies on it.
 - Then set up **local continuous delivery**:
   - a `pnpm ship` script (verify → build → deploy via `scripts/deploy.sh` → `scripts/smoke.sh`);
@@ -132,12 +132,12 @@ A project skill (plus any helper scripts or templates next to it) that a build a
 
 **Integration:** merge into `main` (rebase or merge), run `pnpm verify` on main, update backlog status, and commit with a clear message.
 
-**Deploy continuously (locally):** every work package merged to `main` goes to production. On `main`, the orchestrator runs `pnpm ship` (verify → build → `scripts/deploy.sh` → `scripts/smoke.sh` against https://guitar.dwellsee.com), then pushes `main` to GitHub. Everything runs locally; there are **no GitHub Actions**. A failed verify, deploy or smoke test is a stop-the-line event: fix or revert before merging anything else. After each milestone, also run a Playwright screenshot pass on the iPad (primary) and iPhone profiles against production.
+**Deploy continuously (locally):** every work package merged to `main` goes to production. On `main`, the orchestrator runs `pnpm ship` (verify → build → `scripts/deploy.sh` → `scripts/smoke.sh` against https://fretfree.app), then pushes `main` to GitHub. Everything runs locally; there are **no GitHub Actions**. A failed verify, deploy or smoke test is a stop-the-line event: fix or revert before merging anything else. After each milestone, also run a Playwright screenshot pass on the iPad (primary) and iPhone profiles against production.
 
 **State and resumability:** keep orchestrator state in `.orchestrator/state.json` (git-ignored), recording active workers, panes, branches and statuses, so a new orchestrator session can resume after a crash or context reset.
 
 **Safety:**
-- Never touch DNS records other than `guitar.dwellsee.com`.
+- Never touch DNS records other than the site's own names.
 - Don't push to remotes, create GitHub repos, or delete AWS resources not created by this project without the user's approval.
 - Don't close panes or tabs it did not create.
 - Stop and surface to the user after repeated failures (e.g. 3 failed attempts on a package).
@@ -149,7 +149,7 @@ A project skill (plus any helper scripts or templates next to it) that a build a
 ## Definition of done (foundations)
 
 - `pnpm verify` passes on `main`. Everything is committed in logical commits (use the commit attribution the harness gives you).
-- The skeleton is live at https://guitar.dwellsee.com and the smoke test passes.
+- The skeleton is live at https://fretfree.app and the smoke test passes.
 - `docs/backlog.md`, `CLAUDE.md` and `.claude/skills/fretwork-orchestrator/` exist, and the skill has been exercised once.
 
 ## Then hand off to the build agent
@@ -173,7 +173,7 @@ A project skill (plus any helper scripts or templates next to it) that a build a
 - **Never commit:** AWS account IDs, hosted-zone IDs, ARNs containing the account ID, credentials, `.env` files, or personal data.
   - CDK gets the account from the `smartthings-hp` profile at runtime (`CDK_DEFAULT_ACCOUNT`) and looks up the zone by domain name.
   - `cdk.context.json` caches lookups containing the account ID, so it is git-ignored.
-- **Put the public domain in config, not code.** The domain `guitar.dwellsee.com` and the profile name may appear in docs and config, but read them in `deploy.sh` from env vars with those defaults, so forks can deploy their own copy.
+- **Put the public domain in config, not code.** The domain `fretfree.app` and the profile name may appear in docs and config, but read them in `deploy.sh` from env vars with those defaults, so forks can deploy their own copy.
 - Before each push, run a quick secret scan, e.g. `git diff origin/main..HEAD | grep -E` for 12-digit account IDs, `Z0[0-9A-Z]{10,}` zone IDs, and `AKIA` keys. Make this a check in the orchestration skill's integration step.
 - Add a good public `README.md`: what the app is, the learning-science approach, a link to the live app, how to run and deploy it yourself, and a contributing note.
 - **No GitHub Actions — ever.** The GitHub account has no Actions credits. GitHub is used **only as a git remote** (pushing is fine). All linting, type-checking, testing, building and deploying run **locally**:

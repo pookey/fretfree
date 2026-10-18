@@ -6,7 +6,7 @@ import { redirectFunctionCode, SiteStack, type SiteStackProps } from '../lib/sit
 function synth(
   siteDomain = 'guitar.example.com',
   zoneDomain = 'example.com',
-  extra: Pick<SiteStackProps, 'aliasDomains' | 'redirectDomains'> = {},
+  extra: Pick<SiteStackProps, 'redirectDomains'> = {},
 ) {
   // Fake cached zone lookups so synth runs without AWS credentials.
   const zone = (name: string, id: string) => ({
@@ -76,7 +76,7 @@ describe('SiteStack', () => {
     expect(() => synth('guitar.other.com', 'example.com')).toThrow(/not inside zone/);
     expect(() =>
       synth('example.com', 'example.com', {
-        aliasDomains: [{ domain: 'guitar.other.com', zoneDomain: 'old.net' }],
+        redirectDomains: [{ domain: 'guitar.other.com', zoneDomain: 'old.net' }],
       }),
     ).toThrow(/not inside zone/);
   });
@@ -86,10 +86,12 @@ describe('SiteStack', () => {
   });
 });
 
-describe('SiteStack at an apex with alias and redirect names (a domain move)', () => {
+describe('SiteStack at an apex with redirect names in two zones', () => {
   const t = synth('example.com', 'example.com', {
-    aliasDomains: [{ domain: 'guitar.old.net', zoneDomain: 'old.net' }],
-    redirectDomains: [{ domain: 'www.example.com', zoneDomain: 'example.com' }],
+    redirectDomains: [
+      { domain: 'guitar.old.net', zoneDomain: 'old.net' },
+      { domain: 'www.example.com', zoneDomain: 'example.com' },
+    ],
   });
 
   it('serves every name from one distribution and certificate', () => {

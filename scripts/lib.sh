@@ -1,22 +1,19 @@
 # Shared config for the delivery scripts. Everything is overridable via env so
 # forks can deploy their own copy; nothing account-specific is committed.
 : "${AWS_PROFILE:=smartthings-hp}"
-# The hosted copy moved from guitar.dwellsee.com to fretfree.app. The old name keeps
-# serving the app so learners can export their progress (stored per origin) and
-# import it on the new one; www redirects. Space-separated `domain:zone` lists.
-# Forks that set SITE_DOMAIN get no extra names unless they set them too.
+# The hosted copy lives at fretfree.app; www redirects to it. Redirect names are a
+# space-separated `domain:zone` list. Forks that set SITE_DOMAIN get none unless
+# they set SITE_REDIRECT_DOMAINS too.
 if [[ -z "${SITE_DOMAIN:-}" ]]; then
   SITE_DOMAIN=fretfree.app
   : "${HOSTED_ZONE_DOMAIN:=fretfree.app}"
-  : "${SITE_ALIAS_DOMAINS:=guitar.dwellsee.com:dwellsee.com}"
   : "${SITE_REDIRECT_DOMAINS:=www.fretfree.app:fretfree.app}"
 fi
 : "${HOSTED_ZONE_DOMAIN:=$SITE_DOMAIN}"
-: "${SITE_ALIAS_DOMAINS:=}"
 : "${SITE_REDIRECT_DOMAINS:=}"
 : "${STACK_NAME:=FretworkSite}"
 : "${CDK_REGION:=us-east-1}"
-export AWS_PROFILE SITE_DOMAIN HOSTED_ZONE_DOMAIN SITE_ALIAS_DOMAINS SITE_REDIRECT_DOMAINS STACK_NAME
+export AWS_PROFILE SITE_DOMAIN HOSTED_ZONE_DOMAIN SITE_REDIRECT_DOMAINS STACK_NAME
 export CDK_REGION
 
 # Optional, hosted version only (scripts/deploy-email.sh): SES sending for sign-in

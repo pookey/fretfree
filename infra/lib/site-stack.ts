@@ -18,12 +18,6 @@ export interface SiteStackProps extends StackProps {
   siteDomain: string;
   /** The existing public hosted zone, looked up by name, e.g. fretfree.app */
   zoneDomain: string;
-  /**
-   * Also serve the site, unchanged, at these names. For a domain move: learners'
-   * progress lives in the old origin's storage, so the old name keeps working
-   * until they have exported it.
-   */
-  aliasDomains?: ExtraDomain[];
   /** Answer at these names with a 301 to `siteDomain` (e.g. www, or a retired domain). */
   redirectDomains?: ExtraDomain[];
 }
@@ -40,8 +34,8 @@ function inZone(domain: string, zoneDomain: string): boolean {
 export class SiteStack extends Stack {
   constructor(scope: Construct, id: string, props: SiteStackProps) {
     super(scope, id, props);
-    const { siteDomain, zoneDomain, aliasDomains = [], redirectDomains = [] } = props;
-    const extras = [...aliasDomains, ...redirectDomains];
+    const { siteDomain, zoneDomain, redirectDomains = [] } = props;
+    const extras = redirectDomains;
     for (const d of [{ domain: siteDomain, zoneDomain }, ...extras]) {
       if (!inZone(d.domain, d.zoneDomain)) {
         throw new Error(`domain ${d.domain} is not inside zone ${d.zoneDomain}`);
@@ -134,8 +128,8 @@ export class SiteStack extends Stack {
     });
 
     const target = route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution));
-    // The canonical records keep their original IDs. Extra names get IDs keyed by
-    // name, so moving one between alias and redirect never recreates its records.
+    // Redirect names get record IDs keyed by name, so adding or removing one never
+    // touches the others.
     new route53.ARecord(this, 'AliasA', { zone, recordName: siteDomain, target });
     new route53.AaaaRecord(this, 'AliasAAAA', { zone, recordName: siteDomain, target });
     for (const d of extras) {
