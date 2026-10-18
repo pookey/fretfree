@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Rating } from 'ts-fsrs';
-import { ACHIEVEMENTS, applyDay, checkAchievements, xpForAnswer } from '../engine/gamification';
+import {
+  ACHIEVEMENTS,
+  applyDay,
+  checkAchievements,
+  definitionsFrom,
+  xpForAnswer,
+} from '../engine/gamification';
+import type { AchievementDefinition } from '../engine/gamification/types';
 import type { GamificationEvent } from '../engine/gamification/types';
 import { FretworkDB } from './db';
 import { exportData, importData } from './export-import';
@@ -108,6 +115,11 @@ describe('event log', () => {
     expect(answers.map((e) => e.at)).toEqual([now, new Date(now.getTime() + 2 * HOUR)]);
     const later = await getEvents(db, { since: new Date(now.getTime() + HOUR) });
     expect(later.map((e) => e.type)).toEqual(['goal-met', 'answer']);
+    const laterAnswers = await getEvents(db, {
+      type: 'answer',
+      since: new Date(now.getTime() + HOUR),
+    });
+    expect(laterAnswers.map((e) => e.at)).toEqual([new Date(now.getTime() + 2 * HOUR)]);
     expect(await getEvents(db, { type: 'freeze-used' })).toEqual([]);
   });
 });
@@ -176,7 +188,14 @@ describe('export / import', () => {
   it('carries gamification tables, including dates inside event payloads', async () => {
     const deadline = new Date(now.getTime() + 48 * HOUR);
     await saveGamification(db, { xpTotal: 10, streakRepairDeadline: deadline });
-    await saveDailyProgress(db, emptyDailyProgress('2026-10-18'));
+    const day = {
+      ...emptyDailyProgress('2026-10-18'),
+      xp: 60,
+      minutes: 12,
+      goalMet: true,
+      questsCompleted: ['clear-due'],
+    };
+    await saveDailyProgress(db, day);
     await unlockAchievements(db, ['streak-7'], now);
     await logEvent(
       db,
@@ -189,6 +208,7 @@ describe('export / import', () => {
     try {
       await importData(other, file);
       expect(await getGamification(other)).toEqual(await getGamification(db));
+      expect(await getDailyProgress(other, '2026-10-18')).toEqual(day);
       expect(await getUnlockedAchievements(other)).toEqual(await getUnlockedAchievements(db));
       expect(await getEvents(other)).toEqual(await getEvents(db));
     } finally {
@@ -207,12 +227,38 @@ describe('engine contracts (stubs filled by M1-08, M1-09, M1-13)', () => {
       answeredToday: 0,
     });
     expect(Number.isInteger(xp) && xp >= 0).toBe(true);
-    const day = applyDay(DEFAULT_GAMIFICATION, undefined, '2026-10-18');
-    expect(day.state.streakCurrent).toBe(0);
-    expect(Array.isArray(day.events)).toBe(true);
+    const missed = applyDay(DEFAULT_GAMIFICATION, undefined, '2026-10-18');
+    expect(missed.state.streakCurrent).toBe(0);
+    expect(missed.day.date).toBe('2026-10-18');
+    expect(missed.day.goalMet).toBe(false);
+    expect(Array.isArray(missed.events)).toBe(true);
+    const practised = { ...emptyDailyProgress('2026-10-19'), minutes: 3, xp: 20 };
+    expect(applyDay(DEFAULT_GAMIFICATION, practised, '2026-10-19').day).toMatchObject({
+      date: '2026-10-19',
+      minutes: 3,
+      xp: 20,
+    });
     const ctx = { skillStates: new Map(), gamification: DEFAULT_GAMIFICATION, recentReviews: [] };
     expect(checkAchievements(ctx, new Set(ACHIEVEMENTS.map((a) => a.id)), ACHIEVEMENTS)).toEqual(
       [],
     );
+  });
+
+  it('registers only modules with a default-exported definition, in order', () => {
+    const badge = (id: string, order: number): AchievementDefinition => ({
+      id,
+      title: id,
+      description: id,
+      category: 'streak',
+      order,
+      isUnlocked: () => false,
+    });
+    const defs = definitionsFrom({
+      './streak-30.ts': { default: badge('streak-30', 2) },
+      './helpers.ts': {},
+      './streak-7.ts': { default: badge('streak-7', 1) },
+      './streak-7b.ts': { default: badge('streak-7b', 1) },
+    });
+    expect(defs.map((d) => d.id)).toEqual(['streak-7', 'streak-7b', 'streak-30']);
   });
 });

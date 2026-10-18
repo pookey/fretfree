@@ -3,9 +3,14 @@ import type {
   GamificationEventType,
   LoggedGamificationEvent,
 } from '../engine/gamification/types';
+import { emptyDailyProgress } from '../engine/gamification/daily';
 import type { LocalDate } from '../engine/gamification/local-date';
 import type { FretworkDB } from './db';
-import type { DailyProgressRecord, GamificationRecord } from './gamification-model';
+import type {
+  DailyProgressRecord,
+  GamificationEventRecord,
+  GamificationRecord,
+} from './gamification-model';
 import { getGamification } from './repository';
 
 /**
@@ -15,9 +20,7 @@ import { getGamification } from './repository';
  * against retention (research/02 rule 17).
  */
 
-export function emptyDailyProgress(date: LocalDate): DailyProgressRecord {
-  return { date, xp: 0, minutes: 0, goalMet: false, freezeUsed: false, questsCompleted: [] };
-}
+export { emptyDailyProgress };
 
 export async function saveGamification(
   db: FretworkDB,
@@ -74,13 +77,20 @@ export async function getEvents(
   db: FretworkDB,
   query: EventQuery = {},
 ): Promise<LoggedGamificationEvent[]> {
-  const rows = query.type
-    ? await db.gamificationEvents.where('type').equals(query.type).sortBy('at')
-    : await db.gamificationEvents.orderBy('at').toArray();
-  const since = query.since;
-  return rows
-    .filter((r) => !since || r.at >= since)
-    .map((r) => ({ ...r.data, type: r.type, id: r.id!, at: r.at }) as LoggedGamificationEvent);
+  const { type, since } = query;
+  let rows: GamificationEventRecord[];
+  if (type) {
+    // No compound [type+at] index in schema v1, so `since` filters the type's rows.
+    const ofType = await db.gamificationEvents.where('type').equals(type).sortBy('at');
+    rows = since ? ofType.filter((r) => r.at >= since) : ofType;
+  } else if (since) {
+    rows = await db.gamificationEvents.where('at').aboveOrEqual(since).toArray();
+  } else {
+    rows = await db.gamificationEvents.orderBy('at').toArray();
+  }
+  return rows.map(
+    (r) => ({ ...r.data, type: r.type, id: r.id!, at: r.at }) as LoggedGamificationEvent,
+  );
 }
 
 // --- Achievements --------------------------------------------------------
