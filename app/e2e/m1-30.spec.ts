@@ -125,9 +125,10 @@ test.describe('M1-30 streak repair', () => {
   test('a phone shows the card without overflow @smoke', async ({ page }) => {
     await breakStreak(page);
     await expect(card(page)).toBeVisible();
-    await expect(
-      page.getByRole('progressbar', { name: 'Double session today' }),
-    ).toHaveAttribute('aria-valuetext', `0 of ${DOUBLE_MINUTES} minutes`);
+    await expect(page.getByRole('progressbar', { name: 'Double session today' })).toHaveAttribute(
+      'aria-valuetext',
+      `0 of ${DOUBLE_MINUTES} minutes`,
+    );
     await expectNoHorizontalOverflow(page);
   });
 });
