@@ -46,7 +46,9 @@ place_pane() {
     count="$(herdr tab get "$tab" 2>/dev/null | jq -r '.result.tab.pane_count // 0')" || count=0
     if [[ "$count" == 0 ]]; then $STATE tab-drop "$tab"; continue; fi
     [[ "$count" -ge "$MAX_PANES_PER_TAB" ]] && continue
-    pane="$(herdr pane list --workspace "$HERDR_WORKSPACE_ID" | jq -r --arg t "$tab" \
+    # A tab ID is "<workspace>:<tab>". The tab may be in another workspace than
+    # this PM's (a fresh PM session can start in a new one).
+    pane="$(herdr pane list --workspace "${tab%%:*}" | jq -r --arg t "$tab" \
       '[.result.panes[] | select(.tab_id == $t)][0].pane_id')"
     rect="$(herdr pane layout --pane "$pane" | jq -c '.result.layout.panes | max_by(.rect.width * .rect.height)')"
     pane="$(jq -r '.pane_id' <<<"$rect")"
@@ -58,7 +60,10 @@ place_pane() {
   local n label out
   n=$(($($STATE show | jq '.tabs | length') + 1))
   label="fretwork-workers-$n"
-  out="$(herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$cwd" --label "$label" --no-focus)"
+  local ws
+  ws="$($STATE show | jq -r '.tabs[0].tab_id // empty')"
+  ws="${ws%%:*}"
+  out="$(herdr tab create --workspace "${ws:-$HERDR_WORKSPACE_ID}" --cwd "$cwd" --label "$label" --no-focus)"
   $STATE tab-add "$(jq -r '.result.tab.tab_id' <<<"$out")" "$label" >/dev/null
   jq -r '.result.root_pane.pane_id' <<<"$out"
 }
