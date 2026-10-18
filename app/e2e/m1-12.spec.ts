@@ -17,9 +17,9 @@ const DAY = 86_400_000;
  * Write rows straight into the app's IndexedDB (the app has already created
  * the schema). `slowHistory` adds a finished session yesterday with a 9s
  * median answer, so any normal session is a new personal best. `string6Due`
- * seeds string 5's naturals and string 6's below fret 12 as known (introduced
- * days ago, recalled since, not due), plus fret 12 learned in one sitting two
- * days ago and due now. The session is that one review, and recalling it
+ * seeds string 5's naturals and string 6's below fret 12 as known in both
+ * directions (name the note and find it; introduced days ago, recalled since,
+ * not due), plus fret 12 learned in one sitting two days ago and due now. The session is that one review, and recalling it
  * completes string 6 across a gap.
  */
 async function seed(page: Page, opts: { slowHistory?: boolean; string6Due?: boolean }) {
@@ -85,6 +85,14 @@ async function seed(page: Page, opts: { slowHistory?: boolean; string6Due?: bool
         }
         for (const fret of [0, 2, 3, 5, 7, 8, 10, 12]) {
           cards.put(card(`note@s5f${fret}`, 'F2.string5-naturals', now + 10 * DAY, 10));
+        }
+        // The find-the-note direction (D2) of both strings is known too, so no
+        // new D2 items join the session.
+        for (const string of [6, 5]) {
+          for (const pc of ['A', 'B', 'C', 'D', 'E', 'F', 'G']) {
+            const skillId = `F2.string${string}-naturals`;
+            cards.put(card(`find:${pc}@s${string}`, skillId, now + 10 * DAY, 10));
+          }
         }
         // Learned in one sitting two days ago (so not yet known), and due now.
         cards.put(card('note@s6f12', 'F2.string6-naturals', now - 3_600_000, 2, now - 2 * DAY));
