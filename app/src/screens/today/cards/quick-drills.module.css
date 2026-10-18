@@ -1,0 +1,12 @@
+/* Quick drills (design §7 Today): the button and its note sit on one row on
+   iPad, and wrap to two on narrow widths. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+.row p {
+  flex: 1 1 14rem;
+}
