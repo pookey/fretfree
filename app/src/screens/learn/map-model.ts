@@ -9,6 +9,7 @@ import {
   type SkillStatus,
 } from '../../engine';
 import { moduleOfTopic, orderModules, type Module } from '../../engine/frontier';
+import { overlayStatus, type StatusOverlay } from '../../engine/overlay';
 import { progressBySkill } from '../../engine/progress';
 
 /**
@@ -59,20 +60,25 @@ export interface MapInput {
   stabilityDays?: number;
   /** Whether a built drill can test an item (the session's drill picker). Defaults to yes. */
   canServe?: (item: Item) => boolean;
+  /** A view-only status overlay (the development build's "unlock every skill"). */
+  overlay?: StatusOverlay | null;
 }
 
 /**
  * Every skill's status as the session runner derives it, in registry order
- * so prerequisites resolve first. Locked skills stay previewable (§3.4).
+ * so prerequisites resolve first. Locked skills stay previewable (§3.4). An
+ * overlay applies after derivation, so prerequisites resolve on real statuses.
  */
 export function skillStatuses(
   skills: readonly Skill[],
   stored: ReadonlyMap<string, SkillStatus>,
+  overlay?: StatusOverlay | null,
 ): Map<string, SkillStatus> {
   const statuses = new Map(stored);
   for (const skill of skills)
     statuses.set(skill.id, deriveStatus(skill, statuses, stored.get(skill.id)));
-  return statuses;
+  if (!overlay) return statuses;
+  return new Map([...statuses].map(([id, s]) => [id, overlayStatus(s, overlay)]));
 }
 
 function moduleState(skills: readonly SkillView[]): ModuleState {
@@ -83,7 +89,7 @@ function moduleState(skills: readonly SkillView[]): ModuleState {
 
 export function buildMap(input: MapInput): ModuleView[] {
   const stabilityDays = input.stabilityDays ?? ENGINE_CONFIG.mastery.stabilityDays;
-  const statuses = skillStatuses(input.skills, input.stored);
+  const statuses = skillStatuses(input.skills, input.stored, input.overlay);
   const progress = progressBySkill(input.cards, input.outcomes ?? new Map(), stabilityDays);
   const byModule = new Map<string, SkillView[]>();
   for (const skill of input.skills) {
