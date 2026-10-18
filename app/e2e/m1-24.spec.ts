@@ -50,6 +50,10 @@ async function onboard(page: Page): Promise<void> {
   await expect(today).toBeVisible();
 }
 
+/** A D1 or D2 prompt on screen. D2's worked example also marks its targets. */
+const notePrompt = (page: Page) =>
+  page.getByTestId('d2-prompt').or(page.getByTestId('marker-target').first()).first();
+
 /**
  * Answer whatever note prompt is on screen correctly: D1 names the
  * highlighted note, D2 taps the named note on its string. Returns the cell.
@@ -58,7 +62,7 @@ async function answerCorrectly(page: Page): Promise<string> {
   const find = page.getByTestId('d2-prompt');
   const named = page.getByTestId('marker-target').first();
   // D2's worked example also marks its targets, so check for its prompt first.
-  await expect(find.or(named).first()).toBeVisible();
+  await expect(notePrompt(page)).toBeVisible();
   let cell: string;
   if (await find.isVisible()) {
     const [, pc, string] = /(?:Find|This is) ([A-G]) on string (\d)/.exec(
@@ -94,6 +98,11 @@ async function answerAndFinish(page: Page, count: number, stepMs = 60_000): Prom
   const summary = page.getByTestId('session-summary');
   const cells: string[] = [];
   while (cells.length < count && !(await summary.isVisible())) {
+    // The session screen shows before its runner starts. Step the clock only
+    // once a prompt is up, or the runner's start lands after the step and the
+    // first answer counts a fraction of a minute.
+    await expect(notePrompt(page).or(summary)).toBeVisible();
+    if (await summary.isVisible()) break;
     const now = await page.evaluate(() => Date.now());
     await page.clock.setSystemTime(now + stepMs);
     cells.push(await answerCorrectly(page));
