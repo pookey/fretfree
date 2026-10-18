@@ -1,97 +1,213 @@
-import { useState } from 'react';
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { getDb } from '../storage';
+import { downloadExport } from '../storage/download-export';
+import {
+  browserInstallEnv,
+  captureInstallPrompt,
+  getInstallPrompt,
+  hasLocalProgress,
+  installOffer,
+  promptInstall,
+  subscribeInstallPrompt,
+  type InstallBrowser,
+  type InstallEnv,
+  type InstallOffer,
+  type InstallPlatform,
+} from './install';
+import { Logo } from './Logo';
 import styles from './InstallHint.module.css';
 
-/** What the hint needs to know about the browser; injectable for tests. */
-export interface InstallEnv {
-  userAgent: string;
-  maxTouchPoints: number;
-  /** iOS Safari's `navigator.standalone`: true when launched from the home screen. */
-  standalone: boolean | undefined;
-  /** `(display-mode: standalone)` matches. */
-  displayStandalone: boolean;
-}
-
-export type InstallPlatform = 'ipad' | 'iphone';
-
-// Browsers other than Safari: iOS Chrome, Firefox, Edge, Opera and the Google
-// app, plus desktop Chromium and Android, which also say "Safari".
-const NOT_SAFARI = /CriOS|FxiOS|EdgiOS|OPiOS|OPT\/|GSA\/|Chrome\/|Chromium\/|Android/;
+// Chromium can fire `beforeinstallprompt` before anything mounts, so listen
+// from the start. The onboarding step and the Today card both import this.
+if (typeof window !== 'undefined') captureInstallPrompt(window);
 
 /**
- * Where to show the "Add to Home Screen" hint (design §2: installed PWA on
- * iPad). Only Safari on iPad (and, best effort, iPhone), and never once the
- * app already runs standalone. iPadOS 13+ Safari reports a Mac user agent, so
- * a Mac with multi-touch counts as an iPad.
+ * The install tip's pieces, shared by the onboarding step
+ * (`onboarding/steps/install.tsx`) and the Today card
+ * (`screens/today/cards/install.tsx`), design §2.
  */
-export function installPlatform(env: InstallEnv): InstallPlatform | null {
-  if (env.standalone === true || env.displayStandalone) return null;
-  const ua = env.userAgent;
-  if (!/Safari\//.test(ua) || NOT_SAFARI.test(ua)) return null;
-  if (/iPad/.test(ua) || (/Macintosh/.test(ua) && env.maxTouchPoints > 1)) return 'ipad';
-  if (/iPhone|iPod/.test(ua)) return 'iphone';
-  return null;
+
+/** What to offer here, if anything, kept current as an install prompt arrives. */
+export function useInstallOffer(env?: InstallEnv): InstallOffer | null {
+  const [base] = useState(() => env ?? browserInstallEnv());
+  const prompt = useSyncExternalStore(subscribeInstallPrompt, getInstallPrompt, () => null);
+  // A prompt is used up once shown; keep offering it so the outcome stays on screen.
+  const [prompted, setPrompted] = useState(false);
+  if (prompt && !prompted) setPrompted(true);
+  return installOffer({ env: base, canPrompt: prompted || prompt !== null });
 }
 
-export function browserInstallEnv(): InstallEnv {
-  return {
-    userAgent: navigator.userAgent,
-    maxTouchPoints: navigator.maxTouchPoints ?? 0,
-    standalone: (navigator as Navigator & { standalone?: boolean }).standalone,
-    displayStandalone: window.matchMedia?.('(display-mode: standalone)').matches ?? false,
-  };
+/** Whether this browser holds progress; null while checking. */
+export function useHasProgress(): boolean | null {
+  const [has, setHas] = useState<boolean | null>(null);
+  useEffect(() => {
+    let live = true;
+    hasLocalProgress(getDb())
+      .then((h) => live && setHas(h))
+      .catch(() => live && setHas(false));
+    return () => {
+      live = false;
+    };
+  }, []);
+  return has;
 }
 
-export const DISMISS_KEY = 'fretwork.installHint.dismissed';
+export const BROWSER_NAMES: Record<InstallBrowser, string> = {
+  safari: 'Safari',
+  chrome: 'Chrome',
+  edge: 'Edge',
+};
 
-// A per-device convenience: if storage is unavailable the hint just reappears.
-function isDismissed(): boolean {
-  try {
-    return localStorage.getItem(DISMISS_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function rememberDismissed(): void {
-  try {
-    localStorage.setItem(DISMISS_KEY, '1');
-  } catch {
-    // Ignore: private mode or blocked storage.
-  }
-}
-
-function ShareIcon() {
+export function ShareIcon() {
   return (
-    <svg className={styles.share} viewBox="0 0 20 24" aria-hidden focusable="false">
-      <path d="M10 2v13M6 6l4-4 4 4" />
-      <path d="M6.5 10H4v12h12V10h-2.5" />
+    <svg className={styles.icon} viewBox="0 0 24 24" aria-hidden focusable="false">
+      <path d="M12 3v12M8 7l4-4 4 4" />
+      <path d="M8.5 10H6v11h12V10h-2.5" />
     </svg>
   );
 }
 
-/** A dismissible hint to install FretFree from Safari's Share menu. */
-export function InstallHint({ env }: { env?: InstallEnv }) {
-  const [platform] = useState(() => installPlatform(env ?? browserInstallEnv()));
-  const [dismissed, setDismissed] = useState(isDismissed);
-  if (!platform || dismissed) return null;
-
-  const where = platform === 'ipad' ? 'at the top right' : 'at the bottom of the screen';
+function AddIcon() {
   return (
-    <aside className={styles.hint} aria-label="Install FretFree" data-platform={platform}>
-      <ShareIcon />
-      <p>
-        <strong>Install FretFree.</strong> Tap Share {where}, then <b>Add to Home Screen</b>. It
-        opens full screen and works offline.
-      </p>
+    <svg className={styles.icon} viewBox="0 0 24 24" aria-hidden focusable="false">
+      <rect x="4" y="4" width="16" height="16" rx="4" />
+      <path d="M12 8v8M8 12h8" />
+    </svg>
+  );
+}
+
+function MoreIcon() {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24" aria-hidden focusable="false">
+      <circle cx="6" cy="12" r="1.25" />
+      <circle cx="12" cy="12" r="1.25" />
+      <circle cx="18" cy="12" r="1.25" />
+    </svg>
+  );
+}
+
+/** Where the learner's browser keeps its Share button. */
+export function shareInstruction({ device, browser }: InstallPlatform): ReactNode {
+  if (browser === 'chrome')
+    return (
+      <>
+        Tap <b>Share</b> at the right of the address bar.
+      </>
+    );
+  if (browser === 'edge')
+    return (
+      <>
+        Tap the <b>⋯</b> menu, then <b>Share</b>.
+      </>
+    );
+  return device === 'ipad' ? (
+    <>
+      Tap <b>Share</b> at the top right.
+    </>
+  ) : (
+    <>
+      Tap <b>Share</b> at the bottom of the screen (or <b>⋯</b> first, if Share isn’t there).
+    </>
+  );
+}
+
+/** The illustrated Share → "Add to Home Screen" steps for the learner's browser. */
+export function InstallSteps({ platform }: { platform: InstallPlatform }) {
+  return (
+    <ol className={styles.steps} data-testid="install-steps">
+      <li>
+        <span className={styles.badge}>
+          {platform.browser === 'edge' ? <MoreIcon /> : <ShareIcon />}
+        </span>
+        <span>{shareInstruction(platform)}</span>
+      </li>
+      <li>
+        <span className={styles.badge}>
+          <AddIcon />
+        </span>
+        <span>
+          Choose <b>Add to Home Screen</b>. You may need to scroll down the list.
+        </span>
+      </li>
+      <li>
+        <span className={`${styles.badge} ${styles.app}`}>
+          <Logo className={styles.logo} size={22} />
+        </span>
+        <span>
+          Leave <b>Open as Web App</b> on if you see it, then tap <b>Add</b>.
+        </span>
+      </li>
+    </ol>
+  );
+}
+
+/** Exports this browser's progress, for importing in the installed app. */
+export function ExportButton({ className }: { className?: string }) {
+  const [saved, setSaved] = useState<string | null>(null);
+  return (
+    <>
       <button
         type="button"
-        onClick={() => {
-          rememberDismissed();
-          setDismissed(true);
-        }}
+        className={className ?? styles.secondary}
+        onClick={() => void downloadExport(getDb()).then(setSaved)}
       >
-        Not now
+        Export my progress
       </button>
-    </aside>
+      {saved && <p role="status">Saved {saved}.</p>}
+    </>
+  );
+}
+
+/**
+ * The storage caveat (design §2): a Home Screen app on iOS has its own
+ * storage, separate from the browser, so progress made here stays here. Once
+ * sync (M7) exists, signing in will be the other way across.
+ */
+export function StorageNote({
+  browser,
+  hasProgress,
+  during,
+}: {
+  browser: InstallBrowser;
+  hasProgress: boolean;
+  during: 'setup' | 'practice';
+}) {
+  const name = BROWSER_NAMES[browser];
+  if (!hasProgress)
+    return (
+      <p className={styles.note} data-testid="install-storage">
+        The Home Screen app keeps its own progress, separate from {name}. So add it now, then open
+        FretFree from your Home Screen and {during === 'setup' ? 'finish setup' : 'practise'} there.
+      </p>
+    );
+  return (
+    <div className={styles.note} data-testid="install-storage">
+      <p>
+        Your progress in {name} won’t carry over by itself: the Home Screen app keeps its own.
+        Export it here, then in the installed app open <b>Progress → Your data → Import data</b>.
+      </p>
+      <ExportButton />
+    </div>
+  );
+}
+
+/** Chromium's install prompt behind our own button. */
+export function PromptInstall({ className }: { className?: string }) {
+  const [outcome, setOutcome] = useState<'accepted' | 'dismissed' | null>(null);
+  return (
+    <>
+      {outcome !== 'accepted' && (
+        <button
+          type="button"
+          className={className ?? styles.secondary}
+          onClick={() => void promptInstall().then(setOutcome)}
+        >
+          Install FretFree
+        </button>
+      )}
+      <p role="status" className={styles.status}>
+        {outcome === 'accepted' ? 'Installed. Open FretFree from your apps.' : ''}
+      </p>
+    </>
   );
 }
