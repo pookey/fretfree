@@ -11,10 +11,12 @@ import {
   nextGuideLevel,
   rollingAccuracy,
   scheduleRetry,
+  sessionLength,
   speedTargets,
   updateScope,
   type CardRecord,
   type GuideLevel,
+  type EntryKind,
   type Item,
   type Scheduler,
   type ScopeState,
@@ -24,6 +26,7 @@ import {
   type SkillStateRecord,
   type SkillStatus,
 } from '../engine';
+import type { CardKind, GamificationEvent } from '../engine/gamification';
 import type { AnyDrillType, DrillCheck, DrillSounds } from '../drills/types';
 import {
   allCards,
@@ -37,11 +40,21 @@ import {
   type FretworkDB,
 } from '../storage';
 import { getTuning } from '../theory/tunings';
+import {
+  addAnswerProgress,
+  answersToday,
+  countedMinutes,
+  finishSessionProgress,
+  stretchEntries,
+  xpKindOf,
+} from './gamification-bridge';
 
 /**
  * Runs one practice session end to end: plans it with the session builder,
  * serves prompts through drill plugins, grades with correctness + speed,
- * schedules with FSRS and persists every answer (design §3).
+ * schedules with FSRS and persists every answer (design §3). Each answer
+ * also earns XP and daily-goal minutes, and finishing settles the streak
+ * (design §3.7, via `gamification-bridge.ts`).
  */
 
 export interface RunnerDeps {
@@ -68,6 +81,9 @@ export interface AnswerResult {
   result: DrillCheck;
   rating: Grade;
   sounds: DrillSounds;
+  xp: number;
+  /** This answer reached today's daily goal. */
+  goalReached: boolean;
 }
 
 export interface SessionSummary {
@@ -78,6 +94,17 @@ export interface SessionSummary {
   durationMs: number;
   /** Skills whose status or guide level improved this session. */
   improvedSkills: string[];
+  xp: number;
+  /** Minutes this session counted toward the daily goal. */
+  minutes: number;
+  /** Today's daily goal is met (now or earlier today). */
+  goalMet: boolean;
+  /** The goal was reached during this session. */
+  goalReached: boolean;
+  /** The streak after finishing. */
+  streak: number;
+  /** Gamification events logged at finish (`session-complete`, streak events). */
+  events: GamificationEvent[];
 }
 
 const DEFAULT_GUIDE: GuideLevel = 3;
@@ -92,6 +119,12 @@ export class SessionRunner {
   private correct = 0;
   private newItems = new Set<string>();
   private touchedSkills = new Set<string>();
+  /** The XP kind of each planned item; retries look theirs up here. */
+  private readonly kinds = new Map<string, CardKind>();
+  private xp = 0;
+  private minutes = 0;
+  private lastTick: Date;
+  private goalReached = false;
   private readonly startedAt: Date;
   private readonly targets;
   private finished: SessionSummary | null = null;
@@ -106,6 +139,12 @@ export class SessionRunner {
     this.queue = plan;
     this.cards = new Map(cards.map((c) => [c.itemId, c]));
     this.startedAt = this.now();
+    this.lastTick = this.startedAt;
+    for (const e of plan) {
+      if (e.kind !== 'retry' && !this.kinds.has(e.itemId)) {
+        this.kinds.set(e.itemId, xpKindOf(e.kind));
+      }
+    }
     this.targets = speedTargets(deps.settings.latencyBaselineMs);
   }
 
@@ -125,20 +164,24 @@ export class SessionRunner {
       return deps.drills.some((d) => skill?.drillTypes.includes(d.id) && d.canTest(item));
     };
     const frontier: Item[] = [];
+    const frontierSkills = new Set<string>();
     for (const skill of deps.skills) {
       const status = deriveStatus(skill, statuses, statuses.get(skill.id));
       statuses.set(skill.id, status);
-      if (isFrontier(status)) frontier.push(...skill.items().filter(servable));
+      if (!isFrontier(status)) continue;
+      frontierSkills.add(skill.id);
+      frontier.push(...skill.items().filter(servable));
     }
     const tuning = getTuning(deps.settings.tuning);
     const drillFor = (skillId: string) => {
       const skill = deps.skills.find((s) => s.id === skillId);
       return deps.drills.find((d) => skill?.drillTypes.includes(d.id));
     };
+    const servableCards = cards.filter((c) => servable({ id: c.itemId, skillId: c.skillId }));
     const plan = buildSession({
       now,
       minutes: deps.settings.sessionMinutes,
-      cards: cards.filter((c) => servable({ id: c.itemId, skillId: c.skillId })),
+      cards: servableCards,
       frontier,
       scheduler: deps.scheduler,
       confusions,
@@ -154,6 +197,18 @@ export class SessionRunner {
       },
       ...(deps.maxItems !== undefined ? { maxItems: deps.maxItems } : {}),
     });
+    // The due and new queue ran dry: top up with stretch items, never stable ones (§3.7).
+    const total = deps.maxItems ?? sessionLength(deps.settings.sessionMinutes);
+    plan.push(
+      ...stretchEntries({
+        cards: servableCards,
+        frontierSkills,
+        planned: new Set(plan.map((e) => e.itemId)),
+        scheduler: deps.scheduler,
+        now,
+        count: total - plan.length,
+      }),
+    );
     const logId = await startSessionLog(deps.db, now);
     return new SessionRunner(deps, plan, cards, states, logId);
   }
@@ -225,7 +280,8 @@ export class SessionRunner {
   }
 
   async answer(answer: unknown, responseMs: number): Promise<AnswerResult> {
-    const cur = this.currentPrompt();
+    // A prompt already on screen can still be answered once the time budget runs out.
+    const cur = this.current?.index === this.index ? this.current : this.currentPrompt();
     if (!cur) throw new Error('No active prompt');
     const { entry, drill, prompt } = cur;
     const now = this.now();
@@ -245,23 +301,53 @@ export class SessionRunner {
     );
     this.cards.set(item.id, card);
 
-    await recordAnswer(this.deps.db, {
-      card,
-      log: {
-        itemId: item.id,
-        skillId: item.skillId,
-        drillType: drill.id,
-        correct: result.correct,
-        responseMs: Math.round(responseMs),
-        rating,
-        hintUsed: entry.guided,
-        answerGiven: drill.describeAnswer(answer),
-        at: now,
+    const minutes = this.tick(now);
+    const db = this.deps.db;
+    // The answer and the XP it earned are stored together or not at all.
+    const progress = await db.transaction(
+      'rw',
+      [
+        db.cards,
+        db.reviewLogs,
+        db.confusions,
+        db.gamification,
+        db.dailyProgress,
+        db.gamificationEvents,
+      ],
+      async () => {
+        const answeredToday = await answersToday(db, item.id, now);
+        await recordAnswer(db, {
+          card,
+          log: {
+            itemId: item.id,
+            skillId: item.skillId,
+            drillType: drill.id,
+            correct: result.correct,
+            responseMs: Math.round(responseMs),
+            rating,
+            hintUsed: entry.guided,
+            answerGiven: drill.describeAnswer(answer),
+            at: now,
+          },
+          ...(result.confusedWith
+            ? { confusion: { expected: result.expected, given: result.confusedWith } }
+            : {}),
+        });
+        return addAnswerProgress(db, {
+          itemId: item.id,
+          skillId: item.skillId,
+          correct: result.correct,
+          rating,
+          kind: this.kindOf(entry.kind, item.id),
+          stabilityDays: existing?.fsrs.stability ?? 0,
+          answeredToday,
+          minutes,
+          at: now,
+        });
       },
-      ...(result.confusedWith
-        ? { confusion: { expected: result.expected, given: result.confusedWith } }
-        : {}),
-    });
+    );
+    this.xp += progress.xp;
+    if (progress.goalReached) this.goalReached = true;
 
     const state = this.skillStates.get(item.skillId) ?? {
       skillId: item.skillId,
@@ -281,7 +367,25 @@ export class SessionRunner {
     if (result.correct) this.correct++;
     else this.queue = scheduleRetry(this.queue, this.index);
 
-    return { result, rating, sounds: drill.sounds(prompt, { answer, result }) };
+    return {
+      result,
+      rating,
+      sounds: drill.sounds(prompt, { answer, result }),
+      xp: progress.xp,
+      goalReached: progress.goalReached,
+    };
+  }
+
+  private kindOf(kind: EntryKind, itemId: string): CardKind {
+    return kind === 'retry' ? (this.kinds.get(itemId) ?? 'due') : xpKindOf(kind);
+  }
+
+  /** Daily-goal minutes since the last tick, capped for idle gaps. */
+  private tick(now: Date): number {
+    const minutes = countedMinutes(this.lastTick, now);
+    this.lastTick = now;
+    this.minutes += minutes;
+    return minutes;
   }
 
   next(): void {
@@ -329,6 +433,16 @@ export class SessionRunner {
       itemsSeen: this.answered,
       accuracy,
     });
+    const trailing = this.tick(endedAt);
+    const progress = await finishSessionProgress(this.deps.db, {
+      sessionId: this.sessionLogId,
+      at: endedAt,
+      minutes: trailing,
+      sessionMinutes: this.minutes,
+      xp: this.xp,
+      itemsSeen: this.answered,
+      accuracy,
+    });
     this.finished = {
       itemsSeen: this.answered,
       correct: this.correct,
@@ -336,6 +450,12 @@ export class SessionRunner {
       newItems: this.newItems.size,
       durationMs: endedAt.getTime() - this.startedAt.getTime(),
       improvedSkills: improved,
+      xp: this.xp,
+      minutes: this.minutes,
+      goalMet: progress.goalMet,
+      goalReached: this.goalReached || progress.goalReached,
+      streak: progress.state.streakCurrent,
+      events: progress.events,
     };
     return this.finished;
   }
