@@ -4,7 +4,7 @@ import type { WorkedExample } from './types';
 /** C1: the octave shape two strings up, on strings that don't cross the G–B pair. */
 const example: WorkedExample = {
   id: 'c1-octave-shapes',
-  for: ['C1'],
+  for: ['C1.octaves'],
   title: 'The octave shape',
   idea: 'From strings 6 and 5, the same note sits two strings up and two frets up.',
   steps: [

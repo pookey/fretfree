@@ -36,12 +36,16 @@ describe('worked-example registry', () => {
     expect(exampleFor({ id: 'X.none', topic: 'X' }, [topic, skill])).toBeUndefined();
   });
 
-  it('gives the shipped skills their examples, and future C1/C3 skills theirs by topic', () => {
-    expect(exampleFor(getSkill('C2.all-notes')!)?.id).toBe('c2-gb-octaves');
-    expect(exampleFor(getSkill('F2.string6-naturals')!)?.id).toBe('f2-landmarks');
-    expect(exampleFor({ id: 'C1.octaves-6-4', topic: 'C1' })?.id).toBe('c1-octave-shapes');
+  it('gives the shipped skills their examples, and future C3 skills theirs by topic', () => {
+    const example = (id: string) => exampleFor(getSkill(id)!)?.id;
+    expect(example('C1.octaves')).toBe('c1-octave-shapes');
+    expect(example('C1.octaves-gb-shift')).toBe('c2-gb-octaves');
+    expect(example('C2.all-notes')).toBe('c2-gb-octaves');
+    expect(example('F2.string6-naturals')).toBe('f2-landmarks');
+    // Double octaves are a different shape; no example rather than a misleading one.
+    expect(example('C1.double-octaves')).toBeUndefined();
     expect(exampleFor({ id: 'C3.thirds', topic: 'C3' })?.id).toBe('c3-gb-thirds');
-    expect(SKILLS.length).toBeGreaterThan(0);
+    expect(SKILLS.some((s) => s.topic === 'C1')).toBe(true);
   });
 });
 
