@@ -1,6 +1,6 @@
 import { ENGINE_CONFIG } from '../../engine';
 import { MasteryRing } from './MasteryRing';
-import { MODULE_STATE_LABEL, type ModuleView } from './map-model';
+import { MODULE_STATE_LABEL, percent, type ModuleView } from './map-model';
 import { SkillDetail } from './SkillDetail';
 import styles from './Learn.module.css';
 
@@ -22,7 +22,13 @@ export function ModuleDetail({ view }: { view: ModuleView }) {
       data-testid="module-detail"
     >
       <header className={styles.detailHeader}>
-        <MasteryRing fraction={view.mastery} state={view.state} label={module.title} size="large" />
+        <MasteryRing
+          learning={view.learning}
+          stable={view.mastery}
+          state={view.state}
+          label={module.title}
+          size="large"
+        />
         <div>
           <h2 id="module-detail-title" className={styles.detailTitle}>
             {module.title}
@@ -30,6 +36,11 @@ export function ModuleDetail({ view }: { view: ModuleView }) {
           <p className={styles.detailState} data-testid="module-state">
             {MODULE_STATE_LABEL[view.state]}
           </p>
+          {view.skills.length > 0 && (
+            <p className={styles.detailProgress} data-testid="module-progress">
+              {percent(view.learning)}% learning · {percent(view.mastery)}% stable
+            </p>
+          )}
         </div>
       </header>
       <p>{module.summary}</p>
@@ -60,9 +71,11 @@ export function ModuleDetail({ view }: { view: ModuleView }) {
             ))}
           </ul>
           <p className={styles.muted}>
-            An item is stable once you'd still recall it {ENGINE_CONFIG.mastery.stabilityDays} days
-            later. A skill is mastered when {Math.round(ENGINE_CONFIG.mastery.itemShare * 100)}% of
-            its items are stable and you answer within your speed target.
+            An item is learning while your latest answer to it is right. It becomes stable once
+            you'd still recall it {ENGINE_CONFIG.mastery.stabilityDays} days later, which takes
+            spaced reviews over several days, not one long session. A skill is mastered when{' '}
+            {Math.round(ENGINE_CONFIG.mastery.itemShare * 100)}% of its items are stable and you
+            answer within your speed target.
           </p>
         </>
       ) : (

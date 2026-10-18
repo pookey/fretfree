@@ -8,7 +8,15 @@ import type { SkillView } from './map-model';
 vi.mock('../../audio/audio', () => ({ playNotes: vi.fn(() => Promise.resolve()) }));
 
 function view(skill: Skill, status: SkillStatus): SkillView {
-  return { skill, status, itemCount: 10, stableCount: 2, mastery: 0.2 };
+  return {
+    skill,
+    status,
+    itemCount: 10,
+    learningCount: 6,
+    stableCount: 2,
+    learning: 0.6,
+    mastery: 0.2,
+  };
 }
 
 function renderSkill(id: string, status: SkillStatus) {
@@ -61,6 +69,15 @@ describe('<SkillDetail>', () => {
     renderSkill('F3.markers', 'practising');
     expect(screen.queryByRole('button', { name: 'Worked example' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Practise this now' })).toBeInTheDocument();
+  });
+
+  it('reads learning and stable counts, never "learned"', () => {
+    renderSkill('F2.string6-naturals', 'practising');
+    expect(screen.getByTestId('skill-progress')).toHaveTextContent('6 learning · 2 stable of 10');
+    expect(screen.getByRole('img')).toHaveAccessibleName(
+      'Natural notes on string 6: 60% learning, 20% stable',
+    );
+    expect(screen.queryByText(/learned/i)).toBeNull();
   });
 
   it('names what a locked skill waits for', () => {

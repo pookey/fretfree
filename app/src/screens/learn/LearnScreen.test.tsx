@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, RouterProvider, createMemoryRouter } from 'react-router';
-import { createEmptyCard } from 'ts-fsrs';
+import { Rating, State, createEmptyCard } from 'ts-fsrs';
 import { useAppStore } from '../../app-store';
 import { DEFAULT_SETTINGS, getSkill } from '../../engine';
 import { getDb } from '../../storage';
@@ -31,7 +31,12 @@ beforeEach(() => {
 
 afterEach(async () => {
   const db = getDb();
-  await Promise.all([db.cards.clear(), db.skillStates.clear(), db.settings.clear()]);
+  await Promise.all([
+    db.cards.clear(),
+    db.reviewLogs.clear(),
+    db.skillStates.clear(),
+    db.settings.clear(),
+  ]);
 });
 
 describe('<LearnScreen>', () => {
@@ -106,6 +111,54 @@ describe('<LearnScreen>', () => {
     expect(screen.getByTestId('module-notes-1')).toHaveTextContent('1/8 skills');
   });
 
+  it('shows learning before stable after a first session', async () => {
+    const db = getDb();
+    const skill = getSkill('F2.string6-naturals')!;
+    const items = skill.items();
+    const now = new Date();
+    const reviewed = items.slice(0, 3);
+    await db.cards.bulkPut(
+      reviewed.map((i) => ({
+        itemId: i.id,
+        skillId: skill.id,
+        fsrs: { ...createEmptyCard(now), state: State.Learning, stability: 2.3, reps: 2 },
+        createdAt: now,
+        lastReviewedAt: now,
+      })),
+    );
+    await db.reviewLogs.bulkAdd(
+      reviewed.map((i, n) => ({
+        itemId: i.id,
+        skillId: skill.id,
+        drillType: 'D1',
+        correct: n < 2,
+        responseMs: 1000,
+        rating: n < 2 ? Rating.Good : Rating.Again,
+        hintUsed: false,
+        answerGiven: 'C',
+        at: now,
+      })),
+    );
+    renderAt();
+    await loaded();
+    const f2 = screen.getByTestId('skill-F2.string6-naturals');
+    expect(within(f2).getByTestId('skill-progress')).toHaveTextContent(
+      `2 learning · 0 stable of ${items.length}`,
+    );
+    expect(within(f2).getByRole('img')).toHaveAttribute(
+      'data-learning',
+      String(Math.round((2 / items.length) * 100)),
+    );
+    const ring = within(screen.getByTestId('module-notes-1')).getByRole('img');
+    expect(Number(ring.getAttribute('data-learning'))).toBeGreaterThan(0);
+    expect(ring).toHaveAttribute('data-mastery', '0');
+    expect(ring).toHaveAccessibleName(/^Neck basics: \d+% learning, 0% stable$/);
+    expect(screen.getByTestId('module-progress')).toHaveTextContent(/^\d+% learning · 0% stable$/);
+    expect(screen.getByTestId('module-notes-1')).toHaveTextContent(
+      /[1-9]\d*% learning · 0% stable/,
+    );
+  });
+
   it('orders the map by the learner’s goal', async () => {
     useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, goal: 'songs' } });
     renderAt();
@@ -156,18 +209,56 @@ describe('<LearnScreen>', () => {
 });
 
 describe('<MasteryRing>', () => {
-  it('speaks its state and shows the percentage only while in progress', () => {
-    const { rerender } = render(<MasteryRing fraction={0.42} state="open" label="X" />);
-    expect(screen.getByRole('img')).toHaveAccessibleName('X: 42% stable');
-    expect(screen.getByText('42%')).toBeInTheDocument();
-    rerender(<MasteryRing fraction={0.2} state="locked" label="X" />);
-    expect(screen.getByRole('img')).toHaveAccessibleName('X: 20% stable, locked');
-    expect(screen.queryByText('20%')).toBeNull();
-    rerender(<MasteryRing fraction={1} state="open" label="X" />);
-    expect(screen.getByRole('img')).toHaveAccessibleName('X: 100% stable');
-    rerender(<MasteryRing fraction={1} state="mastered" label="X" />);
-    expect(screen.getByRole('img')).toHaveAccessibleName('X: mastered');
-    rerender(<MasteryRing fraction={0} state="open" label="X" />);
+  const arcs = () => ({
+    learning: document.querySelectorAll('circle[class*="ringLearning"]'),
+    stable: document.querySelectorAll('circle[class*="ringFill"]'),
+  });
+
+  it('shows an empty track at 0/0', () => {
+    render(<MasteryRing learning={0} stable={0} state="open" label="X" />);
+    expect(screen.getByRole('img')).toHaveAccessibleName('X: 0% learning, 0% stable');
+    expect(screen.getByText('0%')).toBeInTheDocument();
     expect(document.querySelectorAll('circle')).toHaveLength(1);
+  });
+
+  it('lights a thin learning arc before anything is stable', () => {
+    render(<MasteryRing learning={0.69} stable={0} state="open" label="Neck basics" />);
+    const ring = screen.getByRole('img');
+    expect(ring).toHaveAccessibleName('Neck basics: 69% learning, 0% stable');
+    expect(ring).toHaveAttribute('data-learning', '69');
+    expect(ring).toHaveAttribute('data-mastery', '0');
+    expect(screen.getByText('69%')).toBeInTheDocument();
+    expect(arcs().learning).toHaveLength(1);
+    expect(arcs().stable).toHaveLength(0);
+  });
+
+  it('draws the solid stable arc over the learning arc when mixed', () => {
+    const { rerender } = render(<MasteryRing learning={0.5} stable={0.2} state="open" label="X" />);
+    expect(screen.getByRole('img')).toHaveAccessibleName('X: 50% learning, 20% stable');
+    const circles = [...document.querySelectorAll('circle')];
+    // Track, then learning, then stable on top.
+    expect(circles.map((c) => c.getAttribute('class'))).toEqual([
+      expect.stringContaining('ringTrack'),
+      expect.stringContaining('ringLearning'),
+      expect.stringContaining('ringFill'),
+    ]);
+    const offset = (c: Element) => Number(c.getAttribute('stroke-dashoffset'));
+    expect(offset(circles[1]!)).toBeLessThan(offset(circles[2]!));
+    rerender(<MasteryRing learning={0.2} stable={0.2} state="locked" label="X" />);
+    expect(screen.getByRole('img')).toHaveAccessibleName('X: 20% learning, 20% stable, locked');
+    expect(screen.queryByText('20%')).toBeNull();
+    // Fully stable: the learning arc is hidden under it, so it isn't drawn.
+    expect(arcs().learning).toHaveLength(0);
+    rerender(<MasteryRing learning={0.1} stable={0.3} state="open" label="X" />);
+    expect(screen.getByRole('img')).toHaveAccessibleName('X: 30% learning, 30% stable');
+  });
+
+  it('shows a tick and full ring when mastered, and speaks only that', () => {
+    const { rerender } = render(<MasteryRing learning={1} stable={1} state="mastered" label="X" />);
+    expect(screen.getByRole('img')).toHaveAccessibleName('X: mastered');
+    expect(screen.queryByText('100%')).toBeNull();
+    expect(arcs().stable).toHaveLength(1);
+    rerender(<MasteryRing learning={0} stable={0} state="soon" label="X" />);
+    expect(screen.getByRole('img')).toHaveAccessibleName('X: coming soon');
   });
 });

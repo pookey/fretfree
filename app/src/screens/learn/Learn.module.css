@@ -148,6 +148,13 @@
   font-weight: 600;
 }
 
+.detailProgress {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .muted {
   color: var(--text-muted);
 }
@@ -223,7 +230,8 @@
   color: var(--accent);
 }
 
-/* Mastery rings: colour plus shape (tick, padlock, dashed track). */
+/* Mastery rings: colour plus shape (tick, padlock, dashed track; a thin,
+   light learning arc under the thick, solid stable arc). */
 .ring {
   --ring-fill: var(--tone);
   display: block;
@@ -243,7 +251,8 @@
 }
 
 .ringTrack,
-.ringFill {
+.ringFill,
+.ringLearning {
   fill: none;
   stroke-width: 5;
 }
@@ -263,8 +272,22 @@
   transition: stroke-dashoffset 600ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Thinner, square-ended and lighter, so it reads apart from the stable arc
+   without relying on colour. */
+.ringLearning {
+  stroke: var(--ring-fill);
+  stroke-width: 2;
+  stroke-linecap: butt;
+  opacity: 0.7;
+  transition: stroke-dashoffset 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .ring[data-state='locked'] .ringFill {
   opacity: 0.6;
+}
+
+.ring[data-state='locked'] .ringLearning {
+  opacity: 0.45;
 }
 
 .ringGlyph {
@@ -290,7 +313,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ringFill {
+  .ringFill,
+  .ringLearning {
     transition: none;
   }
 }

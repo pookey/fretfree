@@ -4,32 +4,54 @@ import styles from './Learn.module.css';
 const R = 18;
 const C = 2 * Math.PI * R;
 
+function Arc({ className, pct }: { className: string | undefined; pct: number }) {
+  return (
+    <circle
+      className={className}
+      cx="22"
+      cy="22"
+      r={R}
+      transform="rotate(-90 22 22)"
+      strokeDasharray={C}
+      strokeDashoffset={C * (1 - pct / 100)}
+    />
+  );
+}
+
 /**
- * A mastery ring (design §3.7 mastery map, §7 Learn). The state is carried by
- * shape as well as colour: a tick when mastered, a padlock when locked, a
- * dashed track when the module isn't built yet, the stable share otherwise.
+ * A mastery ring (design §3.7 mastery map, §7 Learn) in two layers: a thin,
+ * light *learning* arc (latest answer correct) under the thick, solid
+ * *stable* arc, so a first session lights the ring before anything is
+ * retained (research/02 rule 15). The state is carried by shape as well as
+ * colour: a tick when mastered, a padlock when locked, a dashed track when
+ * the module isn't built yet, and the learning share in the middle otherwise.
  */
 export function MasteryRing({
-  fraction,
+  learning,
+  stable,
   state,
   label,
   size = 'medium',
 }: {
-  fraction: number;
+  /** 0–1: items learning (stable ones included). */
+  learning: number;
+  /** 0–1: items stable. */
+  stable: number;
   state: ModuleState;
   /** What the ring measures, for the spoken label ("Neck basics"). */
   label: string;
   size?: 'medium' | 'large';
 }) {
-  const pct = percent(fraction);
-  // "Stable", not "mastered": mastery also needs answers within the speed
-  // target (design §3.4), so a full ring alone doesn't claim it.
+  const stablePct = percent(stable);
+  const learningPct = Math.max(percent(learning), stablePct);
+  // "Learning · Stable", never "learned" or "mastered": one good session isn't
+  // retention, and mastery also needs answers within the speed target (§3.4).
   const spoken =
     state === 'soon'
       ? `${label}: coming soon`
       : state === 'mastered'
         ? `${label}: mastered`
-        : `${label}: ${pct}% stable${state === 'locked' ? ', locked' : ''}`;
+        : `${label}: ${learningPct}% learning, ${stablePct}% stable${state === 'locked' ? ', locked' : ''}`;
   return (
     <svg
       className={styles.ring}
@@ -38,21 +60,13 @@ export function MasteryRing({
       aria-label={spoken}
       data-size={size}
       data-state={state}
-      data-mastery={pct}
+      data-learning={learningPct}
+      data-mastery={stablePct}
       data-testid="mastery-ring"
     >
       <circle className={styles.ringTrack} cx="22" cy="22" r={R} />
-      {pct > 0 && (
-        <circle
-          className={styles.ringFill}
-          cx="22"
-          cy="22"
-          r={R}
-          transform="rotate(-90 22 22)"
-          strokeDasharray={C}
-          strokeDashoffset={C * (1 - pct / 100)}
-        />
-      )}
+      {learningPct > stablePct && <Arc className={styles.ringLearning} pct={learningPct} />}
+      {stablePct > 0 && <Arc className={styles.ringFill} pct={stablePct} />}
       {state === 'mastered' && <path className={styles.ringGlyph} d="M15 22.5 L20 27.5 L29.5 17" />}
       {state === 'locked' && (
         <g className={styles.ringGlyph}>
@@ -62,7 +76,7 @@ export function MasteryRing({
       )}
       {state === 'open' && (
         <text className={styles.ringText} x="22" y="22">
-          {pct}%
+          {learningPct}%
         </text>
       )}
     </svg>

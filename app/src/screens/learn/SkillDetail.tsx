@@ -39,7 +39,8 @@ export function SkillDetail({ view }: { view: SkillView }) {
       data-testid={`skill-${skill.id}`}
     >
       <MasteryRing
-        fraction={view.mastery}
+        learning={view.learning}
+        stable={view.mastery}
         state={skillRingState(view.status)}
         label={skill.title}
       />
@@ -47,7 +48,9 @@ export function SkillDetail({ view }: { view: SkillView }) {
         <h4 className={styles.skillTitle}>{skill.title}</h4>
         <p className={styles.skillMeta}>
           <span className={styles.topic}>{skill.topic}</span> {SKILL_STATUS_LABEL[view.status]} ·{' '}
-          {view.stableCount} of {view.itemCount} items stable
+          <span data-testid="skill-progress">
+            {view.learningCount} learning · {view.stableCount} stable of {view.itemCount}
+          </span>
         </p>
         <p className={styles.skillCopy}>{statusCopy(view)}</p>
         {(example || canPractise) && (

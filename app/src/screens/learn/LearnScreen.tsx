@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useAppStore } from '../../app-store';
 import { SKILLS, type CardRecord, type Goal, type SkillStatus } from '../../engine';
+import { latestOutcomes } from '../../engine/progress';
 import { GOAL_OPTIONS } from '../../onboarding/options';
 import { ScreenLayout } from '../../shell/ScreenLayout';
 import { useSizeClass } from '../../shell/size-class';
@@ -14,6 +15,7 @@ import styles from './Learn.module.css';
 interface LearnData {
   stored: Map<string, SkillStatus>;
   cards: CardRecord[];
+  outcomes: Map<string, boolean>;
 }
 
 function useLearnData(): LearnData | null {
@@ -21,10 +23,16 @@ function useLearnData(): LearnData | null {
   useEffect(() => {
     let live = true;
     const db = getDb();
-    void Promise.all([getSkillStates(db), allCards(db)]).then(([states, cards]) => {
-      if (!live) return;
-      setData({ stored: new Map([...states.values()].map((s) => [s.skillId, s.status])), cards });
-    });
+    void Promise.all([getSkillStates(db), allCards(db), db.reviewLogs.toArray()]).then(
+      ([states, cards, logs]) => {
+        if (!live) return;
+        setData({
+          stored: new Map([...states.values()].map((s) => [s.skillId, s.status])),
+          cards,
+          outcomes: latestOutcomes(logs),
+        });
+      },
+    );
     return () => {
       live = false;
     };
@@ -53,13 +61,18 @@ function ModuleCard({
         data-testid={`module-${module.id}`}
         aria-current={selected ? 'true' : undefined}
       >
-        <MasteryRing fraction={view.mastery} state={view.state} label={module.title} />
+        <MasteryRing
+          learning={view.learning}
+          stable={view.mastery}
+          state={view.state}
+          label={module.title}
+        />
         <span className={styles.moduleText}>
           <span className={styles.moduleTitle}>{module.title}</span>
           <span className={styles.moduleMeta}>
             {MODULE_STATE_LABEL[view.state]}
             {skills > 0 &&
-              ` · ${view.masteredSkills}/${skills} skills · ${percent(view.mastery)}% stable`}
+              ` · ${view.masteredSkills}/${skills} skills · ${percent(view.learning)}% learning · ${percent(view.mastery)}% stable`}
           </span>
         </span>
       </Link>
@@ -87,6 +100,7 @@ export function LearnScreen() {
         goal,
         stored: data?.stored ?? new Map(),
         cards: data?.cards ?? [],
+        outcomes: data?.outcomes,
       }),
     [goal, data],
   );
