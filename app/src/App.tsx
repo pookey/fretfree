@@ -1,25 +1,15 @@
 import { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { useAppStore } from './app-store';
-import { SessionScreen } from './session/SessionScreen';
+import { ROUTES } from './routes/registry';
 import { AppShell } from './shell/AppShell';
 import { UpdateToast } from './shell/UpdateToast';
-import { ExploreScreen } from './screens/ExploreScreen';
-import { LearnScreen } from './screens/LearnScreen';
-import { ProgressScreen } from './screens/ProgressScreen';
-import { TodayScreen } from './screens/TodayScreen';
+
+const toRoute = ({ path, element }: (typeof ROUTES)[number]) => ({ path, element });
 
 const router = createBrowserRouter([
-  {
-    element: <AppShell />,
-    children: [
-      { index: true, element: <TodayScreen /> },
-      { path: 'learn', element: <LearnScreen /> },
-      { path: 'explore', element: <ExploreScreen /> },
-      { path: 'progress', element: <ProgressScreen /> },
-    ],
-  },
-  { path: 'session', element: <SessionScreen /> },
+  { element: <AppShell />, children: ROUTES.filter((r) => r.layout === 'shell').map(toRoute) },
+  ...ROUTES.filter((r) => r.layout === 'fullscreen').map(toRoute),
 ]);
 
 export function App() {

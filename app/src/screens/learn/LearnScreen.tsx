@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { SKILLS, type SkillStatus } from '../engine';
-import { ScreenLayout } from '../shell/ScreenLayout';
-import { getDb, getSkillStates } from '../storage';
-import styles from './screens.module.css';
+import { SKILLS, type SkillStatus } from '../../engine';
+import { ScreenLayout } from '../../shell/ScreenLayout';
+import { getDb, getSkillStates } from '../../storage';
+import styles from '../screens.module.css';
 
 const STATUS_LABEL: Record<SkillStatus, string> = {
   locked: 'Preview',

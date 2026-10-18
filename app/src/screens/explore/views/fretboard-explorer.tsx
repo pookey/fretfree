@@ -1,14 +1,17 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { useAppStore } from '../app-store';
-import { Fretboard, type FretMarker } from '../components/fretboard/Fretboard';
-import { ScreenLayout } from '../shell/ScreenLayout';
-import { neckWindow, useSizeClass } from '../shell/size-class';
-import { allStrings, isNatural, noteAt } from '../theory';
-import styles from './screens.module.css';
+import { useAppStore } from '../../../app-store';
+import { Fretboard, type FretMarker } from '../../../components/fretboard/Fretboard';
+import { neckWindow, useSizeClass } from '../../../shell/size-class';
+import { allStrings, isNatural, noteAt } from '../../../theory';
+import styles from '../../screens.module.css';
+
+export const id = 'fretboard-explorer';
+export const title = 'Fretboard explorer';
+export const order = 10;
 
 /** Fretboard explorer (design §7 Explore): reference only, no grading. */
-export function ExploreScreen() {
+export function View() {
   const sizeClass = useSizeClass();
   const { handedness, accidentalPref } = useAppStore((s) => s.settings);
   const [showAll, setShowAll] = useState(false);
@@ -26,7 +29,7 @@ export function ExploreScreen() {
   }, [showAll, range.from, range.to, accidentalPref]);
 
   return (
-    <ScreenLayout title="Explore">
+    <>
       <div className={styles.toolbar}>
         <label className={styles.toggle}>
           <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
@@ -46,6 +49,6 @@ export function ExploreScreen() {
           label="Fretboard explorer"
         />
       </div>
-    </ScreenLayout>
+    </>
   );
 }
