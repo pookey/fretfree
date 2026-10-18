@@ -10,13 +10,18 @@ import {
 } from './fretboard';
 
 /**
- * CAGED and triad shape generation (topics C6, I1). M0 covers major CAGED
- * shapes in standard tuning and close-voiced triads on any three adjacent
- * strings; minor/7th CAGED variants arrive with M3.
+ * CAGED and triad shape generation (topics C6, I1). CAGED shapes come in
+ * major, minor and dominant-7 forms in standard tuning; close-voiced triads
+ * work on any three adjacent strings. Each CAGED shape has a triad core, the
+ * close triad on three adjacent strings inside it (research/03: "triads are
+ * the cores of the CAGED shapes"), which is what C6 teaches first.
  */
 
 export type CagedShapeName = 'C' | 'A' | 'G' | 'E' | 'D';
-export type Degree = 'R' | '3' | 'b3' | '5';
+export type CagedQuality = 'major' | 'minor' | 'dominant7';
+export type Degree = 'R' | '3' | 'b3' | '5' | 'b7';
+
+export const CAGED_QUALITIES: readonly CagedQuality[] = ['major', 'minor', 'dominant7'];
 
 export interface ShapeNote extends Position {
   readonly degree: Degree;
@@ -24,10 +29,12 @@ export interface ShapeNote extends Position {
 
 export interface CagedShape {
   readonly shape: CagedShapeName;
+  readonly quality: CagedQuality;
   readonly root: string;
   /** Fret of the root on the shape's root string. */
   readonly rootFret: number;
   readonly rootString: number;
+  /** Low-to-high: the lowest-pitched string first. */
   readonly notes: readonly ShapeNote[];
 }
 
@@ -36,98 +43,247 @@ interface Template {
   notes: readonly { string: number; offset: number; degree: Degree }[];
 }
 
-/** Major-chord templates; offsets are relative to the root fret on `rootString`. */
-const MAJOR_TEMPLATES: Record<CagedShapeName, Template> = {
-  C: {
-    rootString: 5,
-    notes: [
-      { string: 5, offset: 0, degree: 'R' },
-      { string: 4, offset: -1, degree: '3' },
-      { string: 3, offset: -3, degree: '5' },
-      { string: 2, offset: -2, degree: 'R' },
-      { string: 1, offset: -3, degree: '3' },
-    ],
+/**
+ * CAGED templates, named after the open chord each one is (C x32010, Am
+ * x02210, G7 320001 …). Offsets are relative to the root fret on `rootString`.
+ * The minor C and G shapes put the 5th on string 1 (C) or string 2 (G) where
+ * the major 3rd was, because the b3 would sit a 4-fret stretch below the nut.
+ */
+const TEMPLATES: Record<CagedQuality, Record<CagedShapeName, Template>> = {
+  major: {
+    C: {
+      rootString: 5,
+      notes: [
+        { string: 5, offset: 0, degree: 'R' },
+        { string: 4, offset: -1, degree: '3' },
+        { string: 3, offset: -3, degree: '5' },
+        { string: 2, offset: -2, degree: 'R' },
+        { string: 1, offset: -3, degree: '3' },
+      ],
+    },
+    A: {
+      rootString: 5,
+      notes: [
+        { string: 5, offset: 0, degree: 'R' },
+        { string: 4, offset: 2, degree: '5' },
+        { string: 3, offset: 2, degree: 'R' },
+        { string: 2, offset: 2, degree: '3' },
+        { string: 1, offset: 0, degree: '5' },
+      ],
+    },
+    G: {
+      rootString: 6,
+      notes: [
+        { string: 6, offset: 0, degree: 'R' },
+        { string: 5, offset: -1, degree: '3' },
+        { string: 4, offset: -3, degree: '5' },
+        { string: 3, offset: -3, degree: 'R' },
+        { string: 2, offset: -3, degree: '3' },
+        { string: 1, offset: 0, degree: 'R' },
+      ],
+    },
+    E: {
+      rootString: 6,
+      notes: [
+        { string: 6, offset: 0, degree: 'R' },
+        { string: 5, offset: 2, degree: '5' },
+        { string: 4, offset: 2, degree: 'R' },
+        { string: 3, offset: 1, degree: '3' },
+        { string: 2, offset: 0, degree: '5' },
+        { string: 1, offset: 0, degree: 'R' },
+      ],
+    },
+    D: {
+      rootString: 4,
+      notes: [
+        { string: 4, offset: 0, degree: 'R' },
+        { string: 3, offset: 2, degree: '5' },
+        { string: 2, offset: 3, degree: 'R' },
+        { string: 1, offset: 2, degree: '3' },
+      ],
+    },
   },
-  A: {
-    rootString: 5,
-    notes: [
-      { string: 5, offset: 0, degree: 'R' },
-      { string: 4, offset: 2, degree: '5' },
-      { string: 3, offset: 2, degree: 'R' },
-      { string: 2, offset: 2, degree: '3' },
-      { string: 1, offset: 0, degree: '5' },
-    ],
+  minor: {
+    C: {
+      rootString: 5,
+      notes: [
+        { string: 5, offset: 0, degree: 'R' },
+        { string: 4, offset: -2, degree: 'b3' },
+        { string: 3, offset: -3, degree: '5' },
+        { string: 2, offset: -2, degree: 'R' },
+        { string: 1, offset: 0, degree: '5' },
+      ],
+    },
+    A: {
+      rootString: 5,
+      notes: [
+        { string: 5, offset: 0, degree: 'R' },
+        { string: 4, offset: 2, degree: '5' },
+        { string: 3, offset: 2, degree: 'R' },
+        { string: 2, offset: 1, degree: 'b3' },
+        { string: 1, offset: 0, degree: '5' },
+      ],
+    },
+    G: {
+      rootString: 6,
+      notes: [
+        { string: 6, offset: 0, degree: 'R' },
+        { string: 5, offset: -2, degree: 'b3' },
+        { string: 4, offset: -3, degree: '5' },
+        { string: 3, offset: -3, degree: 'R' },
+        { string: 2, offset: 0, degree: '5' },
+        { string: 1, offset: 0, degree: 'R' },
+      ],
+    },
+    E: {
+      rootString: 6,
+      notes: [
+        { string: 6, offset: 0, degree: 'R' },
+        { string: 5, offset: 2, degree: '5' },
+        { string: 4, offset: 2, degree: 'R' },
+        { string: 3, offset: 0, degree: 'b3' },
+        { string: 2, offset: 0, degree: '5' },
+        { string: 1, offset: 0, degree: 'R' },
+      ],
+    },
+    D: {
+      rootString: 4,
+      notes: [
+        { string: 4, offset: 0, degree: 'R' },
+        { string: 3, offset: 2, degree: '5' },
+        { string: 2, offset: 3, degree: 'R' },
+        { string: 1, offset: 1, degree: 'b3' },
+      ],
+    },
   },
-  G: {
-    rootString: 6,
-    notes: [
-      { string: 6, offset: 0, degree: 'R' },
-      { string: 5, offset: -1, degree: '3' },
-      { string: 4, offset: -3, degree: '5' },
-      { string: 3, offset: -3, degree: 'R' },
-      { string: 2, offset: -3, degree: '3' },
-      { string: 1, offset: 0, degree: 'R' },
-    ],
-  },
-  E: {
-    rootString: 6,
-    notes: [
-      { string: 6, offset: 0, degree: 'R' },
-      { string: 5, offset: 2, degree: '5' },
-      { string: 4, offset: 2, degree: 'R' },
-      { string: 3, offset: 1, degree: '3' },
-      { string: 2, offset: 0, degree: '5' },
-      { string: 1, offset: 0, degree: 'R' },
-    ],
-  },
-  D: {
-    rootString: 4,
-    notes: [
-      { string: 4, offset: 0, degree: 'R' },
-      { string: 3, offset: 2, degree: '5' },
-      { string: 2, offset: 3, degree: 'R' },
-      { string: 1, offset: 2, degree: '3' },
-    ],
+  dominant7: {
+    C: {
+      rootString: 5,
+      notes: [
+        { string: 5, offset: 0, degree: 'R' },
+        { string: 4, offset: -1, degree: '3' },
+        { string: 3, offset: 0, degree: 'b7' },
+        { string: 2, offset: -2, degree: 'R' },
+        { string: 1, offset: -3, degree: '3' },
+      ],
+    },
+    A: {
+      rootString: 5,
+      notes: [
+        { string: 5, offset: 0, degree: 'R' },
+        { string: 4, offset: 2, degree: '5' },
+        { string: 3, offset: 0, degree: 'b7' },
+        { string: 2, offset: 2, degree: '3' },
+        { string: 1, offset: 0, degree: '5' },
+      ],
+    },
+    G: {
+      rootString: 6,
+      notes: [
+        { string: 6, offset: 0, degree: 'R' },
+        { string: 5, offset: -1, degree: '3' },
+        { string: 4, offset: -3, degree: '5' },
+        { string: 3, offset: -3, degree: 'R' },
+        { string: 2, offset: -3, degree: '3' },
+        { string: 1, offset: -2, degree: 'b7' },
+      ],
+    },
+    E: {
+      rootString: 6,
+      notes: [
+        { string: 6, offset: 0, degree: 'R' },
+        { string: 5, offset: 2, degree: '5' },
+        { string: 4, offset: 0, degree: 'b7' },
+        { string: 3, offset: 1, degree: '3' },
+        { string: 2, offset: 0, degree: '5' },
+        { string: 1, offset: 0, degree: 'R' },
+      ],
+    },
+    D: {
+      rootString: 4,
+      notes: [
+        { string: 4, offset: 0, degree: 'R' },
+        { string: 3, offset: 2, degree: '5' },
+        { string: 2, offset: 1, degree: 'b7' },
+        { string: 1, offset: 2, degree: '3' },
+      ],
+    },
   },
 };
 
 /** The CAGED chain order, ascending the neck. */
 export const CAGED_ORDER: readonly CagedShapeName[] = ['C', 'A', 'G', 'E', 'D'];
 
+export interface CagedOptions {
+  /** Defaults to `major`. */
+  readonly quality?: CagedQuality;
+  /** Place the shape at the lowest position whose frets are all ≥ this. Default 0. */
+  readonly minFret?: number;
+}
+
+/** The shape that follows `shape` up the neck (D wraps round to C). */
+export function nextCagedShape(shape: CagedShapeName): CagedShapeName {
+  return CAGED_ORDER[(CAGED_ORDER.indexOf(shape) + 1) % CAGED_ORDER.length] as CagedShapeName;
+}
+
+/** The shape that precedes `shape` down the neck (C wraps round to D). */
+export function previousCagedShape(shape: CagedShapeName): CagedShapeName {
+  return CAGED_ORDER[(CAGED_ORDER.indexOf(shape) + 4) % CAGED_ORDER.length] as CagedShapeName;
+}
+
 /**
- * The major CAGED shape for `root`, placed at the lowest neck position whose
- * frets are all ≥ `minFret` (default 0). Standard tuning only.
+ * The CAGED shape for `root`, placed at the lowest neck position whose frets
+ * are all ≥ `minFret` (default 0). Standard tuning only.
  */
 export function cagedShape(
   shape: CagedShapeName,
   root: string,
-  opts: { minFret?: number } = {},
+  opts: CagedOptions = {},
 ): CagedShape {
-  const t = MAJOR_TEMPLATES[shape];
+  const quality = opts.quality ?? 'major';
+  const t = TEMPLATES[quality][shape];
   const minFret = opts.minFret ?? 0;
   const minOffset = Math.min(...t.notes.map((n) => n.offset));
   const openChroma = openStringMidi(t.rootString, STANDARD_TUNING) % 12;
   let rootFret = (((chromaOf(root) - openChroma) % 12) + 12) % 12;
   while (rootFret + minOffset < minFret) rootFret += 12;
+  return placeTemplate(shape, quality, root, rootFret);
+}
+
+function placeTemplate(
+  shape: CagedShapeName,
+  quality: CagedQuality,
+  root: string,
+  rootFret: number,
+): CagedShape {
+  const t = TEMPLATES[quality][shape];
   const notes = t.notes.map((n) => ({
     string: n.string,
     fret: rootFret + n.offset,
     degree: n.degree,
   }));
-  if (notes.some((n) => n.fret > MAX_FRET)) {
-    throw new RangeError(`${shape} shape of ${root} does not fit above fret ${minFret}`);
+  if (notes.some((n) => n.fret > MAX_FRET || n.fret < 0)) {
+    throw new RangeError(`${shape} shape of ${root} does not fit at root fret ${rootFret}`);
   }
-  return { shape, root, rootFret, rootString: t.rootString, notes };
+  return { shape, quality, root, rootFret, rootString: t.rootString, notes };
+}
+
+/** Lowest and highest fretted positions of a shape (open strings count as 0). */
+export function shapeSpan(s: { readonly notes: readonly Position[] }): {
+  from: number;
+  to: number;
+} {
+  const frets = s.notes.map((n) => n.fret);
+  return { from: Math.min(...frets), to: Math.max(...frets) };
 }
 
 /**
  * The five shapes of one chord, chained up the neck from the lowest position
  * (e.g. C major: C → A → G → E → D).
  */
-export function cagedChain(root: string): CagedShape[] {
-  const shapes = CAGED_ORDER.map((s) => cagedShape(s, root));
-  const lowestFret = (s: CagedShape) => Math.min(...s.notes.map((n) => n.fret));
-  return shapes.sort((a, b) => lowestFret(a) - lowestFret(b));
+export function cagedChain(root: string, opts: { quality?: CagedQuality } = {}): CagedShape[] {
+  const shapes = CAGED_ORDER.map((s) => cagedShape(s, root, opts));
+  return shapes.sort((a, b) => shapeSpan(a).from - shapeSpan(b).from);
 }
 
 export type TriadQuality = 'major' | 'minor';
@@ -203,4 +359,53 @@ export function triadVoicings(
     }
   }
   return result.sort((a, b) => (a.notes[0]?.fret ?? 0) - (b.notes[0]?.fret ?? 0));
+}
+
+export interface TriadCore extends TriadVoicing {
+  readonly shape: CagedShapeName;
+  /** Lowest-pitched string of the three-string set, e.g. 3 for strings 3–1. */
+  readonly lowString: number;
+}
+
+/** The triad inside a three-string slice of a shape, or null if the slice isn't a close triad. */
+function coreOn(s: CagedShape, quality: TriadQuality, lowString: number): TriadCore | null {
+  const slice = [lowString, lowString - 1, lowString - 2].map((str) =>
+    s.notes.find((n) => n.string === str),
+  );
+  if (slice.some((n) => n === undefined)) return null;
+  const notes = slice as ShapeNote[];
+  const degrees = TRIAD_DEGREES[quality];
+  if (!degrees.every((d) => notes.some((n) => n.degree === d))) return null;
+  const midis = notes.map((n) => midiAt(n));
+  const [m0, m1, m2] = midis as [number, number, number];
+  if (!(m0 < m1 && m1 < m2 && m2 - m0 < 12)) return null;
+  const inversion = degrees.indexOf((notes[0] as ShapeNote).degree) as Inversion;
+  return { shape: s.shape, root: s.root, quality, inversion, lowString, notes };
+}
+
+/**
+ * Every close-voiced triad on three adjacent strings inside the shape, top
+ * string set first. A dominant-7 shape's cores are those of the major shape at
+ * the same position (7 = major triad + b7).
+ */
+export function triadCores(s: CagedShape): TriadCore[] {
+  const base = s.quality === 'dominant7' ? placeTemplate(s.shape, 'major', s.root, s.rootFret) : s;
+  const quality: TriadQuality = s.quality === 'minor' ? 'minor' : 'major';
+  const out: TriadCore[] = [];
+  for (let low = 3; low <= 6; low++) {
+    const core = coreOn(base, quality, low);
+    if (core) out.push(core);
+  }
+  return out;
+}
+
+/**
+ * The triad core taught first for a shape: the highest string set that holds
+ * a complete close triad (strings 3–1 for C, A, E and D; 4–2 for G, and for
+ * the minor C shape; 5–3 for the minor G shape).
+ */
+export function triadCore(s: CagedShape): TriadCore {
+  const core = triadCores(s)[0];
+  if (!core) throw new Error(`${s.shape} shape of ${s.root} has no triad core`);
+  return core;
 }
