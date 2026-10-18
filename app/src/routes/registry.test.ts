@@ -13,6 +13,7 @@ describe('route registry', () => {
   it('discovers every screen from its route file', () => {
     expect(ROUTES.map((r) => [r.path, r.layout])).toEqual([
       ['/', 'shell'],
+      ['/about', 'shell'],
       ['/explore', 'shell'],
       ['/learn', 'shell'],
       ['/onboarding', 'fullscreen'],
