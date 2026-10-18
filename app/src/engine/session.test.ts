@@ -47,6 +47,90 @@ describe('dueReviews', () => {
   });
 });
 
+describe('dueReviews near-ties', () => {
+  // Placement seeds every known card with the same `now` and stability, so a
+  // whole batch comes due with identical retrievability.
+  const placedAt = new Date(now.getTime() - 12 * DAY);
+  const seeded = (skillId: string, n: number) =>
+    Array.from({ length: n }, (_, i) =>
+      s.seedKnownCard({ id: `${skillId}-${i}`, skillId }, placedAt),
+    );
+  const batch = [...seeded('a', 4), ...seeded('b', 4), ...seeded('c', 4)];
+  const skills = (cards: readonly CardRecord[]) => cards.map((c) => c.skillId);
+  /** A small deterministic PRNG (mulberry32). */
+  const seededRng = (seed: number) => () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4_294_967_296;
+  };
+  const backToBack = (seq: readonly string[]) => seq.filter((x, i) => x === seq[i - 1]).length;
+
+  it('interleaves a seeded batch from three skills', () => {
+    expect(skills(dueReviews(batch, s, now))).toEqual(Array(4).fill(['a', 'b', 'c']).flat());
+    const shuffled = dueReviews(batch, s, now, { rng: seededRng(7) });
+    expect(shuffled).toHaveLength(12);
+    expect(backToBack(skills(shuffled))).toBe(0);
+  });
+
+  it('balances uneven skills and alternates drills between them', () => {
+    // Three one-item skills on one drill and a three-item skill across two
+    // drills, as in the M2 QA batch: neither skills nor drills sit together.
+    const cards = [
+      ...seeded('t', 3),
+      ...['x', 'y', 'z'].map((skillId) =>
+        s.seedKnownCard({ id: `oct-${skillId}`, skillId }, placedAt),
+      ),
+    ];
+    const drillOf = (id: string) => (id.startsWith('oct') ? 'D4' : id === 't-0' ? 'D6' : 'D5');
+    const drills = (order: readonly CardRecord[]) => order.map((c) => drillOf(c.itemId));
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      const order = dueReviews(cards, s, now, { rng: seededRng(seed), drillOf });
+      expect(backToBack(skills(order)), `seed ${seed}`).toBe(0);
+      expect(backToBack(drills(order)), `seed ${seed}`).toBe(0);
+    }
+    // Without a drill key, only skills alternate.
+    expect(skills(dueReviews(cards, s, now))).toEqual(['t', 'x', 't', 'y', 'z', 't']);
+  });
+
+  it('gives the same order for the same rng', () => {
+    const ids = (seed: number) =>
+      dueReviews(batch, s, now, { rng: seededRng(seed) }).map((c) => c.itemId);
+    expect(ids(3)).toEqual(ids(3));
+    expect(new Set(ids(3))).toEqual(new Set(batch.map((c) => c.itemId)));
+    expect(ids(3)).not.toEqual(ids(4));
+  });
+
+  it('still serves a clearly more overdue card first', () => {
+    const overdue = s.seedKnownCard(
+      { id: 'c-old', skillId: 'c' },
+      new Date(now.getTime() - 40 * DAY),
+    );
+    for (const rng of [undefined, seededRng(1), seededRng(2)]) {
+      const order = dueReviews([...batch, overdue], s, now, { rng });
+      expect(order[0]?.itemId).toBe('c-old');
+      expect(order).toHaveLength(13);
+    }
+  });
+
+  it('keeps overdue order outside the window', () => {
+    const card = (skillId: string, age: number) => ({
+      ...dueCard(`${skillId}${age}`, age),
+      skillId,
+    });
+    const cards = [card('b', 5), card('a', 40), card('b', 4), card('a', 39)];
+    // Days apart is well outside a zero window: skill a's items stay first, back to back.
+    expect(dueReviews(cards, s, now, { window: 0 }).map((c) => c.itemId)).toEqual([
+      'a40',
+      'a39',
+      'b5',
+      'b4',
+    ]);
+    // A window wide enough to tie everything mixes the skills instead.
+    expect(skills(dueReviews(cards, s, now, { window: 1 }))).toEqual(['a', 'b', 'a', 'b']);
+  });
+});
+
 describe('newItemBlock', () => {
   it('opens with a guided worked example, then repeats the group round-robin', () => {
     const block = newItemBlock(items(2), 3);
@@ -177,6 +261,30 @@ describe('buildSession', () => {
     });
     const ids = plan.map((e) => e.itemId);
     expect(Math.abs(ids.indexOf('E1') - ids.indexOf('F1'))).toBe(1);
+  });
+});
+
+describe('buildSession due ties', () => {
+  it('interleaves a placement-seeded batch before capping it', () => {
+    const placedAt = new Date(now.getTime() - 12 * DAY);
+    const cards = ['a', 'b', 'c'].flatMap((skillId) =>
+      Array.from({ length: 10 }, (_, i) =>
+        s.seedKnownCard({ id: `${skillId}${i}`, skillId }, placedAt),
+      ),
+    );
+    const plan = buildSession({
+      now,
+      minutes: 1,
+      cards,
+      frontier: items(4),
+      scheduler: s,
+      maxItems: 10,
+      rng: () => 0.5,
+    });
+    const reviews = plan.filter((e) => e.kind === 'review').map((e) => e.skillId);
+    expect(reviews).toHaveLength(7);
+    expect(new Set(reviews)).toEqual(new Set(['a', 'b', 'c']));
+    expect(reviews.some((x, i) => x === reviews[i - 1])).toBe(false);
   });
 });
 

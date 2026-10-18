@@ -45,6 +45,10 @@ export interface SessionPlanInput {
   factOf?: (item: Item) => FactRef | null;
   maxItems?: number;
   config?: SessionConfig;
+  /** Shuffles tied due reviews before they are dealt (`DueOrder`). */
+  rng?: () => number;
+  /** The drill that serves an item, so tied due reviews alternate drills too. */
+  drillOf?: (itemId: string) => string | null;
 }
 
 type SessionConfig = {
@@ -60,17 +64,79 @@ export function sessionLength(minutes: number, cfg: SessionConfig = ENGINE_CONFI
   return Math.max(5, Math.round((minutes * 60) / cfg.secondsPerItem));
 }
 
-/** Step 1: due reviews, lowest retrievability first. */
+export interface DueOrder {
+  /** Shuffles a tied run before it is dealt. Without it, ties keep item-ID order. */
+  rng?: () => number;
+  /** The drill that serves an item, so tied neighbours differ in drill as well as skill. */
+  drillOf?: (itemId: string) => string | null;
+  /** Retrievability span that counts as a tie (`ENGINE_CONFIG.dueTies.window`). */
+  window?: number;
+}
+
+/**
+ * Step 1: due reviews, lowest retrievability first. Cards within `window` of
+ * the most overdue card in their run are tied, and a tied run is dealt so
+ * neighbours differ in skill, then in drill (research/02 rule 6). With `rng`,
+ * the run is shuffled first: the order varies, but not for the same `rng`.
+ */
 export function dueReviews(
   cards: readonly CardRecord[],
   scheduler: Scheduler,
   now: Date,
+  { rng, drillOf, window = ENGINE_CONFIG.dueTies.window }: DueOrder = {},
 ): CardRecord[] {
-  return cards
+  const ranked = cards
     .filter((c) => scheduler.isDue(c, now))
     .map((c) => ({ c, r: scheduler.retrievability(c, now) }))
-    .sort((a, b) => a.r - b.r || a.c.itemId.localeCompare(b.c.itemId))
-    .map(({ c }) => c);
+    .sort((a, b) => a.r - b.r || a.c.itemId.localeCompare(b.c.itemId));
+  const out: CardRecord[] = [];
+  for (let start = 0; start < ranked.length;) {
+    const lead = ranked[start]!.r;
+    let end = start + 1;
+    while (end < ranked.length && ranked[end]!.r - lead <= window) end++;
+    const tied = ranked.slice(start, end).map(({ c }) => c);
+    out.push(...dealTies(rng ? shuffle(tied, rng) : tied, drillOf));
+    start = end;
+  }
+  return out;
+}
+
+/**
+ * Each pick is the first card that differs from the last one in skill, then
+ * in drill, favouring the skill with the most cards left so none clumps at
+ * the end.
+ */
+function dealTies(
+  cards: readonly CardRecord[],
+  drillOf?: (itemId: string) => string | null,
+): CardRecord[] {
+  const left = cards.map((c) => ({ c, drill: drillOf?.(c.itemId) ?? null }));
+  const count = new Map<string, number>();
+  for (const { c } of left) count.set(c.skillId, (count.get(c.skillId) ?? 0) + 1);
+  const out: CardRecord[] = [];
+  let last: (typeof left)[number] | undefined;
+  while (left.length > 0) {
+    const score = ({ c, drill }: (typeof left)[number]) =>
+      (c.skillId !== last?.c.skillId ? 2 : 0) +
+      (drill === null || drill !== last?.drill ? 1 : 0) +
+      (count.get(c.skillId) ?? 0) / (cards.length + 1);
+    let best = 0;
+    for (let i = 1; i < left.length; i++) if (score(left[i]!) > score(left[best]!)) best = i;
+    last = left.splice(best, 1)[0]!;
+    count.set(last.c.skillId, count.get(last.c.skillId)! - 1);
+    out.push(last.c);
+  }
+  return out;
+}
+
+/** Fisher–Yates on a copy. */
+function shuffle<T>(items: readonly T[], rng: () => number): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
 }
 
 /**
@@ -171,7 +237,10 @@ function interleave(
 export function buildSession(input: SessionPlanInput): SessionEntry[] {
   const cfg = input.config ?? ENGINE_CONFIG.session;
   const total = input.maxItems ?? sessionLength(input.minutes, cfg);
-  const due = dueReviews(input.cards, input.scheduler, input.now);
+  const due = dueReviews(input.cards, input.scheduler, input.now, {
+    rng: input.rng,
+    drillOf: input.drillOf,
+  });
   const reviewCap = Math.floor(total * cfg.reviewShare);
   const reviews: SessionEntry[] = due.slice(0, reviewCap).map((c) => ({
     itemId: c.itemId,
