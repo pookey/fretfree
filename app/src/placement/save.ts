@@ -1,4 +1,4 @@
-import type { Grade } from 'ts-fsrs';
+import { Rating, type Grade } from 'ts-fsrs';
 import { ENGINE_CONFIG } from '../engine/config';
 import type { SpeedTargets } from '../engine/grading';
 import { isMastered } from '../engine/mastery';
@@ -18,9 +18,11 @@ import { knownItems, verdicts, type PlacementState } from './algorithm';
  * Persists a finished placement test (design §3.4). Known items get a card
  * seeded at stability ≈ 10 days (`seedKnownCard`), so they come back as a
  * check-up review instead of being taught from scratch. Items that already
- * have a card are never re-seeded: real history beats a placement guess, and
- * a probe on one is evidence, so it is reviewed with the probe's rating.
- * Every answered probe is logged as a review (research/02 rule 17), marked
+ * have a card are never re-seeded: real history beats a placement guess. The
+ * test can be retaken from Settings at any time, so it never sets a learner
+ * back: a probe reviews a card they already have only when that moves it
+ * forward (`probeReview`), and a skill's status and guide level never drop
+ * (`knownSkillState`). Every answered probe is logged as a review (research/02 rule 17), marked
  * as a placement log. A known skill is marked mastered when every probed
  * item has a card and the mastery rule holds, or practising otherwise, so the
  * skills after it unlock while a probe it missed stays on the frontier, to
@@ -55,6 +57,28 @@ export interface PlacementSummary {
 
 const DEFAULT_GUIDE: GuideLevel = 3;
 
+/**
+ * A probe's review of a card the learner already has, or the card unchanged
+ * if the review would set it back. Only a fluent probe counts, and only when
+ * the card's stability and due date don't fall and it gains no lapse. A
+ * slow or missed probe is still logged, but the card keeps the schedule its
+ * real reviews gave it: sessions will ask it when it's due.
+ */
+export function probeReview(
+  card: CardRecord,
+  rating: Grade,
+  at: Date,
+  scheduler: Scheduler,
+): CardRecord {
+  if (rating < Rating.Good) return card;
+  const next = scheduler.review(card, rating, at);
+  const forward =
+    next.fsrs.stability >= card.fsrs.stability &&
+    next.fsrs.due.getTime() >= card.fsrs.due.getTime() &&
+    next.fsrs.lapses <= card.fsrs.lapses;
+  return forward ? next : card;
+}
+
 /** A known skill's state, never lowering what the learner already has. */
 export function knownSkillState(
   skillId: string,
@@ -86,11 +110,14 @@ export async function savePlacement(
       .filter((c): c is CardRecord => c !== undefined)
       .map((c) => [c.itemId, c]),
   );
-  // Probes on cards the learner already has are reviews, in the order answered.
+  // Probes on cards the learner already has are reviews, in the order
+  // answered, when they move the card forward.
   const reviewed = new Map<string, CardRecord>();
   for (const l of logs) {
     const card = reviewed.get(l.item.id) ?? existing.get(l.item.id);
-    if (card) reviewed.set(l.item.id, scheduler.review(card, l.rating, l.at));
+    if (!card) continue;
+    const next = probeReview(card, l.rating, l.at, scheduler);
+    if (next !== card) reviewed.set(l.item.id, next);
   }
   const seeded = knownItems(state)
     .filter((i) => !existing.has(i.id))

@@ -10,7 +10,13 @@ import {
   type PlacementState,
   type ProbeOutcome,
 } from './algorithm';
-import { isPlacementLog, knownSkillState, savePlacement, type ProbeLog } from './save';
+import {
+  isPlacementLog,
+  knownSkillState,
+  probeReview,
+  savePlacement,
+  type ProbeLog,
+} from './save';
 
 const NOW = new Date('2026-10-18T09:00:00Z');
 const DAY = 86_400_000;
@@ -34,7 +40,10 @@ const DEFAULT_OUTCOMES = (groupId: string): ProbeOutcome =>
   groupId === string6.id ? 'fluent' : 'wrong';
 
 /** Play the test; `outcome` gets the group and how many of its probes came before. */
-function play(outcome: (groupId: string, asked: number) => ProbeOutcome = DEFAULT_OUTCOMES): {
+function play(
+  outcome: (groupId: string, asked: number) => ProbeOutcome = DEFAULT_OUTCOMES,
+  at: Date = NOW,
+): {
   state: PlacementState;
   logs: ProbeLog[];
 } {
@@ -52,7 +61,7 @@ function play(outcome: (groupId: string, asked: number) => ProbeOutcome = DEFAUL
       responseMs: o === 'fluent' ? 900 : 2400,
       rating: o === 'fluent' ? Rating.Easy : o === 'slow' ? Rating.Hard : Rating.Again,
       answerGiven: o === 'wrong' ? 'wrong' : 'right',
-      at: NOW,
+      at,
     });
     state = answerProbe(state, p, o);
   }
@@ -139,16 +148,27 @@ describe('savePlacement', () => {
     }
   });
 
-  it('reviews a card the learner already has when a probe asks it', async () => {
+  it('leaves a card the learner already has alone when its probe is missed', async () => {
     const { state, logs } = play();
     // An established card on a string 5 item the learner then got wrong.
     const probed = logs.find((l) => l.item.skillId === string5.id)!.item;
     const own = scheduler.seedKnownCard(probed, new Date(NOW.getTime() - 30 * DAY), 30);
     await db.cards.put(own);
     await savePlacement(db, { state, logs, skills: SKILLS, scheduler, targets, now: NOW });
+    expect(await db.cards.get(probed.id)).toEqual(own);
+    // The answer is still logged (research/02 rule 17).
+    expect(await db.reviewLogs.where('itemId').equals(probed.id).count()).toBe(1);
+  });
+
+  it('reviews a card the learner already has when a fluent probe asks it', async () => {
+    const { state, logs } = play();
+    const probed = logs.find((l) => l.item.skillId === string6.id)!.item;
+    const own = scheduler.seedKnownCard(probed, new Date(NOW.getTime() - 30 * DAY), 20);
+    await db.cards.put(own);
+    await savePlacement(db, { state, logs, skills: SKILLS, scheduler, targets, now: NOW });
     const after = (await db.cards.get(probed.id))!;
-    expect(after).toEqual(scheduler.review(own, Rating.Again, NOW));
-    expect(after.fsrs.lapses).toBe(1);
+    expect(after).toEqual(scheduler.review(own, Rating.Easy, NOW));
+    expect(after.fsrs.stability).toBeGreaterThan(own.fsrs.stability);
   });
 
   it('keeps cards the learner already has', async () => {
@@ -188,6 +208,104 @@ describe('savePlacement', () => {
     });
     expect(summary).toEqual({ knownSkills: [], seeded: 0 });
     expect(await db.cards.count()).toBe(0);
+  });
+});
+
+describe('retaking the test', () => {
+  const STATUS_RANK = { locked: 0, unlocked: 1, practising: 2, mastered: 3 } as const;
+  const LATER = new Date(NOW.getTime() + 3 * DAY);
+
+  /** A learner a few days in: an earlier placement, then sessions of mixed reviews. */
+  async function learnerWithHistory() {
+    const first = play();
+    await savePlacement(db, { ...first, skills: SKILLS, scheduler, targets, now: NOW });
+    const day1 = new Date(NOW.getTime() + DAY);
+    const ratings = [Rating.Good, Rating.Again, Rating.Hard, Rating.Easy] as const;
+    const fresh = string5.items().map((item, i) => {
+      const learnt = scheduler.review(scheduler.newCard(item, NOW), Rating.Good, NOW);
+      return scheduler.review(learnt, ratings[i % ratings.length]!, day1);
+    });
+    await db.cards.bulkPut(fresh);
+    await db.skillStates.bulkPut([
+      { skillId: string6.id, status: 'mastered', guideLevel: 0, rollingAccuracy: 0.97 },
+      { skillId: string5.id, status: 'practising', guideLevel: 2, rollingAccuracy: 0.8 },
+    ]);
+    return {
+      cards: new Map((await db.cards.toArray()).map((c) => [c.itemId, c])),
+      states: await getSkillStates(db),
+    };
+  }
+
+  const patterns: Record<string, (g: string, asked: number) => ProbeOutcome> = {
+    'misses everything': () => 'wrong',
+    'is slow on everything': () => 'slow',
+    'is fluent on everything': () => 'fluent',
+    'mixes fluent, slow and wrong answers': (g, asked) =>
+      (['fluent', 'wrong', 'slow'] as const)[(asked + g.length) % 3]!,
+  };
+
+  for (const [name, outcome] of Object.entries(patterns)) {
+    it(`never lowers a skill's status, guide level or any card when the learner ${name}`, async () => {
+      const before = await learnerWithHistory();
+      const retake = play(outcome, LATER);
+      await savePlacement(db, { ...retake, skills: SKILLS, scheduler, targets, now: LATER });
+
+      for (const [id, was] of before.cards) {
+        const now = (await db.cards.get(id))!;
+        expect(now.fsrs.stability).toBeGreaterThanOrEqual(was.fsrs.stability);
+        expect(now.fsrs.due.getTime()).toBeGreaterThanOrEqual(was.fsrs.due.getTime());
+        expect(now.fsrs.lapses).toBe(was.fsrs.lapses);
+        expect(now.fsrs.reps).toBeGreaterThanOrEqual(was.fsrs.reps);
+      }
+      const after = await getSkillStates(db);
+      for (const [id, was] of before.states) {
+        const now = after.get(id)!;
+        expect(STATUS_RANK[now.status]).toBeGreaterThanOrEqual(STATUS_RANK[was.status]);
+        expect(now.guideLevel).toBeLessThanOrEqual(was.guideLevel);
+      }
+    });
+  }
+
+  it('still seeds what an earlier test or session never reached', async () => {
+    // Skipped in onboarding: no cards at all, then a fluent retake.
+    const { state, logs } = play(() => 'fluent', LATER);
+    const summary = await savePlacement(db, {
+      state,
+      logs,
+      skills: SKILLS,
+      scheduler,
+      targets,
+      now: LATER,
+    });
+    expect(summary.knownSkills).toEqual([string6.id, string5.id]);
+    expect(await db.cards.count()).toBe(string6.items().length + string5.items().length);
+  });
+});
+
+describe('probeReview', () => {
+  const item = string6.items()[0]!;
+  const own = scheduler.seedKnownCard(item, new Date(NOW.getTime() - 5 * DAY), 20);
+
+  it('ignores a slow or missed probe', () => {
+    expect(probeReview(own, Rating.Hard, NOW, scheduler)).toBe(own);
+    expect(probeReview(own, Rating.Again, NOW, scheduler)).toBe(own);
+  });
+
+  it('applies a fluent probe that moves the card forward', () => {
+    expect(probeReview(own, Rating.Good, NOW, scheduler)).toEqual(
+      scheduler.review(own, Rating.Good, NOW),
+    );
+  });
+
+  it('ignores even a fluent probe if the review would bring the card back sooner', () => {
+    const lower = (patch: Partial<typeof own.fsrs>) => ({
+      ...scheduler,
+      review: () => ({ ...own, fsrs: { ...own.fsrs, ...patch } }),
+    });
+    const sooner = new Date(own.fsrs.due.getTime() - DAY);
+    expect(probeReview(own, Rating.Easy, NOW, lower({ due: sooner }))).toBe(own);
+    expect(probeReview(own, Rating.Easy, NOW, lower({ stability: 1 }))).toBe(own);
+    expect(probeReview(own, Rating.Easy, NOW, lower({ lapses: own.fsrs.lapses + 1 }))).toBe(own);
   });
 });
 
