@@ -31,6 +31,14 @@
   font-weight: 800;
 }
 
+.question,
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+}
+
 .prompt {
   margin: 0;
   max-width: 44rem;
@@ -48,10 +56,13 @@
 
 /* The slots: one per note, the tonic or root first. */
 .slots {
+  /* Room between slots for the W/H step marks. */
+  --slot-gap: var(--space-5);
+
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--space-2);
+  gap: var(--slot-gap);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -152,14 +163,13 @@
 
 .step {
   position: absolute;
-  top: 1.75rem;
-  left: calc(-1 * var(--space-2) / 2 - 0.4rem);
-  width: 0.8rem;
+  top: 1.5rem;
+  right: 100%;
+  width: var(--slot-gap);
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--text-muted);
-  z-index: 1;
 }
 
 .explanation {
@@ -293,32 +303,74 @@
   gap: var(--space-3);
 }
 
-.drill[data-size-class='compact'] .top {
+.drill[data-size-class='compact'] .top,
+.drill[data-size-class='compact'] .question,
+.drill[data-size-class='compact'] .answer {
   gap: var(--space-2);
 }
 
+/* A phone on its side: the question beside the answer grid, so both fit
+   above the fold. */
+@media (min-width: 40rem) {
+  .drill[data-size-class='compact'] .top {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: var(--space-5);
+  }
+
+  .drill[data-size-class='compact'] .question {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .drill[data-size-class='compact'] .answer {
+    flex: 0 0 21.5rem;
+  }
+}
+
 .drill[data-size-class='compact'] .subject {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .drill[data-size-class='compact'] .prompt {
-  font-size: 1rem;
+  font-size: 0.9375rem;
+}
+
+.drill[data-size-class='compact'] .primary,
+.drill[data-size-class='compact'] .secondary {
+  min-height: 2.75rem;
 }
 
 .drill[data-size-class='compact'] .slots {
-  gap: var(--space-1);
+  --slot-gap: var(--space-2);
+
+  flex-wrap: nowrap;
+  width: 100%;
 }
 
+/* Seven slots share one row, shrinking on the narrowest screens. */
+.drill[data-size-class='compact'] .slotItem {
+  flex: 0 1 2.5rem;
+  min-width: 0;
+}
+
+.drill[data-size-class='compact'] .hint {
+  display: none;
+}
+
+/* Slots are not tap targets, so they may go below 44pt to fit seven across. */
 .drill[data-size-class='compact'] .slot {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
   font-size: 1.125rem;
   border-radius: var(--radius-s);
 }
 
 .drill[data-size-class='compact'] .step {
-  top: 1rem;
-  left: calc(-1 * var(--space-1) / 2 - 0.4rem);
+  top: 0.8rem;
+  font-size: 0.625rem;
 }
 
 .drill[data-size-class='compact'] .mark {

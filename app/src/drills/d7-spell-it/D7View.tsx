@@ -197,114 +197,119 @@ export function D7View({
     <div className={styles.drill} data-size-class={sizeClass} data-testid="d7-drill">
       <div className={styles.upper}>
         <div className={styles.top}>
-          <p className={styles.subject} data-testid="d7-subject">
-            {prompt.subject}
-          </p>
-          <p className={styles.prompt} id="drill-prompt">
-            {guided ? (
-              <>
-                {d7WorkedExample(prompt)}{' '}
-                {isDegreeOf ? (
-                  <>
-                    Tap <strong>{degreeOrdinal(prompt.degree as number)}</strong> to continue.
-                  </>
-                ) : (
-                  'Enter it to continue.'
-                )}
-              </>
-            ) : (
-              d7Task(prompt)
+          <div className={styles.question}>
+            <p className={styles.subject} data-testid="d7-subject">
+              {prompt.subject}
+            </p>
+            <p className={styles.prompt} id="drill-prompt">
+              {guided ? (
+                <>
+                  {d7WorkedExample(prompt)}{' '}
+                  {isDegreeOf ? (
+                    <>
+                      Tap <strong>{degreeOrdinal(prompt.degree as number)}</strong> to continue.
+                    </>
+                  ) : (
+                    'Enter it to continue.'
+                  )}
+                </>
+              ) : (
+                d7Task(prompt)
+              )}
+            </p>
+            <p className={styles.hint} data-testid="d7-hint">
+              {!feedback && guides.steps && !isDegreeOf && hint}
+            </p>
+            <ol className={styles.slots} aria-label="Spelling">
+              {slots}
+            </ol>
+            {explanation.length > 0 && (
+              <ul className={styles.explanation} data-testid="d7-explanation">
+                {explanation.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
             )}
-          </p>
-          <p className={styles.hint} data-testid="d7-hint">
-            {!feedback && guides.steps && !isDegreeOf && hint}
-          </p>
-          <ol className={styles.slots} aria-label="Spelling">
-            {slots}
-          </ol>
-          {explanation.length > 0 && (
-            <ul className={styles.explanation} data-testid="d7-explanation">
-              {explanation.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          )}
-          {isDegreeOf ? (
-            <div className={styles.degrees} role="group" aria-labelledby="drill-prompt">
-              {prompt.degreeChoices.map((d) => {
-                const picked = answer && 'degree' in answer ? answer.degree : null;
-                const state = !feedback
-                  ? undefined
-                  : d === picked
-                    ? feedback.result.correct
-                      ? 'correct'
-                      : 'wrong'
-                    : d === prompt.degree && !feedback.result.correct
-                      ? 'expected'
-                      : undefined;
-                return (
-                  <button
-                    key={d}
-                    type="button"
-                    className={styles.choice}
-                    data-state={state}
-                    disabled={Boolean(feedback)}
-                    onClick={() => onAnswer({ degree: d })}
-                    aria-keyshortcuts={String(d)}
+          </div>
+          {/* In spelling feedback the grid is gone, so the question takes the width. */}
+          {(isDegreeOf || !feedback) && (
+            <div className={styles.answer}>
+              {isDegreeOf ? (
+                <div className={styles.degrees} role="group" aria-labelledby="drill-prompt">
+                  {prompt.degreeChoices.map((d) => {
+                    const picked = answer && 'degree' in answer ? answer.degree : null;
+                    const state = !feedback
+                      ? undefined
+                      : d === picked
+                        ? feedback.result.correct
+                          ? 'correct'
+                          : 'wrong'
+                        : d === prompt.degree && !feedback.result.correct
+                          ? 'expected'
+                          : undefined;
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        className={styles.choice}
+                        data-state={state}
+                        disabled={Boolean(feedback)}
+                        onClick={() => onAnswer({ degree: d })}
+                        aria-keyshortcuts={String(d)}
+                      >
+                        {degreeOrdinal(d)}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <>
+                  <div
+                    className={styles.grid}
+                    role="group"
+                    aria-labelledby="drill-prompt"
+                    style={{ gridTemplateRows: `repeat(${rows.length}, auto)` }}
                   >
-                    {degreeOrdinal(d)}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            !feedback && (
-              <>
-                <div
-                  className={styles.grid}
-                  role="group"
-                  aria-labelledby="drill-prompt"
-                  style={{ gridTemplateRows: `repeat(${rows.length}, auto)` }}
-                >
-                  {prompt.choices.map((c) => (
+                    {prompt.choices.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        className={styles.choice}
+                        style={{
+                          gridColumn: COLUMNS.indexOf(c.charAt(0)) + 1,
+                          gridRow: rows.indexOf(c.slice(1)) + 1,
+                        }}
+                        disabled={full}
+                        onClick={() => add(c)}
+                        aria-label={spoken(c)}
+                      >
+                        {pretty(c)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className={styles.actions}>
                     <button
-                      key={c}
                       type="button"
-                      className={styles.choice}
-                      style={{
-                        gridColumn: COLUMNS.indexOf(c.charAt(0)) + 1,
-                        gridRow: rows.indexOf(c.slice(1)) + 1,
-                      }}
-                      disabled={full}
-                      onClick={() => add(c)}
-                      aria-label={spoken(c)}
+                      className={styles.secondary}
+                      onClick={remove}
+                      disabled={notes.length === 0}
+                      aria-keyshortcuts="Backspace"
                     >
-                      {pretty(c)}
+                      Undo
                     </button>
-                  ))}
-                </div>
-                <div className={styles.actions}>
-                  <button
-                    type="button"
-                    className={styles.secondary}
-                    onClick={remove}
-                    disabled={notes.length === 0}
-                    aria-keyshortcuts="Backspace"
-                  >
-                    Undo
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.primary}
-                    onClick={check}
-                    disabled={!full}
-                    aria-keyshortcuts="Enter"
-                  >
-                    Check
-                  </button>
-                </div>
-              </>
-            )
+                    <button
+                      type="button"
+                      className={styles.primary}
+                      onClick={check}
+                      disabled={!full}
+                      aria-keyshortcuts="Enter"
+                    >
+                      Check
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
         {sizeClass === 'regular-wide' && context}
