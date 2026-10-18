@@ -272,6 +272,18 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The About page covers the evidence-based approach and privacy (no analytics, local data).
 - **Note:** M1-15 also adds the blind-mode toggle to `settings.tsx`. Don't run M1-15 and M1-22 at the same time.
 
+### M1-25 · [hotfix] Recall prompts must never show their answer
+- **Status:** todo
+- **Deps:** none
+- **Design:** §3.5, research/02 (retrieval practice)
+- **Owns:** `app/src/components/fretboard/Fretboard.tsx`, `app/src/components/fretboard/Fretboard.test.tsx`, `app/src/drills/d1-name-the-note/D1View.tsx`, `app/src/drills/d1-name-the-note/*.test.tsx`, `app/e2e/m1-25.spec.ts`
+- **Acceptance:**
+  - Reported from production: a new learner sees "Name the highlighted note" with the answer printed on the highlighted cell. `Fretboard.tsx` labels every marker at `guideLevel >= 3`, and D1 always passes the answer as the target's `label`, so `forceLabel: guided` doesn't hide it.
+  - The queried cell (a `target` marker) is never labelled by guide level. Only `forceLabel` (worked example, answer feedback) can show it. Level 3 still labels other markers as §3.5 says.
+  - D1 doesn't pass the answer as the target label in unguided prompts (defence in depth).
+  - No other text on the neck reveals the answer in an unguided prompt. In particular, the string-name label at the nut is hidden for the target's string when the target is at fret 0 or 12.
+  - RTL tests cover guide levels 0–3 × guided/unguided/feedback. An e2e test (`m1-25.spec.ts`, tagged `@smoke`) checks that after the worked example, the unguided prompt for a fresh learner doesn't show the answer on the neck.
+
 ### M1-24 · M1 milestone QA
 - **Status:** todo
 - **Deps:** M1-01, M1-02, M1-03, M1-04, M1-05, M1-06, M1-07, M1-08, M1-09, M1-10, M1-11, M1-12, M1-13, M1-14, M1-15, M1-16, M1-17, M1-18, M1-19, M1-20, M1-22
