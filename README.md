@@ -1,8 +1,8 @@
-# Fretwork
+# FretFree
 
-**Learn the guitar fretboard the way memory actually works.**
+**Open the page. Pick up the guitar.**
 
-Fretwork is a free, open-source, iPad-first guitar learning app (an installable PWA; iPhone works too). It teaches:
+FretFree is a free, open-source, iPad-first guitar learning app (an installable PWA; iPhone works too). It teaches:
 
 - where every note is on the fretboard
 - intervals and octave shapes
@@ -14,7 +14,7 @@ Fretwork is a free, open-source, iPad-first guitar learning app (an installable 
 
 ## Why it's different
 
-Most fretboard apps are flashcard toys or visualisers. Fretwork is built on the learning-science findings that hold up best ([research notes](docs/research/02-learning-science.md)):
+Most fretboard apps are flashcard toys or visualisers. FretFree is built on the learning-science findings that hold up best ([research notes](docs/research/02-learning-science.md)):
 
 - **Spaced retrieval.** Every note, interval and shape is its own card, scheduled with [FSRS](https://github.com/open-spaced-repetition/ts-fsrs), the scheduler behind modern Anki.
 - **Speed is part of knowing.** Answers are timed against a personal target calibrated to your own tap speed. A slow correct answer counts as "Hard", not "Good".
@@ -24,7 +24,7 @@ Most fretboard apps are flashcard toys or visualisers. Fretwork is built on the 
 - **Habit without dark patterns.** Duolingo-style streaks, a daily goal and XP, wired only to behaviour that helps you learn. No hearts, and no punishment for mistakes.
 - **Local-first and private.** No account, no analytics. Your data stays on your device, with JSON export and import.
 
-We don't personalise by "learning styles", because the evidence doesn't support it. Fretwork adapts to what you know and what you want to play.
+We don't personalise by "learning styles", because the evidence doesn't support it. FretFree adapts to what you know and what you want to play.
 
 ## Status
 
@@ -55,7 +55,7 @@ Two requirements: serve it over HTTPS (or `localhost`) so the service worker and
 
 ## Deploy your own copy on AWS
 
-Fretwork is a static site on AWS: a private S3 bucket behind CloudFront, with an ACM certificate and Route53 records, all defined with CDK in [`infra/`](infra). Everything runs from your machine. There is no hosted CI.
+FretFree is a static site on AWS: a private S3 bucket behind CloudFront, with an ACM certificate and Route53 records, all defined with CDK in [`infra/`](infra). Everything runs from your machine. There is no hosted CI.
 
 ```bash
 export AWS_PROFILE=your-profile           # default: smartthings-hp
@@ -67,6 +67,10 @@ pnpm ship                                 # verify → build → deploy → smok
 ```
 
 `pnpm ship` refuses to run on a dirty tree. The stack lives in us-east-1 because CloudFront certificates must. The account comes from your AWS profile at runtime, and the hosted zone is looked up by name. No account-specific values live in the repo.
+
+## Brand
+
+The name, mark, colours, type and voice are in [`brand/`](brand/README.md). "Fretwork" is the internal code name, and it stays in identifiers such as the database and stack names.
 
 ## Project layout
 

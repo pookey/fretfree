@@ -6,8 +6,8 @@ import styles from './Onboarding.module.css';
  */
 export function About() {
   return (
-    <section className={styles.about} aria-labelledby="about-fretwork">
-      <h2 id="about-fretwork">About Fretwork</h2>
+    <section className={styles.about} aria-labelledby="about-fretfree">
+      <h2 id="about-fretfree">About FretFree</h2>
       <p className={styles.lead}>
         This app adapts to what you know and what you want, not to a &lsquo;learning style&rsquo;.
         Here&rsquo;s why.
@@ -19,7 +19,7 @@ export function About() {
         they come quickly.
       </p>
       <p>
-        So every note you learn is something you answer, not something you read. Fretwork keeps the
+        So every note you learn is something you answer, not something you read. FretFree keeps the
         practice hard enough that you get about 8 or 9 in 10 right, brings each note back just
         before you&rsquo;d forget it, and takes the guides away as you improve.
       </p>

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MovedNotice, movedTo } from './MovedNotice';
 
 vi.mock('../storage/download-export', () => ({
-  downloadExport: vi.fn(() => Promise.resolve('fretwork-2026-10-18.json')),
+  downloadExport: vi.fn(() => Promise.resolve('fretfree-2026-10-18.json')),
 }));
 
 describe('movedTo', () => {
@@ -38,7 +38,7 @@ describe('<MovedNotice>', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Export my progress' }));
     expect(downloadExport).toHaveBeenCalledOnce();
     expect(await screen.findByRole('status')).toHaveTextContent(
-      'Saved fretwork-2026-10-18.json. Now open fretfree.app and import it.',
+      'Saved fretfree-2026-10-18.json. Now open fretfree.app and import it.',
     );
   });
 });

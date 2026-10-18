@@ -1,9 +1,9 @@
 import type { FretworkDB } from './db';
 import { exportData, exportToJson } from './export-import';
 
-/** The backup's file name, e.g. fretwork-2026-10-18.json. */
+/** The backup's file name, e.g. fretfree-2026-10-18.json. */
 export function exportFileName(now: Date): string {
-  return `fretwork-${now.toISOString().slice(0, 10)}.json`;
+  return `fretfree-${now.toISOString().slice(0, 10)}.json`;
 }
 
 /** Export all local data and hand it to the browser as a JSON download. */

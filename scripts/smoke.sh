@@ -30,12 +30,12 @@ cert_ok() {
 }
 check cert_ok
 
-desc="manifest served as JSON naming Fretwork"
+desc="manifest served as JSON naming FretFree"
 manifest_ok() {
   local body type
   type="$(curl -sS -o /dev/null -w '%{content_type}' "$url/manifest.webmanifest")"
   body="$(curl -sSf "$url/manifest.webmanifest")" || return 1
-  [[ "$type" == *json* ]] && grep -q '"name": *"Fretwork"' <<<"$body"
+  [[ "$type" == *json* ]] && grep -q '"name": *"FretFree"' <<<"$body"
 }
 check retry manifest_ok
 

@@ -77,13 +77,11 @@
 }
 
 .logo {
-  display: grid;
-  place-items: center;
+  flex: none;
   width: 2.25rem;
   height: 2.25rem;
-  border-radius: var(--radius-s);
-  background: var(--accent);
-  color: var(--accent-text);
+  color: var(--accent-fill);
+  --logo-cut: var(--bg-raised);
 }
 
 .icon {

@@ -94,11 +94,11 @@ test.describe('M1-22 settings', () => {
 test.describe('M1-22 About', () => {
   test('explains the approach and privacy, from Settings and back @smoke', async ({ page }) => {
     await freshStart(page, '/progress');
-    await settings(page).getByRole('link', { name: 'About Fretwork' }).click();
+    await settings(page).getByRole('link', { name: 'About FretFree' }).click();
     await expect(page).toHaveURL(/\/about$/);
-    await expect(page.getByRole('heading', { name: 'About Fretwork', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'About FretFree', level: 1 })).toBeVisible();
 
-    const approach = page.getByRole('region', { name: 'How Fretwork teaches' });
+    const approach = page.getByRole('region', { name: 'How FretFree teaches' });
     await expect(approach.getByText(/not to a .learning style./)).toBeVisible();
     await expect(approach.getByRole('heading', { level: 3 })).toHaveCount(6);
 

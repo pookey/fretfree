@@ -243,8 +243,8 @@ describe('export and import', () => {
 
   it('rejects invalid, foreign and future files', () => {
     expect(() => parseExport('not json')).toThrow(ImportError);
-    expect(() => parseExport('{"app":"other","tables":{}}')).toThrow(/not a Fretwork export/);
-    expect(() => parseExport('null')).toThrow(/not a Fretwork export/);
+    expect(() => parseExport('{"app":"other","tables":{}}')).toThrow(/not a FretFree export/);
+    expect(() => parseExport('null')).toThrow(/not a FretFree export/);
     expect(() =>
       parseExport(
         JSON.stringify({ app: 'fretwork', schemaVersion: SCHEMA_VERSION + 1, tables: {} }),

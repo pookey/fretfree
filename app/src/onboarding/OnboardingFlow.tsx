@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../app-store';
+import { Logo } from '../shell/Logo';
 import { useSizeClass } from '../shell/size-class';
 import { About } from './About';
 import { ONBOARDING_STEPS, type OnboardingStep } from './registry';
@@ -47,7 +48,7 @@ export function OnboardingFlow({
     <main className={styles.flow} data-size-class={sizeClass} data-testid="onboarding">
       <header className={styles.header}>
         <span className={styles.brand}>
-          <span aria-hidden>♪</span> Fretwork
+          <Logo className={styles.logo} size={28} /> FretFree
         </span>
         {step && (
           <p className={styles.counter} data-testid="onboarding-progress">
@@ -87,7 +88,7 @@ export function OnboardingFlow({
         <div className={styles.panes} data-step="welcome">
           <section className={styles.explain} data-testid="onboarding-explanation">
             <h1 ref={heading} tabIndex={-1}>
-              Welcome to Fretwork
+              Welcome to FretFree
             </h1>
             <About />
           </section>

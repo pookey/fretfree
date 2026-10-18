@@ -49,9 +49,9 @@ describe('installPlatform', () => {
 describe('<InstallHint>', () => {
   afterEach(() => localStorage.clear());
 
-  it('tells an iPad Safari user how to add Fretwork to the home screen', () => {
+  it('tells an iPad Safari user how to add FretFree to the home screen', () => {
     render(<InstallHint env={env(IPAD_SAFARI)} />);
-    const hint = screen.getByRole('complementary', { name: 'Install Fretwork' });
+    const hint = screen.getByRole('complementary', { name: 'Install FretFree' });
     expect(hint).toHaveAttribute('data-platform', 'ipad');
     expect(hint).toHaveTextContent('Tap Share at the top right, then Add to Home Screen');
     expect(hint).toHaveTextContent('works offline');
@@ -59,7 +59,7 @@ describe('<InstallHint>', () => {
 
   it('points iPhone users to the bottom toolbar', () => {
     render(<InstallHint env={env(IPHONE_SAFARI)} />);
-    expect(screen.getByRole('complementary', { name: 'Install Fretwork' })).toHaveTextContent(
+    expect(screen.getByRole('complementary', { name: 'Install FretFree' })).toHaveTextContent(
       'Tap Share at the bottom of the screen',
     );
   });
@@ -72,11 +72,11 @@ describe('<InstallHint>', () => {
   it('stays dismissed on this device', async () => {
     const { unmount } = render(<InstallHint env={env(IPAD_SAFARI)} />);
     await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
-    expect(screen.queryByRole('complementary', { name: 'Install Fretwork' })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Install FretFree' })).toBeNull();
     expect(localStorage.getItem(DISMISS_KEY)).toBe('1');
     unmount();
     render(<InstallHint env={env(IPAD_SAFARI)} />);
-    expect(screen.queryByRole('complementary', { name: 'Install Fretwork' })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Install FretFree' })).toBeNull();
   });
 
   it('reads the real browser when no env is given', () => {

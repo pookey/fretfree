@@ -28,7 +28,7 @@ async function expectControlled(page: Page): Promise<void> {
   await expect.poll(() => swState(page)).toContain('"controlled":true');
 }
 
-const installHint = (page: Page) => page.getByRole('complementary', { name: 'Install Fretwork' });
+const installHint = (page: Page) => page.getByRole('complementary', { name: 'Install FretFree' });
 
 test.describe('M1-19 offline', () => {
   test('a full session runs offline after the first load', async ({ page, context }) => {
@@ -94,7 +94,7 @@ test.describe('M1-19 offline', () => {
 });
 
 test.describe('M1-19 install hint', () => {
-  test('Safari shows how to add Fretwork to the home screen @smoke', async ({ page }, info) => {
+  test('Safari shows how to add FretFree to the home screen @smoke', async ({ page }, info) => {
     await freshStart(page);
     const hint = installHint(page);
     await expect(hint).toBeVisible();

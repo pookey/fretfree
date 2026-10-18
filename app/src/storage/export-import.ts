@@ -68,11 +68,11 @@ export function parseExport(json: string): ExportFile {
     typeof file.tables !== 'object' ||
     file.tables === null
   ) {
-    throw new ImportError('This is not a Fretwork export file.');
+    throw new ImportError('This is not a FretFree export file.');
   }
   if (typeof file.schemaVersion !== 'number' || file.schemaVersion > SCHEMA_VERSION) {
     throw new ImportError(
-      'This export comes from a newer version of Fretwork. Update the app first.',
+      'This export comes from a newer version of FretFree. Update the app first.',
     );
   }
   return file as ExportFile;

@@ -14,8 +14,8 @@ function renderAbout() {
 describe('<AboutScreen>', () => {
   it('explains the evidence-based approach, not learning styles', () => {
     renderAbout();
-    expect(screen.getByRole('heading', { level: 1, name: 'About Fretwork' })).toBeInTheDocument();
-    const approach = within(screen.getByRole('region', { name: 'How Fretwork teaches' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'About FretFree' })).toBeInTheDocument();
+    const approach = within(screen.getByRole('region', { name: 'How FretFree teaches' }));
     expect(approach.getByText(/not to a .learning style.\. Here.s why\./)).toBeInTheDocument();
     expect(approach.getByText(/Pashler et al\. 2008/)).toBeInTheDocument();
     for (const name of [/answer/, /Spaced/, /Mixed/, /Fast/, /Hard enough/, /Guides that fade/])

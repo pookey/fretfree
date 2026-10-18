@@ -11,11 +11,12 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Fretwork',
-        short_name: 'Fretwork',
-        description: 'Learn the guitar fretboard, intervals, chords, CAGED and harmony.',
-        theme_color: '#14110f',
-        background_color: '#14110f',
+        name: 'FretFree',
+        short_name: 'FretFree',
+        description:
+          'Open the page. Pick up the guitar. A free, open-source fretboard trainer: notes, intervals, chords, CAGED and harmony.',
+        theme_color: '#1b1626',
+        background_color: '#1b1626',
         display: 'standalone',
         orientation: 'any',
         start_url: '/',

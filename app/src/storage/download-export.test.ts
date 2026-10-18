@@ -7,7 +7,7 @@ describe('downloadExport', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('names the file by date', () => {
-    expect(exportFileName(new Date('2026-10-18T22:00:00Z'))).toBe('fretwork-2026-10-18.json');
+    expect(exportFileName(new Date('2026-10-18T22:00:00Z'))).toBe('fretfree-2026-10-18.json');
   });
 
   it('downloads the full export as JSON', async () => {
@@ -22,12 +22,12 @@ describe('downloadExport', () => {
       this: HTMLAnchorElement,
     ) {
       expect(this.href).toBe('blob:test');
-      expect(this.download).toBe('fretwork-2026-10-18.json');
+      expect(this.download).toBe('fretfree-2026-10-18.json');
     });
 
     const name = await downloadExport(db, new Date('2026-10-18T09:00:00Z'));
 
-    expect(name).toBe('fretwork-2026-10-18.json');
+    expect(name).toBe('fretfree-2026-10-18.json');
     expect(click).toHaveBeenCalledOnce();
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:test');
     expect(blob?.type).toBe('application/json');

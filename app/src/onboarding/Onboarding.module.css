@@ -20,6 +20,14 @@
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 1.125rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.logo {
+  color: var(--accent-fill);
+  --logo-cut: var(--bg);
 }
 
 .counter {
@@ -146,7 +154,7 @@
 
 .choice:has(input:checked)::before {
   border-color: var(--accent);
-  background: radial-gradient(circle, var(--accent) 0 45%, transparent 50%);
+  background: radial-gradient(circle, var(--accent-fill) 0 45%, transparent 50%);
 }
 
 .choice:has(input:focus-visible) {
@@ -175,7 +183,7 @@
   padding: 0 var(--space-6);
   border: 0;
   border-radius: var(--radius-l);
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--accent-text);
   font-size: 1.125rem;
   font-weight: 800;

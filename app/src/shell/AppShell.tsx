@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router';
 import { AchievementUnlocks } from '../components/achievements/AchievementToast';
 import { InstallHint } from './InstallHint';
+import { Logo } from './Logo';
 import { MovedNotice, movedTo } from './MovedNotice';
 import { NAV_ITEMS } from './nav';
 import { useSizeClass } from './size-class';
@@ -20,10 +21,8 @@ export function AppShell() {
       {!compact && (
         <nav className={styles.sidebar} aria-label="Sections" data-testid="sidebar">
           <div className={styles.brand}>
-            <span className={styles.logo} aria-hidden>
-              ♪
-            </span>
-            {sizeClass === 'regular-wide' && <span>Fretwork</span>}
+            <Logo className={styles.logo} size={36} />
+            {sizeClass === 'regular-wide' && <span>FretFree</span>}
           </div>
           <ul>
             {NAV_ITEMS.map((item) => (

@@ -153,6 +153,6 @@ describe('Progress settings panel', () => {
     expect(
       within(group('Guides and timing')).getByRole('button', { name: 'Measure' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'About Fretwork' })).toHaveAttribute('href', '/about');
+    expect(screen.getByRole('link', { name: 'About FretFree' })).toHaveAttribute('href', '/about');
   });
 });

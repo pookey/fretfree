@@ -15,7 +15,7 @@ export function UpdateToast() {
   if (!needRefresh) return null;
   return (
     <div className={styles.toast} role="status">
-      <span>A new version of Fretwork is ready.</span>
+      <span>A new version of FretFree is ready.</span>
       <button type="button" onClick={() => void updateServiceWorker(true)}>
         Reload
       </button>

@@ -59,11 +59,11 @@ function InShort() {
  */
 export function AboutScreen() {
   return (
-    <ScreenLayout title="About Fretwork" context={<InShort />} contextTitle="In short">
+    <ScreenLayout title="About FretFree" context={<InShort />} contextTitle="In short">
       <div className={styles.about}>
         <section aria-labelledby="about-approach">
           <h2 id="about-approach" className={screens.sectionTitle}>
-            How Fretwork teaches
+            How FretFree teaches
           </h2>
           <p className={styles.lead}>
             This app adapts to what you know and what you want, not to a &lsquo;learning
@@ -113,7 +113,7 @@ export function AboutScreen() {
             </li>
             <li>
               <strong>Your data stays here.</strong> Your progress, settings and every answer are
-              stored in this browser on this device. Fretwork works offline.
+              stored in this browser on this device. FretFree works offline.
             </li>
             <li>
               <strong>Mic mode listens, but doesn&rsquo;t record.</strong> When you switch it on,
@@ -126,7 +126,7 @@ export function AboutScreen() {
               another device.
             </li>
           </ul>
-          <p className={screens.muted}>Fretwork is open source under the MIT licence.</p>
+          <p className={screens.muted}>FretFree is open source under the MIT licence.</p>
         </section>
 
         <p>

@@ -21,7 +21,7 @@ test.describe('smoke @smoke', () => {
     expect(href).toBeTruthy();
     const manifest = await request.get(href!);
     expect(manifest.ok()).toBe(true);
-    expect((await manifest.json()).name).toBe('Fretwork');
+    expect((await manifest.json()).name).toBe('FretFree');
   });
 
   test('can answer a drill prompt', async ({ page }) => {

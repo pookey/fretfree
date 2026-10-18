@@ -37,7 +37,7 @@ test.describe('M1-06 onboarding', () => {
   test('first launch completes onboarding and keeps the choices @smoke', async ({ page }, info) => {
     await firstLaunch(page);
     await expect(
-      page.getByRole('heading', { name: 'Welcome to Fretwork', level: 1 }),
+      page.getByRole('heading', { name: 'Welcome to FretFree', level: 1 }),
     ).toBeVisible();
     await expect(
       page.getByText(/adapts to what you know and what you want, not to a/),

@@ -42,8 +42,8 @@ beforeEach(async () => {
 describe('<OnboardingFlow>', () => {
   it('opens with the About copy: adapts to what you know, not a learning style', () => {
     renderFlow();
-    expect(screen.getByRole('heading', { level: 1, name: 'Welcome to Fretwork' })).toBeVisible();
-    expect(screen.getByRole('region', { name: 'About Fretwork' })).toHaveTextContent(
+    expect(screen.getByRole('heading', { level: 1, name: 'Welcome to FretFree' })).toBeVisible();
+    expect(screen.getByRole('region', { name: 'About FretFree' })).toHaveTextContent(
       /adapts to what you know and what you want, not to a .learning style./,
     );
     expect(screen.getByText(/2 quick questions/)).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('<OnboardingFlow>', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getByRole('heading', { level: 1, name: 'Title one' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Welcome to Fretwork' })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 1, name: 'Welcome to FretFree' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Get started' }));
     fireEvent.click(screen.getByRole('button', { name: 'Skip this step' }));
     fireEvent.click(screen.getByRole('button', { name: 'Skip this step' }));

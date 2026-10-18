@@ -69,7 +69,7 @@ function ShareIcon() {
   );
 }
 
-/** A dismissible hint to install Fretwork from Safari's Share menu. */
+/** A dismissible hint to install FretFree from Safari's Share menu. */
 export function InstallHint({ env }: { env?: InstallEnv }) {
   const [platform] = useState(() => installPlatform(env ?? browserInstallEnv()));
   const [dismissed, setDismissed] = useState(isDismissed);
@@ -77,10 +77,10 @@ export function InstallHint({ env }: { env?: InstallEnv }) {
 
   const where = platform === 'ipad' ? 'at the top right' : 'at the bottom of the screen';
   return (
-    <aside className={styles.hint} aria-label="Install Fretwork" data-platform={platform}>
+    <aside className={styles.hint} aria-label="Install FretFree" data-platform={platform}>
       <ShareIcon />
       <p>
-        <strong>Install Fretwork.</strong> Tap Share {where}, then <b>Add to Home Screen</b>. It
+        <strong>Install FretFree.</strong> Tap Share {where}, then <b>Add to Home Screen</b>. It
         opens full screen and works offline.
       </p>
       <button

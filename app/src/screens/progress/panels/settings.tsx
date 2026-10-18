@@ -281,7 +281,7 @@ export function Panel() {
         <GuideSettings settings={settings} update={update} />
       </div>
       <p className={local.about}>
-        <Link to="/about">About Fretwork</Link>
+        <Link to="/about">About FretFree</Link>
         <span className={styles.muted}>How it teaches, and what happens to your data.</span>
       </p>
     </>

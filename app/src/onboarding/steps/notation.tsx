@@ -14,7 +14,7 @@ export const skippable = true;
 export const explanation = (
   <>
     <p>
-      Fretwork teaches the neck by name, position and sound either way. Reading tab or standard
+      FretFree teaches the neck by name, position and sound either way. Reading tab or standard
       notation is extra.
     </p>
     <p>
