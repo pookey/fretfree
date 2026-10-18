@@ -100,6 +100,20 @@ export const ENGINE_CONFIG = {
        */
       maxGapSeconds: 60,
     },
+    /** Session celebrations (design §3.7, §3.3 step 5). */
+    celebrations: {
+      /** The in-session combo counter shows from this many correct answers in a row. */
+      comboShowAt: 3,
+      /** "Perfect session" needs at least this many unguided answers, all correct. */
+      perfectMinAnswers: 8,
+      /** A session's median speed counts for a personal best only over this many correct unguided answers. */
+      speedMinAnswers: 5,
+      /**
+       * An item counts as known ("you now know string 6 to fret 12") once its
+       * card has graduated to FSRS review with at least this stability.
+       */
+      knownStabilityDays: 1,
+    },
   },
   heatmap: {
     /**
