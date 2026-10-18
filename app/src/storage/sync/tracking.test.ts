@@ -195,7 +195,8 @@ describe('change tracking', () => {
 });
 
 describe('schema v2 upgrade', () => {
-  it('gives old rows a uid, stamps them and queues them all for the first push', async () => {
+  /** A schema v1 database holding `rows` per table, as a device before sync had it. */
+  async function legacyDb(rows: Record<string, unknown[]>): Promise<string> {
     const name = `sync-legacy-${n++}`;
     const legacy = new Dexie(name);
     legacy.version(1).stores({
@@ -203,32 +204,52 @@ describe('schema v2 upgrade', () => {
       cards: 'itemId, skillId, fsrs.due',
       reviewLogs: '++id, itemId, skillId, drillType, at',
       confusions: '[a+b], a, b',
+      sessionLogs: '++id, startedAt',
       gamification: 'key',
+      gamificationEvents: '++id, type, at',
     });
     await legacy.open();
-    await legacy.table('settings').put({ key: 'singleton', handedness: 'left' });
-    await legacy.table('cards').put(card('note@s6f5', 1));
-    await legacy.table('reviewLogs').bulkAdd([log('note@s6f5'), log('note@s6f5')]);
-    await legacy.table('confusions').put({ a: 'E', b: 'F', count: 2 });
+    for (const [table, list] of Object.entries(rows)) await legacy.table(table).bulkAdd(list);
     legacy.close();
+    return name;
+  }
 
-    const clock: SyncClock = {
-      now: () => 777,
-      newId: (() => {
-        let i = 0;
-        return () => `u${i++}`;
-      })(),
-    };
+  const clock: SyncClock = { now: () => 777, newId: () => 'random' };
+
+  async function upgraded(name: string): Promise<FretworkDB> {
     const db = new FretworkDB(name, clock);
     open.push(db);
-    expect((await db.reviewLogs.toArray()).map((r) => r.uid)).toEqual(['u0', 'u1']);
+    await db.open();
+    return db;
+  }
+
+  async function records(db: FretworkDB): Promise<SyncRecord[]> {
+    const metas = (await db.syncMeta.toArray()) as SyncMetaRow[];
+    const all = await Promise.all(metas.map((m) => readSyncRecord(db, m.table, m.id)));
+    return all.filter((r): r is SyncRecord => r !== null);
+  }
+
+  it('gives old rows a uid, stamps them and queues them all for the first push', async () => {
+    const db = await upgraded(
+      await legacyDb({
+        settings: [{ key: 'singleton', handedness: 'left' }],
+        cards: [card('note@s6f5', 1)],
+        // Two identical logs still get distinct uids.
+        reviewLogs: [log('note@s6f5'), log('note@s6f5')],
+        confusions: [{ a: 'E', b: 'F', count: 2 }],
+      }),
+    );
+    const uids = (await db.reviewLogs.toArray()).map((r) => r.uid!);
+    expect(uids).toHaveLength(2);
+    expect(uids[0]).toMatch(/^v1-[0-9a-f]{28}-0$/);
+    expect(uids[1]).toBe(uids[0]!.replace(/-0$/, '-1'));
     expect(
       (await db.outbox.toArray()).map((o) => `${o.table}/${o.id}@${o.updatedAt}`).sort(),
     ).toEqual([
       'cards/note@s6f5@777',
       'confusions/["E","F"]@777',
-      'reviewLogs/u0@777',
-      'reviewLogs/u1@777',
+      `reviewLogs/${uids[0]}@777`,
+      `reviewLogs/${uids[1]}@777`,
       'settings/singleton@777',
     ]);
     expect((await meta(db, 'confusions', '["E","F"]'))?.fields).toEqual({
@@ -237,6 +258,50 @@ describe('schema v2 upgrade', () => {
       decay: 777,
     });
     expect((await pendingRecords(db, 10)).length).toBe(5);
+  });
+
+  it('gives a v1 export the same uids on import, so sync keeps one copy of each log', async () => {
+    const history = {
+      reviewLogs: [log('note@s6f5'), log('note@s5f3', new Date('2026-10-18T09:01:00Z'))],
+      sessionLogs: [
+        { startedAt: new Date('2026-10-18T09:00:00Z'), endedAt: null, itemsSeen: 2, accuracy: 1 },
+      ],
+      gamificationEvents: [
+        { type: 'answer', at: new Date('2026-10-18T09:00:05Z'), data: { xp: 10 } },
+      ],
+    };
+    // Safari upgraded in place; the installed app imported Safari's v1 export.
+    const safari = await upgraded(await legacyDb(history));
+    const exported = await exportData(safari);
+    const v1File = {
+      ...exported,
+      schemaVersion: 1,
+      tables: Object.fromEntries(
+        Object.entries(exported.tables).map(([t, rows]) => [
+          t,
+          rows.map((r) => {
+            const { uid: _uid, ...rest } = r as Record<string, unknown>;
+            return rest;
+          }),
+        ]),
+      ),
+    };
+    const { db: installed } = device('installed');
+    await installed.reviewLogs.add(log('note@s1f1') as never);
+    await importData(installed, v1File);
+
+    const uidsOf = async (db: FretworkDB) => ({
+      logs: (await db.reviewLogs.toArray()).map((r) => r.uid),
+      sessions: (await db.sessionLogs.toArray()).map((r) => r.uid),
+      events: (await db.gamificationEvents.toArray()).map((r) => r.uid),
+    });
+    expect(await uidsOf(installed)).toEqual(await uidsOf(safari));
+
+    const merged = mergeRecordSets(await records(safari), await records(installed));
+    const live = (table: string) => merged.filter((r) => r.table === table && !r.deleted);
+    expect(live('reviewLogs')).toHaveLength(2);
+    expect(live('sessionLogs')).toHaveLength(1);
+    expect(live('gamificationEvents')).toHaveLength(1);
   });
 });
 

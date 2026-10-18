@@ -19,6 +19,7 @@ import {
   syncId,
   tableSpec,
   toSyncData,
+  withLegacyUids,
   type SyncData,
   type SyncRecord,
   type SyncTableName,
@@ -239,7 +240,7 @@ async function put(down: DBCore, trans: DBCoreTransaction, store: string, values
 // --- Upgrade --------------------------------------------------------------
 
 /**
- * Schema v2 upgrade: give append-only rows a `uid`, then stamp every existing
+ * Schema v2 upgrade: give append-only rows their legacy `uid`, then stamp every existing
  * row and queue it, so the first push after sign-in uploads all local
  * progress (M7-05).
  */
@@ -248,8 +249,12 @@ export async function backfillSyncMeta(tx: Transaction, clock: SyncClock): Promi
   for (const name of SYNC_TABLE_NAMES) {
     const table = tx.table(name);
     if (tableSpec(name).identity === 'uid') {
+      // Content-derived, so a v1 export of the same history imports with the same uids.
+      const uids = new Map(
+        withLegacyUids(name, (await table.toArray()) as Row[]).map((r) => [r.id, r.uid]),
+      );
       await table.toCollection().modify((row: Row) => {
-        if (typeof row.uid !== 'string') row.uid = clock.newId();
+        if (typeof row.uid !== 'string') row.uid = uids.get(row.id);
       });
     }
     const rows = (await table.toArray()) as Row[];

@@ -4,9 +4,13 @@ import {
   SYNC_TABLES,
   SYNC_TABLE_NAMES,
   canonical,
+  decodeDates,
   decodeSyncRecord,
+  encodeDates,
   encodeSyncRecord,
   isDate,
+  legacyUids,
+  withLegacyUids,
   isSyncTable,
   lwwGroups,
   syncId,
@@ -73,6 +77,34 @@ describe('identity', () => {
   });
 });
 
+describe('legacy uids', () => {
+  const at = new Date('2026-10-18T09:00:00Z');
+  const row = (id: number, itemId = 'x') => ({ id, itemId, at });
+
+  it('derive from content and occurrence, not from the local key or input order', () => {
+    const uids = legacyUids('reviewLogs', [row(1), row(2, 'y'), row(3)]);
+    expect(uids[0]).toMatch(/-0$/);
+    expect(uids[2]).toBe(uids[0]!.replace(/-0$/, '-1'));
+    expect(new Set(uids).size).toBe(3);
+    // Another device numbered the same history differently and listed it out of order.
+    expect(legacyUids('reviewLogs', [row(30), row(20, 'y'), row(10)])).toEqual([
+      uids[2],
+      uids[1],
+      uids[0],
+    ]);
+    expect(legacyUids('gamificationEvents', [row(1)])[0]).not.toBe(uids[0]);
+  });
+
+  it('are added only to append-only rows that lack one', () => {
+    const rows = [{ ...row(1), uid: 'kept' }, row(2)];
+    const out = withLegacyUids('reviewLogs', rows);
+    expect(out[0]).toBe(rows[0]);
+    expect(out[1]?.uid).toBe(legacyUids('reviewLogs', [row(2)])[0]);
+    expect(withLegacyUids('cards', [row(1)])).toEqual([row(1)]);
+    expect(withLegacyUids('notATable', [row(1)])).toEqual([row(1)]);
+  });
+});
+
 describe('canonical form and wire encoding', () => {
   it('sorts keys, drops undefined and tags dates', () => {
     expect(canonical({ b: 1, a: [undefined, new Date(0)], c: undefined })).toBe(
@@ -85,6 +117,14 @@ describe('canonical form and wire encoding', () => {
     const imposter = Object.assign(Object.create(Date.prototype) as object, { n: 1 });
     expect(isDate(imposter)).toBe(false);
     expect(canonical({ at: imposter })).toBe('{"at":{"n":1}}');
+  });
+
+  it('tags dates in place for the export file, keeping key order', () => {
+    const value = { b: new Date(0), a: [undefined, 1], c: undefined };
+    expect(JSON.stringify(encodeDates(value))).toBe(
+      '{"b":{"$date":"1970-01-01T00:00:00.000Z"},"a":[null,1]}',
+    );
+    expect(decodeDates(encodeDates(value))).toEqual({ b: new Date(0), a: [null, 1] });
   });
 
   it('round-trips a record through JSON', () => {

@@ -200,7 +200,7 @@ const DATE_TAG = '$date';
  * the server, so it breaks merge ties and detects changes.
  */
 export function canonical(value: unknown): string {
-  return JSON.stringify(toCanonical(value));
+  return JSON.stringify(encodeDates(value, true));
 }
 
 /**
@@ -212,16 +212,35 @@ export function isDate(value: unknown): value is Date {
   return Object.prototype.toString.call(value) === '[object Date]';
 }
 
-function toCanonical(value: unknown): unknown {
+/**
+ * `value` with every date tagged `{"$date": iso}`, ready for JSON: the sync
+ * wire format and the export file. `sortKeys` gives the canonical form.
+ */
+export function encodeDates(value: unknown, sortKeys = false): unknown {
   if (isDate(value)) return { [DATE_TAG]: value.toISOString() };
-  if (Array.isArray(value)) return value.map((v) => (v === undefined ? null : toCanonical(v)));
+  if (Array.isArray(value)) {
+    return value.map((v) => (v === undefined ? null : encodeDates(v, sortKeys)));
+  }
   if (value && typeof value === 'object') {
     const obj = value as Record<string, unknown>;
+    const keys = sortKeys ? Object.keys(obj).sort() : Object.keys(obj);
     const out: Record<string, unknown> = {};
-    for (const k of Object.keys(obj).sort()) {
-      if (obj[k] !== undefined) out[k] = toCanonical(obj[k]);
-    }
+    for (const k of keys) if (obj[k] !== undefined) out[k] = encodeDates(obj[k], sortKeys);
     return out;
+  }
+  return value;
+}
+
+/** The inverse of `encodeDates`: tagged dates become `Date`s again. */
+export function decodeDates(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(decodeDates);
+  if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    const keys = Object.keys(obj);
+    if (keys.length === 1 && keys[0] === DATE_TAG && typeof obj[DATE_TAG] === 'string') {
+      return new Date(obj[DATE_TAG]);
+    }
+    return Object.fromEntries(keys.map((k) => [k, decodeDates(obj[k])]));
   }
   return value;
 }
@@ -245,18 +264,67 @@ export function decodeSyncRecord(wire: unknown): SyncRecord {
   ) {
     throw new TypeError('Not a sync record');
   }
-  return fromCanonical(r) as SyncRecord;
+  return decodeDates(r) as SyncRecord;
 }
 
-function fromCanonical(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(fromCanonical);
-  if (value && typeof value === 'object') {
-    const obj = value as Record<string, unknown>;
-    const keys = Object.keys(obj);
-    if (keys.length === 1 && keys[0] === DATE_TAG && typeof obj[DATE_TAG] === 'string') {
-      return new Date(obj[DATE_TAG]);
-    }
-    return Object.fromEntries(keys.map((k) => [k, fromCanonical(obj[k])]));
+// --- Legacy rows -----------------------------------------------------------
+
+/**
+ * Deterministic uids for append-only rows written before sync existed
+ * (schema v1, or a v1 export file). Each is a hash of the row's synced
+ * content plus its occurrence among identical rows in local key order. So
+ * the same v1 history gets the same uids on every device, whether its
+ * database was upgraded in place or it was imported from a v1 export, and
+ * sync keeps one copy of each log. Rows created since get random uids.
+ */
+export function legacyUids(
+  table: SyncTableName,
+  rows: readonly Record<string, unknown>[],
+): string[] {
+  const order = rows
+    .map((_, i) => i)
+    .sort((x, y) => Number(rows[x]?.id) - Number(rows[y]?.id) || x - y);
+  const seen = new Map<string, number>();
+  const uids: string[] = [];
+  for (const i of order) {
+    const hash = contentHash(`${table}\u0000${canonical(toSyncData(table, rows[i] ?? {}))}`);
+    const n = seen.get(hash) ?? 0;
+    seen.set(hash, n + 1);
+    uids[i] = `v1-${hash}-${n}`;
   }
-  return value;
+  return uids;
+}
+
+/** Give each uid-less row of an append-only table its legacy uid. Other rows pass through. */
+export function withLegacyUids<T extends Record<string, unknown>>(
+  table: string,
+  rows: readonly T[],
+): (T & { uid?: unknown })[] {
+  if (!isSyncTable(table) || tableSpec(table).identity !== 'uid') return [...rows];
+  const legacy = rows.filter((r) => typeof r.uid !== 'string');
+  const uids = legacyUids(table, legacy);
+  const byRow = new Map(legacy.map((r, i) => [r, uids[i]]));
+  return rows.map((r) => (byRow.has(r) ? { ...r, uid: byRow.get(r) } : r));
+}
+
+/**
+ * A 106-bit hash as hex: two cyrb53 lanes with different seeds. Synchronous,
+ * so it can run inside a Dexie upgrade transaction (crypto.subtle is async
+ * and would let the transaction commit early).
+ */
+function contentHash(text: string): string {
+  return cyrb53(text, 0x9e3779b9) + cyrb53(text, 0x85ebca6b);
+}
+
+function cyrb53(text: string, seed: number): string {
+  let h1 = 0xdeadbeef ^ seed;
+  let h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 2654435761);
+    h2 = Math.imul(h2 ^ c, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, '0');
 }

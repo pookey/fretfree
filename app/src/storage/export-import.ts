@@ -1,4 +1,5 @@
 import { SCHEMA_VERSION, TABLE_NAMES, type FretworkDB } from './db';
+import { decodeDates, encodeDates, withLegacyUids } from './sync/model';
 
 /** Design §3.6: JSON export/import of all local data. */
 
@@ -11,34 +12,11 @@ export interface ExportFile {
   tables: Record<string, unknown[]>;
 }
 
-const DATE_TAG = '$date';
-
-function encode(value: unknown): unknown {
-  if (value instanceof Date) return { [DATE_TAG]: value.toISOString() };
-  if (Array.isArray(value)) return value.map(encode);
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, encode(v)]));
-  }
-  return value;
-}
-
-function decode(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(decode);
-  if (value && typeof value === 'object') {
-    const obj = value as Record<string, unknown>;
-    const keys = Object.keys(obj);
-    if (keys.length === 1 && keys[0] === DATE_TAG && typeof obj[DATE_TAG] === 'string') {
-      return new Date(obj[DATE_TAG]);
-    }
-    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, decode(v)]));
-  }
-  return value;
-}
-
 export async function exportData(db: FretworkDB, now: Date = new Date()): Promise<ExportFile> {
   const tables: Record<string, unknown[]> = {};
   await db.transaction('r', db.tables, async () => {
-    for (const name of TABLE_NAMES) tables[name] = (await db.table(name).toArray()).map(encode);
+    for (const name of TABLE_NAMES)
+      tables[name] = (await db.table(name).toArray()).map((row) => encodeDates(row));
   });
   return {
     app: EXPORT_APP_ID,
@@ -89,7 +67,11 @@ export async function importData(db: FretworkDB, file: ExportFile): Promise<void
       const table = db.table(name);
       await table.clear();
       const rows = file.tables[name];
-      if (Array.isArray(rows) && rows.length > 0) await table.bulkAdd(rows.map(decode));
+      if (!Array.isArray(rows) || rows.length === 0) continue;
+      // Rows from a v1 file have no uid: give them the same content-derived
+      // uids a v1 database gets on upgrade, so sync doesn't duplicate them.
+      const decoded = rows.map((row) => decodeDates(row) as Record<string, unknown>);
+      await table.bulkAdd(withLegacyUids(name, decoded));
     }
   });
 }
