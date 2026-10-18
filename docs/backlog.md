@@ -422,7 +422,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Completion gives bonus XP and is logged.
 
 ### M2-11 · Focused sessions ("Practise this now", "Quiz me on this")
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-17
 - **Owns:** `app/src/session/runner.ts` (hotspot), `app/src/session/focus.ts`, `app/e2e/m2-11.spec.ts`, `app/e2e/helpers/focus.ts`, `app/e2e/d1-session.spec.ts`, `app/e2e/smoke.spec.ts`
 - **Acceptance:**
