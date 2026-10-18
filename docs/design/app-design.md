@@ -245,7 +245,7 @@ interface DrillType<P = unknown, A = unknown> {
 | D5 | Interval: name it from two dots | choice | C3 | M2 |
 | D6 | Interval: tap the M3/P5/b7 from a root | tap | C3 | M2 |
 | D7 | Spell it: key or chord ("notes of Bm7") | ordered choice | C4, C5 | M3 |
-| D8 | Find the chord tone in a shape | tap | C5, C6, I2 | M3 |
+| D8 | Find the chord tone in a shape (root, 3rd, 5th, 7th; both directions) | tap / choice | C5, C6, I2 | M3 |
 | D9 | Build the CAGED shape at a root (tap or drag the template) | tap/drag | C6 | M3 |
 | D10 | Which shape, and which shape comes next? | choice | C6 | M3 |
 | D11 | Roman numeral ↔ chord in a key | choice | C8 | M4 |
@@ -270,6 +270,9 @@ interface DrillType<P = unknown, A = unknown> {
 | D30 | Hear the meter: 3/4 vs 4/4 vs 6/8 vs 12/8 (later 5/4, 7/8) | choice | T4, T7 | M8 |
 | D31 | Accent and strum in meter: strum with the correct accents; the click fades out (guidance fading) | tap / mic onset | T5 | M8 |
 | D32 | Simple or compound? How many felt beats? | choice | T2 | M8 |
+| D36 | What chord is this? A voicing on the neck or a chord diagram → root, then quality | choice | C5, C6 | M3 |
+| D37 | Chord tones across the neck: tap every note (or every 3rd, 5th …) of a chord | tap (multi-target) | C5, I2 | M3 |
+| D38 | Build the chord: tap a playable voicing from a symbol and a root | tap | C5 | M3 |
 
 **D3 wording and input:**
 

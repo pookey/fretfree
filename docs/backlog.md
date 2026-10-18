@@ -436,6 +436,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/screens/explore/views/fretboard-explorer.tsx`, `app/e2e/m2-12.spec.ts`
 - **Acceptance:**
   - Pick a key, scale or chord, then toggle note names, degrees or intervals.
+  - A chord view colours the root, 3rd, 5th and 7th across the neck (shape and colour), with "Quiz me on this" opening D37 for that chord once M3-14 exists.
   - Uses the whole neck on iPad, plus "Quiz me on this".
 
 ### M2-13 · Per-user FSRS parameter refit
@@ -487,6 +488,9 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/drills/d8-chord-tone/**`, `app/e2e/m3-04.spec.ts`
 - **Acceptance:**
   - Tap the 3rd or b7 inside a displayed shape. The shape outline follows the guide level.
+  - User request (2026-10-18): identifying the **root** comes first, then the 3rd, 5th and 7th. Prompts cover every chord tone ("tap the root", "tap the 5th"), not only the 3rd and b7.
+  - Both directions (rule 12): "tap the 3rd in this shape" and "this highlighted note: root, 3rd, 5th or 7th?". Pair the 3rd/b3 and b7/7 confusions (rule 6).
+  - Shapes include the common open and barre voicings as well as the CAGED shapes, at varied roots and positions.
 
 ### M3-05 · C6 CAGED skills plus D9 "Build the shape at a root"
 - **Status:** todo
@@ -532,6 +536,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/learn/worked-examples/c4-*.tsx`, `app/src/learn/worked-examples/c5-*.tsx`, `app/src/learn/worked-examples/c6-*.tsx`
 - **Acceptance:**
   - Examples plus misconception callouts ("CAGED is a map, not 5 grips").
+  - A "find the root first" example: locate the root in a shape, then read the 3rd to tell major from minor (supports D8 and D36).
 
 ### M3-11 · Session context-panel registry
 - **Status:** todo
@@ -542,9 +547,44 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Drills declare their context panels: key and diatonic chords, current chord diagram, CAGED chain mini-map, interval legend.
   - The panel content follows guide fading and is hidden at level 0.
 
+### M3-13 · D36 "What chord is this?"
+- **Status:** todo
+- **Deps:** M3-03, M3-04, M3-05
+- **Design:** §6 D36, research/03 C5 ("name the chord from its dots")
+- **Owns:** `app/src/drills/d36-name-the-chord/**`, `app/src/engine/skills/c5-name.ts`, `app/e2e/m3-13.spec.ts`
+- **Acceptance:**
+  - User request (2026-10-18). A chord voicing is shown on the neck (as a chord diagram as well, once M3-07 exists) and the learner names it: root, then quality (major, minor, 7, maj7, m7, m7b5, sus).
+  - The voicings are common open, barre and CAGED shapes at varied roots and positions (rule 12). The answer is never printed on the prompt (M1-25).
+  - Items are atomic and FSRS-scheduled (rule 1). Decide and record the item grain in design §6: e.g. one card per quality × shape family, with the root varied per prompt. Major/minor and 7/maj7 are confusable pairs (rule 6).
+  - Wrong-answer feedback labels each dot with its degree (R, 3, 5, 7) by shape and colour, and says which note decided the quality ("the 3rd is C, a minor 3rd above A").
+  - Unit tests for the item model and grading, plus an e2e test on the iPad projects with the happy path tagged `@smoke`.
+
+### M3-14 · D37 "Chord tones across the neck" (multi-target)
+- **Status:** todo
+- **Deps:** M3-03, M2-03
+- **Design:** §6 D37, §7 (iPad multi-target drills), research/03 C7/I2
+- **Owns:** `app/src/drills/d37-chord-tones-neck/**`, `app/src/engine/skills/c5-tones.ts`, `app/e2e/m3-14.spec.ts`
+- **Acceptance:**
+  - User request (2026-10-18): "highlight all notes in a C chord". The prompt names a chord ("tap every note of C major"), or one degree of it ("tap every 3rd of C major"), in a region, then across the whole neck on iPad.
+  - Reuse D4's multi-target machinery (M2-03): per-target feedback, completion-time grading, region by region on compact.
+  - Feedback marks each found note with its degree (R, 3, 5, 7), by shape as well as colour. Missed and wrong taps are shown after the attempt.
+  - Feeds I2 (chord tones inside a box) and CAGED: the region option can align with a CAGED shape's span.
+  - Unit tests for target sets and grading, plus an e2e test on the iPad projects.
+
+### M3-15 · D38 "Build the chord" (tap a voicing)
+- **Status:** todo
+- **Deps:** M3-03, M3-04
+- **Design:** §6 D38, research/03 C5 ("build a chord by tapping")
+- **Owns:** `app/src/drills/d38-build-the-chord/**`, `app/e2e/m3-15.spec.ts`
+- **Acceptance:**
+  - Given a symbol and a starting root on the neck ("Am7, root on string 5 fret 0"), the learner taps one note per string to make a playable voicing.
+  - Any voicing that contains the required chord tones, within a playable span (≤4 frets, configurable in `engine/config/<area>.ts`), is accepted. Feedback names each tapped note's degree and flags missing tones.
+  - The reverse direction of D36, so the same facts are practised both ways (rule 12).
+  - Unit tests for voicing validation, plus an e2e test on the iPad projects.
+
 ### M3-12 · M3 milestone QA
 - **Status:** todo
-- **Deps:** M3-01, M3-02, M3-03, M3-04, M3-05, M3-06, M3-07, M3-08, M3-09, M3-10, M3-11
+- **Deps:** M3-01, M3-02, M3-03, M3-04, M3-05, M3-06, M3-07, M3-08, M3-09, M3-10, M3-11, M3-13, M3-14, M3-15
 - **Owns:** `docs/progress.md`, `app/e2e/m3-12.spec.ts`
 - **Acceptance:**
   - A production screenshot pass and a progress update.
