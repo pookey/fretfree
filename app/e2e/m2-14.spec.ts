@@ -186,12 +186,15 @@ async function answer(page: Page, drill: Drill): Promise<void> {
   await expectCorrect(page);
 }
 
-/** A learner with M1 to C3 mastered and only `DUE` waiting; the session focuses on M2. */
-async function startM2Reviews(page: Page): Promise<void> {
+/**
+ * A learner with M1 to C3 mastered and only `DUE` waiting; the session focuses
+ * on M2. `identical` seeds every card alike, as the placement test does.
+ */
+async function startM2Reviews(page: Page, identical = false): Promise<void> {
   await freshStart(page);
   await seedIntervals(page, {
     mastered: [...SKILLS_BEFORE_C3, ...C3_SKILLS],
-    cards: DUE.map((d, i) => ({ ...d, dueInDays: -1, reviewedDaysAgo: 20 - i })),
+    cards: DUE.map((d, i) => ({ ...d, dueInDays: -1, reviewedDaysAgo: identical ? 20 : 20 - i })),
   });
   await focusSession(page, M2_SKILLS);
 }
@@ -246,7 +249,7 @@ test.describe('M2-14 a cross-drill session', () => {
       await answer(page, drill);
     }
     expect(served).toHaveLength(DUE.length);
-    // Every M2 drill serves its own items, mixed rather than blocked by drill (rule 4).
+    // Every M2 drill serves its own items, mixed rather than blocked by drill (rule 6).
     expect(new Set(served)).toEqual(new Set(['octave-finder', 'interval-name', 'interval-tap']));
     expect(switches(served)).toBeGreaterThanOrEqual(4);
     await expectNoHorizontalOverflow(page);
@@ -267,6 +270,24 @@ test.describe('M2-14 a cross-drill session', () => {
       );
     }
     await expect(page.getByTestId('due-count')).toHaveText('0');
+  });
+
+  test('identically seeded reviews still interleave their drills (rule 6) @smoke', async ({
+    page,
+  }) => {
+    test.slow();
+    // Equal retrievability: item-ID order would serve each drill's items together.
+    await startM2Reviews(page, true);
+
+    const served: Drill[] = [];
+    for (let drill = await current(page); drill; drill = await current(page)) {
+      if (served.length >= DUE.length) break;
+      served.push(drill);
+      await answer(page, drill);
+    }
+    expect(served).toHaveLength(DUE.length);
+    expect(switches(served)).toBeGreaterThanOrEqual(4);
+    await finish(page, DUE.length);
   });
 
   test('a G–B shift slip comes back through its own drill, between the others', async ({
