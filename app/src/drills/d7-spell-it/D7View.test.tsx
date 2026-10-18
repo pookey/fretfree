@@ -50,7 +50,7 @@ const undo = () => screen.getByRole('button', { name: 'Undo' });
 const key = (k: string) => fireEvent.keyDown(window, { key: k });
 
 describe('<D7View>', () => {
-  it('is registered as the spell-it drill for every C4 skill', () => {
+  it('is registered as the spell-it drill for every C4 and C5 skill', () => {
     const drill = getDrill('spell-it');
     expect(drill?.render).toBe(D7View);
     expect(drill?.skills).toEqual([
@@ -58,6 +58,9 @@ describe('<D7View>', () => {
       'C4.flat-keys',
       'C4.sharp-key-degrees',
       'C4.flat-key-degrees',
+      'C5.triads',
+      'C5.sevenths',
+      'C5.sus-add',
     ]);
     expect(drill?.gradedResponseMs).toBeDefined();
   });

@@ -33,6 +33,9 @@ describe('skill registry', () => {
       'C4.flat-keys',
       'C4.sharp-key-degrees',
       'C4.flat-key-degrees',
+      'C5.triads',
+      'C5.sevenths',
+      'C5.sus-add',
     ]);
     expect(getSkill('nope')).toBeUndefined();
   });
