@@ -1,0 +1,124 @@
+/* D4's context panel: the octave shapes as one row of small neck strips, so it
+   fits above the neck on an iPad in landscape. The session's panel supplies
+   the box and the heading colour. */
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.head h2 {
+  margin: 0;
+}
+
+.panel p.key {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.keyRoot,
+.keyOctave {
+  display: inline-block;
+  width: 0.625rem;
+  height: 0.625rem;
+  background: var(--root);
+  border-radius: 0.125rem;
+}
+
+.keyOctave {
+  margin-left: var(--space-1);
+  background: var(--tone);
+  border-radius: 50%;
+}
+
+.shapes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+}
+
+.shape {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-1) 0;
+  border: 2px solid transparent;
+  border-radius: var(--radius-s);
+}
+
+/* The prompt's shape, once answered: an outline, not only a colour. */
+.shape[aria-current='true'] {
+  border-color: var(--tone);
+  border-style: solid;
+  background: var(--surface);
+}
+
+.diagram {
+  display: block;
+  width: 100%;
+  max-width: 4.5rem;
+}
+
+.fret,
+.string {
+  stroke: var(--text-muted);
+  stroke-width: 0.6;
+  opacity: 0.6;
+}
+
+.string {
+  stroke-width: 0.8;
+}
+
+.gb {
+  fill: var(--surface);
+  stroke: var(--text-muted);
+  stroke-width: 0.6;
+  stroke-dasharray: 2 1.5;
+}
+
+.link {
+  stroke: var(--text);
+  stroke-width: 1;
+  stroke-dasharray: 2 1.5;
+}
+
+.root {
+  fill: var(--root);
+  stroke: var(--bg-raised);
+  stroke-width: 0.8;
+}
+
+.octave {
+  fill: var(--tone);
+  stroke: var(--bg-raised);
+  stroke-width: 0.8;
+}
+
+.offset {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pair {
+  font-size: 0.75rem;
+  line-height: 1.25;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}

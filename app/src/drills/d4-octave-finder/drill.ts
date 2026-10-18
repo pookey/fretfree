@@ -1,4 +1,5 @@
 import type { DrillType } from '../types';
+import { OctaveContextPanel } from './ContextPanel';
 import { D4View } from './D4View';
 import {
   D4_ID,
@@ -30,6 +31,7 @@ const octaveFinder: DrillType<D4Prompt, D4Answer> = {
   feedbackPositions: d4FeedbackPositions,
   conceptOf: d4ConceptOf,
   render: D4View,
+  contextPanel: OctaveContextPanel,
 };
 
 export default octaveFinder;
