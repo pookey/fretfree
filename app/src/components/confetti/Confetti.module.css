@@ -1,0 +1,49 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.piece {
+  position: absolute;
+  top: -2rem;
+  left: var(--x);
+  width: var(--size);
+  height: var(--size);
+  background: var(--colour);
+  opacity: 0;
+  animation-name: fall;
+  animation-timing-function: cubic-bezier(0.25, 0.6, 0.5, 1);
+  animation-fill-mode: forwards;
+}
+
+.piece[data-shape='circle'] {
+  border-radius: 50%;
+}
+
+.piece[data-shape='triangle'] {
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+@keyframes fall {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift), 110vh, 0) rotate(var(--spin));
+  }
+}
+
+/* Belt and braces: the component already renders nothing under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .layer {
+    display: none;
+  }
+}
