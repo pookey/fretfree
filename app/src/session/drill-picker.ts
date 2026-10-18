@@ -41,7 +41,9 @@ export function createDrillPicker(
 /**
  * The fact an item tests, the same key in both directions (research/02
  * rule 1): `note@s6f5` names "A on string 6" and `find:A@s6` finds it;
- * `marker:f7` names the 7th-fret marker and `find-marker:f7` finds it.
+ * `marker:f7` names the 7th-fret marker and `find-marker:f7` finds it;
+ * `interval-name:M3@s6→s5` names an interval shape and `interval:M3@s6→s5`
+ * taps it from a root.
  * Items with no reverse direction return `null`.
  */
 export function factOf(item: Item, tuning: Tuning): FactRef | null {
@@ -60,6 +62,14 @@ export function factOf(item: Item, tuning: Tuning): FactRef | null {
       return { fact: `marker:${ref.fret}`, direction: 'name' };
     case 'find-marker':
       return { fact: `marker:${ref.fret}`, direction: 'find' };
+    case 'interval-name':
+    case 'interval':
+      // One interval shape: named from two dots (D5) or tapped from a root (D6).
+      if (Math.max(ref.from, ref.to) > stringCount(tuning)) return null;
+      return {
+        fact: `interval:${ref.interval}@s${ref.from}→s${ref.to}`,
+        direction: ref.kind === 'interval' ? 'find' : 'name',
+      };
     default:
       return null;
   }

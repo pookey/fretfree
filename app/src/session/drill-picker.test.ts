@@ -61,6 +61,27 @@ describe('factOf', () => {
     expect(factOf({ id: 'find:A#@s6', skillId: 'sk' }, standard)?.fact).toBe('s6:10');
   });
 
+  it('pairs the two directions of an interval shape (D5 and D6)', () => {
+    expect(factOf({ id: 'interval-name:M3@s6→s5', skillId: 'sk' }, standard)).toEqual({
+      fact: 'interval:M3@s6→s5',
+      direction: 'name',
+    });
+    expect(factOf({ id: 'interval:M3@s6→s5', skillId: 'sk' }, standard)).toEqual({
+      fact: 'interval:M3@s6→s5',
+      direction: 'find',
+    });
+    // Another shape of the same interval is another fact.
+    expect(factOf({ id: 'interval:M3@s3→s2', skillId: 'sk' }, standard)?.fact).toBe(
+      'interval:M3@s3→s2',
+    );
+    // A string the tuning lacks has no fact.
+    const bass = { id: 'bass', name: 'Bass (EADG)', notes: ['E1', 'A1', 'D2', 'G2'] };
+    expect(factOf({ id: 'interval:M3@s6→s5', skillId: 'sk' }, bass)).toBeNull();
+    expect(factOf({ id: 'interval-name:M3@s4→s3', skillId: 'sk' }, bass)?.fact).toBe(
+      'interval:M3@s4→s3',
+    );
+  });
+
   it('pairs inlay-marker items and has no key for one-way items', () => {
     expect(factOf({ id: 'marker:f7', skillId: 'sk' }, standard)).toEqual({
       fact: 'marker:7',
