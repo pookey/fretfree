@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useAppStore } from '../app-store';
 import { playNotes } from '../audio/audio';
 import { DRILLS } from '../drills/registry';
+import { FOCUS_PARAM, focusedSkills } from '../learn/worked-examples/focus';
 import type { DrillFeedback } from '../drills/types';
 import { SKILLS, createScheduler, type GuideLevel } from '../engine';
 import { useSizeClass } from '../shell/size-class';
@@ -30,6 +31,7 @@ export function SessionScreen() {
   const loaded = useAppStore((s) => s.loaded);
   const sizeClass = useSizeClass();
   const navigate = useNavigate();
+  const focus = useSearchParams()[0].get(FOCUS_PARAM);
   const runnerRef = useRef<SessionRunner | null>(null);
   const trackerRef = useRef<CelebrationTracker | null>(null);
   const shownAt = useRef(0);
@@ -62,7 +64,13 @@ export function SessionScreen() {
     let live = true;
     const db = getDb();
     void Promise.all([
-      SessionRunner.start({ db, scheduler, settings, skills: SKILLS, drills: DRILLS }),
+      SessionRunner.start({
+        db,
+        scheduler,
+        settings,
+        skills: focusedSkills(SKILLS, focus),
+        drills: DRILLS,
+      }),
       CelebrationTracker.begin({ db, skills: SKILLS }),
     ]).then(([runner, tracker]) => {
       if (!live) return;
@@ -73,7 +81,7 @@ export function SessionScreen() {
     return () => {
       live = false;
     };
-  }, [loaded, settings, showCurrent]);
+  }, [loaded, settings, focus, showCurrent]);
 
   const advance = useCallback(() => {
     runnerRef.current?.next();
