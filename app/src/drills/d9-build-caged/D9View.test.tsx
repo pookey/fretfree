@@ -67,10 +67,10 @@ describe('<D9View>', () => {
     );
     // At guide level 1 the count hides the total (rule 9).
     expect(screen.getByTestId('d9-count')).toHaveTextContent(/^Found 0$/);
-    // The iPad shows the whole neck, frets 13–15 dimmed.
+    // The iPad shows the whole neck, every fret live.
     expect(neck()).toHaveAttribute('data-fret-from', '0');
     expect(neck()).toHaveAttribute('data-fret-to', '15');
-    expect(neck().querySelectorAll('[data-testid="dimmed-fret"]')).toHaveLength(3);
+    expect(neck().querySelectorAll('[data-testid="dimmed-fret"]')).toHaveLength(0);
   });
 
   it('marks each found note by degree, and answers at the last one', () => {
@@ -91,9 +91,9 @@ describe('<D9View>', () => {
     expect(onAnswer).toHaveBeenCalledWith([at(3, 5), at(2, 5), at(1, 3)]);
   });
 
-  it('answers at the first wrong tap, and ignores taps past fret 12', () => {
+  it('answers at the first wrong tap', () => {
     const { onAnswer } = view(prompt('caged:A-shape@major'));
-    tap(at(1, 14));
+    tap(at(5, 3));
     expect(onAnswer).not.toHaveBeenCalled();
     tap(at(4, 5));
     tap(at(2, 1));
@@ -144,7 +144,7 @@ describe('<D9View>', () => {
     expect(screen.queryByTestId('d9-explain')).toBeNull();
   });
 
-  it('shows 12 frets on iPad portrait, with the context panel below', () => {
+  it('shows 12 frets on iPad portrait, slid up for a high root, with the panel below', () => {
     render(
       <D9View
         prompt={prompt('caged:D-shape@major')}
@@ -158,11 +158,12 @@ describe('<D9View>', () => {
         aside={<aside data-testid="aside" />}
       />,
     );
-    expect(neck()).toHaveAttribute('data-fret-to', '12');
+    // The D shape of C sits at frets 10–13, so the 12-fret neck shows 1–13.
+    expect(neck()).toHaveAttribute('data-fret-from', '1');
+    expect(neck()).toHaveAttribute('data-fret-to', '13');
     expect(screen.getByTestId('aside')).toBeInTheDocument();
-    // C would put the D shape at frets 10–13, past the region, so the first root is D.
     expect(screen.getByTestId('d9-prompt')).toHaveTextContent(
-      'Build the D shape of D from this root',
+      'Build the D shape of C from this root',
     );
   });
 

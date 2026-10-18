@@ -4,6 +4,7 @@ import {
   DROP_D_TUNING,
   STANDARD_TUNING,
   chromaOf,
+  chromaToPc,
   midiAt,
   noteAt,
   type AccidentalPref,
@@ -26,6 +27,8 @@ import {
   d9GradedResponseMs,
   d9MakePrompt,
   d9Placements,
+  d9Reach,
+  d9RegularWindow,
   d9ScopeFor,
   d9ShowsCount,
   d9Sounds,
@@ -178,17 +181,46 @@ describe('d9MakePrompt', () => {
   });
 
   it('offers each position that fits the region', () => {
-    // E shape of E: open, and again at the 12th fret (12–14 is past the region).
+    // E shape of E: open, and again at the 12th fret (frets 12–14).
     expect(d9Placements('E', 'major', 'E', STANDARD_TUNING).map((p) => p.shape.rootFret)).toEqual([
-      0,
+      0, 12,
     ]);
     expect(
-      d9Placements('E', 'major', 'E', STANDARD_TUNING, { from: 0, to: 15 }).map(
+      d9Placements('E', 'major', 'E', STANDARD_TUNING, { from: 0, to: 12 }).map(
         (p) => p.shape.rootFret,
       ),
-    ).toEqual([0, 12]);
-    // The C shape of B would need fret −1 or 11–14.
-    expect(d9Placements('C', 'major', 'B', STANDARD_TUNING)).toEqual([]);
+    ).toEqual([0]);
+    // The C shape of B needs frets 11–14, past a 0–12 neck but inside the whole neck.
+    expect(d9Placements('C', 'major', 'B', STANDARD_TUNING, { from: 0, to: 12 })).toEqual([]);
+    expect(d9Placements('C', 'major', 'B', STANDARD_TUNING).map((p) => p.shape.rootFret)).toEqual([
+      14,
+    ]);
+  });
+
+  /** Every (shape, quality, root) with no placement on the whole neck. */
+  const unreachable = (tuning: Tuning) =>
+    (['C', 'A', 'G', 'E', 'D'] as const).flatMap((shape) =>
+      (['major', 'minor', 'dominant7'] as const).flatMap((quality) =>
+        [...Array(12).keys()]
+          .map((chroma) => chromaToPc(chroma))
+          .filter((root) => d9Placements(shape, quality, root, tuning).length === 0)
+          .map((root) => `${shape} shape of ${root} ${quality}`),
+      ),
+    );
+
+  it('reaches every shape at every root on frets 0–15 (rule 12)', () => {
+    // Including the D shape of C (frets 10–13), the last link of the C chain.
+    expect(unreachable(STANDARD_TUNING)).toEqual([]);
+    expect(d9Placements('D', 'major', 'C', STANDARD_TUNING).map((p) => p.shape.rootFret)).toEqual([
+      10,
+    ]);
+    // Drop D moves string 6 up two frets, so the G shape spans 6 frets: F♯
+    // would need its root at fret 2 (fret −1 below) or 16.
+    expect(unreachable(DROP_D_TUNING)).toEqual([
+      'G shape of F# major',
+      'G shape of F# minor',
+      'G shape of F# dominant7',
+    ]);
   });
 });
 
@@ -295,7 +327,26 @@ describe('D9 feedback', () => {
   });
 });
 
-describe('d9Window', () => {
+describe('windows', () => {
+  it('knows how far a shape reaches from its root', () => {
+    expect(d9Reach(STANDARD_TUNING)).toBe(3);
+    expect(d9Reach(DROP_D_TUNING)).toBe(5);
+    expect(make('caged:A-shape@major').reach).toBe(3);
+  });
+
+  it('slides the portrait 12-fret neck up only for high roots', () => {
+    expect(d9RegularWindow(make('caged:A-shape@major'))).toEqual({ from: 0, to: 12 });
+    // The D shape of C: root at string 4, fret 10; the shape reaches fret 13.
+    const roots = new Map<string, D9Prompt>();
+    for (const r of RNGS) {
+      const p = make('caged:D-shape@major', { rng: () => r });
+      roots.set(p.root, p);
+    }
+    const dOfC = roots.get('C')!;
+    expect(dOfC.anchor.fret).toBe(10);
+    expect(d9RegularWindow(dOfC)).toEqual({ from: 1, to: 13 });
+  });
+
   it('centres the compact window on the root, wide enough either way', () => {
     const p = make('caged:A-shape@major'); // root at fret 3
     expect(d9Window(p, 5)).toEqual({ from: 0, to: 6 });
@@ -303,21 +354,33 @@ describe('d9Window', () => {
     const w = d9Window(high, 5);
     expect(w.to - w.from + 1).toBe(7);
     expect(w.from).toBeLessThanOrEqual(Math.max(0, high.anchor.fret - 3));
-    expect(w.to).toBeGreaterThanOrEqual(Math.min(12, high.anchor.fret + 3));
+    expect(w.to).toBeGreaterThanOrEqual(Math.min(15, high.anchor.fret + 3));
     // A phone on its side shows more frets.
     expect(d9Window(p, 9)).toEqual({ from: 0, to: 8 });
   });
 
-  it('keeps every note of the shape on screen', () => {
-    for (const id of C6_IDS) {
-      for (const r of RNGS) {
-        const p = make(id, { scopeLevel: 1, rng: () => r });
-        const w = d9Window(p, 5);
-        for (const n of p.shapeNotes) {
-          expect(n.fret, id).toBeGreaterThanOrEqual(w.from);
-          expect(n.fret, id).toBeLessThanOrEqual(w.to);
+  it('keeps every note of the shape on screen, and each window follows the root', () => {
+    for (const tuning of [STANDARD_TUNING, DROP_D_TUNING]) {
+      for (const id of C6_IDS) {
+        for (const r of RNGS) {
+          const p = make(id, { scopeLevel: 1, rng: () => r, tuning });
+          const windows = [d9Window(p, 5), d9RegularWindow(p)];
+          expect(windows[1]!.to - windows[1]!.from).toBe(12);
+          for (const w of windows) {
+            // Either side of the root, so the window never shows the shape's direction.
+            expect(w.from, id).toBeLessThanOrEqual(Math.max(0, p.anchor.fret - p.reach));
+            expect(w.to, id).toBeGreaterThanOrEqual(Math.min(15, p.anchor.fret + p.reach));
+            for (const n of p.shapeNotes) {
+              expect(n.fret, id).toBeGreaterThanOrEqual(w.from);
+              expect(n.fret, id).toBeLessThanOrEqual(w.to);
+            }
+          }
         }
       }
     }
+    // Drop D's wider reach widens the compact window.
+    const g = make('caged:G-shape@major', { tuning: DROP_D_TUNING });
+    const w = d9Window(g, 5);
+    expect(w.to - w.from + 1).toBe(11);
   });
 });

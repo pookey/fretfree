@@ -11,6 +11,7 @@ import {
   d9Explain,
   d9Found,
   d9IsLive,
+  d9RegularWindow,
   d9Missed,
   d9ShowsCount,
   d9StringSpan,
@@ -29,15 +30,14 @@ interface ViewState {
 }
 
 const WIDE: FretRange = { from: 0, to: 15 };
-const REGULAR: FretRange = { from: 0, to: 12 };
 
 /**
  * D9 view (design §6 D9, §7). The root is drawn as a square on the shape's
  * root string, and the learner taps the rest of the template. Each tap is
  * marked at once with its degree, by shape and colour; the round answers at
  * the last note, on the first wrong tap, or on "Done". The iPad shows the
- * whole neck (frets 13–15 dimmed), so the shape is placed in context;
- * compact screens show a window centred on the root.
+ * whole neck, so the shape is placed in context; iPad portrait shows
+ * 12 frets that follow the root, and compact screens a window centred on it.
  */
 export function D9View({
   prompt,
@@ -66,7 +66,7 @@ export function D9View({
 
   let visible: FretRange;
   if (compact) visible = d9Window(prompt, compactFrets);
-  else visible = sizeClass === 'regular-wide' ? WIDE : REGULAR;
+  else visible = sizeClass === 'regular-wide' ? WIDE : d9RegularWindow(prompt);
 
   const tapped = (pos: Position) => taps.some((p) => samePosition(p, pos));
 

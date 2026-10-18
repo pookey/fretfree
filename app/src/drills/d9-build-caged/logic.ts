@@ -58,8 +58,15 @@ export type D9Scope = 'naturals' | 'all';
 export const D9_SCOPES: readonly D9Scope[] = ['naturals', 'all'];
 export const D9_SCOPE = { minLevel: 0, maxLevel: D9_SCOPES.length - 1 };
 
-/** Shapes sit within frets 0–12 (frets 13–15 are shown on iPad, dimmed). */
-export const D9_REGION: FretRange = { from: 0, to: 12 };
+/**
+ * Shapes sit within frets 0–15, the whole neck the iPad shows, so every shape
+ * fits at every root (the D shape of C at frets 10–13 closes the C chain).
+ * iPad portrait and compact screens show a window that follows the root.
+ */
+export const D9_REGION: FretRange = { from: 0, to: 15 };
+
+/** The frets iPad portrait shows at once: a 12-fret neck (design §7), 13 cells. */
+export const D9_REGULAR_SPAN = 12;
 
 /** The shape sharing each shape's root string: the one it is confused with. */
 const PARTNER: Partial<Record<CagedShapeName, CagedShapeName>> = {
@@ -94,6 +101,12 @@ export interface D9Prompt {
   scope: D9Scope;
   /** Frets that accept taps; the neck dims the rest (design §7). */
   activeRange: FretRange;
+  /**
+   * The furthest any CAGED shape reaches from its root, in frets, in this
+   * tuning (3 in standard, 5 in drop D). Windows cover this either side of
+   * the root, so they never show which way the asked shape faces.
+   */
+  reach: number;
   tuning: Tuning;
   accidentalPref: AccidentalPref;
 }
@@ -168,6 +181,23 @@ function pick<T>(xs: readonly T[], rng: () => number): T | undefined {
 }
 
 /** The partner shape's notes at the same root that are not in the asked shape (the root is shared). */
+const SHAPE_NAMES: readonly CagedShapeName[] = ['C', 'A', 'G', 'E', 'D'];
+const QUALITIES: readonly CagedQuality[] = ['major', 'minor', 'dominant7'];
+
+/** The furthest a note of any shape lies from its root square, in `tuning`. */
+export function d9Reach(tuning: Tuning): number {
+  let reach = 0;
+  for (const shape of SHAPE_NAMES) {
+    for (const quality of QUALITIES) {
+      const s = cagedShape(shape, 'C', { quality, minFret: 6 });
+      const notes = retune(s.notes, tuning);
+      const anchor = notes.find((n) => n.string === s.rootString) as ShapeNote;
+      for (const n of notes) reach = Math.max(reach, Math.abs(n.fret - anchor.fret));
+    }
+  }
+  return reach;
+}
+
 function partnerOf(
   placed: CagedShape,
   own: readonly Position[],
@@ -217,6 +247,7 @@ export function d9MakePrompt(item: Item, ctx: DrillContext): D9Prompt {
     partner: partnerOf(placed, shapeNotes, tuning),
     scope,
     activeRange: D9_REGION,
+    reach: d9Reach(tuning),
     tuning,
     accidentalPref,
   };
@@ -371,15 +402,19 @@ export function d9ShowsCount(guideLevel: GuideLevel, guided: boolean): boolean {
   return guided || guideLevel >= ENGINE_CONFIG.buildCaged.countGuideLevel;
 }
 
-// --- Compact layout -------------------------------------------------------
+// --- Windows ---------------------------------------------------------------
 
 /**
  * The compact window: centred on the root and wide enough for any shape
- * either side of it (C and G reach 3 frets below, A, E and D up to 3 above),
- * so the window never shows which way the shape faces.
+ * either side of it (in standard tuning C and G reach 3 frets below, A, E and
+ * D up to 3 above), so the window never shows which way the shape faces.
  */
 export function d9Window(prompt: D9Prompt, compactFrets: number): FretRange {
-  const size = Math.max(ENGINE_CONFIG.buildCaged.compactWindowFrets, compactFrets);
+  const size = Math.max(
+    ENGINE_CONFIG.buildCaged.compactWindowFrets,
+    compactFrets,
+    2 * prompt.reach + 1,
+  );
   const bounds = prompt.activeRange;
   const width = Math.min(size, bounds.to - bounds.from + 1);
   const start = Math.max(
@@ -387,4 +422,18 @@ export function d9Window(prompt: D9Prompt, compactFrets: number): FretRange {
     Math.min(prompt.anchor.fret - Math.floor(width / 2), bounds.to - width + 1),
   );
   return { from: start, to: start + width - 1 };
+}
+
+/**
+ * iPad portrait's 12-fret neck: frets 0–12, slid up just far enough that
+ * every shape at this root fits (the D shape of C shows frets 1–13). It
+ * follows the root alone, so it doesn't hint at the shape's direction.
+ */
+export function d9RegularWindow(prompt: D9Prompt): FretRange {
+  const bounds = prompt.activeRange;
+  const top = Math.min(
+    bounds.to,
+    Math.max(bounds.from + D9_REGULAR_SPAN, prompt.anchor.fret + prompt.reach),
+  );
+  return { from: top - D9_REGULAR_SPAN, to: top };
 }
