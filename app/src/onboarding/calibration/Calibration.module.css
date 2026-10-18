@@ -1,0 +1,78 @@
+/* Latency calibration (design §4 step 5): the status line, the neck, then the action. */
+.calibration {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.status {
+  min-height: 5.5rem;
+}
+
+.status p {
+  margin: 0 0 var(--space-2);
+}
+
+.muted {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress {
+  width: 100%;
+  height: 0.5rem;
+  accent-color: var(--tone);
+}
+
+.neck {
+  overflow-x: auto;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.actions > form {
+  flex: 1;
+}
+
+/* Best-effort iPhone: the neck fits a short landscape viewport once scrolled to. */
+.calibration[data-size-class='compact'] .neck svg {
+  max-height: calc(100dvh - 4rem);
+}
+
+/* Progress → Settings. */
+.setting {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.settingRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap);
+}
+
+.settingButton {
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settingPanel {
+  padding: var(--space-4);
+  border-radius: var(--radius-l);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+}
