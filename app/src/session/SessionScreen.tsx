@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useAppStore } from '../app-store';
 import { playNotes } from '../audio/audio';
 import { DRILLS } from '../drills/registry';
@@ -9,6 +9,7 @@ import { useCompactWindowFrets, useSizeClass } from '../shell/size-class';
 import { getDb } from '../storage';
 import { getTuning } from '../theory';
 import { parseFocus } from './focus';
+import { parseSessionOptions } from './options';
 import { refitIfDue } from './refit-bridge';
 import { SessionRunner, type CurrentPrompt } from './runner';
 import type { Celebration } from './summary/celebrations';
@@ -38,6 +39,7 @@ export function SessionScreen() {
   const compact = sizeClass === 'compact';
   const navigate = useNavigate();
   const query = useSearchParams()[0].toString();
+  const routeState: unknown = useLocation().state;
   const runnerRef = useRef<SessionRunner | null>(null);
   const trackerRef = useRef<CelebrationTracker | null>(null);
   const shownAt = useRef(0);
@@ -83,6 +85,7 @@ export function SessionScreen() {
         scheduler,
         settings,
         skills: SKILLS,
+        ...parseSessionOptions(routeState),
         drills: DRILLS,
         focus: parseFocus(new URLSearchParams(query), SKILLS),
       }),
@@ -97,7 +100,7 @@ export function SessionScreen() {
     return () => {
       live = false;
     };
-  }, [loaded, settings, scheduler, query, showCurrent]);
+  }, [loaded, settings, scheduler, query, routeState, showCurrent]);
 
   const advance = useCallback(() => {
     runnerRef.current?.next();

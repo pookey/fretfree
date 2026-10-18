@@ -85,6 +85,10 @@ export interface RunnerDeps {
   maxItems?: number;
   /** Serve only these skills or items ("Practise this now", "Quiz me on this"). */
   focus?: SessionFocus | null;
+  /** Override the settings' time budget in minutes (quick drills). */
+  minutes?: number;
+  /** Plan due reviews only, with no new or stretch items (the Today warm-up). */
+  reviewOnly?: boolean;
 }
 
 export interface CurrentPrompt {
@@ -192,9 +196,7 @@ export class SessionRunner {
     this.lastTick = this.startedAt;
     this.lastDrill = lastDrill;
     this.queue = [];
-    this.adopt(
-      planner(this.startedAt, deps.settings.sessionMinutes, cards, new Set(), deps.maxItems),
-    );
+    this.adopt(planner(this.startedAt, this.budgetMinutes, cards, new Set(), deps.maxItems));
     this.targets = speedTargets(deps.settings.latencyBaselineMs);
     this.guides = new SessionGuides(this.targets);
   }
@@ -234,9 +236,11 @@ export class SessionRunner {
       frontierInOrder.push(skill);
     }
     // The goal profile reorders frontier skills (design §3.3 step 2).
-    const frontier: Item[] = orderFrontier(frontierInOrder, deps.settings.goal).flatMap((skill) =>
-      skill.items().filter(serves),
-    );
+    const frontier: Item[] = deps.reviewOnly
+      ? []
+      : orderFrontier(frontierInOrder, deps.settings.goal).flatMap((skill) =>
+          skill.items().filter(serves),
+        );
     const tuning = getTuning(deps.settings.tuning);
     const ctx = { tuning, accidentalPref: deps.settings.accidentalPref };
 
@@ -268,7 +272,7 @@ export class SessionRunner {
           planned: new Set([...seen, ...plan.map((e) => e.itemId)]),
           scheduler: deps.scheduler,
           now: at,
-          count: total - plan.length,
+          count: deps.reviewOnly ? 0 : total - plan.length,
         }),
       );
       return plan;
@@ -277,6 +281,10 @@ export class SessionRunner {
     const logId = await startSessionLog(deps.db, now);
     const lastDrill = await lastDrills(deps.db, cards, picker);
     return new SessionRunner(deps, planner, picker, cards, states, logId, lastDrill);
+  }
+
+  private get budgetMinutes(): number {
+    return this.deps.minutes ?? this.deps.settings.sessionMinutes;
   }
 
   private now(): Date {
@@ -306,7 +314,7 @@ export class SessionRunner {
 
   /** When the time budget runs out. */
   get endsAt(): Date {
-    return new Date(this.startedAt.getTime() + this.deps.settings.sessionMinutes * 60_000);
+    return new Date(this.startedAt.getTime() + this.budgetMinutes * 60_000);
   }
 
   /** Time left in the budget, never negative. */
