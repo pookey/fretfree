@@ -96,11 +96,11 @@ test.describe('M1-30 streak repair', () => {
     await expect(page.getByTestId('streak-repair-progress')).toHaveText(
       `0 / ${DOUBLE_MINUTES} min today`,
     );
-    // Straight under the hero.
+    // Under the hero and the install tip's slot (dismissed here), above quests.
     const order = await page
       .locator('[data-today-card]')
       .evaluateAll((els) => els.map((e) => e.getAttribute('data-today-card')));
-    expect(order.slice(0, 2)).toEqual(['hero', 'streak-repair']);
+    expect(order.slice(0, 4)).toEqual(['hero', 'install', 'streak-repair', 'quests']);
     await expectNoHorizontalOverflow(page);
 
     await doubleSession(page);

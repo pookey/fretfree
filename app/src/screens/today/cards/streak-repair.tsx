@@ -8,8 +8,8 @@ import screens from '../../screens.module.css';
 import styles from './streak-repair.module.css';
 
 export const id = 'streak-repair';
-// Straight under the hero: while it shows, it is the most useful thing on Today.
-export const order = 11;
+// Under the hero and the install tip (which keeps its place under the hero), above quests.
+export const order = 13;
 
 const systemNow = () => new Date();
 
