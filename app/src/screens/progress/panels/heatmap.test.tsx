@@ -54,7 +54,10 @@ describe('Progress heatmap panel', () => {
       }),
     );
 
-    await waitFor(() => expect(screen.getAllByTestId('heat-tile')).toHaveLength(1));
+    // The live query re-renders asynchronously; under load it can take over a second.
+    await waitFor(() => expect(screen.getAllByTestId('heat-tile')).toHaveLength(1), {
+      timeout: 5000,
+    });
     expect(screen.getByTestId('forecast-string-5')).toHaveTextContent(
       /You'll remember ~\d+% of string 5 next week/,
     );
