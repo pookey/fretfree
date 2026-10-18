@@ -118,7 +118,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The e2e test completes and skips the onboarding.
 
 ### M1-07 · Latency calibration step
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-06
 - **Design:** §3.2, §4 step 5
 - **Owns:** `app/src/onboarding/steps/calibration.tsx`, `app/src/onboarding/calibration/**`, `app/e2e/m1-07.spec.ts`
