@@ -287,7 +287,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - RTL tests cover guide levels 0–3 × guided/unguided/feedback. An e2e test (`m1-25.spec.ts`, tagged `@smoke`) checks that after the worked example, the unguided prompt for a fresh learner doesn't show the answer on the neck.
 
 ### M1-27 · [hotfix] D3: say "note", and answer by tapping the neck
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §6 D3, research/02 (retrieval in the target context)
 - **Owns:** `app/src/drills/d3-note-wheel/**`, `app/e2e/m1-27.spec.ts`, `docs/design/app-design.md`
