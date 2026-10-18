@@ -43,7 +43,13 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
-      include: ['src/theory/**', 'src/engine/**', 'src/storage/**', 'src/drills/**', 'src/session/**'],
+      include: [
+        'src/theory/**',
+        'src/engine/**',
+        'src/storage/**',
+        'src/drills/**',
+        'src/session/**',
+      ],
       exclude: ['**/*.test.*', '**/index.ts', '**/*.tsx'],
       thresholds: { lines: 90, functions: 90, statements: 90, branches: 85 },
     },
