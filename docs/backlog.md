@@ -84,7 +84,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Every item ID is stable and unique, and prerequisites form a DAG (tested).
 
 ### M1-04 · D2 "Find the note" drill (tap the neck)
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-03
 - **Design:** §6 D2, §7 session, §8
 - **Owns:** `app/src/drills/d2-find-the-note/**`, `app/e2e/m1-04.spec.ts`
