@@ -57,7 +57,7 @@
 /* The slots: one per note, the tonic or root first. */
 .slots {
   /* Room between slots for the W/H step marks. */
-  --slot-gap: var(--space-5);
+  --slot-gap: 1.25rem;
 
   display: flex;
   flex-wrap: wrap;
@@ -81,8 +81,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 4.5rem;
-  height: 4.5rem;
+  width: 4rem;
+  height: 4rem;
   border-radius: var(--radius-m);
   border: 2px solid var(--border);
   background: var(--bg-raised);
@@ -163,7 +163,7 @@
 
 .step {
   position: absolute;
-  top: 1.5rem;
+  top: 1.375rem;
   right: 100%;
   width: var(--slot-gap);
   text-align: center;
