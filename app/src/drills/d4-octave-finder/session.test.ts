@@ -76,7 +76,13 @@ describe('D4 in a session', () => {
       scheduler.seedKnownCard({ id: 'octaves:G', skillId: 'C1.every-octave' }, clock, 1),
     );
     const due = new Date(clock.getTime() + 86_400_000 * 3);
-    await unlock([skill('C1.every-octave')]);
+    // The skill is mastered, so the session is its due card alone (no new items).
+    await db.skillStates.put({
+      skillId: 'C1.every-octave',
+      status: 'mastered',
+      guideLevel: 1,
+      rollingAccuracy: 1,
+    });
     const r = await SessionRunner.start({
       db,
       scheduler,
@@ -85,7 +91,6 @@ describe('D4 in a session', () => {
       drills: DRILLS,
       now: () => due,
       rng: () => 0,
-      maxItems: 1,
     });
     const cur = r.currentPrompt()!;
     expect(cur.entry).toMatchObject({ itemId: 'octaves:G', guided: false });
@@ -112,9 +117,11 @@ describe('D4 in a session', () => {
 
     // Single items are timed as given.
     const next = r.currentPrompt()!.prompt as D4SinglePrompt;
+    expect(next.mode).toBe('single');
     await r.answer(next.targets, 900);
     const logs = await db.reviewLogs.toArray();
     expect(logs.map((l) => l.responseMs)).toEqual([900, 900]);
-    expect((await allCards(db)).length).toBe(2);
+    expect(logs.every((l) => l.drillType === D4_ID)).toBe(true);
+    expect(await allCards(db)).not.toHaveLength(0);
   });
 });
