@@ -15,8 +15,9 @@ An iPad-first guitar-learning PWA (iPhone is best-effort). It is public and MIT-
 | Command | What it does |
 |---|---|
 | `pnpm dev` | Vite dev server (`PORT=5xxx pnpm dev` for a custom port) |
-| `pnpm verify` | **The quality gate**: typecheck, lint, prettier check, unit tests with coverage thresholds, infra tests, build, Playwright e2e |
+| `pnpm verify` | **The quality gate**: typecheck, lint, prettier check, unit tests with coverage thresholds, infra tests, build, first-load JS budget (`scripts/check-bundle.mjs`, ≤250 KB gzip), Playwright e2e |
 | `pnpm test` / `pnpm --filter app test:watch` | Unit tests only |
+| `pnpm lighthouse` | Build, then the local PWA + accessibility gate (`scripts/lighthouse.mjs`): Chrome installability, manifest and offline checks, then Lighthouse a11y (must be 100) and best practices on every screen, dark and light. Fetches a pinned Lighthouse via `pnpm dlx` |
 | `pnpm e2e` | Build, then run Playwright through the machine-wide e2e semaphore (`scripts/e2e-slot.sh`, 2 slots, port per slot) |
 | `pnpm ship` | On a clean `main`: secret scan → verify → deploy (`scripts/deploy.sh`) → smoke test production (`scripts/smoke.sh`) |
 | `pnpm secret-scan [range]` | Scan a git range for account IDs, zone IDs and keys |

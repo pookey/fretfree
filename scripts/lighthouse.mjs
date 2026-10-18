@@ -7,7 +7,8 @@
 //    the manifest and iOS home-screen tags, and an offline reload served by the
 //    service worker.
 // 2. Lighthouse accessibility and best practices on every screen, at iPad Pro
-//    11 landscape. Accessibility must score 100 everywhere.
+//    11 landscape, in the dark (default) and light colour schemes.
+//    Accessibility must score 100 everywhere.
 //
 // It drives Playwright's Chromium (already installed for e2e) with a remote
 // debugging port, so Lighthouse audits the same profile that skipped
@@ -30,6 +31,8 @@ const FRESH_ROUTES = ['/onboarding'];
 const ROUTES = ['/', '/learn', '/explore', '/progress', '/session'];
 const IPAD = { width: 1194, height: 834, deviceScaleFactor: 2 };
 const RUN_TIMEOUT_MS = 120_000;
+// Blink's preferredColorScheme setting: 0 is dark, 1 is light.
+const SCHEMES = { dark: 0, light: 1 };
 const IPAD_UA =
   'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 
@@ -64,9 +67,7 @@ const preview = spawn(
   ],
   { cwd: app, stdio: 'ignore' },
 );
-const profile = mkdtempSync(join(tmpdir(), 'fretwork-lh-profile-'));
 const reports = mkdtempSync(join(tmpdir(), 'fretwork-lh-reports-'));
-let context;
 
 async function waitForServer() {
   for (let i = 0; i < 100; i++) {
@@ -155,8 +156,8 @@ function run(command, args) {
   });
 }
 
-async function lighthouse(route, outDir) {
-  const out = join(outDir, `${route === '/' ? 'today' : route.slice(1)}.json`);
+async function lighthouse(route, scheme) {
+  const out = join(reports, `${scheme}-${route === '/' ? 'today' : route.slice(1)}.json`);
   // With nothing on --port, Lighthouse would launch a Chrome of its own.
   try {
     await fetch(`http://127.0.0.1:${debugPort}/json/version`);
@@ -190,7 +191,8 @@ async function lighthouse(route, outDir) {
   for (const [id, min] of Object.entries(MIN_SCORES)) {
     const category = report.categories[id];
     const score = category.score ?? 0;
-    check(score >= min, `${route} ${category.title} ${Math.round(score * 100)} (min ${min * 100})`);
+    const label = `${route} ${category.title} ${Math.round(score * 100)} (min ${min * 100})`;
+    check(score >= min, `${scheme} ${label}`);
     if (score < min) {
       for (const { id: audit } of category.auditRefs) {
         const a = report.audits[audit];
@@ -202,29 +204,42 @@ async function lighthouse(route, outDir) {
   }
 }
 
-try {
-  await waitForServer();
-  context = await chromium.launchPersistentContext(profile, {
+/** A fresh profile per scheme, so onboarding is audited before it is skipped. */
+async function auditScheme(scheme, withPwa) {
+  const profile = mkdtempSync(join(tmpdir(), 'fretwork-lh-profile-'));
+  const context = await chromium.launchPersistentContext(profile, {
     headless: true,
     viewport: { width: IPAD.width, height: IPAD.height },
-    args: [`--remote-debugging-port=${debugPort}`],
+    args: [
+      `--remote-debugging-port=${debugPort}`,
+      `--blink-settings=preferredColorScheme=${SCHEMES[scheme]}`,
+    ],
   });
-  const page = context.pages()[0] ?? (await context.newPage());
-  await checkPwa(page);
+  try {
+    const page = context.pages()[0] ?? (await context.newPage());
+    if (withPwa) await checkPwa(page);
 
-  console.log('Lighthouse (iPad Pro 11 landscape)');
-  for (const route of FRESH_ROUTES) await lighthouse(route, reports);
-  await page.goto(`${base}/onboarding`);
-  await page.getByRole('button', { name: 'Skip setup' }).click();
-  await page.getByRole('heading', { name: 'Today', level: 1 }).waitFor();
-  for (const route of ROUTES) await lighthouse(route, reports);
+    console.log(`Lighthouse (iPad Pro 11 landscape, ${scheme})`);
+    for (const route of FRESH_ROUTES) await lighthouse(route, scheme);
+    await page.goto(`${base}/onboarding`);
+    await page.getByRole('button', { name: 'Skip setup' }).click();
+    await page.getByRole('heading', { name: 'Today', level: 1 }).waitFor();
+    for (const route of ROUTES) await lighthouse(route, scheme);
+  } finally {
+    await context.close();
+    rmSync(profile, { recursive: true, force: true });
+  }
+}
+
+try {
+  await waitForServer();
+  await auditScheme('dark', true);
+  await auditScheme('light', false);
 } catch (error) {
   failures.push(String(error));
   console.error(error);
 } finally {
-  await context?.close();
   preview.kill();
-  rmSync(profile, { recursive: true, force: true });
   console.log(`Lighthouse JSON reports: ${reports}`);
 }
 
