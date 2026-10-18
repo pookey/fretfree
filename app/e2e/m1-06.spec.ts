@@ -8,7 +8,7 @@ const STEPS = [
   'Your guitar',
   'What do you want to play?',
   'Your daily goal',
-  'Do you read music?',
+  'Reading music',
   'How long is a session?',
 ];
 
@@ -22,6 +22,11 @@ async function expectStep(page: Page, n: number) {
 async function pick(page: Page, name: string | RegExp) {
   await choice(page).getByRole('radio', { name }).check();
 }
+
+const readsTab = (page: Page) =>
+  choice(page)
+    .getByRole('group', { name: 'What can you already read?' })
+    .getByRole('checkbox', { name: /^Tab/ });
 
 async function next(page: Page) {
   await choice(page).getByRole('button', { name: 'Continue' }).click();
@@ -65,7 +70,7 @@ test.describe('M1-06 onboarding', () => {
     await next(page);
 
     await expectStep(page, 4);
-    await pick(page, /^Tab/);
+    await readsTab(page).check();
     await expectNoHorizontalOverflow(page);
     await next(page);
 
@@ -90,7 +95,7 @@ test.describe('M1-06 onboarding', () => {
     await next(page);
     await expect(choice(page).getByRole('radio', { name: /Intense/ })).toBeChecked();
     await next(page);
-    await expect(choice(page).getByRole('radio', { name: /^Tab/ })).toBeChecked();
+    await expect(readsTab(page)).toBeChecked();
     await next(page);
     await expect(choice(page).getByRole('radio', { name: /15 minutes/ })).toBeChecked();
   });

@@ -1,0 +1,17 @@
+/* Multi-select cards (design §4). They reuse the onboarding `.choice` card and
+   swap its round radio ring for a square box with a tick, so the shape says
+   "pick any" as well as the colour. Doubled classes outrank `.choice`. */
+.check.check::before {
+  display: grid;
+  place-items: center;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent-text);
+}
+
+.check.check:has(input:checked)::before {
+  content: '✓';
+  background: var(--accent);
+}

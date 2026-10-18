@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useAppStore } from '../../app-store';
 import { DEFAULT_SETTINGS } from '../../engine/model';
 import { getDb, getGamification, getSettings, saveGamification } from '../../storage';
+import { OnboardingFlow } from '../OnboardingFlow';
 import * as dailyGoal from './daily-goal';
 import * as goal from './goal';
 import * as handAndTuning from './hand-and-tuning';
@@ -63,12 +64,90 @@ describe('onboarding steps', () => {
     expect((await getGamification(getDb())).dailyGoalMinutes).toBe(20);
   });
 
-  it('saves the notation preference to settings', async () => {
-    const onNext = renderStep(notation.Step);
-    expect(screen.getByRole('radio', { name: /No notation/ })).toBeChecked();
-    fireEvent.click(screen.getByRole('radio', { name: /Standard notation/ }));
-    await submit(onNext);
-    expect((await getSettings(getDb())).notation).toBe('staff');
+  describe('reading music', () => {
+    const reads = () => within(screen.getByRole('group', { name: 'What can you already read?' }));
+    const learn = () =>
+      within(screen.getByRole('group', { name: 'What would you like to learn to read?' }));
+
+    it('asks what you read and what you want to learn, neither ticked by default', () => {
+      renderStep(notation.Step);
+      for (const group of [reads(), learn()]) {
+        expect(group.getAllByRole('checkbox')).toHaveLength(2);
+        expect(group.getByRole('checkbox', { name: /^Tab/ })).not.toBeChecked();
+        expect(group.getByRole('checkbox', { name: /Standard notation/ })).not.toBeChecked();
+      }
+      expect(screen.queryByRole('radio')).toBeNull();
+    });
+
+    it('says the neck is taught either way and reading is extra', () => {
+      render(notation.explanation);
+      expect(
+        screen.getByText(/teaches the neck by name, position and sound either way/),
+      ).toBeVisible();
+      expect(screen.getByText(/is extra/)).toBeVisible();
+    });
+
+    it('saves several picks in each question', async () => {
+      const onNext = renderStep(notation.Step);
+      fireEvent.click(reads().getByRole('checkbox', { name: /^Tab/ }));
+      fireEvent.click(learn().getByRole('checkbox', { name: /^Tab/ }));
+      fireEvent.click(learn().getByRole('checkbox', { name: /Standard notation/ }));
+      expect(learn().getByRole('checkbox', { name: /^Tab/ })).toBeChecked();
+      expect(learn().getByRole('checkbox', { name: /Standard notation/ })).toBeChecked();
+      await submit(onNext);
+      expect((await getSettings(getDb())).reading).toEqual({
+        reads: { tab: true, staff: false },
+        learn: { tab: true, staff: true },
+      });
+      expect(useAppStore.getState().settings.reading.learn.staff).toBe(true);
+    });
+
+    it('saves both notations as already read', async () => {
+      const onNext = renderStep(notation.Step);
+      fireEvent.click(reads().getByRole('checkbox', { name: /^Tab/ }));
+      fireEvent.click(reads().getByRole('checkbox', { name: /Standard notation/ }));
+      await submit(onNext);
+      expect((await getSettings(getDb())).reading).toEqual({
+        reads: { tab: true, staff: true },
+        learn: { tab: false, staff: false },
+      });
+    });
+
+    it('saves neither, and a second tap unticks', async () => {
+      useAppStore.setState({
+        settings: {
+          ...DEFAULT_SETTINGS,
+          reading: { reads: { tab: true, staff: false }, learn: { tab: false, staff: false } },
+        },
+      });
+      const onNext = renderStep(notation.Step);
+      const tab = reads().getByRole('checkbox', { name: /^Tab/ });
+      expect(tab).toBeChecked();
+      fireEvent.click(tab);
+      expect(tab).not.toBeChecked();
+      await submit(onNext);
+      expect((await getSettings(getDb())).reading).toEqual(DEFAULT_SETTINGS.reading);
+    });
+
+    it('can be skipped, keeping what was stored', async () => {
+      const onDone = vi.fn();
+      render(<OnboardingFlow steps={[notation]} onDone={onDone} now={() => new Date(0)} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Get started' }));
+      fireEvent.click(learn().getByRole('checkbox', { name: /Standard notation/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'Skip this step' }));
+      await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+      expect((await getSettings(getDb())).reading).toEqual(DEFAULT_SETTINGS.reading);
+    });
+
+    it('starts from a legacy notation choice', async () => {
+      // A row saved before M1-26: `notation` and no `reading`.
+      const { reading: _reading, ...legacy } = DEFAULT_SETTINGS;
+      await getDb().settings.put({ ...legacy, key: 'singleton', notation: 'staff' } as never);
+      useAppStore.setState({ settings: await getSettings(getDb()) });
+      renderStep(notation.Step);
+      expect(reads().getByRole('checkbox', { name: /Standard notation/ })).toBeChecked();
+      expect(reads().getByRole('checkbox', { name: /^Tab/ })).not.toBeChecked();
+    });
   });
 
   it('saves the session length to settings', async () => {

@@ -28,8 +28,8 @@ export const DAILY_GOAL_OPTIONS: readonly Option<DailyGoalMinutes>[] = [
   { value: 20, label: 'Intense', detail: '20 minutes a day' },
 ];
 
+/** Asked twice (reads / wants to learn), and both are multi-select. */
 export const NOTATION_OPTIONS: readonly Option<Notation>[] = [
-  { value: 'none', label: 'No notation', detail: 'Just the neck and note names' },
   { value: 'tab', label: 'Tab', detail: 'String and fret numbers' },
   { value: 'staff', label: 'Standard notation', detail: 'Notes on the staff' },
 ];
