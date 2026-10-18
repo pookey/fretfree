@@ -28,6 +28,8 @@ for pane in $($STATE show | jq -r --arg wp "$WP" '.workers[$wp] | [.pane, .revie
   herdr pane close "$pane" >/dev/null 2>&1 || true
 done
 wt="$WORKTREES/$WP"
+# Dev servers and test runners can outlive their pane; stop anything still running from the worktree.
+pkill -f "$wt/" 2>/dev/null && sleep 2 || true
 [[ -d "$wt" ]] && git -C "$MAIN" worktree remove --force "$wt"
 if [[ "${2:-}" != --keep-branch ]] && git -C "$MAIN" merge-base --is-ancestor "wp/$WP" main 2>/dev/null; then
   git -C "$MAIN" branch -d "wp/$WP" >/dev/null
