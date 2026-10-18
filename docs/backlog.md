@@ -600,6 +600,57 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ---
 
+### M2-17 · Interleave near-tie due reviews
+- **Status:** todo
+- **Deps:** none
+- **Design:** §3.3 session builder, research/02 rule 6 (interleave)
+- **Owns:** `app/src/engine/session.ts` (hotspot), `app/src/engine/session.test.ts`
+- **Acceptance:**
+  - From M2-14 QA: due reviews with near-equal due times are ordered by item ID, so a placement-seeded batch serves one skill's items back to back instead of interleaving them (rule 6).
+  - Break near-ties (within a configurable window in `engine/config/`) by round-robin over skill, then drill, or with a shuffle from the session `rng`. Keep it deterministic for a given `rng`. Overdue order still wins outside the window.
+  - Unit tests: a seeded batch from three skills interleaves, the same rng gives the same order, and an item that is clearly more overdue still comes first.
+
+### M2-18 · Per-drill context panels, starting with D4 octave shapes
+- **Status:** todo
+- **Deps:** none
+- **Design:** §6 (drill plugin interface), §7 session context panel
+- **Owns:** `app/src/drills/types.ts` (contract hub: additive optional field only), `app/src/session/SessionScreen.tsx` (hotspot: the aside only), `app/src/drills/d4-octave-finder/ContextPanel.tsx`, `app/src/drills/d4-octave-finder/ContextPanel.module.css`, `app/src/drills/d4-octave-finder/ContextPanel.test.tsx`, `app/e2e/m2-18.spec.ts`
+- **Acceptance:**
+  - From M2-14 QA: the session's context panel is hard-coded to "Musical alphabet" in `SessionScreen.tsx`, so D4 shows note-name help instead of octave shapes.
+  - Add an optional `contextPanel` component to the drill plugin. `SessionScreen` renders it when the current drill provides one and falls back to the alphabet panel otherwise. No other drill changes.
+  - D4's panel shows the octave shapes: +2 frets and 2 strings over, +3 across the G–B pair, and the double octave. Draw them with shape as well as colour, follow guide fading, and keep it accessible.
+  - E2E (`m2-18.spec.ts`, iPad projects): a D4 focus session shows the octave panel; a D1 session still shows the alphabet.
+
+### M2-19 · Progress shows interval and octave work
+- **Status:** todo
+- **Deps:** none
+- **Design:** §7 Progress
+- **Owns:** `app/src/screens/progress/panels/stats.tsx`, `app/src/screens/progress/panels/topics.tsx`, `app/src/screens/progress/panels/topics.test.tsx`, `app/src/screens/progress/panels/topics.module.css`, `app/e2e/m2-19.spec.ts`
+- **Acceptance:**
+  - From M2-14 QA: Progress shows nothing for M2 work. The mastery map is notes-only, and the "Notes in rotation" tile also counts octave and interval cards.
+  - Rename the tile to "Items in rotation". Add a per-topic panel (registered through the Progress panel registry): for each started topic, learning and stable counts using M1-34's definitions, with no illusion-of-competence wording.
+  - E2E (`m2-19.spec.ts`): after seeded C1 and C3 reviews, the topic panel lists Octaves and Intervals with non-zero counts.
+
+### M2-20 · iPad portrait: D5/D6 layout polish
+- **Status:** todo
+- **Deps:** none
+- **Design:** §7 layout system
+- **Owns:** `app/src/drills/d5-interval-name/D5View.module.css`, `app/src/drills/d6-interval-tap/D6View.module.css`, `app/e2e/m2-20.spec.ts`
+- **Acceptance:**
+  - From M2-14 QA: on iPad portrait, D5 and D6 centre the neck in a tall empty band, with the help panel pinned at the bottom.
+  - Lay out prompt, neck, answers and help as one column that uses the height sensibly. Neck cells stay ≥44pt, with no horizontal overflow. Other size classes are unchanged.
+  - E2E (`m2-20.spec.ts`, ipad-portrait): the gap between prompt and neck is under a set fraction of the viewport, and the answer controls are in view without scrolling.
+
+### M1-38 · Copy polish: Learn prerequisites and summary tiles
+- **Status:** todo
+- **Deps:** none
+- **Design:** §7 Learn, §7 session summary
+- **Owns:** `app/src/screens/learn/SkillDetail.tsx`, `app/src/screens/learn/SkillDetail.test.tsx`, `app/src/session/summary/SessionSummary.tsx`, `app/src/session/summary/SessionSummary.test.tsx`
+- **Acceptance:**
+  - From M2-14 QA. A locked skill's prerequisite list runs together ("Half steps: sharps and flats and Whole steps and Octave shapes"). Use a list (one per line) or commas with a final "and".
+  - The summary's "Learning 7 · Became stable 7" tiles can read as 14 items. Make clear that "Became stable" is a subset of today's items (e.g. "7 of them became stable"), keeping M1-35's learning/stable split.
+  - RTL covers both.
+
 ## M3: Chords and CAGED
 
 ### M3-01 · [contract] Scale, chord and CAGED theory v2
