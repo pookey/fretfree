@@ -32,7 +32,7 @@ interface SyncRecord {
 }
 ```
 
-**IDs.** Tables with a natural key use it: `cards` by item ID, `dailyProgress` by date, `achievements` by badge ID, the `settings` and `gamification` singletons by `'singleton'`, and `confusions` by the JSON array `["E","F"]`. Tables keyed by a local auto-increment number (`reviewLogs`, `sessionLogs`, `gamificationEvents`) carry a random `uid` on the row, which is their sync ID. It's on the row, not beside it, so it survives a JSON export and import. `data` never includes the local number or the `uid`.
+**IDs.** Tables with a natural key use it: `cards` by item ID, `dailyProgress` by date, `achievements` by badge ID, the `settings` and `gamification` singletons by `'singleton'`, and `confusions` by the JSON array `["E","F"]`. Tables keyed by a local auto-increment number (`reviewLogs`, `sessionLogs`, `gamificationEvents`) carry a `uid` on the row, which is their sync ID. It is random for new rows, and content-derived for rows from before sync (§4, Upgrade). It's on the row, not beside it, so it survives a JSON export and import. `data` never includes the local number or the `uid`.
 
 **Wire format.** JSON, with dates tagged `{"$date": "<ISO>"}` as in the export file (`encodeSyncRecord` / `decodeSyncRecord`). `canonical()` is the same JSON with sorted keys. It breaks merge ties and detects changes identically on every device and on the server.
 
@@ -70,9 +70,13 @@ Every tie that timestamps leave open is broken by comparing canonical JSON, so t
 
 **Tracking.** The `syncTracking` middleware sees every write to a syncable table: add, put, update, delete and clear. In the same transaction it stamps `syncMeta` and queues the record in `outbox`, widening the transaction to include them. A rewrite that changes nothing is skipped. A delete leaves a tombstone. `updatedAt` is `max(now, previous + 1)`, so it rises even if the clock steps back. Field-merged tables stamp only the fields or groups that changed. The repositories need no changes.
 
-**Upgrade.** The v2 upgrade gives existing append-only rows a `uid`, then stamps and queues every existing row. The outbox is therefore complete from the start. On first sign-in, draining it uploads all the progress made before the account existed.
+**Upgrade.** The v2 upgrade gives existing append-only rows a **legacy uid** (`legacyUids` in `model.ts`), then stamps and queues every existing row. A legacy uid is a hash of the row's synced content plus its occurrence among identical rows in local key order, not a random ID. So the same pre-sync history gets the same uids on every device. One device may upgrade in place while another imports a v1 export of it (the Safari → installed app path in onboarding), or one v1 backup may be restored onto two devices. Either way, sync keeps one copy of each log. Rows created after the upgrade get random uids. The outbox is therefore complete from the start. On first sign-in, draining it uploads all the progress made before the account existed.
 
-**Import.** A JSON import clears and refills the data tables through the middleware, so it is tracked like any other write. Rows that the file lacks become tombstones. Append-only rows ignore them, and they come back on the next pull. With an account, importing merges the file into the account; it never deletes review logs.
+**Import.** A JSON import clears and refills the data tables through the middleware, so it is tracked like any other write.
+
+- **Uids.** Rows from a v2 file keep their `uid`. Rows from a v1 file have none, so `importData` gives them their legacy uid, the same one a v1 database gets on upgrade.
+- **Missing rows.** Rows the file lacks become tombstones. Append-only rows ignore them and come back on the next pull. With an account, importing merges the file into the account; it never deletes review logs.
+- **Restored values win.** The clear removes each row before the file's version is added, so every field and group of a re-added record is stamped "now". The backup's settings, streak group and cards therefore win last-writer-wins over newer values in the account. That is intended: an import is an explicit restore. Counters and logs still merge (max, union), so nothing earned elsewhere is lost.
 
 ## 5. Protocol
 
@@ -82,8 +86,9 @@ Each signed-in user has one record set on the server. Every change to it takes t
 
 `POST /sync/push` with `{ records: SyncRecord[] }`, at most `SYNC_LIMITS.maxBatchRecords` (500) records and `maxBatchBytes` (1 MB). For each record the server:
 
-1. loads its stored version, if any;
-2. stores `merge(stored, incoming)` with a new sequence number, **only if it differs** from the stored version.
+1. loads its stored version and that version's sequence number, if any;
+2. computes `merge(stored, incoming)`, and skips the record if the result equals the stored version (`canonical()`);
+3. otherwise writes it **atomically with a new sequence number**, conditioned on nothing having changed since step 1, and retries from step 1 on a conflict (see Server notes).
 
 Pushing the same batch twice changes nothing (idempotence). The reply is `{ ok: true }`. The client then calls `acknowledgePushed(records)`, which drops each outbox entry whose `updatedAt` is no newer than the pushed version. A change made during the push keeps its entry for the next push.
 
@@ -107,7 +112,16 @@ Push the outbox in batches, then pull to the end, then push whatever the pull qu
 ### Server notes (M7-03)
 
 - The table is partitioned by user ID, taken from the JWT and never from the body. A record's sort key is `table#id`, and a GSI on the sequence number serves pulls.
-- Allocate the sequence number with an atomic counter. Two concurrent pushes may interleave, but each stored write is a merge, so the order doesn't matter.
+- **Sequence numbers and writes commit together, in order.** A separate atomic counter is not enough, for two reasons:
+  - *Cursor gap.* Push A takes seq 10 and push B takes seq 11, but B commits first. A pull in between returns 11 and moves the cursor past 10, so that device never pulls A's record.
+  - *Lost update.* Two concurrent pushes of the same record both load the stored version and each write their own merge. The later write drops the other's change.
+
+  So each write is one DynamoDB `TransactWriteItems`:
+  1. update the per-user counter item from `S` to `S + k`, conditioned on it still being `S`;
+  2. put each changed record with its new seq (`S + 1` … `S + k`), conditioned on its stored seq being the one read in step 1, or on `attribute_not_exists` for a new record.
+
+  A push batch can go in one transaction: the counter plus up to 99 records. On `TransactionCanceledException` (a `ConditionalCheckFailed` or a conflict), re-read and re-merge, then retry. The counter condition serialises each user's writes, so commit order equals sequence order, and a pull that reads `seq > cursor` can never skip a record. Contention is per user only, which is small.
+- Optionally, a pull serves records only up to the counter value read when the pull began. That gives each page a consistent end even while pushes land.
 - The server never trusts client timestamps for authorisation. It only uses them to merge.
 - `DELETE /account` removes every record and the counter.
 
