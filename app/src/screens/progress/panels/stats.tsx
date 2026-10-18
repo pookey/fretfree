@@ -29,7 +29,7 @@ export function Panel({ revision }: PanelProps) {
         <dd data-testid="review-count">{stats.reviews}</dd>
       </div>
       <div>
-        <dt>Notes in rotation</dt>
+        <dt>Items in rotation</dt>
         <dd data-testid="card-count">{stats.cards}</dd>
       </div>
     </dl>
