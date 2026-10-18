@@ -567,7 +567,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Parameters persist in settings, and the scheduler uses them. Behaviour is unchanged below the threshold (tested).
 
 ### M2-15 · Retake the placement test from Settings
-- **Status:** todo
+- **Status:** done
 - **Deps:** M2-09
 - **Design:** §3.4, §4 step 6
 - **Owns:** `app/src/routes/placement.route.tsx`, `app/src/placement/**`, `app/src/screens/settings/SettingsGroups.tsx`, `app/src/screens/settings/SettingsGroups.test.tsx`, `app/e2e/m2-15.spec.ts`
