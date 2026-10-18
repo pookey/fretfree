@@ -192,7 +192,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Achievements are tied to mastery, not activity counts.
 
 ### M1-14 · Progress fretboard heatmap
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-01
 - **Design:** §7 Progress
 - **Owns:** `app/src/screens/progress/panels/heatmap.tsx`, `app/src/components/heatmap/**`, `app/e2e/m1-14.spec.ts`
