@@ -104,9 +104,9 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Status:** todo
 - **Deps:** M1-01
 - **Design:** §4
-- **Owns:** `app/src/onboarding/**` (except steps owned by M1-07), `app/src/routes/onboarding.route.tsx`, `app/e2e/m1-06.spec.ts`
+- **Owns:** `app/src/onboarding/**` (except steps owned by M1-07), `app/src/routes/onboarding.route.tsx`, `app/src/App.tsx`, `app/src/routes/registry.ts`, `app/e2e/m1-06.spec.ts`
 - **Acceptance:**
-  - First launch routes to onboarding. Steps: handedness and tuning, goal, daily goal (Casual 5 / Regular 10 / Serious 15 / Intense 20), notation, session length.
+  - Extend the route contract (M1-01) with an optional guard or loader so a route can redirect, and use it so that first launch routes to onboarding. Steps: handedness and tuning, goal, daily goal (Casual 5 / Regular 10 / Serious 15 / Intense 20), notation, session length.
   - Every step is skippable, and the whole flow takes under 3 minutes. Choices persist to settings and gamification.
   - The iPad layout is two-pane (explanation on the left, choice on the right) at regular-wide.
   - The About copy explains "adapts to what you know, not a learning style".

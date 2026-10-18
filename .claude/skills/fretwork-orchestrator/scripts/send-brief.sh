@@ -16,6 +16,12 @@ export WP REASON WORKTREE="$WORKTREES/$WP" BRANCH="wp/$WP"
 export REPORT="$ORCH/reports/$WP.md" REVIEW="$ORCH/reports/$WP.review.md"
 agent="$(worker_field "$WP" agent)"
 [[ "$(agent_status "$agent")" != none ]] || die "worker agent $agent is gone; respawn with spawn.sh $WP"
+# Archive the previous review so the next reviewer starts fresh (the brief still points
+# the worker at the archived copy).
+if [[ -f "$REVIEW" ]]; then
+  mv "$REVIEW" "$ORCH/reports/$WP.review.$attempts.md"
+  REVIEW="$ORCH/reports/$WP.review.$attempts.md"
+fi
 text="$(render "$SKILL_DIR/templates/$KIND-brief.md")"
 herdr agent prompt "$agent" "$text" >/dev/null
 $STATE worker "$WP" "$(jq -nc --argjson n "$attempts" '{status:"fixing", attempts:$n}')" >/dev/null
