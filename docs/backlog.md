@@ -243,7 +243,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Session options are passed through route state. The runner already supports `maxItems`.
 
 ### M1-19 · Offline, install and performance gates
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-01
 - **Design:** §10
 - **Owns:** `scripts/check-bundle.mjs`, `app/e2e/m1-19.spec.ts`, `app/src/shell/InstallHint.tsx`, root `package.json` (verify script only; hotspot)
