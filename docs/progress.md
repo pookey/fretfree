@@ -2,19 +2,20 @@
 
 ## Current status
 
-**Fan-out build in progress (2026-10-18). 19 work packages live in production, including the dry run's M1-01 and M1-02.**
+**First fan-out shift complete (2026-10-18). 23 work packages live in production. The build is handed to a fresh PM (`docs/handoff/03-pm-handoff.md`) after moving the repo to `guitar.nosync`, so iCloud stops syncing it.**
 
 Shipped by the builder (each through worker, then fresh reviewer, then the integration lane, then `pnpm ship`, then push):
 
 | Milestone | Live |
 |---|---|
-| M1 | M1-03 (F1/F3 skills, bidirectional F2/C2), M1-04 (D2 find the note), M1-05 (D3 note wheel), M1-06 (onboarding shell), M1-08 (XP engine), M1-09, M1-10 (session ↔ gamification bridge), M1-11, M1-13, M1-14 (Progress heatmap), M1-16 (Learn screen), **M1-25 (hotfix: recall prompts showed their answer)**, **M1-26 (reading question: "can read" / "want to learn")** |
+| M1 | M1-03 (F1/F3 skills, bidirectional F2/C2), M1-04 (D2 find the note), M1-05 (D3 note wheel), M1-06 (onboarding shell), M1-07 (latency calibration), M1-08 (XP engine), M1-09, M1-10 (session ↔ gamification bridge), M1-11, M1-12 (session celebrations), M1-13, M1-14 (Progress heatmap), M1-16 (Learn screen), M1-19 (PWA, offline, bundle budget, Lighthouse gate), **M1-25 (hotfix: recall prompts showed their answer)**, **M1-26 (reading question: "can read" / "want to learn")** |
 | M2 | M2-01 (interval and octave theory) |
 | M3 | M3-01 (chord and scale theory) |
 | M4 | M4-01 (harmony theory) |
 | M5 | M5-01 (mic pitch-source contract) |
+| M6 | M6-01 (intermediate contract) |
 
-In flight: M1-07 (latency calibration), M1-12 (session celebrations), M1-19, M6-01.
+In flight: none. All work in progress was drained before the handoff.
 
 **Production:** healthy. `scripts/smoke.sh` passes after every ship. The M1-25 and M1-26 specs were also run against production on iPad landscape and pass.
 
@@ -96,13 +97,14 @@ The trust-folder prompt never appeared, because worktrees under the trusted repo
 
 ## Questions for the user
 
-- **Repo location and iCloud (optional).** Recurring `getcwd` EINTR errors suggest the repo under `~/Documents` is affected by iCloud "Desktop & Documents" sync (`cloudd` busy during spikes). The lane works around it with retries. Moving the repo outside `~/Documents`, or excluding it from sync, would likely remove it, but that needs a pipeline pause. Your call: leave it, or say when to pause and move.
+None open.
 
 ### Answered
 
 - **Name:** keep "Fretwork" (user, 2026-10-18).
 - **Dependencies:** the orchestrator may add licence-compatible dependencies (MIT/ISC/BSD/Apache-2.0/0BSD) itself, without asking each time (user, 2026-10-18).
 - **"Learn to read" scope:** add a small tab-reading track (M9) so "learn tab" is a real option (user, 2026-10-18).
+- **iCloud:** `~/Documents` is iCloud-synced, and `fileproviderd` was the top CPU user. iCloud only skips names that *end* in `.nosync`, and `Projects.nosync.noindex` ends in `.noindex`. The repo was renamed to `guitar.nosync` (user, 2026-10-18).
 
 ## Parallelism log
 
@@ -111,5 +113,6 @@ The trust-folder prompt never appeared, because worktrees under the trusted repo
 | Dry run (M1-01, M1-02) | serial | 2 | 1.6 | 2 | 16 samples. Idle time was spent in review rounds on M1-02 |
 
 | Fan-out, 09:24–11:47 UTC | fanout | 5–8 (one hotfix burst to 10) | 7.3 | 10 | 155 samples, 4% idle slots. The serial ship lane (≈5–10 min per ship) was the bottleneck, not workers. Reviewers ran in parallel throughout |
+| Drain, 11:47–handoff | fanout → paused | 2–5 (load-driven, iCloud) | ≈4 | 6 | No new spawns after the user asked for the handoff. M1-12, M1-07, M6-01 and M1-19 drained through the lane |
 
 From here on, the builder appends rows from `.orchestrator/state.json` → `parallelism`.
