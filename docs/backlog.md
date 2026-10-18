@@ -96,7 +96,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The pure logic is unit-tested (≥90%). The e2e test covers a full prompt on the iPad profiles.
 
 ### M1-05 · D3 "Note-wheel steps" drill
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-03
 - **Design:** §6 D3
 - **Owns:** `app/src/drills/d3-note-wheel/**`, `app/e2e/m1-05.spec.ts`
