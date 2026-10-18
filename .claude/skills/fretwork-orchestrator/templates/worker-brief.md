@@ -33,7 +33,7 @@ You are a **worker agent** on Fretwork, an iPad-first guitar-learning PWA. You b
   - RTL tests for components;
   - Playwright `app/e2e/{{WP_LOWER}}.spec.ts` for UI, with the full flow on the iPad projects and the phone happy path tagged `@smoke`.
 - Keep modules small and pure where you can. Pass `now`/`rng` in, never read the clock in theory or engine code. Put tunables in `engine/config/<area>.ts`: add a new area file (see `engine/config/index.ts`) rather than growing someone else's.
-- **Shared e2e files are orchestrator-owned:** don't edit `app/e2e/helpers.ts`, `d1-session.spec.ts` or `smoke.spec.ts` unless your Owns lists them. Put new helpers in `app/e2e/helpers/<topic>.ts`. If your change breaks a shared spec, fix the minimum needed and say so in your report.
+- **Shared e2e files are orchestrator-owned:** don't edit `app/e2e/helpers.ts`, `d1-session.spec.ts` or `smoke.spec.ts` unless your Owns lists them. Put new helpers in `app/e2e/helpers/<topic>.ts`. **Start sessions in your specs with `focusSession(page, skillId)` (`app/e2e/helpers/focus.ts`)**, never by relying on which drill a fresh session serves first: new drills change that, and the spec then breaks in the lane. If your change breaks a shared spec, fix the minimum needed and say so in your report.
 - Never commit secrets, AWS account IDs or zone IDs. Use only MIT/ISC/BSD/Apache/0BSD dependencies. **Ask before adding a dependency**: note it in your report instead, unless the package says to add it.
 - Commit in small logical commits on `{{BRANCH}}`, with imperative subjects and this trailer:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`

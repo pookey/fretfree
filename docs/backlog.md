@@ -797,10 +797,10 @@ Notes for whoever picks this up:
   - No account IDs, ARNs or zone IDs in git. Domain and sender come from config with env overrides (`scripts/lib.sh`).
   - **Email is already provisioned by the separate `FretworkEmail` stack** (`infra/lib/email-stack.ts`, deployed with `scripts/deploy-email.sh`, decided 2026-10-18). Don't create SES identities or email DNS records here.
     - Sender: `no-reply@fretfree.app`, display name **"Fret Free"**. The product is being rebranded, so email copy must never hardcode "Fretwork".
-    - Config: `EMAIL_DOMAIN`, `EMAIL_FROM`, `EMAIL_FROM_NAME` and `EMAIL_SSM_PREFIX` (`/fretwork/email`) in `scripts/lib.sh`.
-    - Look the identity up from SSM String parameters `<prefix>/domain`, `/from-address`, `/from-name`, `/identity-arn` and `/configuration-set`, via `ssm.StringParameter.valueForStringParameter`.
-    - Wire Cognito with `UserPoolEmail.withSES({ fromEmail, fromName, sesRegion: 'us-east-1', configurationSetName, sesVerifiedDomain: 'fretfree.app' })`. In the same account Cognito sends through its service-linked role, so no identity policy is needed.
-    - Until the user's SES production-access request is approved, only verified recipients receive mail. E2E tests must not depend on real delivery.
+    - Config in `scripts/lib.sh`: `EMAIL_REGION` (**eu-west-1**, where the account has SES production access), `EMAIL_DOMAIN`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, `EMAIL_CONFIG_SET` (`fretwork-email`, a fixed name) and `EMAIL_SSM_PREFIX`.
+    - FretworkSync stays in us-east-1 and **must not use the SSM lookup**: those parameters live in eu-west-1, and the lookup is same-region only. Build the identity ARN with `Stack.formatArn({ service: 'ses', region: EMAIL_REGION, resource: 'identity', resourceName: EMAIL_DOMAIN })`.
+    - Wire Cognito with `UserPoolEmail.withSES({ fromEmail, fromName, sesRegion: EMAIL_REGION, configurationSetName: EMAIL_CONFIG_SET, sesVerifiedDomain: EMAIL_DOMAIN })`. In the same account Cognito sends through its service-linked role, so no identity policy is needed.
+    - SES production access is granted in eu-west-1 (50k/day). E2E tests still must not depend on real delivery.
   - CDK assertion tests. `pnpm ship` deploys both stacks, and smoke checks the API's health route.
 
 ### M7-03 · Sync API handlers
