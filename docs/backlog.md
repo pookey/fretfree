@@ -356,6 +356,48 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ---
 
+### M1-30 · Make streak repair visible on Today
+- **Status:** todo
+- **Deps:** none
+- **Design:** §3.7 (streak repair), §7 Today
+- **Owns:** `app/src/screens/today/cards/streak-repair.tsx`, `app/src/screens/today/cards/streak-repair.module.css`, `app/src/screens/today/cards/streak-repair.test.tsx`, `app/e2e/m1-30.spec.ts`
+- **Acceptance:**
+  - From M1-24 QA: the engine repairs a broken streak after a double session within 48 hours (§3.7), but nothing tells the learner a repair is available, so the mechanic is invisible.
+  - A Today card shows while a repair window is open (`streakRepairDeadline` in the future, `streakBeforeBreak` > 0), for example "Your 10-day streak broke. Practise 2× your goal by Tuesday to restore it." It shows progress towards the doubled goal and disappears once the streak is restored or the deadline passes.
+  - Tone follows research/02 and §3.7: encouraging and loss-free, with no guilt copy. Reads the stored gamification state only; no engine changes.
+  - RTL covers the open, in-progress, restored and expired states. E2E (`m1-30.spec.ts`, iPad projects; iPhone tagged `@smoke`) breaks a streak on a mocked clock, sees the card, does the double session and sees the streak restored.
+
+### M1-31 · Fretboard contrast: light-theme inactive frets and nut string names
+- **Status:** todo
+- **Deps:** none
+- **Design:** §8 fretboard, research/02 (signalling)
+- **Owns:** `app/src/components/fretboard/Fretboard.module.css`, `app/src/components/fretboard/Fretboard.tsx`, `app/src/components/fretboard/Fretboard.test.tsx`, `app/e2e/m1-31.spec.ts`
+- **Acceptance:**
+  - From M1-24 QA screenshots. In light theme, frets outside the active range (13–15 at regular-wide) get a pale grey wash, so they read as highlighted rather than dimmed, and their F/G markers are hard to read. The dark theme dims them correctly. Make light match dark in meaning: inactive frets recede.
+  - The nut's string names (E B G D A E) have low contrast on the wood in both themes and are nearly invisible in light. Lift them to ≥4.5:1 against their actual background in both themes. Lighthouse misses this because axe skips SVG text, so assert it in a unit test (compute contrast from the tokens used) or an e2e pixel check.
+  - Use tokens only (no new hard-coded colours). Keep the brand rules: no brand yellow on the neck, and `--root` for theory marks.
+  - E2E (`m1-31.spec.ts`) screenshots the session neck in both themes on iPad landscape for review; existing Fretboard tests stay green.
+
+### M1-32 · iPad portrait: the Progress mastery map clips its 12th fret
+- **Status:** todo
+- **Deps:** none
+- **Design:** §7 Progress, §7 size classes
+- **Owns:** `app/src/components/heatmap/FretboardHeatmap.tsx`, `app/src/components/heatmap/Heatmap.module.css`, `app/src/components/heatmap/Heatmap.test.tsx`, `app/e2e/m1-32.spec.ts`
+- **Acceptance:**
+  - From M1-24 QA: on iPad portrait the mastery map cuts off its 12th fret column and the "12" label at the right edge.
+  - Every fret column and label up to 12 is fully inside the panel on all iPad projects and iPhone, with no horizontal page scroll. Cells keep the §7 minimum size, or the map scrolls inside its own container with a visible affordance if they can't.
+  - E2E (`m1-32.spec.ts`, all iPad projects; iPhone tagged `@smoke`): with seeded progress, the "12" label's bounding box lies inside the map's container and the viewport.
+
+### M1-33 · Phone landscape: the session summary's Done is below the fold
+- **Status:** todo
+- **Deps:** none
+- **Design:** §7 session summary, §7 compact
+- **Owns:** `app/src/session/summary/SessionSummary.tsx`, `app/src/session/summary/SessionSummary.module.css`, `app/src/session/summary/SessionSummary.test.tsx`, `app/e2e/m1-33.spec.ts`
+- **Acceptance:**
+  - From M1-24 QA (and the M1-20 vertical-layout note): on iPhone held sideways the session summary's **Done** link sits below the fold. The page scrolls, but the learner may not know to. M1-28 fixed Continue in-session but not the summary.
+  - Done (and any primary action) is visible without scrolling on every supported viewport, including the shortest compact landscape. Prefer a compact summary layout at short heights over pinning, and respect `--safe-bottom`.
+  - E2E (`m1-33.spec.ts`, iPhone tagged `@smoke`, plus iPad projects): finish a `focusSession` and assert that Done's bounding box lies inside the viewport with `window.scrollY` at 0.
+
 ## M2: Octaves and intervals
 
 ### M2-01 · [contract] Interval and octave theory
