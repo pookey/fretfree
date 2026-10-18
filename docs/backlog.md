@@ -495,7 +495,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Exhaustive tests.
 
 ### M3-02 · C4 skills plus D7 "Spell it"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-01
 - **Owns:** `app/src/engine/skills/c4.ts`, `app/src/drills/d7-spell-it/**`, `app/e2e/m3-02.spec.ts`
 - **Acceptance:**
