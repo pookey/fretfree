@@ -6,15 +6,20 @@ import { focusSession } from './helpers/focus';
 // a mocked clock: onboarding → three daily sessions → streak 3, a due-review
 // session and a filled-in heatmap; a goal and weekend-amulet change from
 // Settings mid-week holds the streak over a weekend; a double session repairs
-// a broken streak. Then a screenshot pass of every screen. The @smoke tests
-// also run against production, on every profile:
+// a broken streak. Then every screen is checked for overflow.
+//
+// The @smoke tests also run against production, on every profile:
 //   E2E_BASE_URL=https://fretfree.app ../scripts/e2e-slot.sh playwright test e2e/m1-24.spec.ts
+// The screenshot pass is on demand: with SCREENSHOTS=1 the screen walk also
+// saves each screen, dark and light, under --output (run from app/):
+//   SCREENSHOTS=1 E2E_BASE_URL=https://fretfree.app ../scripts/e2e-slot.sh \
+//     playwright test e2e/m1-24.spec.ts --grep @screens --output <dir>
 
 // A fixed zone, so local dates (and the weekend) don't depend on the machine.
 test.use({ timezoneId: 'Europe/London' });
 
 const SKILL = 'F2.string6-naturals';
-/** Wednesday 21 October 2026, 08:00 local. */
+/** Wednesday 21 October 2026, 08:00 local (07:00 once BST ends on Sunday 25th). */
 const WEEK_START = new Date('2026-10-21T08:00:00+01:00');
 const DAY = 86_400_000;
 
@@ -78,27 +83,38 @@ async function answerCorrectly(page: Page): Promise<string> {
 }
 
 /**
- * A focused session of `minutes` answers, a minute apart, then back to Today.
- * A session as long as its time budget ends by itself on the last answer.
+ * Answer `count` prompts (or until the session ends) `stepMs` of wall-clock
+ * time apart, then finish the session and go back to Today.
+ *
+ * Only the wall clock moves: `setSystemTime` fires no timers and leaves
+ * `performance.now()` alone, so daily minutes count each step while answers
+ * are graded on their real (quick) response times.
  */
-async function practise(page: Page, minutes: number): Promise<string[]> {
-  await focusSession(page, SKILL);
+async function answerAndFinish(page: Page, count: number, stepMs = 60_000): Promise<string[]> {
+  const summary = page.getByTestId('session-summary');
   const cells: string[] = [];
-  for (let i = 0; i < minutes; i++) {
-    await page.clock.fastForward('01:00');
+  while (cells.length < count && !(await summary.isVisible())) {
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.setSystemTime(now + stepMs);
     cells.push(await answerCorrectly(page));
   }
+  // A session as long as its time budget ends by itself on the last answer.
   const end = page.getByRole('button', { name: 'End session' });
-  const summary = page.getByTestId('session-summary');
   await expect(end.or(summary)).toBeVisible();
   if (await end.isVisible()) await end.click();
-  await expect(page.getByTestId('summary-items')).toHaveText(String(minutes));
+  await expect(page.getByTestId('summary-items')).toHaveText(String(cells.length));
   await page.getByRole('link', { name: 'Done' }).click();
   await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
   return cells;
 }
 
-/** Jump to `day` days after the week starts (08:00 local), and reopen the app. */
+/** A focused session of `minutes` answers, a minute apart. */
+async function practise(page: Page, minutes: number): Promise<string[]> {
+  await focusSession(page, SKILL);
+  return answerAndFinish(page, minutes);
+}
+
+/** Jump to `day` whole days after the week starts, and reopen the app. */
 async function openOnDay(page: Page, day: number): Promise<void> {
   await page.clock.setSystemTime(new Date(WEEK_START.getTime() + day * DAY));
   await page.goto('/');
@@ -121,6 +137,29 @@ async function dueCount(page: Page): Promise<number> {
 async function openProgress(page: Page): Promise<void> {
   await page.goto('/progress');
   await expect(page.getByRole('heading', { name: 'Progress', level: 1 })).toBeVisible();
+}
+
+interface Log {
+  rating: number;
+  responseMs: number;
+  hintUsed: boolean;
+}
+
+async function reviewLogs(page: Page): Promise<Log[]> {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open('fretwork');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const logs = await new Promise<Log[]>((resolve, reject) => {
+      const req = db.transaction('reviewLogs').objectStore('reviewLogs').getAll();
+      req.onsuccess = () => resolve(req.result as Log[]);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    return logs;
+  });
 }
 
 const map = (page: Page) => page.getByRole('region', { name: 'Mastery map' });
@@ -153,13 +192,21 @@ test.describe('M1-24 the first week', () => {
     for (const cell of new Set(wednesday)) await expect(tile(page, cell)).toHaveCount(1);
     const tilesAfterDay1 = await map(page).getByTestId('heat-tile').count();
 
-    // Thursday: yesterday's facts are due, and the session reviews them.
+    // Thursday: yesterday's facts are due, and Today's warm-up reviews them
+    // all (20 s apart, inside its 2-minute budget). A session tops up the goal.
     await openOnDay(page, 1);
     await expectStreak(page, info, 1);
     const dueThursday = await dueCount(page);
     expect(dueThursday).toBeGreaterThan(0);
-    await practise(page, 5);
-    expect(await dueCount(page)).toBeLessThan(dueThursday);
+    await expect(page.getByTestId('warmup-copy')).toHaveText(
+      `Reviews ${dueThursday} fretboard item${dueThursday === 1 ? '' : 's'} due now.`,
+    );
+    await page.getByTestId('warmup').click();
+    await expect(page.getByTestId('session')).toBeVisible();
+    expect(await answerAndFinish(page, dueThursday + 1, 20_000)).toHaveLength(dueThursday);
+    expect(await dueCount(page)).toBe(0);
+    await expectStreak(page, info, 1);
+    await practise(page, 4);
     await expectStreak(page, info, 2);
 
     // Friday: streak 3.
@@ -170,6 +217,12 @@ test.describe('M1-24 the first week', () => {
     await openProgress(page);
     await expect(map(page).getByTestId('heatmap-panel')).toHaveAttribute('data-loaded', 'true');
     expect(await map(page).getByTestId('heat-tile').count()).toBeGreaterThan(tilesAfterDay1);
+
+    // Answers were graded on their real speed: quick recall rates Good or Easy.
+    const logs = await reviewLogs(page);
+    expect(logs).toHaveLength(14 + dueThursday);
+    for (const log of logs.filter((l) => !l.hintUsed)) expect(log.responseMs).toBeLessThan(10_000);
+    expect(logs.some((l) => l.rating >= 3)).toBe(true);
 
     // Mid-week, from Settings: a 10-minute goal and the weekend amulet.
     await page.getByRole('link', { name: 'Settings' }).first().click();
@@ -220,9 +273,12 @@ test.describe('M1-24 streak repair', () => {
   });
 });
 
-/** Screenshot the page in both themes, into the test's output folder. */
+const SCREENSHOTS = Boolean(process.env.SCREENSHOTS);
+
+/** Check the screen for overflow; with SCREENSHOTS set, save it in both themes. */
 async function shoot(page: Page, info: TestInfo, name: string): Promise<void> {
   await expectNoHorizontalOverflow(page);
+  if (!SCREENSHOTS) return;
   for (const colorScheme of ['dark', 'light'] as const) {
     await page.emulateMedia({ colorScheme });
     await page.screenshot({
@@ -234,10 +290,8 @@ async function shoot(page: Page, info: TestInfo, name: string): Promise<void> {
 }
 
 test.describe('M1-24 screenshot pass', () => {
-  test('every M1 screen renders without overflow, dark and light @smoke @screens', async ({
-    page,
-  }, info) => {
-    test.slow();
+  test('every M1 screen renders without overflow @smoke @screens', async ({ page }, info) => {
+    test.slow(SCREENSHOTS, 'full-page screenshots in two themes');
     await firstLaunch(page);
     await shoot(page, info, '01-onboarding');
     await choice(page).getByRole('button', { name: 'Get started' }).click();
