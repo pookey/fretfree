@@ -9,6 +9,11 @@
   gap: var(--space-6);
 }
 
+/* A card with nothing to show (e.g. the install tip once installed) takes no gap. */
+.stack > :empty {
+  display: none;
+}
+
 /* Explore's view list: one pill per registered view. */
 .viewList {
   display: flex;
