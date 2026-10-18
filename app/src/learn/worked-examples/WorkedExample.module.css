@@ -76,10 +76,12 @@
   font-weight: 600;
 }
 
-/* The neck keeps its 44pt cells (design §7) and scrolls inside the pane if it must. */
+/* The neck keeps its 44pt cells (design §7) and scrolls inside the pane if it
+   must. It bleeds into the card's padding for a little more room. */
 .neck {
   overflow-x: auto;
   min-width: 0;
+  margin-inline: calc(-1 * var(--space-3));
 }
 
 .feedback {

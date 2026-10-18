@@ -131,16 +131,36 @@ describe('exampleMarkers', () => {
 });
 
 describe('stepRange', () => {
-  it('covers the step, trap included, with padding', () => {
-    // Root at 5, answer at 8, trap at 7, padded by one.
-    expect(stepRange(gb.steps[0])).toEqual({ from: 4, to: 9 });
+  const { lead, span } = ENGINE_CONFIG.workedExamples;
+
+  it('anchors on the given note with a fixed span, not on the answer', () => {
+    // Root at fret 5: the window is 3–9 whatever the shape's answer is.
+    expect(stepRange(gb.steps[0])).toEqual({ from: 5 - lead, to: 5 - lead + span - 1 });
+    const third = shapeStep({ string: 4, fret: 5 }, 'M3', 3);
+    expect(stepRange(third)).toEqual(stepRange(gb.steps[0]));
   });
 
-  it('widens short steps to the minimum, without going past either end of the neck', () => {
+  it('stops at the nut and at the last fret', () => {
+    expect(stepRange(gb.steps[1])).toEqual({ from: 0, to: span - 1 });
+    const high = {
+      ...gb.steps[0],
+      given: [{ string: 4, fret: 22 }],
+      answer: { string: 2, fret: 24 },
+    };
+    expect(stepRange({ ...high, trap: undefined })).toEqual({ from: 24 - span + 1, to: 24 });
+  });
+
+  it('widens to cover a wide shape, with a fret to spare', () => {
+    // A major 7th on the next string is six frets up: fret 9 from fret 3.
+    const wide = shapeStep({ string: 6, fret: 3 }, 'M7', 5);
+    expect(stepRange(wide)).toEqual({ from: 1, to: wide.answer.fret + 1 });
+  });
+
+  it('shows a step without given notes from the nut, unless the example pins a window', () => {
     const at = (fret: number) => ({ ...landmarkStep('F', 6, 'x'), answer: { string: 6, fret } });
-    expect(stepRange(at(1))).toEqual({ from: 0, to: ENGINE_CONFIG.workedExamples.minFrets - 1 });
-    expect(stepRange(at(24))).toEqual({ from: 25 - ENGINE_CONFIG.workedExamples.minFrets, to: 24 });
-    expect(stepRange(at(12))).toEqual({ from: 10, to: 14 });
+    expect(stepRange(at(1))).toEqual({ from: 0, to: span - 1 });
+    expect(stepRange(at(9))).toEqual({ from: 0, to: 10 });
+    expect(stepRange(at(1), { from: 0, to: 9 })).toEqual({ from: 0, to: 9 });
   });
 });
 

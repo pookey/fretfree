@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SKILLS, getSkill } from '../../engine';
 import { MODULES } from '../../engine/frontier';
-import { intervalBetween, noteAt } from '../../theory';
+import { intervalBetween, noteAt, semitonesBetween } from '../../theory';
 import { WORKED_EXAMPLES, exampleFor, type WorkedExample } from './index';
 import { outcomeOf, stepRange } from './logic';
 
@@ -54,7 +54,7 @@ describe('example content', () => {
     for (const e of WORKED_EXAMPLES) {
       expect(e.steps, e.id).toHaveLength(3);
       for (const step of e.steps) {
-        const range = stepRange(step);
+        const range = stepRange(step, e.range);
         expect(step.answer.fret).toBeGreaterThanOrEqual(range.from);
         expect(step.answer.fret).toBeLessThanOrEqual(range.to);
         expect(outcomeOf(step, step.answer)).toBe('correct');
@@ -86,6 +86,39 @@ describe('example content', () => {
       expect(step.answer.fret).toBe(step.given[0]!.fret);
       expect(noteAt(step.answer).pc).toMatch(/^[A-G]$/);
     }
+  });
+
+  it('never lets the window stand in for a missing stimulus', () => {
+    for (const e of WORKED_EXAMPLES) {
+      if (e.steps.some((s) => s.given.length === 0)) expect(e.range, e.id).toBeDefined();
+    }
+  });
+
+  it('spells every trap as the interval it forms from the root', () => {
+    for (const e of WORKED_EXAMPLES) {
+      for (const step of e.steps) {
+        if (!step.trap) continue;
+        const root = step.given[0]!;
+        const semis = ((semitonesBetween(root, step.trap.at) % 12) + 12) % 12 || 12;
+        const letters = 'CDEFGAB';
+        const steps = letters.indexOf(step.trap.name[0]!) - letters.indexOf(noteAt(root).pc[0]!);
+        // m2/M2 → 1 letter, m3/M3 → 2, …, M7 → 6 (octave-reduced).
+        expect((steps + 7) % 7, `${e.id} ${step.trap.name}`).toBe(
+          [0, 1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 6, 0][semis],
+        );
+      }
+    }
+  });
+
+  it('shows the F2 landmarks from the nut, in one window, so the layout gives nothing away', () => {
+    const e = byId('f2-landmarks');
+    const windows = e.steps.map((s) => stepRange(s, e.range));
+    expect(new Set(windows.map((w) => `${w.from}-${w.to}`)).size).toBe(1);
+    expect(windows[0]!.from).toBe(0);
+    // The answers sit in different columns, none at the edge of the window.
+    const columns = e.steps.map((s) => s.answer.fret - windows[0]!.from);
+    expect(new Set(columns).size).toBe(3);
+    for (const c of columns) expect(c).toBeLessThan(windows[0]!.to);
   });
 
   it('finds string-6 naturals at the first three markers', () => {

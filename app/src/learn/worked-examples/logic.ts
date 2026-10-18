@@ -78,19 +78,22 @@ export function isComplete(state: ExampleState): boolean {
 }
 
 /**
- * The neck window for a step: its notes (trap included) plus context frets.
- * Each step gets its own, so the notes stay in view in a half-width pane
- * without shrinking cells below 44pt.
+ * The neck window for a step. It is anchored on the given note (the
+ * stimulus) with a fixed span, so it never encodes where the answer is; an
+ * example can pin one window for every step instead. Notes the span misses
+ * (wide shapes) widen it, with a fret to spare.
  */
-export function stepRange(step: ExampleStep): FretRange {
-  const { rangePadding, minFrets } = ENGINE_CONFIG.workedExamples;
+export function stepRange(step: ExampleStep, pinned?: FretRange): FretRange {
+  if (pinned) return pinned;
+  const { lead, span } = ENGINE_CONFIG.workedExamples;
   const frets = [...step.given.map((p) => p.fret), step.answer.fret];
   if (step.trap) frets.push(step.trap.at.fret);
-  let from = Math.max(0, Math.min(...frets) - rangePadding);
-  let to = Math.min(MAX_FRET, Math.max(...frets) + rangePadding);
-  while (to - from + 1 < minFrets) {
-    if (from > 0) from--;
-    if (to - from + 1 < minFrets && to < MAX_FRET) to++;
+  const anchor = step.given.length > 0 ? Math.min(...step.given.map((p) => p.fret)) : 0;
+  let from = Math.min(Math.max(0, anchor - lead), Math.max(0, Math.min(...frets) - 1));
+  let to = Math.max(from + span - 1, Math.max(...frets) + 1);
+  if (to > MAX_FRET) {
+    from = Math.max(0, from - (to - MAX_FRET));
+    to = MAX_FRET;
   }
   return { from, to };
 }
@@ -126,7 +129,7 @@ export function exampleMarkers(
     }
   } else if (stageOf(state) === 'worked') {
     markers.push({ ...step.answer, style: 'target', label: pc(step.answer), forceLabel: true });
-    if (step.trap) markers.push({ ...step.trap.at, style: 'ghost', label: pc(step.trap.at) });
+    if (step.trap) markers.push({ ...step.trap.at, style: 'ghost', label: step.trap.name });
   }
   return markers;
 }

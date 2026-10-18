@@ -5,10 +5,13 @@ export const workedExamples = {
    * hint when faded, inlays only when the learner works it out alone.
    */
   stageGuideLevels: { worked: 3, faded: 2, independent: 1 },
-  /** Frets of context shown either side of a step's notes. */
-  rangePadding: 1,
-  /** The fewest frets a step's neck shows, so it keeps some landmarks around it. */
-  minFrets: 5,
+  /**
+   * A step's neck window starts this many frets below its given note and
+   * spans `span` frets, so the window depends on the stimulus, never on
+   * where the answer is. Examples without a given note pin their own window.
+   */
+  lead: 2,
+  span: 7,
 } as const;
 
 declare module './index' {
