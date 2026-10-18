@@ -1,6 +1,12 @@
 import type { Card as FsrsCard, Rating } from 'ts-fsrs';
 import type { FittedFsrsParams } from './refit';
-import { isIntervalName, type IntervalName, type Position } from '../theory';
+import {
+  isChordKind,
+  isIntervalName,
+  type ChordKind,
+  type IntervalName,
+  type Position,
+} from '../theory';
 
 /** Design §3.1 / §3.6. */
 
@@ -144,7 +150,10 @@ export type ItemRef =
   | { kind: 'repeat'; frets: number; from: number }
   | { kind: 'octave'; from: Position; string: number }
   | { kind: 'octaves'; pc: string }
-  | { kind: 'interval' | 'interval-name'; interval: IntervalName; from: number; to: number };
+  | { kind: 'interval' | 'interval-name'; interval: IntervalName; from: number; to: number }
+  | { kind: 'spell-key'; tonic: string }
+  | { kind: 'spell-chord'; chord: ChordKind; root: string }
+  | { kind: 'degree' | 'degree-of'; degree: number; tonic: string };
 
 const INT = '(0|[1-9]\\d*)';
 const OFFSET = '([+-][1-9]\\d*)';
@@ -159,6 +168,9 @@ const REPEAT_ITEM = new RegExp(`^repeat:${OFFSET}@f${INT}$`);
 const OCTAVE_ITEM = new RegExp(`^octave:s${INT}f${INT}→s${INT}$`);
 const OCTAVES_ITEM = new RegExp(`^octaves:${PC}$`);
 const INTERVAL_ITEM = new RegExp(`^(interval|interval-name):([A-Za-z0-9]+)@s${INT}→s${INT}$`);
+const SPELL_KEY_ITEM = new RegExp(`^spell-key:${PC}$`);
+const SPELL_CHORD_ITEM = new RegExp(`^spell-chord:([A-Za-z0-9]+)@${PC}$`);
+const DEGREE_ITEM = new RegExp(`^(degree|degree-of):([1-7])@${PC}$`);
 
 function count(n: number, what: string): number {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Invalid ${what}: ${n}`);
@@ -302,6 +314,51 @@ export function parseIntervalItemId(id: string): {
   };
 }
 
+// Spelling items (C4, C5) keep the tonic or root as written: F# major and Gb
+// major are different spellings of the same pitches, so different facts.
+
+/** `spell-key:F#`: spell the F# major scale, tonic first (F# G# A# B C# D# E#). */
+export function spellKeyItemId(tonic: string): string {
+  return `spell-key:${pitchClass(tonic)}`;
+}
+
+export function parseSpellKeyItemId(id: string): { tonic: string } | null {
+  const m = SPELL_KEY_ITEM.exec(id);
+  if (!m) return null;
+  return { tonic: m[1] as string };
+}
+
+/** `spell-chord:m7@B`: spell Bm7, root first (B D F# A). */
+export function spellChordItemId(chord: ChordKind, root: string): string {
+  if (!isChordKind(chord)) throw new RangeError(`Invalid chord kind: ${String(chord)}`);
+  return `spell-chord:${chord}@${pitchClass(root)}`;
+}
+
+export function parseSpellChordItemId(id: string): { chord: ChordKind; root: string } | null {
+  const m = SPELL_CHORD_ITEM.exec(id);
+  if (!m || !isChordKind(m[1] as string)) return null;
+  return { chord: m[1] as ChordKind, root: m[2] as string };
+}
+
+/**
+ * `degree:6@Eb`: the 6th of E♭ major (C), degree → note. `degree-of:6@Eb`
+ * is the reverse: which degree of E♭ major is C? (note → degree).
+ */
+export function degreeItemId(kind: 'degree' | 'degree-of', degree: number, tonic: string): string {
+  if (!Number.isInteger(degree) || degree < 1 || degree > 7) {
+    throw new RangeError(`Invalid degree: ${degree}`);
+  }
+  return `${kind}:${degree}@${pitchClass(tonic)}`;
+}
+
+export function parseDegreeItemId(
+  id: string,
+): { kind: 'degree' | 'degree-of'; degree: number; tonic: string } | null {
+  const m = DEGREE_ITEM.exec(id);
+  if (!m) return null;
+  return { kind: m[1] as 'degree' | 'degree-of', degree: Number(m[2]), tonic: m[3] as string };
+}
+
 export function itemId(ref: ItemRef): string {
   switch (ref.kind) {
     case 'note':
@@ -325,6 +382,13 @@ export function itemId(ref: ItemRef): string {
     case 'interval':
     case 'interval-name':
       return intervalItemId(ref.kind, ref.interval, ref.from, ref.to);
+    case 'spell-key':
+      return spellKeyItemId(ref.tonic);
+    case 'spell-chord':
+      return spellChordItemId(ref.chord, ref.root);
+    case 'degree':
+    case 'degree-of':
+      return degreeItemId(ref.kind, ref.degree, ref.tonic);
   }
 }
 
@@ -347,5 +411,11 @@ export function parseItemId(id: string): ItemRef | null {
   if (octaves) return { kind: 'octaves', ...octaves };
   const interval = parseIntervalItemId(id);
   if (interval) return interval;
+  const spellKey = parseSpellKeyItemId(id);
+  if (spellKey) return { kind: 'spell-key', ...spellKey };
+  const spellChord = parseSpellChordItemId(id);
+  if (spellChord) return { kind: 'spell-chord', ...spellChord };
+  const degree = parseDegreeItemId(id);
+  if (degree) return degree;
   return null;
 }

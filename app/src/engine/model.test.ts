@@ -9,7 +9,13 @@ import {
   noteItemId,
   octavesItemId,
   parseFindItemId,
+  degreeItemId,
+  parseDegreeItemId,
   parseIntervalItemId,
+  parseSpellChordItemId,
+  parseSpellKeyItemId,
+  spellChordItemId,
+  spellKeyItemId,
   parseItemId,
   parseLetterItemId,
   parseMarkerItemId,
@@ -38,6 +44,11 @@ describe('item IDs', () => {
     expect(intervalItemId('interval-name', 'TT', 3, 1)).toBe('interval-name:TT@s3→s1');
     expect(octavesItemId('G')).toBe('octaves:G');
     expect(() => intervalItemId('interval', 'X9' as 'M3', 6, 5)).toThrow(RangeError);
+    expect(spellKeyItemId('F#')).toBe('spell-key:F#');
+    expect(spellChordItemId('m7', 'B')).toBe('spell-chord:m7@B');
+    expect(spellChordItemId('7', 'Gb')).toBe('spell-chord:7@Gb');
+    expect(degreeItemId('degree', 6, 'Eb')).toBe('degree:6@Eb');
+    expect(degreeItemId('degree-of', 7, 'F#')).toBe('degree-of:7@F#');
   });
 
   it('parses each kind', () => {
@@ -50,6 +61,14 @@ describe('item IDs', () => {
     expect(parseRepeatItemId('repeat:-12@f17')).toEqual({ frets: -12, from: 17 });
     expect(parseIntervalItemId('interval:b7@s5→s3')).toBeNull();
     expect(parseOctavesItemId('octaves:F#')).toEqual({ pc: 'F#' });
+    expect(parseSpellKeyItemId('spell-key:Cb')).toEqual({ tonic: 'Cb' });
+    expect(parseSpellChordItemId('spell-chord:m7b5@F#')).toEqual({ chord: 'm7b5', root: 'F#' });
+    expect(parseSpellChordItemId('spell-chord:m9@F#')).toBeNull();
+    expect(parseDegreeItemId('degree-of:3@Ab')).toEqual({
+      kind: 'degree-of',
+      degree: 3,
+      tonic: 'Ab',
+    });
   });
 
   const refs: ItemRef[] = [
@@ -64,6 +83,10 @@ describe('item IDs', () => {
     { kind: 'interval-name', interval: 'M3', from: 3, to: 2 },
     { kind: 'octave', from: { string: 6, fret: 5 }, string: 4 },
     { kind: 'octaves', pc: 'G' },
+    { kind: 'spell-key', tonic: 'Gb' },
+    { kind: 'spell-chord', chord: 'major', root: 'E' },
+    { kind: 'degree', degree: 6, tonic: 'Eb' },
+    { kind: 'degree-of', degree: 2, tonic: 'C#' },
   ];
 
   it.each(refs)('round-trips $kind refs', (ref) => {
@@ -96,6 +119,14 @@ describe('item IDs', () => {
     'octaves:H',
     'octaves:g',
     'octaves:G@s6',
+    'spell-key:F##',
+    'spell-key:f',
+    'spell-chord:Bm7',
+    'spell-chord:min@B',
+    'degree:8@C',
+    'degree:0@C',
+    'degree:6@Eb major',
+    'degree-of:C@Eb',
   ])('rejects non-canonical %j', (id) => {
     expect(parseItemId(id)).toBeNull();
   });
@@ -110,5 +141,9 @@ describe('item IDs', () => {
     expect(() => markerItemId(-3)).toThrow(RangeError);
     expect(() => repeatItemId(12, -1)).toThrow(RangeError);
     expect(() => octavesItemId('H')).toThrow(RangeError);
+    expect(() => spellKeyItemId('E##')).toThrow(RangeError);
+    expect(() => spellChordItemId('m9' as 'm7', 'B')).toThrow(RangeError);
+    expect(() => degreeItemId('degree', 8, 'C')).toThrow(RangeError);
+    expect(() => degreeItemId('degree', 2.5, 'C')).toThrow(RangeError);
   });
 });
