@@ -428,7 +428,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Tests cover the pairing guarantees.
 
 ### M2-09 · Placement test
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-06, M1-17
 - **Design:** §3.4, §4 step 6
 - **Owns:** `app/src/placement/**`, `app/src/onboarding/steps/placement.tsx`, `app/e2e/m2-09.spec.ts`
