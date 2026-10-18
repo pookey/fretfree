@@ -58,10 +58,7 @@ export const D4_SCOPE = { minLevel: 0, maxLevel: D4_SCOPES.length - 1 };
 /** Frets 0–12: the C1 region; above 12 the neck repeats (dimmed, not hidden). */
 export const D4_REGION: FretRange = { from: 0, to: 12 };
 
-/** Compact screens run every-octave items in regions of this many frets (design §7). */
-export const D4_REGION_FRETS = 5;
-
-/** Compact screens show single items in a window this wide, centred on the dot. */
+/** Compact screens show single items in a window at least this wide, centred on the dot. */
 export const D4_SHAPE_WINDOW_FRETS = 7;
 
 interface D4Base {
@@ -395,40 +392,27 @@ function clampWindow(from: number, bounds: FretRange, size: number): FretRange {
 }
 
 /**
- * Regions covering the range, for region-by-region rounds (design §7
- * iPhone). The round starts in the region holding `startFret` (the dot, so
- * octave shapes can be read from it) and then works outward, nearest first.
+ * The rounds of a region-by-region every-octave round (design §7 iPhone),
+ * from `neckRegions` and `targetsByRegion`. The round starts in the region
+ * nearest the dot, so octave shapes can be read from it, then works outward.
  */
-export function d4Regions(
-  range: FretRange,
-  startFret = range.from,
-  size = D4_REGION_FRETS,
-): FretRange[] {
-  const out: FretRange[] = [];
-  for (let from = range.from; from <= range.to; from += size) {
-    out.push({ from, to: Math.min(range.to, from + size - 1) });
-  }
-  const start = Math.max(
-    0,
-    out.findIndex((r) => inRange(startFret, r)),
-  );
-  return out
-    .map((r, i) => ({ r, d: Math.abs(i - start) }))
-    .sort((a, b) => a.d - b.d)
-    .map(({ r }) => r);
+export function d4RoundOrder<T extends { region: FretRange }>(
+  rounds: readonly T[],
+  dotFret: number,
+): T[] {
+  const distance = ({ region }: T) =>
+    dotFret < region.from ? region.from - dotFret : Math.max(0, dotFret - region.to);
+  return [...rounds].sort((a, b) => distance(a) - distance(b) || a.region.from - b.region.from);
 }
 
-/** The frets on screen for a region: a full-size window, so a short last region keeps its cell size. */
-export function d4RegionWindow(
-  region: FretRange,
-  bounds: FretRange,
-  size = D4_REGION_FRETS,
-): FretRange {
+/** The frets on screen for a region: a full window, so a short region keeps its cell size. */
+export function d4RegionWindow(region: FretRange, bounds: FretRange, size: number): FretRange {
   return clampWindow(region.from, bounds, size);
 }
 
 /** The compact window for a single item: centred on the dot, wide enough for any octave shape. */
-export function d4ShapeWindow(prompt: D4Prompt, size = D4_SHAPE_WINDOW_FRETS): FretRange {
+export function d4ShapeWindow(prompt: D4Prompt, compactFrets = D4_SHAPE_WINDOW_FRETS): FretRange {
+  const size = Math.max(D4_SHAPE_WINDOW_FRETS, compactFrets);
   return clampWindow(prompt.source.fret - Math.floor(size / 2), prompt.activeRange, size);
 }
 

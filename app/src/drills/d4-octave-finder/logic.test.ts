@@ -25,7 +25,7 @@ import {
   d4NeckGuideLevel,
   d4OtherOffset,
   d4RegionWindow,
-  d4Regions,
+  d4RoundOrder,
   d4ScopeFor,
   d4ShapeLabel,
   d4ShapeWindow,
@@ -320,31 +320,40 @@ describe('D4 neck guides', () => {
 });
 
 describe('D4 compact layout', () => {
-  it('splits frets 0–12 into regions, each shown in a full-size window', () => {
-    const regions = d4Regions({ from: 0, to: 12 });
-    expect(regions).toEqual([
+  it('orders compact rounds from the region nearest the dot, outward', () => {
+    const rounds = [
       { from: 0, to: 4 },
-      { from: 5, to: 9 },
-      { from: 10, to: 12 },
-    ]);
-    // Starting from the dot's region, then outward.
-    expect(d4Regions({ from: 0, to: 12 }, 10)).toEqual([
-      { from: 10, to: 12 },
-      { from: 5, to: 9 },
-      { from: 0, to: 4 },
-    ]);
-    expect(d4Regions({ from: 0, to: 12 }, 7).map((r) => r.from)).toEqual([5, 0, 10]);
+      { from: 5, to: 8 },
+      { from: 9, to: 12 },
+    ].map((region) => ({
+      region,
+    }));
+    const order = (fret: number) => d4RoundOrder(rounds, fret).map((r) => r.region.from);
+    expect(order(10)).toEqual([9, 5, 0]);
+    expect(order(6)).toEqual([5, 0, 9]);
+    expect(order(3)).toEqual([0, 5, 9]);
+    // A dot between two kept rounds (its own region had nothing to find): nearest first.
+    expect(d4RoundOrder([rounds[0]!, rounds[2]!], 7).map((r) => r.region.from)).toEqual([9, 0]);
+  });
+
+  it('shows a region in a full-size window', () => {
     const bounds = { from: 0, to: 12 };
-    expect(d4RegionWindow(regions[0]!, bounds)).toEqual({ from: 0, to: 4 });
-    expect(d4RegionWindow(regions[2]!, bounds)).toEqual({ from: 8, to: 12 });
-    const p = every('octaves:G');
-    expect(d4TargetsIn(p, regions[0]!)).toEqual([at(1, 3), at(3, 0), at(6, 3)]);
+    expect(d4RegionWindow({ from: 0, to: 4 }, bounds, 5)).toEqual({ from: 0, to: 4 });
+    expect(d4RegionWindow({ from: 9, to: 12 }, bounds, 5)).toEqual({ from: 8, to: 12 });
+    expect(d4RegionWindow({ from: 7, to: 12 }, bounds, 7)).toEqual({ from: 6, to: 12 });
+    expect(d4TargetsIn(every('octaves:G'), { from: 0, to: 4 })).toEqual([
+      at(1, 3),
+      at(3, 0),
+      at(6, 3),
+    ]);
   });
 
   it('centres a single item on its dot, wide enough for any shape', () => {
     expect(d4ShapeWindow(single('octave:s6f5→s4'))).toEqual({ from: 2, to: 8 });
     expect(d4ShapeWindow(single('octave:s6f0→s4'))).toEqual({ from: 0, to: 6 });
     expect(d4ShapeWindow(single('octave:s4f12→s6'))).toEqual({ from: 6, to: 12 });
+    // A phone on its side shows more frets.
+    expect(d4ShapeWindow(single('octave:s6f5→s4'), 9)).toEqual({ from: 1, to: 9 });
     for (const skillId of ['C1.octaves', 'C1.octaves-gb-shift', 'C1.double-octaves']) {
       for (const item of getSkill(skillId)!.items()) {
         const p = d4MakePrompt(item, ctx());

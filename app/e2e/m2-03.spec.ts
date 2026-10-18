@@ -61,7 +61,9 @@ test.describe('M2-03 D4 octave finder', () => {
   test('taps every G, region by region on compact screens @smoke', async ({ page }) => {
     const dot = await startEveryG(page);
     // Compact screens ask region by region; the iPad asks for the whole neck at once.
-    const rounds = (await page.getByTestId('d4-region').count()) > 0 ? 3 : 1;
+    const region = page.getByTestId('d4-region');
+    const rounds =
+      (await region.count()) > 0 ? Number(/of (\d+)/.exec(await region.innerText())![1]) : 1;
     for (let round = 0; round < rounds; round++) {
       const [from, to] = await askedFrets(page);
       const found = await markerCells(page, 'correct');
@@ -174,7 +176,8 @@ test.describe('M2-03 D4 on a phone in portrait', () => {
         await cellAt(page, cell).click();
       }
     }
-    expect(seen.sort((a, b) => a - b)).toEqual([0, 5, 10]);
+    // Frets 0–12 in balanced windows of at most 5 frets.
+    expect(seen.sort((a, b) => a - b)).toEqual([0, 5, 9]);
     await expect(page.getByTestId('feedback-correct')).toHaveText('✓ G');
     await expectNoHorizontalOverflow(page);
   });

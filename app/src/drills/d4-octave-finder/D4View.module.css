@@ -126,3 +126,11 @@
 .drill[data-size-class='compact'] .neckArea svg {
   max-height: calc(100dvh - 7rem);
 }
+
+/* A phone on its side has no room for the feedback line above the letterboxed
+   neck; the session's feedback bar still says what was right. */
+@media (max-height: 499px) {
+  .drill[data-size-class='compact'] .explain {
+    display: none;
+  }
+}

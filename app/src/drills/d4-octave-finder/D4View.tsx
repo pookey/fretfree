@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppStore } from '../../app-store';
+import { COMPACT_WINDOW_FRETS, neckRegions, targetsByRegion } from '../../shell/size-class';
 import { playNotes } from '../../audio/audio';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import { inRange, noteAt, samePosition, type FretRange, type Position } from '../../theory';
@@ -12,7 +13,7 @@ import {
   d4Missed,
   d4NeckGuideLevel,
   d4RegionWindow,
-  d4Regions,
+  d4RoundOrder,
   d4ShapeWindow,
   d4ShowsCount,
   d4TargetsIn,
@@ -39,7 +40,8 @@ const REGULAR: FretRange = { from: 0, to: 12 };
  * every other cell of that note: each tap is marked at once (per-target
  * feedback), and the round answers when the last one is found, on the first
  * wrong tap, or on "Done". The iPad runs it over the whole neck; compact
- * screens run it region by region.
+ * screens run it region by region (`neckRegions`), starting nearest the dot,
+ * and a region is done once its targets are found.
  */
 export function D4View({
   prompt,
@@ -47,6 +49,7 @@ export function D4View({
   guided,
   handedness,
   sizeClass,
+  compactFrets = COMPACT_WINDOW_FRETS,
   tuning,
   feedback,
   onAnswer,
@@ -65,8 +68,13 @@ export function D4View({
   }
 
   const every = prompt.mode === 'every';
-  const regions =
-    every && compact ? d4Regions(prompt.activeRange, prompt.source.fret) : [prompt.activeRange];
+  const rounds = every
+    ? d4RoundOrder(
+        targetsByRegion(prompt.targets, neckRegions(sizeClass, prompt.activeRange, compactFrets)),
+        prompt.source.fret,
+      )
+    : [];
+  const regions = rounds.length > 1 ? rounds.map((r) => r.region) : [prompt.activeRange];
   const regionIndex = Math.min(view.region, regions.length - 1);
   const region = regions[regionIndex] as FretRange;
   const lastRegion = regionIndex === regions.length - 1;
@@ -74,8 +82,8 @@ export function D4View({
 
   let visible: FretRange;
   if (!compact) visible = sizeClass === 'regular-wide' ? WIDE : REGULAR;
-  else if (every) visible = d4RegionWindow(region, prompt.activeRange);
-  else visible = d4ShapeWindow(prompt);
+  else if (every) visible = d4RegionWindow(region, prompt.activeRange, compactFrets);
+  else visible = d4ShapeWindow(prompt, compactFrets);
 
   const tapped = (pos: Position) => taps.some((p) => samePosition(p, pos));
 
@@ -104,12 +112,9 @@ export function D4View({
     });
   };
 
-  /** "Done": the learner sees no more here. Moves on a region, or ends the round. */
+  /** "Done": the learner sees no more, so the round ends with what was found. */
   const done = () => {
-    if (feedback) return;
-    const left = d4TargetsIn(prompt, region).some((t) => !tapped(t));
-    if (left || lastRegion) onAnswer(view.taps);
-    else setState({ ...view, region: regionIndex + 1 });
+    if (!feedback) onAnswer(view.taps);
   };
 
   const pcAt = (p: Position) => noteAt(p, tuning, prompt.accidentalPref).pc;
@@ -135,7 +140,7 @@ export function D4View({
   if (feedback) markers.push(...d4WrongTaps(prompt, taps).map((p) => label(p, 'wrong', pcAt(p))));
 
   const found = d4Found(prompt, taps).length;
-  const inFrets = compact && every ? ` in frets ${region.from}–${region.to}` : '';
+  const inFrets = regions.length > 1 ? ` in frets ${region.from}–${region.to}` : '';
   const pc = <strong>{prompt.pc}</strong>;
   let question;
   if (prompt.mode === 'single') {
@@ -188,14 +193,14 @@ export function D4View({
                 Found {found}
                 {d4ShowsCount(guideLevel, guided) && ` of ${prompt.targets.length}`}
               </p>
-              {compact && (
+              {regions.length > 1 && (
                 <p className={styles.caption} data-testid="d4-region">
                   Region {regionIndex + 1} of {regions.length}
                 </p>
               )}
               {!feedback && (
                 <button type="button" className={styles.done} onClick={done}>
-                  {lastRegion ? 'Done' : 'Next frets'}
+                  Done
                 </button>
               )}
             </div>
@@ -229,8 +234,8 @@ export function D4View({
           }
         />
       </div>
-      {/* iPad portrait: the context panel sits below the neck. */}
-      {sizeClass === 'regular' && aside}
+      {/* Below the neck on iPad portrait; the session shows it as a sheet on compact. */}
+      {sizeClass !== 'regular-wide' && aside}
     </div>
   );
 }

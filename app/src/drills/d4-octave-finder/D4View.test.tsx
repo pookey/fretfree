@@ -19,6 +19,7 @@ function view(
     guided?: boolean;
     guideLevel?: GuideLevel;
     sizeClass?: SizeClass;
+    compactFrets?: number;
     feedback?: DrillFeedback<D4Answer> | null;
   } = {},
 ) {
@@ -29,6 +30,7 @@ function view(
     guided: over.guided ?? false,
     handedness: 'right',
     sizeClass: over.sizeClass ?? 'regular-wide',
+    compactFrets: over.compactFrets ?? 5,
     tuning: STANDARD_TUNING,
     feedback: over.feedback ?? null,
     onAnswer,
@@ -186,14 +188,14 @@ describe('<D4View> every octave', () => {
     tap(at(1, 3));
     expect(screen.getByTestId('d4-region')).toHaveTextContent('Region 1 of 3');
     tap(at(3, 0));
-    // Region done: on to frets 5–9.
-    expect(screen.getByTestId('d4-prompt')).toHaveTextContent('Tap every G in frets 5–9');
+    // Region done: on to frets 5–8, shown in a 5-fret window.
+    expect(screen.getByTestId('d4-prompt')).toHaveTextContent('Tap every G in frets 5–8');
     expect(region()).toEqual(['5', '9']);
     tap(at(4, 5));
     tap(at(2, 8));
-    // Last region shows frets 8–12, with 8–9 dimmed and inert.
+    // Last region shows frets 8–12, with fret 8 dimmed and inert.
+    expect(screen.getByTestId('d4-prompt')).toHaveTextContent('Tap every G in frets 9–12');
     expect(region()).toEqual(['8', '12']);
-    expect(screen.getByRole('button', { name: 'Done' })).toBeInTheDocument();
     tap(at(2, 8));
     tap(at(5, 10));
     expect(onAnswer).not.toHaveBeenCalled();
@@ -208,15 +210,47 @@ describe('<D4View> every octave', () => {
     ]);
   });
 
-  it('moves on from a region with "Next frets", or ends the round if one is left', () => {
+  it('starts at the dot, and "Done" ends the round with what was found', () => {
     const p = prompt('octaves:C');
-    // The dot is string 6 fret 8; frets 5–9 also hold C at s3f5 and s1f8.
+    // The dot is string 6 fret 8; frets 5–8 also hold C at s3f5 and s1f8.
     expect(p.source).toEqual(at(6, 8));
     const { onAnswer } = view(p, { sizeClass: 'compact' });
-    // The round starts in the dot's region.
-    expect(screen.getByTestId('d4-prompt')).toHaveTextContent('Tap every C in frets 5–9');
+    expect(screen.getByTestId('d4-prompt')).toHaveTextContent('Tap every C in frets 5–8');
     expect(markers('root')).toEqual([at(6, 8)]);
-    fireEvent.click(screen.getByRole('button', { name: 'Next frets' }));
-    expect(onAnswer).toHaveBeenCalledWith([]);
+    tap(at(3, 5));
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(onAnswer).toHaveBeenCalledWith([at(3, 5)]);
+  });
+
+  it('runs the whole range at once when the compact window is wide enough', () => {
+    view(prompt(G), { sizeClass: 'compact', compactFrets: 13 });
+    expect(screen.getByTestId('d4-prompt')).toHaveTextContent(/^Tap every G$/);
+    expect(screen.queryByTestId('d4-region')).toBeNull();
+  });
+
+  it('shows the context panel below the neck off regular-wide', () => {
+    const aside = <aside data-testid="context-panel" />;
+    const p = prompt(G);
+    for (const sizeClass of ['regular', 'compact'] as const) {
+      const { container, unmount } = render(
+        <D4View
+          prompt={p}
+          guideLevel={2}
+          guided={false}
+          handedness="right"
+          sizeClass={sizeClass}
+          tuning={STANDARD_TUNING}
+          feedback={null}
+          onAnswer={vi.fn()}
+          aside={aside}
+        />,
+      );
+      const panel = screen.getByTestId('context-panel');
+      const neckArea = container.querySelector('svg')!.parentElement!;
+      expect(
+        neckArea.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      unmount();
+    }
   });
 });
