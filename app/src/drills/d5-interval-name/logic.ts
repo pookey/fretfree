@@ -218,10 +218,17 @@ export function d5LegendRows(choices: readonly IntervalName[], level: GuideLevel
   });
 }
 
-export function d5LegendTips(level: GuideLevel): string[] {
+/**
+ * Level-3 tips. The G–B tip shows only on shapes that cross that pair: its
+ * wording holds in any tuning that keeps G and B a major 3rd apart, which is
+ * what `gbShift` flags.
+ */
+export function d5LegendTips(level: GuideLevel, gbShift: boolean): string[] {
   if (level < 3) return [];
+  const count = 'Count half steps up from the square (the lower note) to the round dot.';
+  if (!gbShift) return [count];
   return [
-    'Count half steps up from the square (the lower note) to the round dot.',
-    'One string up is 5 half steps, but only 4 from G to B: shapes that cross G–B move up a fret.',
+    count,
+    'This shape crosses from G to B, which are a major 3rd apart, not a 4th: so the note on B sits a fret higher than it would across a 4th.',
   ];
 }

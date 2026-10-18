@@ -6,15 +6,17 @@ import styles from './D5View.module.css';
 interface Props {
   choices: readonly IntervalName[];
   guideLevel: GuideLevel;
+  /** The shape crosses the G–B pair: level 3 explains the shifted fret. */
+  gbShift: boolean;
   /** Set in feedback: the right answer, and the wrong one if the learner missed. */
   expected?: IntervalName;
   given?: IntervalName;
 }
 
 /** The interval legend for the context panel, faded with the guide level (design §7). */
-export function IntervalLegend({ choices, guideLevel, expected, given }: Props) {
+export function IntervalLegend({ choices, guideLevel, gbShift, expected, given }: Props) {
   const rows = d5LegendRows(choices, guideLevel);
-  const tips = d5LegendTips(guideLevel);
+  const tips = d5LegendTips(guideLevel, gbShift);
   return (
     <>
       <ul className={styles.legend} data-testid="interval-legend" data-level={guideLevel}>

@@ -214,7 +214,11 @@ describe('interval legend', () => {
     expect(d5LegendRows(choices, 1)[3]).toEqual({ name: 'M3', long: 'major 3rd' });
     expect(d5LegendRows(choices, 2)[3]).toEqual({ name: 'M3', long: 'major 3rd', semitones: 4 });
     expect(d5LegendRows(choices, 3)).toHaveLength(4);
-    expect(d5LegendTips(2)).toEqual([]);
-    expect(d5LegendTips(3).join(' ')).toMatch(/G to B/);
+    expect(d5LegendTips(2, true)).toEqual([]);
+    expect(d5LegendTips(3, false)).toEqual([
+      'Count half steps up from the square (the lower note) to the round dot.',
+    ]);
+    expect(d5LegendTips(3, true)).toHaveLength(2);
+    expect(d5LegendTips(3, true)[1]).toMatch(/G to B, which are a major 3rd apart/);
   });
 });

@@ -163,6 +163,35 @@ test.describe('M2-05 D5 names the interval from two dots', () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test('on a phone, the legend opens as a sheet from "Show help" @smoke', async ({
+    page,
+  }, info) => {
+    test.skip(info.project.name !== 'iphone-smoke', 'phone flow');
+    await freshStart(page);
+    await seedThirds(page, { reviewsAtLevel: 2 });
+    await startSession(page);
+
+    // The sheet starts closed so it never covers the answer buttons.
+    await expect(page.getByTestId('context-panel')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show help' }).click();
+    await expect(legend(page)).toBeVisible();
+    await expect(legend(page).locator('li')).toHaveCount(4);
+    await page.getByRole('button', { name: 'Hide help' }).click();
+    await expect(page.getByTestId('context-panel')).toHaveCount(0);
+
+    // Both dots sit inside the phone's neck window.
+    const from = Number(await neck(page).getAttribute('data-fret-from'));
+    const to = Number(await neck(page).getAttribute('data-fret-to'));
+    for (const id of ['marker-root', 'marker-target']) {
+      const { fret } = await cellOf(page, id);
+      expect(fret).toBeGreaterThanOrEqual(from);
+      expect(fret).toBeLessThanOrEqual(to);
+    }
+    const answer = await solve(page);
+    await choose(page, answer);
+    await expect(page.getByTestId('feedback-correct')).toHaveText(`✓ ${answer}`);
+  });
+
   test('recall prompts: neighbour distractors, wrong-answer feedback', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
@@ -227,11 +256,15 @@ test.describe('M2-05 D5 names the interval from two dots', () => {
     await page.getByRole('button', { name: 'Show help' }).click();
     await expect(legend(page)).toBeVisible();
 
-    // Level 3: the tips for reading shapes across strings, the G–B shift included.
+    // Level 3: the counting tip, and the G–B tip only on a shape from string 3 to 2.
     await freshStart(page);
     await seedThirds(page, { reviewsAtLevel: 3 });
     await startSession(page);
-    await expect(panel).toContainText('from G to B');
+    await expect(panel).toContainText('Count half steps up from the square');
+    const root = await cellOf(page, 'marker-root');
+    const crossesGb = root.string === 3 && (await cellOf(page, 'marker-target')).string === 2;
+    if (crossesGb) await expect(panel).toContainText('from G to B');
+    else await expect(panel).not.toContainText('from G to B');
 
     // Level 1: the names only.
     await freshStart(page);

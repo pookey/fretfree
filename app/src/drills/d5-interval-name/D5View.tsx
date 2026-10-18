@@ -26,6 +26,7 @@ export function D5View({
   guided,
   handedness,
   sizeClass,
+  compactFrets,
   tuning,
   feedback,
   onAnswer,
@@ -48,9 +49,10 @@ export function D5View({
     return () => window.removeEventListener('keydown', onKey);
   }, [feedback, onAnswer, choices]);
 
-  const low = Math.min(prompt.root.fret, prompt.upper.fret);
-  // Focus two frets in, so the compact five-fret window starts at the lower dot.
-  const range = neckWindow(sizeClass, low + 2);
+  // Centre the compact window between the dots: C3 shapes span at most four
+  // frets, so both fit even the narrowest (five-fret) window.
+  const mid = Math.floor((prompt.root.fret + prompt.upper.fret) / 2);
+  const range = neckWindow(sizeClass, mid, compactFrets);
   // The worked example shows full guides (design §3.3 step 2).
   const level: GuideLevel = guided ? 3 : guideLevel;
 
@@ -92,6 +94,7 @@ export function D5View({
       <IntervalLegend
         choices={choices}
         guideLevel={level}
+        gbShift={prompt.gbShift}
         {...(feedback
           ? {
               expected: prompt.interval,
@@ -116,7 +119,8 @@ export function D5View({
             )}
           </p>
           <p className={styles.hint} data-testid="d5-hint">
-            {!feedback && 'From the square (the lower note) up to the round dot.'}
+            {/* A guide like the others: gone at level 0, the independent stage (rule 9). */}
+            {!feedback && level >= 1 && 'From the square (the lower note) up to the round dot.'}
           </p>
           <div className={styles.choices} role="group" aria-labelledby="drill-prompt">
             {choices.map((c, i) => {
@@ -160,8 +164,8 @@ export function D5View({
           label={`Fretboard, root on string ${prompt.root.string} fret ${prompt.root.fret}, second note on string ${prompt.upper.string} fret ${prompt.upper.fret}`}
         />
       </div>
-      {/* iPad portrait: the context panel sits below the neck. */}
-      {sizeClass === 'regular' && context}
+      {/* iPad portrait: below the neck. Compact: the session styles it as a sheet. */}
+      {sizeClass !== 'regular-wide' && context}
     </div>
   );
 }

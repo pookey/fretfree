@@ -8,16 +8,17 @@ import type { DrillFeedback } from '../types';
 import { D5View } from './D5View';
 import { d5Check, d5MakePrompt, type D5Answer, type D5Prompt } from './logic';
 
-const prompt = (id = 'interval-name:M3@s6→s5', scopeLevel = 0) =>
+const prompt = (id = 'interval-name:M3@s6→s5', scopeLevel = 0, r = 0) =>
   d5MakePrompt(
     { id, skillId: 'C3.thirds' },
-    { tuning: STANDARD_TUNING, accidentalPref: 'sharp', scopeLevel, rng: () => 0 },
+    { tuning: STANDARD_TUNING, accidentalPref: 'sharp', scopeLevel, rng: () => r },
   );
 
 interface Opts {
   guideLevel?: GuideLevel;
   guided?: boolean;
   sizeClass?: SizeClass;
+  compactFrets?: number | undefined;
   feedback?: DrillFeedback<D5Answer> | null;
   withAside?: boolean;
 }
@@ -31,6 +32,7 @@ function renderView(p: D5Prompt, opts: Opts = {}) {
       guided={opts.guided ?? false}
       handedness="right"
       sizeClass={opts.sizeClass ?? 'regular-wide'}
+      {...(opts.compactFrets === undefined ? {} : { compactFrets: opts.compactFrets })}
       tuning={STANDARD_TUNING}
       feedback={opts.feedback ?? null}
       onAnswer={onAnswer}
@@ -131,6 +133,29 @@ describe('<D5View>', () => {
     expect(legendRow('M3')).toHaveAttribute('data-state', 'expected');
   });
 
+  it('fades the hint with the other guides: gone at level 0', () => {
+    const { unmount } = renderView(prompt(), { guideLevel: 1 });
+    expect(screen.getByTestId('d5-hint')).toHaveTextContent('From the square');
+    unmount();
+    renderView(prompt(), { guideLevel: 0 });
+    expect(screen.getByTestId('d5-hint')).toBeEmptyDOMElement();
+  });
+
+  it('widens the compact neck window with compactFrets, keeping both dots in it', () => {
+    const p = prompt('interval-name:P4@s5→s4', 0, 0.999);
+    for (const compactFrets of [undefined, 8]) {
+      const { unmount } = renderView(p, { sizeClass: 'compact', compactFrets });
+      const from = Number(neck().getAttribute('data-fret-from'));
+      const to = Number(neck().getAttribute('data-fret-to'));
+      expect(to - from + 1).toBe(compactFrets ?? 5);
+      for (const pos of [p.root, p.upper]) {
+        expect(pos.fret).toBeGreaterThanOrEqual(from);
+        expect(pos.fret).toBeLessThanOrEqual(to);
+      }
+      unmount();
+    }
+  });
+
   describe('interval legend in the context panel', () => {
     it('lists names, half steps and tips at guide level 3', () => {
       renderView(prompt(), { guideLevel: 3 });
@@ -138,13 +163,25 @@ describe('<D5View>', () => {
       expect(within(panel).getByRole('heading', { name: 'Intervals' })).toBeInTheDocument();
       expect(legendRow('M3')).toHaveTextContent('M3major 3rd4 half steps');
       expect(legendRow('m2')).toHaveTextContent('1 half step');
-      expect(panel).toHaveTextContent(/from G to B/);
+      expect(panel).toHaveTextContent(/Count half steps up from the square/);
+      // String 6 to 5 does not cross G–B, so no shift tip.
+      expect(panel).not.toHaveTextContent(/from G to B/);
+    });
+
+    it('explains the G–B shift at level 3 only on shapes that cross it', () => {
+      const { unmount } = renderView(prompt('interval-name:M3@s3→s2'), { guideLevel: 3 });
+      expect(screen.getByTestId('context-panel')).toHaveTextContent(
+        /crosses from G to B, which are a major 3rd apart/,
+      );
+      unmount();
+      renderView(prompt('interval-name:M3@s3→s2'), { guideLevel: 2 });
+      expect(screen.getByTestId('context-panel')).not.toHaveTextContent(/from G to B/);
     });
 
     it('drops the tips at level 2', () => {
       renderView(prompt(), { guideLevel: 2 });
       expect(legendRow('M3')).toHaveTextContent('4 half steps');
-      expect(screen.getByTestId('context-panel')).not.toHaveTextContent(/from G to B/);
+      expect(screen.getByTestId('context-panel')).not.toHaveTextContent(/Count half steps/);
     });
 
     it('only decodes the names at level 1', () => {
@@ -158,13 +195,14 @@ describe('<D5View>', () => {
       expect(screen.queryByTestId('context-panel')).toBeNull();
     });
 
-    it('sits below the neck on iPad portrait, and not at all on compact', () => {
-      const { unmount } = renderView(prompt(), { sizeClass: 'regular' });
-      const drill = screen.getByTestId('d5-drill');
-      expect(drill.lastElementChild).toBe(screen.getByTestId('context-panel'));
-      unmount();
-      renderView(prompt(), { sizeClass: 'compact' });
-      expect(screen.queryByTestId('context-panel')).toBeNull();
+    it('sits after the neck on iPad portrait and compact (where it becomes a sheet)', () => {
+      for (const sizeClass of ['regular', 'compact'] as const) {
+        const { unmount } = renderView(prompt(), { sizeClass });
+        const drill = screen.getByTestId('d5-drill');
+        expect(drill.lastElementChild, sizeClass).toBe(screen.getByTestId('context-panel'));
+        expect(legend(), sizeClass).not.toBeNull();
+        unmount();
+      }
     });
   });
 });
