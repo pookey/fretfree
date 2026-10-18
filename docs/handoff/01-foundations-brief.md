@@ -103,7 +103,28 @@ A project skill (plus any helper scripts or templates next to it) that a build a
 
 **Isolation:** one git worktree and branch per work package (e.g. `herdr worktree create --branch wp/M1-03 …`, or `git worktree`). Workers never touch `main` directly.
 
-**Planning:** read `docs/backlog.md`, select ready packages whose dependencies are done and whose file areas don't conflict, and keep a concurrency cap (default 3 workers).
+**Planning and parallelism: maximise throughput.** The user wants the build parallelised as much as possible, to make full use of the usage allowance, **once agents can work without tripping over each other**.
+
+- **Phase 1, foundations (serial).** Until M0 lands (shared shell, fretboard model, engine interfaces, drill plugin interface, storage schema, design tokens), run at most 1–2 workers. Shared contracts must be stable first.
+- **Phase 2, fan-out.** Once the core interfaces are stable, run as many workers as the conflict-free ready set and the machine allow.
+  - Concurrency is **dynamic, not fixed**. Default ceiling: **6 workers** plus reviewers.
+  - The dev machine is a 10-core / 16 GB Mac, and Playwright/WebKit is the real constraint.
+  - Raise the ceiling while things stay healthy. Lower it on memory pressure, test flakiness from contention, or usage-limit signals.
+- **Shape the backlog for parallelism** (the backlog's job, not luck):
+  - small packages (½–2 hours of agent work);
+  - explicit **file/area ownership** per package;
+  - **interface-first**: land types and contracts as their own tiny package, so dependents can start against them;
+  - favour **vertical slices** that touch new files (a new drill plugin, a new Explore view, a new skill's content) over edits to shared hubs;
+  - shared registries (drill registry, routes, skill graph) use one-file-per-entry or append-only patterns, to minimise merge conflicts.
+- **Avoid tripping over shared resources:**
+  - each worker gets its own worktree;
+  - a unique dev/preview **port range** per worker, recorded in state;
+  - a machine-wide **semaphore for e2e runs** (e.g. a lock-dir counter allowing 2 concurrent Playwright runs) so browsers don't starve RAM;
+  - one shared pnpm store;
+  - **deploys and merges to `main` serialized** through a single integration lane (a merge queue: rebase → verify → merge → `pnpm ship` → push, one at a time).
+- **Keep every slot busy.** When a worker finishes, start the next ready package immediately; don't wait for a batch. Review runs in parallel with other work.
+- **Usage limits.** If agents report rate or usage limits, back off: pause new spawns and let in-flight work finish. Resume when the limit clears. Record events in `.orchestrator/state.json`.
+- Log effective parallelism, meaning active workers over time and idle slots, in `docs/progress.md`, so the ceiling can be tuned.
 
 **Worker brief template:** includes the package's acceptance criteria, the relevant design sections, the "design rules are normative" reminder, the requirement to write tests, a requirement to run `pnpm verify` before reporting, and a fixed output contract: write a report to `.orchestrator/reports/<WP>.md`.
 
@@ -136,7 +157,7 @@ A project skill (plus any helper scripts or templates next to it) that a build a
 1. Write **`docs/handoff/02-build-brief.md`** for the build agent. It should cover:
    - what exists
    - how to invoke the orchestration skill
-   - the milestone order (M1 → M6)
+   - the milestone order (M1 → M6), plus the instruction to **parallelise aggressively** once M0's contracts are stable: work across milestones in parallel wherever dependencies allow, not strictly milestone by milestone
    - deployment expectations (continuous and local: every merge to `main` runs `pnpm ship`, which verifies, deploys and smoke-tests production, then pushes; no GitHub Actions; a broken production deploy stops the line)
    - when to stop and ask the user
 2. Start the build agent in a **new sibling Herdr pane** (split your own pane with `--no-focus`, preserving cwd):
