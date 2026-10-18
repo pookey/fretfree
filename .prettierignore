@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+playwright-report
+test-results
+infra/cdk.out
+pnpm-lock.yaml
+.orchestrator
+docs
+*.md

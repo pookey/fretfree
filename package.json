@@ -1,0 +1,40 @@
+{
+  "name": "fretwork",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter app dev",
+    "build": "pnpm --filter app build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm --filter app test",
+    "test:coverage": "pnpm --filter app test:coverage",
+    "e2e": "pnpm --filter app e2e",
+    "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test:all && pnpm e2e",
+    "deploy": "./scripts/deploy.sh",
+    "smoke": "./scripts/smoke.sh",
+    "ship": "./scripts/ship.sh",
+    "secret-scan": "./scripts/secret-scan.sh",
+    "prepare": "simple-git-hooks",
+    "test:all": "pnpm --filter app test:coverage && pnpm --filter infra test"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "simple-git-hooks": "^2.14.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.2"
+  },
+  "simple-git-hooks": {
+    "pre-push": "./scripts/pre-push.sh"
+  }
+}
