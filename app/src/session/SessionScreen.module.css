@@ -1,9 +1,11 @@
 .screen {
+  /* Room the drill area keeps clear at its foot for the pinned feedback bar. */
+  --feedback-bar: 5rem;
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: calc(var(--space-4) + var(--safe-top)) calc(var(--space-5) + var(--safe-right))
-    calc(var(--space-4) + var(--safe-bottom)) calc(var(--space-5) + var(--safe-left));
+  padding: calc(var(--space-4) + var(--safe-top)) calc(var(--space-5) + var(--safe-right)) 0
+    calc(var(--space-5) + var(--safe-left));
   gap: var(--space-4);
 }
 
@@ -46,8 +48,8 @@
 }
 
 .screen[data-size-class='compact'] {
+  --feedback-bar: 4.5rem;
   padding-top: calc(var(--space-2) + var(--safe-top));
-  padding-bottom: calc(var(--space-2) + var(--safe-bottom));
   gap: var(--space-2);
 }
 
@@ -57,6 +59,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  /* On the drill area, not the screen: a drill taller than the screen (a
+     phone in portrait) still scrolls clear of the bar. */
+  padding-bottom: calc(var(--feedback-bar) + var(--safe-bottom));
 }
 
 /* Compact: the drill's context panel becomes a bottom sheet over the neck
@@ -87,18 +92,96 @@
   flex: 1;
 }
 
+/* The feedback bar is pinned to the bottom of the viewport, over the room
+   .drillArea keeps clear for it, so it never covers the neck or the answers and
+   a wrong answer's Continue is never below the fold (M1-28). It sits above
+   the compact help sheet, so Continue stays reachable with help open. */
 .feedbackBar {
-  min-height: 3.5rem;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  min-height: calc(var(--feedback-bar) + var(--safe-bottom));
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-4);
+  padding: var(--space-2) calc(var(--space-5) + var(--safe-right))
+    calc(var(--space-2) + var(--safe-bottom)) calc(var(--space-5) + var(--safe-left));
+  /* Empty while a prompt is open: let taps through to anything scrolled under it. */
+  pointer-events: none;
+}
+
+.feedbackBar[data-state] {
+  pointer-events: auto;
+}
+
+.feedbackBar[data-state='wrong'] {
+  background: var(--bg-raised);
+  border-top: 0.25rem solid var(--wrong);
+  box-shadow: 0 -0.625rem 1.875rem rgb(0 0 0 / 0.35);
+  animation: feedback-in 0.2s ease-out;
+}
+
+@keyframes feedback-in {
+  from {
+    transform: translateY(100%);
+  }
 }
 
 .feedbackBar p {
   margin: 0;
   font-weight: 700;
   font-size: 1.125rem;
+}
+
+.screen[data-size-class='compact'] .feedbackBar {
+  gap: var(--space-3);
+}
+
+.screen[data-size-class='compact'] .feedbackBar p {
+  font-size: 1rem;
+}
+
+/* A phone on its side (isShortLandscape in size-class.ts) has no height to
+   spare: the letterboxed neck fills it, and a bar at the bottom would cover
+   string 6. There the bar covers the header row instead, the one strip with
+   nothing to read or answer while feedback is up. */
+@media (orientation: landscape) and (max-height: 499.98px) {
+  .screen[data-size-class] {
+    --feedback-bar: 0px;
+  }
+
+  .feedbackBar {
+    top: 0;
+    bottom: auto;
+    min-height: calc(var(--tap) + 2 * var(--space-1) + var(--safe-top));
+    padding: calc(var(--space-1) + var(--safe-top)) calc(var(--space-5) + var(--safe-right))
+      var(--space-1) calc(var(--space-5) + var(--safe-left));
+  }
+
+  .feedbackBar[data-state] {
+    background: var(--bg);
+  }
+
+  .feedbackBar[data-state='wrong'] {
+    background: var(--bg-raised);
+    border-top: 0;
+    border-bottom: 0.25rem solid var(--wrong);
+    box-shadow: 0 0.625rem 1.875rem rgb(0 0 0 / 0.35);
+    animation-name: feedback-down;
+  }
+
+  .feedbackBar .primary {
+    min-height: var(--tap);
+  }
+}
+
+@keyframes feedback-down {
+  from {
+    transform: translateY(-100%);
+  }
 }
 
 .correct {
@@ -166,4 +249,17 @@
   font-weight: 800;
   text-decoration: none;
   cursor: pointer;
+}
+
+/* Reduced motion: fade instead of sliding (the global rule also shortens it). */
+@media (prefers-reduced-motion: reduce) {
+  .screen .feedbackBar[data-state='wrong'] {
+    animation-name: feedback-fade;
+  }
+}
+
+@keyframes feedback-fade {
+  from {
+    opacity: 0;
+  }
 }

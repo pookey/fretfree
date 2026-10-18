@@ -44,6 +44,7 @@ export function SessionScreen() {
   const trackerRef = useRef<CelebrationTracker | null>(null);
   const shownAt = useRef(0);
   const busy = useRef(false);
+  const continueRef = useRef<HTMLButtonElement>(null);
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
   const [progress, setProgress] = useState({ position: 0, length: 1 });
   const [contextOpen, setContextOpen] = useState(true);
@@ -144,6 +145,8 @@ export function SessionScreen() {
 
   useEffect(() => {
     if (phase.kind !== 'feedback' || phase.feedback.result.correct) return;
+    // The bar is pinned on screen, so focusing it must not scroll the neck away.
+    continueRef.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => {
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
@@ -234,7 +237,14 @@ export function SessionScreen() {
           ) : (
             <p className={styles.loading}>Preparing your session…</p>
           )}
-          <div className={styles.feedbackBar} aria-live="polite">
+          {/* Pinned to the bottom of the viewport (M1-28), so a wrong answer's
+              Continue is never below the fold, whatever the drill. */}
+          <div
+            className={styles.feedbackBar}
+            aria-live="polite"
+            data-testid="feedback-bar"
+            data-state={feedback ? (feedback.result.correct ? 'correct' : 'wrong') : undefined}
+          >
             {feedback &&
               (feedback.result.correct ? (
                 <p className={styles.correct} data-testid="feedback-correct">
@@ -245,7 +255,13 @@ export function SessionScreen() {
                   <p className={styles.wrong} data-testid="feedback-wrong">
                     That was {feedback.result.expected}. You'll see it again shortly.
                   </p>
-                  <button type="button" className={styles.primary} onClick={advance} autoFocus>
+                  <button
+                    type="button"
+                    ref={continueRef}
+                    className={styles.primary}
+                    onClick={advance}
+                    aria-keyshortcuts="Enter Space"
+                  >
                     Continue
                   </button>
                 </>
