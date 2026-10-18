@@ -9,6 +9,7 @@ import {
   competenceText,
   headline,
   personalBestText,
+  progressText,
 } from './copy';
 import styles from './SessionSummary.module.css';
 
@@ -20,14 +21,15 @@ export interface SessionSummaryProps {
 
 /**
  * The lesson-complete screen (design §3.7 session celebrations, §3.3 step 5):
- * what the learner can now do, the session's moments, its numbers and why to
- * come back tomorrow.
+ * what the learner can now do, the session's moments, its numbers, where its
+ * items stand on Learn's learning / stable scale and why to come back.
  */
 export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryProps) {
   const title = headline(c);
   const [first, ...more] = c.competence;
   const learnedToday = c.competence.some((line) => line.kind === 'learned');
   const note = accuracyNote(c);
+  const progress = progressText(c.progress);
   const showCombo = c.bestCombo >= ENGINE_CONFIG.gamification.celebrations.comboShowAt;
 
   return (
@@ -110,26 +112,38 @@ export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryP
           </ul>
         )}
 
+        {/* Today's score, Learn's two levels and XP are different numbers (M1-35). */}
         <dl className={styles.stats}>
+          <div>
+            <dt>Today&rsquo;s accuracy</dt>
+            <dd data-testid="summary-accuracy">{Math.round(c.accuracy * 100)}%</dd>
+            <dd className={styles.statDetail}>
+              <span data-testid="summary-items">{c.answered}</span> answered
+            </dd>
+          </div>
+          <div>
+            <dt>Learning</dt>
+            <dd data-testid="summary-learning">{c.progress.learning}</dd>
+          </div>
+          <div>
+            <dt>Became stable</dt>
+            <dd data-testid="summary-stable">{c.progress.becameStable}</dd>
+            <dd className={styles.statDetail}>
+              <span data-testid="summary-improved">{c.itemsImproved}</span> stronger
+            </dd>
+          </div>
           <div>
             <dt>XP earned</dt>
             <dd data-testid="summary-xp">{c.xp}</dd>
           </div>
-          <div>
-            <dt>Items improved</dt>
-            <dd data-testid="summary-improved">{c.itemsImproved}</dd>
-          </div>
-          <div>
-            <dt>Accuracy</dt>
-            <dd data-testid="summary-accuracy">{Math.round(c.accuracy * 100)}%</dd>
-          </div>
-          <div>
-            <dt>Answered</dt>
-            <dd data-testid="summary-items">{c.answered}</dd>
-          </div>
         </dl>
         {note && <p className={styles.note}>{note}</p>}
 
+        {progress && (
+          <p className={styles.progress} data-testid="summary-progress">
+            {progress}
+          </p>
+        )}
         <p className={styles.spacing} data-testid="summary-spacing">
           {SPACING_COPY}
         </p>

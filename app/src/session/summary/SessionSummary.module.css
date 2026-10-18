@@ -133,9 +133,23 @@
   font-weight: 800;
 }
 
+.stats dd.statDetail {
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
 .note {
   margin: calc(-1 * var(--space-3)) 0 0;
   color: var(--text-muted);
+}
+
+.progress {
+  margin: 0;
+  max-width: 34rem;
+  align-self: center;
+  font-weight: 600;
 }
 
 .spacing {
@@ -181,5 +195,33 @@
 
   .stats dd {
     font-size: 1.5rem;
+  }
+}
+
+/*
+ * Compact landscape (a phone held sideways): short but wide, so the stats go
+ * back to one row and the copy runs the full width. That keeps the learning
+ * line from pushing Done further down.
+ */
+@media (max-height: 499px) and (min-width: 600px) {
+  .card {
+    gap: var(--space-3);
+  }
+
+  .stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .stats > div {
+    padding: var(--space-2);
+  }
+
+  .progress,
+  .spacing {
+    max-width: none;
+  }
+
+  .spacing {
+    font-size: 0.875rem;
   }
 }

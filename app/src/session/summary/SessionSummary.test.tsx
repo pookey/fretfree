@@ -8,6 +8,12 @@ import { SessionSummary } from './SessionSummary';
 const base: Celebration = {
   answered: 12,
   accuracy: 0.83,
+  progress: {
+    learning: 10,
+    stable: 0,
+    becameStable: 0,
+    nextReview: { date: '2026-10-19', inDays: 1 },
+  },
   newItems: 4,
   xp: 96,
   itemsImproved: 5,
@@ -119,6 +125,80 @@ describe('<SessionSummary>', () => {
     ).toBeVisible();
     expect(screen.queryByText('Natural notes on string 6')).toBeNull();
     expect(screen.getByTestId('confetti')).toBeInTheDocument();
+  });
+});
+
+describe('<SessionSummary> learning and stable (M1-35)', () => {
+  it("a first session: today's accuracy, items learning and none stable yet", () => {
+    show({
+      accuracy: 0.96,
+      answered: 25,
+      newItems: 14,
+      itemsImproved: 14,
+      progress: {
+        learning: 14,
+        stable: 0,
+        becameStable: 0,
+        nextReview: { date: '2026-10-20', inDays: 2 },
+      },
+    });
+    const terms = screen.getAllByRole('term').map((t) => t.textContent);
+    expect(terms).toEqual(['Today’s accuracy', 'Learning', 'Became stable', 'XP earned']);
+    expect(screen.getByTestId('summary-accuracy')).toHaveTextContent('96%');
+    expect(screen.getByTestId('summary-items')).toHaveTextContent('25');
+    expect(screen.getByTestId('summary-learning')).toHaveTextContent('14');
+    expect(screen.getByTestId('summary-stable')).toHaveTextContent('0');
+    expect(screen.getByTestId('summary-improved')).toHaveTextContent('14');
+    expect(screen.getByTestId('summary-progress')).toHaveTextContent(
+      '14 items learning. They become stable as you recall them over the next few days; your next review is Tuesday.',
+    );
+    // The spacing explanation stays, and Done stays last.
+    expect(screen.getByTestId('summary-spacing')).toHaveTextContent(/^Come back tomorrow/);
+    expect(screen.getByRole('link', { name: 'Done' })).toBeVisible();
+  });
+
+  it('a session that stabilises items says how many became stable', () => {
+    show({
+      progress: {
+        learning: 12,
+        stable: 3,
+        becameStable: 3,
+        nextReview: { date: '2026-10-19', inDays: 1 },
+      },
+    });
+    expect(screen.getByTestId('summary-learning')).toHaveTextContent('12');
+    expect(screen.getByTestId('summary-stable')).toHaveTextContent('3');
+    expect(screen.getByTestId('summary-progress')).toHaveTextContent(
+      /^12 items learning, 3 of them newly stable\. The rest become stable .* your next review is tomorrow\.$/,
+    );
+  });
+
+  it('an all-review session of stable items forecasts the next review', () => {
+    show({
+      newItems: 0,
+      accuracy: 1,
+      progress: {
+        learning: 8,
+        stable: 8,
+        becameStable: 0,
+        nextReview: { date: '2026-11-03', inDays: 16 },
+      },
+    });
+    expect(screen.getByTestId('summary-learning')).toHaveTextContent('8');
+    expect(screen.getByTestId('summary-stable')).toHaveTextContent('0');
+    expect(screen.getByTestId('summary-progress')).toHaveTextContent(
+      '8 items are stable. Each recall stretches the gap, and your next review is 3 November.',
+    );
+  });
+
+  it('leaves the line out when nothing was answered', () => {
+    show({
+      answered: 0,
+      accuracy: 0,
+      progress: { learning: 0, stable: 0, becameStable: 0, nextReview: null },
+    });
+    expect(screen.queryByTestId('summary-progress')).toBeNull();
+    expect(screen.getByTestId('summary-spacing')).toBeVisible();
   });
 });
 
