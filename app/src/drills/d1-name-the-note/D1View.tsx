@@ -2,7 +2,13 @@ import { useEffect } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import { neckWindow } from '../../shell/size-class';
 import type { DrillRenderProps } from '../types';
-import { d1FeedbackPositions, d1KeyToAnswer, type D1Answer, type D1Prompt } from './logic';
+import {
+  d1FeedbackPositions,
+  d1GuideMarkers,
+  d1KeyToAnswer,
+  type D1Answer,
+  type D1Prompt,
+} from './logic';
 import styles from './D1View.module.css';
 
 /** D1 view: the highlighted cell on the neck, note buttons above it (design §7 session layout). */
@@ -16,6 +22,7 @@ export function D1View({
   feedback,
   onAnswer,
   aside,
+  blindMode = false,
 }: DrillRenderProps<D1Prompt, D1Answer>) {
   const pref = prompt.choices.some((c) => c.includes('b')) ? 'flat' : 'sharp';
 
@@ -32,6 +39,10 @@ export function D1View({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [feedback, onAnswer, pref, prompt.choices]);
+
+  const range = neckWindow(sizeClass, prompt.position.fret);
+  // The worked example shows full guides (design §3.3 step 2).
+  const level = guided ? 3 : guideLevel;
 
   let markers: FretMarker[];
   if (feedback) {
@@ -54,13 +65,12 @@ export function D1View({
     // Worked example: the first rep of a new item shows the answer. An
     // unguided prompt is a recall test, so the answer never reaches the neck.
     markers = [
+      ...d1GuideMarkers(prompt, level, range, tuning, pref),
       guided
         ? { ...prompt.position, style: 'target', label: prompt.expectedPc, forceLabel: true }
         : { ...prompt.position, style: 'target' },
     ];
   }
-
-  const range = neckWindow(sizeClass, prompt.position.fret);
 
   return (
     <div className={styles.drill} data-size-class={sizeClass}>
@@ -111,7 +121,8 @@ export function D1View({
           activeRange={{ from: 0, to: 12 }}
           handedness={handedness}
           markers={markers}
-          guideLevel={guided ? 3 : guideLevel}
+          guideLevel={level}
+          blindMode={blindMode}
           label={`Fretboard, string ${prompt.position.string} highlighted`}
         />
       </div>

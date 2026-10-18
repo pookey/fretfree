@@ -1,4 +1,4 @@
-import { parseNoteItemId, type Item } from '../../engine/model';
+import { parseNoteItemId, type GuideLevel, type Item } from '../../engine/model';
 import {
   NATURAL_PCS,
   chromaOf,
@@ -6,6 +6,7 @@ import {
   isNatural,
   noteAt,
   type AccidentalPref,
+  type FretRange,
   type Position,
   type Tuning,
 } from '../../theory';
@@ -117,6 +118,45 @@ export function d1FeedbackPositions(
     if (!best || Math.abs(f - fret) < Math.abs(best.fret - fret)) best = { string, fret: f };
   }
   return { expected, given: best ? [best] : [] };
+}
+
+export interface D1GuideMark extends Position {
+  /** `root`: the string's open note again; `ghost`: a labelled natural. */
+  style: 'root' | 'ghost';
+  label: string;
+}
+
+/**
+ * The guides on the target string (design §3.5): level 3 labels its natural
+ * notes and highlights its roots (the open-string note's octaves), level 2
+ * shows only the roots, levels 1 and 0 show nothing. Fret 0 is named by the
+ * string label at the nut, so it gets no marker.
+ *
+ * No guide shares the target's pitch class: they let the learner work the
+ * answer out from its neighbours, never read it off (retrieval practice,
+ * research/02).
+ */
+export function d1GuideMarkers(
+  prompt: D1Prompt,
+  level: GuideLevel,
+  range: FretRange,
+  tuning: Tuning,
+  pref: AccidentalPref = 'sharp',
+): D1GuideMark[] {
+  if (level < 2) return [];
+  const { string } = prompt.position;
+  const target = chromaOf(prompt.expectedPc);
+  const open = noteAt({ string, fret: 0 }, tuning).chroma;
+  const marks: D1GuideMark[] = [];
+  for (let fret = Math.max(1, range.from); fret <= range.to; fret++) {
+    const note = noteAt({ string, fret }, tuning, pref);
+    if (note.chroma === target) continue;
+    if (note.chroma === open) marks.push({ string, fret, style: 'root', label: note.pc });
+    else if (level >= 3 && isNatural(note.pc)) {
+      marks.push({ string, fret, style: 'ghost', label: note.pc });
+    }
+  }
+  return marks;
 }
 
 export function d1ConceptOf(

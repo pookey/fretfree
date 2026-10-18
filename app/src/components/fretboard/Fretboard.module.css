@@ -138,3 +138,8 @@
     transform: scale(1.4);
   }
 }
+
+/* A labelled guide note sits on the bare wood, so its text is light. */
+.ghost text {
+  fill: var(--inlay);
+}

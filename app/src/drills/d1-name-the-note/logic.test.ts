@@ -6,6 +6,7 @@ import {
   d1Choices,
   d1ConceptOf,
   d1FeedbackPositions,
+  d1GuideMarkers,
   d1KeyToAnswer,
   d1MakePrompt,
   d1Sounds,
@@ -112,5 +113,51 @@ describe('D1 keyboard shortcuts', () => {
     expect(d1KeyToAnswer('9', false, naturals, 'sharp')).toBeNull();
     expect(d1KeyToAnswer('x', false, naturals, 'sharp')).toBeNull();
     expect(d1KeyToAnswer('E', true, chromatic, 'sharp')).toBeNull();
+  });
+});
+
+describe('D1 guide markers (design §3.5)', () => {
+  const wide = { from: 0, to: 15 };
+  // String 6, fret 3: G.
+  const g = d1MakePrompt(item('note@s6f3'), ctx);
+  const at = (marks: { fret: number; style: string; label: string }[]) =>
+    marks.map((m) => `${m.fret}${m.style === 'root' ? '*' : ''}${m.label}`);
+
+  it('level 3 labels the naturals on the target string and its roots, never the answer', () => {
+    const marks = d1GuideMarkers(g, 3, wide, STANDARD_TUNING);
+    expect(at(marks)).toEqual(['1F', '5A', '7B', '8C', '10D', '12*E', '13F']);
+    expect(marks.every((m) => m.string === 6)).toBe(true);
+  });
+
+  it('level 2 shows only the roots', () => {
+    expect(at(d1GuideMarkers(g, 2, wide, STANDARD_TUNING))).toEqual(['12*E']);
+  });
+
+  it.each([1, 0] as const)('level %i shows nothing', (level) => {
+    expect(d1GuideMarkers(g, level, wide, STANDARD_TUNING)).toEqual([]);
+  });
+
+  it('skips the nut, and roots that share the target pitch class', () => {
+    const e = d1MakePrompt(item('note@s6f12'), ctx);
+    const marks = d1GuideMarkers(e, 3, wide, STANDARD_TUNING);
+    expect(marks.some((m) => m.label === 'E' || m.fret === 0)).toBe(false);
+    expect(d1GuideMarkers(e, 2, wide, STANDARD_TUNING)).toEqual([]);
+  });
+
+  it('stays inside the shown window and spells roots with the preference', () => {
+    const halfDown = {
+      id: 'eb',
+      name: 'E♭ standard',
+      notes: ['Eb2', 'Ab2', 'Db3', 'Gb3', 'Bb3', 'Eb4'],
+    };
+    // String 6 is E♭ here, so fret 6 is A: the root sits at fret 12.
+    const a = d1MakePrompt(item('note@s6f6'), { ...ctx, tuning: halfDown });
+    expect(at(d1GuideMarkers(a, 3, { from: 4, to: 12 }, halfDown, 'flat'))).toEqual([
+      '4G',
+      '8B',
+      '9C',
+      '11D',
+      '12*Eb',
+    ]);
   });
 });
