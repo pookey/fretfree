@@ -1,0 +1,167 @@
+/* Achievement badges and the unlock toast (design §3.7). Shapes and colours
+   per category: mastery = sky-blue circle, speed = bluish-green triangle,
+   streak = orange diamond. Locked badges are outlines. */
+
+.icon {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.icon * {
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.icon[data-category='mastery'] {
+  --badge: var(--tone);
+}
+
+.icon[data-category='speed'] {
+  --badge: var(--correct);
+}
+
+.icon[data-category='streak'] {
+  --badge: var(--streak);
+}
+
+.icon[data-unlocked='true'] * {
+  fill: var(--badge);
+  stroke: var(--badge);
+}
+
+.icon[data-unlocked='false'] * {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-dasharray: 4 3;
+}
+
+/* --- Progress panel ----------------------------------------------------- */
+
+.tally {
+  margin: 0 0 var(--space-3);
+  color: var(--text-muted);
+}
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--space-3);
+}
+
+.badge {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-m);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+}
+
+.badge[data-unlocked='false'] {
+  background: transparent;
+  border-style: dashed;
+}
+
+.badge h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.badge p {
+  margin: var(--space-1) 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.badge[data-unlocked='true'] .status {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* --- Toast -------------------------------------------------------------- */
+
+.toast {
+  position: fixed;
+  top: calc(var(--space-4) + var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(30rem, calc(100vw - 2 * var(--space-4)));
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+  z-index: 20;
+  animation: toast-in 240ms ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -0.75rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
+.toastBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-2);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.toastList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.toastList li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.toastList strong,
+.toastList span {
+  display: block;
+}
+
+.toastList span {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.dismiss {
+  flex: none;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  border: none;
+  border-radius: var(--radius-m);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.125rem;
+  cursor: pointer;
+}

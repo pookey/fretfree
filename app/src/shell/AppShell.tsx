@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router';
+import { AchievementUnlocks } from '../components/achievements/AchievementToast';
 import { NAV_ITEMS } from './nav';
 import { useSizeClass } from './size-class';
 import { StreakBadge } from './StreakBadge';
@@ -44,6 +45,7 @@ export function AppShell() {
       <main className={styles.main}>
         <Outlet />
       </main>
+      <AchievementUnlocks />
       {compact && (
         <nav className={styles.tabbar} aria-label="Sections" data-testid="tabbar">
           {NAV_ITEMS.map((item) => (
