@@ -36,6 +36,11 @@ describe('skill registry', () => {
       'C5.triads',
       'C5.sevenths',
       'C5.sus-add',
+      'C6.triad-cores',
+      'C6.major-shapes',
+      'C6.minor-cores',
+      'C6.minor-shapes',
+      'C6.dominant7-shapes',
     ]);
     expect(getSkill('nope')).toBeUndefined();
   });

@@ -1,0 +1,323 @@
+import { describe, expect, it } from 'vitest';
+import { SKILLS } from '../../engine/skills';
+import {
+  DROP_D_TUNING,
+  STANDARD_TUNING,
+  chromaOf,
+  midiAt,
+  noteAt,
+  type AccidentalPref,
+  type Position,
+  type Tuning,
+} from '../../theory';
+import type { DrillFeedback } from '../types';
+import drill from './drill';
+import {
+  D9_REGION,
+  d9CanTest,
+  d9Check,
+  d9ConceptOf,
+  d9DegreeLine,
+  d9DegreeStyle,
+  d9DescribeAnswer,
+  d9Display,
+  d9Explain,
+  d9FeedbackPositions,
+  d9GradedResponseMs,
+  d9MakePrompt,
+  d9Placements,
+  d9ScopeFor,
+  d9ShowsCount,
+  d9Sounds,
+  d9StringSpan,
+  d9Window,
+  type D9Answer,
+  type D9Prompt,
+} from './logic';
+
+const ctx = (
+  over: { scopeLevel?: number; rng?: () => number; tuning?: Tuning; pref?: AccidentalPref } = {},
+) => ({
+  tuning: over.tuning ?? STANDARD_TUNING,
+  accidentalPref: over.pref ?? 'sharp',
+  scopeLevel: over.scopeLevel ?? 0,
+  rng: over.rng ?? (() => 0),
+});
+
+const make = (id: string, over: Parameters<typeof ctx>[0] = {}) =>
+  d9MakePrompt({ id, skillId: 'C6.triad-cores' }, ctx(over));
+
+const at = (string: number, fret: number): Position => ({ string, fret });
+const pos = (p: Position) => ({ string: p.string, fret: p.fret });
+const fb = (p: D9Prompt, answer: D9Answer): DrillFeedback<D9Answer> => ({
+  answer,
+  result: d9Check(p, answer),
+});
+
+/** Semitones above the root for each degree, independent of the theory module. */
+const SEMITONES: Record<string, number> = { R: 0, b3: 3, '3': 4, '5': 7, b7: 10 };
+
+const C6_IDS = SKILLS.filter((s) => s.topic === 'C6').flatMap((s) => s.items().map((i) => i.id));
+
+/** A spread of rng values, so prompts land on many roots and positions. */
+const RNGS = Array.from({ length: 16 }, (_, i) => i / 16);
+
+describe('D9 items and scope', () => {
+  it('tests every C6 card and nothing else', () => {
+    expect(C6_IDS).toHaveLength(25);
+    for (const id of C6_IDS) expect(d9CanTest({ id, skillId: 'x' }), id).toBe(true);
+    expect(d9CanTest({ id: 'note@s6f5', skillId: 'x' })).toBe(false);
+    expect(drill.skills).toEqual(SKILLS.filter((s) => s.topic === 'C6').map((s) => s.id));
+  });
+
+  it('widens from natural roots to all twelve', () => {
+    expect(d9ScopeFor(-1)).toBe('naturals');
+    expect(d9ScopeFor(0)).toBe('naturals');
+    expect(d9ScopeFor(1)).toBe('all');
+    expect(d9ScopeFor(7)).toBe('all');
+  });
+
+  it('keys every card by its shape, so C and A pair (rule 6)', () => {
+    expect(d9ConceptOf({ id: 'caged-core:A-shape@major', skillId: 'x' })).toBe('caged:A');
+    expect(d9ConceptOf({ id: 'caged:C-shape@minor', skillId: 'x' })).toBe('caged:C');
+    expect(d9ConceptOf({ id: 'octaves:G', skillId: 'x' })).toBeNull();
+  });
+
+  it('refuses items it cannot test, and tunings without six strings', () => {
+    expect(() => make('note@s6f5')).toThrow(/cannot test/);
+    const bass: Tuning = { id: 'bass', name: 'Bass', notes: ['E1', 'A1', 'D2', 'G2'] };
+    expect(() => make('caged:A-shape@major', { tuning: bass })).toThrow(/cannot test/);
+  });
+});
+
+describe('d9MakePrompt', () => {
+  it('builds the A-shape triad of C on strings 3–1 from the root at string 5, fret 3', () => {
+    const p = make('caged-core:A-shape@major');
+    expect(p.part).toBe('core');
+    expect(p.root).toBe('C');
+    expect(p.chord).toBe('C');
+    expect(pos(p.anchor)).toEqual(at(5, 3));
+    expect(p.targets.map(pos)).toEqual([at(3, 5), at(2, 5), at(1, 3)]);
+    expect(p.targets.map((t) => t.degree)).toEqual(['R', '3', '5']);
+    expect(p.strings).toEqual([3, 2, 1]);
+    expect(p.partner?.shape).toBe('C');
+  });
+
+  it('builds the whole C shape of C as the open chord, minus the given root', () => {
+    const p = make('caged:C-shape@major');
+    expect(p.part).toBe('shape');
+    expect(pos(p.anchor)).toEqual(at(5, 3));
+    expect(p.targets.map(pos)).toEqual([at(4, 2), at(3, 0), at(2, 1), at(1, 0)]);
+    expect(p.shapeNotes).toHaveLength(5);
+    expect(p.partner?.shape).toBe('A');
+    expect(p.partner?.notes.map(pos)).toContainEqual(at(2, 5));
+  });
+
+  it('puts the G-shape core on strings 4–2, and the D shape has no partner', () => {
+    expect(make('caged-core:G-shape@major').strings).toEqual([4, 3, 2]);
+    const d = make('caged:D-shape@major');
+    expect(d.anchor.string).toBe(4);
+    expect(d.partner).toBeNull();
+  });
+
+  it('spells minor and dominant-7 chords', () => {
+    expect(make('caged:E-shape@minor').chord).toBe('Cm');
+    expect(make('caged:E-shape@dominant7').chord).toBe('C7');
+  });
+
+  it('places every card at many roots, inside frets 0–12, with true degrees', () => {
+    for (const id of C6_IDS) {
+      for (const scopeLevel of [0, 1]) {
+        const roots = new Set<string>();
+        for (const r of RNGS) {
+          const p = make(id, { scopeLevel, rng: () => r });
+          roots.add(p.root);
+          const rootMidi = midiAt(p.anchor);
+          expect(p.anchor.degree).toBe('R');
+          expect(noteAt(p.anchor).chroma).toBe(chromaOf(p.root));
+          for (const n of [...p.targets, ...p.shapeNotes]) {
+            expect(n.fret, id).toBeGreaterThanOrEqual(D9_REGION.from);
+            expect(n.fret, id).toBeLessThanOrEqual(D9_REGION.to);
+            const interval = (((midiAt(n) - rootMidi) % 12) + 12) % 12;
+            expect(interval, `${id} ${n.degree}`).toBe(SEMITONES[n.degree]);
+          }
+          expect(
+            p.targets.some((t) => t.string === p.anchor.string && t.fret === p.anchor.fret),
+          ).toBe(false);
+          if (p.part === 'core') {
+            expect(p.targets).toHaveLength(3);
+            const [a, b, c] = p.strings as [number, number, number];
+            expect([a - b, b - c]).toEqual([1, 1]);
+          } else {
+            expect(p.targets).toHaveLength(p.shapeNotes.length - 1);
+          }
+        }
+        // Rule 12: the same card meets many keys.
+        expect(roots.size, id).toBeGreaterThanOrEqual(5);
+        if (scopeLevel === 0) for (const r of roots) expect(r).toMatch(/^[A-G]$/);
+      }
+    }
+  });
+
+  it('uses sharps and flats per the preference once the scope widens', () => {
+    const roots = (pref: AccidentalPref) =>
+      RNGS.map((r) => make('caged:E-shape@major', { scopeLevel: 1, rng: () => r, pref }).root);
+    expect(roots('sharp').some((r) => r.includes('#'))).toBe(true);
+    expect(roots('flat').some((r) => r.includes('b'))).toBe(true);
+    expect(roots('flat').some((r) => r.includes('#'))).toBe(false);
+  });
+
+  it('keeps every pitch in drop D, moving string-6 notes up two frets', () => {
+    const std = make('caged:E-shape@major', { rng: () => 0.58 });
+    const drop = make('caged:E-shape@major', { rng: () => 0.58, tuning: DROP_D_TUNING });
+    expect(drop.root).toBe(std.root);
+    expect(drop.anchor.fret).toBe(std.anchor.fret + 2);
+    expect(drop.shapeNotes.map((n) => midiAt(n, DROP_D_TUNING))).toEqual(
+      std.shapeNotes.map((n) => midiAt(n)),
+    );
+  });
+
+  it('offers each position that fits the region', () => {
+    // E shape of E: open, and again at the 12th fret (12–14 is past the region).
+    expect(d9Placements('E', 'major', 'E', STANDARD_TUNING).map((p) => p.shape.rootFret)).toEqual([
+      0,
+    ]);
+    expect(
+      d9Placements('E', 'major', 'E', STANDARD_TUNING, { from: 0, to: 15 }).map(
+        (p) => p.shape.rootFret,
+      ),
+    ).toEqual([0, 12]);
+    // The C shape of B would need fret −1 or 11–14.
+    expect(d9Placements('C', 'major', 'B', STANDARD_TUNING)).toEqual([]);
+  });
+});
+
+describe('d9Check', () => {
+  const a = make('caged:A-shape@major'); // root C at string 5, fret 3
+
+  it('is correct when every note is found, in any order, ignoring the root', () => {
+    const taps = [...a.targets].reverse().map(pos);
+    expect(d9Check(a, [at(5, 3), ...taps])).toEqual({
+      correct: true,
+      expected: 'the A shape of C',
+    });
+  });
+
+  it('is wrong when notes are missing (Done)', () => {
+    expect(d9Check(a, [at(4, 5)])).toEqual({ correct: false, expected: 'the A shape of C' });
+    expect(d9Check(a, [])).toEqual({ correct: false, expected: 'the A shape of C' });
+  });
+
+  it('logs a tap in the C shape as the C vs A confusion', () => {
+    expect(d9Check(a, [at(4, 5), at(2, 1)])).toEqual({
+      correct: false,
+      expected: 'the A shape of C',
+      confusedWith: 'caged:C',
+      concept: 'caged:A',
+    });
+    const c = make('caged-core:C-shape@major');
+    expect(d9Check(c, [at(3, 5)]).confusedWith).toBe('caged:A');
+  });
+
+  it('logs other wrong taps without a confusion', () => {
+    expect(d9Check(a, [at(6, 10)])).toEqual({ correct: false, expected: 'the A shape of C' });
+    expect(d9Check(make('caged:D-shape@major'), [at(6, 0)]).confusedWith).toBeUndefined();
+  });
+});
+
+describe('D9 feedback', () => {
+  const core = make('caged-core:A-shape@major');
+  const all = core.targets.map(pos);
+
+  it('plays the chord low to high, plus a wrong note', () => {
+    expect(d9Sounds(core, fb(core, all))).toEqual({ expected: ['C3', 'C4', 'E4', 'G4'] });
+    expect(d9Sounds(core, fb(core, [at(1, 0)]))).toEqual({
+      expected: ['C3', 'C4', 'E4', 'G4'],
+      given: ['E4'],
+    });
+    expect(d9FeedbackPositions(core, fb(core, [at(1, 0)]))).toEqual({
+      expected: core.targets,
+      given: [at(1, 0)],
+    });
+  });
+
+  it('grades completion time per note', () => {
+    expect(d9GradedResponseMs(core, all, 3000)).toBe(1000);
+    expect(d9DescribeAnswer([at(3, 5), at(2, 5)])).toBe('s3f5 s2f5');
+    expect(d9DescribeAnswer([])).toBe('none');
+  });
+
+  it('names the degrees when right, and why when wrong', () => {
+    expect(d9Explain(core, fb(core, all))).toBe(
+      "That's the A-shape triad of C: R 3 5 from strings 3–1.",
+    );
+    expect(d9Explain(core, fb(core, [at(3, 5)]))).toBe(
+      "It's the A-shape triad of C: R 3 5 from strings 3–1. 2 still to find, ringed on the neck.",
+    );
+    expect(d9Explain(core, fb(core, [at(2, 1)]))).toBe(
+      'You tapped string 2, fret 1. That note is in the C shape. Both root on string 5: ' +
+        'the A shape reaches up from the root, the C shape back toward the nut. ' +
+        "It's the A-shape triad of C: R 3 5 from strings 3–1.",
+    );
+    expect(d9Explain(core, fb(core, [at(6, 9)]))).toBe(
+      "You tapped string 6, fret 9. It's the A-shape triad of C: R 3 5 from strings 3–1.",
+    );
+    const minor = make('caged:E-shape@minor', { rng: () => 0.29 });
+    expect(d9Explain(minor, fb(minor, minor.targets))).toMatch(
+      /^That's the E shape of [A-G]m: R 5 R ♭3 5 R from strings 6–1\.$/,
+    );
+  });
+
+  it('formats degrees, notes, string spans and the marker style', () => {
+    expect(d9Display('b3')).toBe('♭3');
+    expect(d9Display('b7')).toBe('♭7');
+    expect(d9Display('F#')).toBe('F♯');
+    expect(d9Display('Bbm')).toBe('B♭m');
+    expect(d9Display('Bb7')).toBe('B♭7');
+    expect(d9Display('5')).toBe('5');
+    expect(d9StringSpan([3, 2, 1])).toBe('strings 3–1');
+    expect(d9StringSpan([4])).toBe('string 4');
+    expect(d9DegreeLine(core.targets)).toBe('R 3 5');
+    expect(['R', '3', 'b3', '5', 'b7'].map((d) => d9DegreeStyle(d as never))).toEqual([
+      'root',
+      'third',
+      'third',
+      'fifth',
+      'seventh',
+    ]);
+  });
+
+  it('shows the note total only while guides are up', () => {
+    expect(d9ShowsCount(3, false)).toBe(true);
+    expect(d9ShowsCount(2, false)).toBe(true);
+    expect(d9ShowsCount(1, false)).toBe(false);
+    expect(d9ShowsCount(0, true)).toBe(true);
+  });
+});
+
+describe('d9Window', () => {
+  it('centres the compact window on the root, wide enough either way', () => {
+    const p = make('caged:A-shape@major'); // root at fret 3
+    expect(d9Window(p, 5)).toEqual({ from: 0, to: 6 });
+    const high = make('caged:E-shape@major', { rng: () => 0.86 });
+    const w = d9Window(high, 5);
+    expect(w.to - w.from + 1).toBe(7);
+    expect(w.from).toBeLessThanOrEqual(Math.max(0, high.anchor.fret - 3));
+    expect(w.to).toBeGreaterThanOrEqual(Math.min(12, high.anchor.fret + 3));
+    // A phone on its side shows more frets.
+    expect(d9Window(p, 9)).toEqual({ from: 0, to: 8 });
+  });
+
+  it('keeps every note of the shape on screen', () => {
+    for (const id of C6_IDS) {
+      for (const r of RNGS) {
+        const p = make(id, { scopeLevel: 1, rng: () => r });
+        const w = d9Window(p, 5);
+        for (const n of p.shapeNotes) {
+          expect(n.fret, id).toBeGreaterThanOrEqual(w.from);
+          expect(n.fret, id).toBeLessThanOrEqual(w.to);
+        }
+      }
+    }
+  });
+});
