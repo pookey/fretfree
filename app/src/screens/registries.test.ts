@@ -5,7 +5,7 @@ import { TODAY_CARDS } from './today/registry';
 
 describe('screen registries', () => {
   it('composes Today from the hero, then the stats', () => {
-    expect(TODAY_CARDS.map((c) => c.id)).toEqual(['hero', 'stats']);
+    expect(TODAY_CARDS.map((c) => c.id)).toEqual(['hero', 'quests', 'stats']);
     for (const c of TODAY_CARDS) expect(typeof c.Card).toBe('function');
   });
 
