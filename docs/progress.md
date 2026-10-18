@@ -2,7 +2,12 @@
 
 ## Current status
 
-**M0 Foundations: done (2026-10-18).**
+**M0 Foundations: done. Orchestration dry run: done. Build handed to the `builder` agent (2026-10-18).**
+
+- M1-01 (route/card/panel/view/onboarding registries) and M1-02 (gamification contracts) went through the full pipeline: worker, then fresh reviewer, then integration lane, then `pnpm ship`, then push. Both are live.
+- The `builder` agent runs `docs/handoff/02-build-brief.md` in a sibling Herdr pane and fans out across M1–M6, pulling M8 forward when slots are idle.
+
+**M0 foundations (2026-10-18).**
 
 - Live at https://guitar.dwellsee.com. `scripts/smoke.sh` passes, and so does the Playwright `@smoke` suite against production on all four profiles.
 - `pnpm verify` is green on `main`: 148 unit tests (≈99% line coverage on theory, engine, storage, drills and session), 5 infra tests and 20 e2e tests.
@@ -38,6 +43,26 @@ What exists:
 - **Backlog statuses in git move only `todo → done/blocked`.** In-flight states live in `.orchestrator/state.json`, so `main` stays clean for `pnpm ship`.
 - **The pre-push hook** verifies the pushed SHA in a temporary clean worktree. It skips docs-only pushes and reuses SHAs that `pnpm ship` has already verified.
 
+## Orchestration dry run (M1-01, M1-02)
+
+Two workers ran in parallel in an orchestrator-created tab (serial phase, ceiling 2).
+
+| WP | Worker | Review rounds | Integration | Result |
+|---|---|---|---|---|
+| M1-01 | about 18 min | 1 (approved; its should-fix became an M1-06 backlog change: route guard) | 44 s: rebase, ff, ship, push | live |
+| M1-02 | about 6 min, plus 3 fix rounds | 4 (each round found a real forgiveness bug in the streak contract) | 44 s | live |
+
+Rough edges found and fixed in the skill:
+
+- `health.sh` died under `pipefail` when `pgrep` matched nothing.
+- `poll.sh` now suggests each package's next pipeline step.
+- Old reviews are archived before a fix round, so the next reviewer starts fresh.
+- Review rounds and integration failures are capped separately, at 3 each.
+- `ship.sh` writes its phase, so the lane can tell a failed verify (reset `main`, nothing shipped) from a failed deploy (stop the line).
+- Re-reviews are scoped to earlier must-fixes plus regressions. Issues that belong to later packages go under "Downstream notes", which `cleanup.sh` forwards into those workers' briefs. The first notes are already queued for M1-09 and M1-10.
+
+The trust-folder prompt never appeared, because worktrees under the trusted repo inherit trust. `ensure-ready.sh` still handles it, accepting only for `.orchestrator/worktrees/*`.
+
 ## Questions for the user
 
 None open.
@@ -49,4 +74,8 @@ None open.
 
 ## Parallelism log
 
-(Filled in by the orchestrator from `.orchestrator/state.json`.)
+| Period | Phase | Ceiling | Avg active | Peak | Notes |
+|---|---|---|---|---|---|
+| Dry run (M1-01, M1-02) | serial | 2 | 1.6 | 2 | 16 samples. Idle time was spent in review rounds on M1-02 |
+
+From here on, the builder appends rows from `.orchestrator/state.json` → `parallelism`.
