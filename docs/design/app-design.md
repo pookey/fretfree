@@ -50,7 +50,7 @@ Topic IDs (F1, C6, I1, …) refer to the curriculum map in research/03.
 | Chord diagrams | Our own SVG (svguitar for reference) | Consistent styling with the fretboard |
 | PWA | vite-plugin-pwa (Workbox), full offline precache | — |
 | Testing | Vitest (unit). Playwright: **primary** profiles iPad Pro 11" landscape + portrait and iPad mini landscape (full e2e + visual). **Secondary**: iPhone 15 landscape, smoke e2e only (core flow works, nothing overflows). | iPad first |
-| Infra | **AWS CDK (TypeScript)**: S3 (private) + CloudFront (OAC) + ACM + Route53 for `guitar.dwellsee.com` | AWS profile `smartthings-hp`, existing hosted zone `dwellsee.com` (looked up by name) |
+| Infra | **AWS CDK (TypeScript)** + **GitHub Actions CD** (OIDC role, deploys every push to `main`): S3 (private) + CloudFront (OAC) + ACM + Route53 for `guitar.dwellsee.com` | AWS profile `smartthings-hp`, existing hosted zone `dwellsee.com` (looked up by name) |
 | Backend | **None for v1.** Optional sync (Cognito plus a small API) is a later milestone. | Keeps v1 simple and private |
 
 ## 3. Learning engine (the core)
@@ -398,4 +398,4 @@ There are 4 sections: **Today**, **Learn**, **Explore** and **Progress**. Settin
 | **M6 Intermediate** | C7, I1, I2, I4, I5, I7, D18–D21, rhythm track | — |
 | **M7 Native and sync** (optional) | Capacitor iOS build, haptics, optional account sync, **Web Push streak reminders**, **opt-in weekly leagues** | — |
 
-Each milestone ships to production when it's done. The orchestration skill (see `.claude/skills/`) drives this roadmap.
+**Deploy continuously.** Every work package merged to `main` ships to production automatically: GitHub Actions verifies, deploys to AWS through OIDC, and smoke-tests https://guitar.dwellsee.com. Milestones group features; they are not release gates. The orchestration skill (see `.claude/skills/`) drives this roadmap.
