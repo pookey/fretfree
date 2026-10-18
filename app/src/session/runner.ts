@@ -31,6 +31,7 @@ import {
 } from '../engine';
 import type { CardKind, GamificationEvent } from '../engine/gamification';
 import { orderFrontier } from '../engine/frontier';
+import { overlayStatus, type StatusOverlay } from '../engine/overlay';
 import { SessionGuides } from '../engine/guides';
 import type { AnyDrillType, DrillCheck, DrillSounds } from '../drills/types';
 import {
@@ -71,6 +72,11 @@ import { focusFilter, type SessionFocus } from './focus';
  *
  * A focus (`focus.ts`) narrows all of that to some skills or items. Gating
  * still looks at every skill, so a focus can't unlock anything.
+ *
+ * A status overlay (the development build's "unlock every skill", M1-36)
+ * widens the frontier for this session only. Answers on a skill that only the
+ * overlay put there are a sandbox: graded and scheduled in memory, but no
+ * card, review log, skill state or XP is written, so real progress is as it was.
  */
 
 export interface RunnerDeps {
@@ -89,6 +95,8 @@ export interface RunnerDeps {
   minutes?: number;
   /** Plan due reviews only, with no new or stretch items (the Today warm-up). */
   reviewOnly?: boolean;
+  /** A view-only status overlay (the development build's "unlock every skill"). */
+  overlay?: StatusOverlay | null;
 }
 
 export interface CurrentPrompt {
@@ -190,6 +198,8 @@ export class SessionRunner {
     private readonly skillStates: Map<string, SkillStateRecord>,
     private readonly sessionLogId: number,
     lastDrill: Map<string, string>,
+    /** Skills on the frontier only through the overlay: their answers aren't stored. */
+    private readonly sandbox: ReadonlySet<string>,
   ) {
     this.cards = new Map(cards.map((c) => [c.itemId, c]));
     this.startedAt = this.now();
@@ -228,10 +238,12 @@ export class SessionRunner {
     const serves = (item: Item) => inFocus(item) && picker.canServe(item);
     const frontierSkills = new Set<string>();
     const frontierInOrder: Skill[] = [];
+    const sandbox = new Set<string>();
     for (const skill of deps.skills) {
       const status = deriveStatus(skill, statuses, statuses.get(skill.id));
       statuses.set(skill.id, status);
-      if (!isFrontier(status)) continue;
+      if (!isFrontier(overlayStatus(status, deps.overlay))) continue;
+      if (!isFrontier(status)) sandbox.add(skill.id);
       frontierSkills.add(skill.id);
       frontierInOrder.push(skill);
     }
@@ -280,7 +292,7 @@ export class SessionRunner {
 
     const logId = await startSessionLog(deps.db, now);
     const lastDrill = await lastDrills(deps.db, cards, picker);
-    return new SessionRunner(deps, planner, picker, cards, states, logId, lastDrill);
+    return new SessionRunner(deps, planner, picker, cards, states, logId, lastDrill, sandbox);
   }
 
   private get budgetMinutes(): number {
@@ -388,56 +400,60 @@ export class SessionRunner {
     this.cards.set(item.id, card);
     this.lastDrill.set(item.id, drill.id);
 
-    const minutes = this.tick(now);
+    // A sandboxed answer (overlay-only skill) is kept in memory: nothing is stored.
+    const sandboxed = this.sandbox.has(item.skillId);
+    const minutes = sandboxed ? this.skipTick(now) : this.tick(now);
     const db = this.deps.db;
     // The answer and the XP it earned are stored together or not at all.
-    const progress = await db.transaction(
-      'rw',
-      [
-        db.cards,
-        db.reviewLogs,
-        db.confusions,
-        db.gamification,
-        db.dailyProgress,
-        db.gamificationEvents,
-      ],
-      async () => {
-        const answeredToday = await answersToday(db, item.id, now);
-        await recordAnswer(db, {
-          card,
-          log: {
-            itemId: item.id,
-            skillId: item.skillId,
-            drillType: drill.id,
-            correct: result.correct,
-            responseMs: Math.round(responseMs),
-            rating,
-            hintUsed: entry.guided,
-            answerGiven: drill.describeAnswer(answer),
-            at: now,
+    const progress = sandboxed
+      ? { xp: 0, goalReached: false }
+      : await db.transaction(
+          'rw',
+          [
+            db.cards,
+            db.reviewLogs,
+            db.confusions,
+            db.gamification,
+            db.dailyProgress,
+            db.gamificationEvents,
+          ],
+          async () => {
+            const answeredToday = await answersToday(db, item.id, now);
+            await recordAnswer(db, {
+              card,
+              log: {
+                itemId: item.id,
+                skillId: item.skillId,
+                drillType: drill.id,
+                correct: result.correct,
+                responseMs: Math.round(responseMs),
+                rating,
+                hintUsed: entry.guided,
+                answerGiven: drill.describeAnswer(answer),
+                at: now,
+              },
+              ...(result.confusedWith
+                ? {
+                    confusion: {
+                      expected: result.concept ?? result.expected,
+                      given: result.confusedWith,
+                    },
+                  }
+                : {}),
+            });
+            return addAnswerProgress(db, {
+              itemId: item.id,
+              skillId: item.skillId,
+              correct: result.correct,
+              rating,
+              kind: this.kindOf(entry.kind, item.id),
+              stabilityDays: existing?.fsrs.stability ?? 0,
+              answeredToday,
+              minutes,
+              at: now,
+            });
           },
-          ...(result.confusedWith
-            ? {
-                confusion: {
-                  expected: result.concept ?? result.expected,
-                  given: result.confusedWith,
-                },
-              }
-            : {}),
-        });
-        return addAnswerProgress(db, {
-          itemId: item.id,
-          skillId: item.skillId,
-          correct: result.correct,
-          rating,
-          kind: this.kindOf(entry.kind, item.id),
-          stabilityDays: existing?.fsrs.stability ?? 0,
-          answeredToday,
-          minutes,
-          at: now,
-        });
-      },
-    );
+        );
     this.xp += progress.xp;
     if (progress.goalReached) this.goalReached = true;
 
@@ -455,7 +471,7 @@ export class SessionRunner {
       hintUsed: entry.guided,
     });
     this.skillStates.set(item.skillId, state);
-    this.touchedSkills.add(item.skillId);
+    if (!sandboxed) this.touchedSkills.add(item.skillId);
 
     // Guided reps are worked examples, not evidence of recall, for scope purposes.
     if (!entry.guided) {
@@ -495,6 +511,12 @@ export class SessionRunner {
     this.lastTick = now;
     this.minutes += minutes;
     return minutes;
+  }
+
+  /** Move the clock on without counting the time (sandboxed answers). */
+  private skipTick(now: Date): number {
+    this.lastTick = now;
+    return 0;
   }
 
   next(): void {
