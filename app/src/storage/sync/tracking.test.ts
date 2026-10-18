@@ -260,6 +260,27 @@ describe('schema v2 upgrade', () => {
     expect((await pendingRecords(db, 10)).length).toBe(5);
   });
 
+  it('opens a v1 database whose rows hold an Invalid Date', async () => {
+    const bad = new Date(Number.NaN);
+    const db = await upgraded(
+      await legacyDb({
+        cards: [{ ...card('note@s6f5', 1), lastReviewedAt: bad }],
+        reviewLogs: [log('note@s6f5', bad), log('note@s6f5')],
+        sessionLogs: [{ startedAt: bad, endedAt: null, itemsSeen: 0, accuracy: 0 }],
+        gamification: [{ key: 'singleton', streakRepairDeadline: bad }],
+      }),
+    );
+    const logs = await db.reviewLogs.toArray();
+    expect(logs.map((r) => r.uid)).toEqual([
+      expect.stringMatching(/^v1-/),
+      expect.stringMatching(/^v1-/),
+    ]);
+    expect(logs[0]?.uid).not.toBe(logs[1]?.uid);
+    expect(await pendingRecords(db, 10)).toHaveLength(5);
+    const file = await exportData(db);
+    expect(JSON.stringify(file.tables.cards)).toContain('"$date":"invalid"');
+  });
+
   it('gives a v1 export the same uids on import, so sync keeps one copy of each log', async () => {
     const history = {
       reviewLogs: [log('note@s6f5'), log('note@s5f3', new Date('2026-10-18T09:01:00Z'))],

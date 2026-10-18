@@ -138,8 +138,10 @@ function combine(rule: Exclude<FieldRule, 'lww'>, a: unknown, b: unknown): unkno
   switch (rule) {
     case 'max':
       return Math.max(Number(a), Number(b));
-    case 'min':
-      return new Date(Math.min(asTime(a), asTime(b)));
+    case 'min': {
+      const t = Math.min(asTime(a), asTime(b));
+      return new Date(t === Infinity ? NaN : t);
+    }
     case 'or':
       return Boolean(a) || Boolean(b);
     case 'union':
@@ -147,8 +149,10 @@ function combine(rule: Exclude<FieldRule, 'lww'>, a: unknown, b: unknown): unkno
   }
 }
 
+/** A date's time; an invalid one sorts last, so `min` keeps any valid date. */
 function asTime(value: unknown): number {
-  return isDate(value) ? value.getTime() : new Date(value as string).getTime();
+  const t = isDate(value) ? value.getTime() : new Date(value as string).getTime();
+  return Number.isNaN(t) ? Infinity : t;
 }
 
 function asStrings(value: unknown): string[] {

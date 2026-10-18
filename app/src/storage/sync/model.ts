@@ -193,6 +193,12 @@ export function lwwGroups(
 // --- Canonical form and wire encoding --------------------------------------
 
 const DATE_TAG = '$date';
+/**
+ * How an Invalid Date is tagged. `toISOString` throws on one, and a single
+ * corrupt date in a legacy row must not abort the v2 upgrade (the database
+ * would then never open again). `new Date('invalid')` decodes it back.
+ */
+const INVALID_DATE = 'invalid';
 
 /**
  * Deterministic JSON: keys sorted, `undefined` dropped, dates as
@@ -217,7 +223,9 @@ export function isDate(value: unknown): value is Date {
  * wire format and the export file. `sortKeys` gives the canonical form.
  */
 export function encodeDates(value: unknown, sortKeys = false): unknown {
-  if (isDate(value)) return { [DATE_TAG]: value.toISOString() };
+  if (isDate(value)) {
+    return { [DATE_TAG]: Number.isNaN(value.getTime()) ? INVALID_DATE : value.toISOString() };
+  }
   if (Array.isArray(value)) {
     return value.map((v) => (v === undefined ? null : encodeDates(v, sortKeys)));
   }

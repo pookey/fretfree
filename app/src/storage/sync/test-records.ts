@@ -24,7 +24,12 @@ export function pick<T>(rng: Rng, options: readonly T[]): T {
   return options[Math.floor(rng() * options.length)] as T;
 }
 
-const DATES = [new Date('2026-10-01T09:00:00Z'), new Date('2026-10-02T09:00:00Z')];
+// The last is an Invalid Date: corrupt legacy data must merge, not throw.
+const DATES = [
+  new Date('2026-10-01T09:00:00Z'),
+  new Date('2026-10-02T09:00:00Z'),
+  new Date(Number.NaN),
+];
 const QUESTS = ['clear-due', 'fluent-10', 'try-mic'];
 
 function subset<T>(rng: Rng, items: readonly T[]): T[] {

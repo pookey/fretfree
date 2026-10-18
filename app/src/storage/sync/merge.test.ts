@@ -227,6 +227,21 @@ describe('mergeRecords rules', () => {
     });
   });
 
+  it('prefers a valid unlock date over an invalid one', () => {
+    const unlock = (at: Date): SyncRecord => ({
+      table: 'achievements',
+      id: 'whole-neck',
+      updatedAt: 5,
+      deleted: false,
+      data: { id: 'whole-neck', unlockedAt: at },
+    });
+    const valid = new Date('2026-10-03');
+    const invalid = new Date(Number.NaN);
+    expect(mergeRecords(unlock(invalid), unlock(valid)).data?.unlockedAt).toEqual(valid);
+    const both = mergeRecords(unlock(invalid), { ...unlock(invalid), updatedAt: 6 });
+    expect(Number.isNaN((both.data?.unlockedAt as Date).getTime())).toBe(true);
+  });
+
   it('keeps the first unlock of an achievement, and a tombstone never removes one', () => {
     const unlock = (iso: string): SyncRecord => ({
       table: 'achievements',

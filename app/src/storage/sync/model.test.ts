@@ -112,6 +112,14 @@ describe('canonical form and wire encoding', () => {
     );
   });
 
+  it('tags an Invalid Date instead of throwing, and decodes it back', () => {
+    const bad = new Date('not a date');
+    expect(canonical({ at: bad })).toBe('{"at":{"$date":"invalid"}}');
+    const back = decodeDates(JSON.parse(JSON.stringify(encodeDates({ at: bad })))) as { at: Date };
+    expect(isDate(back.at) && Number.isNaN(back.at.getTime())).toBe(true);
+    expect(legacyUids('reviewLogs', [{ id: 1, at: bad }])[0]).toMatch(/^v1-/);
+  });
+
   it('tags only real dates, not objects that inherit Date.prototype', () => {
     expect(isDate(new Date(0))).toBe(true);
     const imposter = Object.assign(Object.create(Date.prototype) as object, { n: 1 });
