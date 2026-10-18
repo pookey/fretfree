@@ -129,7 +129,8 @@ export type ItemRef =
   | { kind: 'letter'; steps: number; from: string }
   | { kind: 'marker'; fret: number }
   | { kind: 'find-marker'; fret: number }
-  | { kind: 'repeat'; frets: number; from: number };
+  | { kind: 'repeat'; frets: number; from: number }
+  | { kind: 'octave'; from: Position; string: number };
 
 const INT = '(0|[1-9]\\d*)';
 const OFFSET = '([+-][1-9]\\d*)';
@@ -141,6 +142,7 @@ const STEP_ITEM = new RegExp(`^step:${OFFSET}@${PC}$`);
 const LETTER_ITEM = new RegExp(`^letter:${OFFSET}@([A-G])$`);
 const MARKER_ITEM = new RegExp(`^(marker|find-marker):f${INT}$`);
 const REPEAT_ITEM = new RegExp(`^repeat:${OFFSET}@f${INT}$`);
+const OCTAVE_ITEM = new RegExp(`^octave:s${INT}f${INT}→s${INT}$`);
 
 function count(n: number, what: string): number {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Invalid ${what}: ${n}`);
@@ -231,6 +233,17 @@ export function parseRepeatItemId(id: string): { frets: number; from: number } |
   return { frets: Number(m[1]), from: Number(m[2]) };
 }
 
+/** `octave:s6f5→s4`: the octave of string 6, fret 5 on string 4. */
+export function octaveItemId(from: Position, string: number): string {
+  return `octave:s${count(from.string, 'string')}f${count(from.fret, 'fret')}→s${count(string, 'string')}`;
+}
+
+export function parseOctaveItemId(id: string): { from: Position; string: number } | null {
+  const m = OCTAVE_ITEM.exec(id);
+  if (!m) return null;
+  return { from: { string: Number(m[1]), fret: Number(m[2]) }, string: Number(m[3]) };
+}
+
 export function itemId(ref: ItemRef): string {
   switch (ref.kind) {
     case 'note':
@@ -247,6 +260,8 @@ export function itemId(ref: ItemRef): string {
       return findMarkerItemId(ref.fret);
     case 'repeat':
       return repeatItemId(ref.frets, ref.from);
+    case 'octave':
+      return octaveItemId(ref.from, ref.string);
   }
 }
 
@@ -263,5 +278,7 @@ export function parseItemId(id: string): ItemRef | null {
   if (marker) return marker;
   const repeat = parseRepeatItemId(id);
   if (repeat) return { kind: 'repeat', ...repeat };
+  const octave = parseOctaveItemId(id);
+  if (octave) return { kind: 'octave', ...octave };
   return null;
 }
