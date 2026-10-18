@@ -49,6 +49,24 @@ export const ENGINE_CONFIG = {
     /** Restore one level when rolling accuracy falls below this. */
     restoreBelowAccuracy: 0.7,
   },
+  gamification: {
+    /**
+     * XP per answer (design §3.7). Every answer earns `attempt`, a correct one
+     * adds `correctBonus`, a fluent (Easy) one adds `fluentBonus` on top. The
+     * sum is scaled by the card's kind, its stability when not due, and how
+     * often it has already been answered today.
+     */
+    xp: {
+      attempt: 6,
+      correctBonus: 4,
+      fluentBonus: 2,
+      kindWeight: { new: 1, due: 1, stretch: 0.8, 'not-due': 0.4 },
+      /** A not-due card's weight halves again once its stability reaches this. */
+      stableHalfLifeDays: 7,
+      /** Each earlier answer to the same item today multiplies XP by this. */
+      repeatDecay: 0.5,
+    },
+  },
 } as const;
 
 export type EngineConfig = typeof ENGINE_CONFIG;
