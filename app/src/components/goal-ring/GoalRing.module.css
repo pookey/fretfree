@@ -1,0 +1,81 @@
+/* The arc meets WCAG 1.4.11 (≥ 3:1) against the card and the track in both
+   schemes (streak-tokens.css; GoalRing.test.tsx checks it). */
+.ring {
+  --ring-fill: var(--streak-on-card);
+  --ring-track: var(--border);
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+
+.ring[data-size='large'] {
+  width: 7.5rem;
+  height: 7.5rem;
+}
+
+.ring[data-size='small'] {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.track,
+.fill {
+  fill: none;
+  stroke-width: 10;
+}
+
+.ring[data-size='small'] .track,
+.ring[data-size='small'] .fill {
+  stroke-width: 14;
+}
+
+.track {
+  stroke: var(--ring-track);
+}
+
+.fill {
+  stroke: var(--ring-fill);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 600ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: draw-in 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes draw-in {
+  from {
+    stroke-dashoffset: var(--ring-c);
+  }
+}
+
+.tick {
+  fill: none;
+  stroke: var(--ring-fill);
+  stroke-width: 9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.value,
+.unit {
+  fill: var(--text);
+  text-anchor: middle;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.value {
+  font-size: 1.375rem;
+  font-weight: 800;
+}
+
+.unit {
+  fill: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    animation: none;
+    transition: none;
+  }
+}

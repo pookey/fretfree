@@ -1,0 +1,12 @@
+/* The streak colour on a card (design §3.7, WCAG AA). --streak passes on the
+   dark cards, but is under 3:1 on a light one, so light mode uses a darker
+   orange that passes 4.5:1. GoalRing.test.tsx checks both schemes. */
+:root {
+  --streak-on-card: var(--streak);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --streak-on-card: #9a5800;
+  }
+}
