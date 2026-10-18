@@ -132,3 +132,22 @@ describe('<SessionScreen> feedback bar (M1-28)', () => {
     await waitFor(() => expect(screen.queryByTestId('feedback-correct')).not.toBeInTheDocument());
   });
 });
+
+describe('<SessionScreen> with nothing to serve', () => {
+  beforeEach(async () => {
+    // Every skill mastered and the one card reviewed: nothing is due or new.
+    await seedOneReview();
+    await getDb().cards.clear();
+    useAppStore.setState({ loaded: true });
+  });
+
+  it('says so instead of finishing a session with no answers', async () => {
+    renderSession();
+    expect(await screen.findByTestId('session-empty')).toHaveTextContent(
+      'Nothing to practise right now',
+    );
+    expect(screen.queryByText('Session complete')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Done' })).toHaveAttribute('href', '/');
+    expect(await getDb().gamificationEvents.count()).toBe(0);
+  });
+});

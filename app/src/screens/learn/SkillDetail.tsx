@@ -11,6 +11,8 @@ import local from './SkillDetail.module.css';
 
 /** What a skill's status means for sessions (soft unlocking, design §3.4). */
 function statusCopy(view: SkillView): string {
+  if (!view.practisable)
+    return "Coming soon. Its drill isn't built yet, so it can't join your sessions.";
   if (view.status === 'mastered') return 'Mastered. Reviews keep it fresh.';
   if (isFrontier(view.status)) return 'Its new items join your daily sessions.';
   const needs = view.skill.prerequisites.map((id) => getSkill(id)?.title ?? id).join(' and ');
@@ -31,7 +33,8 @@ export function SkillDetail({ view }: { view: SkillView }) {
   const example = exampleFor(skill);
   const [open, setOpen] = useState(false);
   const exampleId = useId();
-  const canPractise = isFrontier(view.status);
+  // A skill no built drill can test would open an empty session.
+  const canPractise = isFrontier(view.status) && view.practisable;
   return (
     <li
       className={`${styles.skill} ${local.skill}`}

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useAppStore } from '../../app-store';
+import { DRILLS } from '../../drills/registry';
 import { SKILLS, type CardRecord, type Goal, type SkillStatus } from '../../engine';
 import { latestOutcomes } from '../../engine/progress';
 import { GOAL_OPTIONS } from '../../onboarding/options';
+import { createDrillPicker } from '../../session/drill-picker';
 import { ScreenLayout } from '../../shell/ScreenLayout';
 import { useSizeClass } from '../../shell/size-class';
 import { allCards, getDb, getSkillStates } from '../../storage';
@@ -11,6 +13,8 @@ import { MasteryRing } from './MasteryRing';
 import { ModuleDetail } from './ModuleDetail';
 import { MODULE_STATE_LABEL, buildMap, defaultModule, percent, type ModuleView } from './map-model';
 import styles from './Learn.module.css';
+
+const PICKER = createDrillPicker(SKILLS, DRILLS);
 
 interface LearnData {
   stored: Map<string, SkillStatus>;
@@ -101,6 +105,7 @@ export function LearnScreen() {
         stored: data?.stored ?? new Map(),
         cards: data?.cards ?? [],
         outcomes: data?.outcomes,
+        canServe: PICKER.canServe,
       }),
     [goal, data],
   );

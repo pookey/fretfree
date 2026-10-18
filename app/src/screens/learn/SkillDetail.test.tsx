@@ -7,7 +7,7 @@ import type { SkillView } from './map-model';
 
 vi.mock('../../audio/audio', () => ({ playNotes: vi.fn(() => Promise.resolve()) }));
 
-function view(skill: Skill, status: SkillStatus): SkillView {
+function view(skill: Skill, status: SkillStatus, practisable: boolean): SkillView {
   return {
     skill,
     status,
@@ -16,14 +16,15 @@ function view(skill: Skill, status: SkillStatus): SkillView {
     stableCount: 2,
     learning: 0.6,
     mastery: 0.2,
+    practisable,
   };
 }
 
-function renderSkill(id: string, status: SkillStatus) {
+function renderSkill(id: string, status: SkillStatus, practisable = true) {
   return render(
     <MemoryRouter>
       <ul>
-        <SkillDetail view={view(getSkill(id)!, status)} />
+        <SkillDetail view={view(getSkill(id)!, status, practisable)} />
       </ul>
     </MemoryRouter>,
   );
@@ -78,6 +79,13 @@ describe('<SkillDetail>', () => {
       'Natural notes on string 6: 60% learning, 20% stable',
     );
     expect(screen.queryByText(/learned/i)).toBeNull();
+  });
+
+  it('offers no practice for a skill no built drill can test', () => {
+    renderSkill('F3.markers', 'unlocked', false);
+    expect(screen.getByText(/Coming soon\. Its drill isn't built yet/)).toBeInTheDocument();
+    expect(screen.queryByText('Its new items join your daily sessions.')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Practise this now' })).toBeNull();
   });
 
   it('names what a locked skill waits for', () => {

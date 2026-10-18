@@ -4,6 +4,7 @@ import {
   isFrontier,
   type CardRecord,
   type Goal,
+  type Item,
   type Skill,
   type SkillStatus,
 } from '../../engine';
@@ -31,6 +32,8 @@ export interface SkillView {
   learning: number;
   /** 0–1: the ring's solid, stable layer. A mastered skill is full. */
   mastery: number;
+  /** A built drill can test at least one of its items, so a session can serve it. */
+  practisable: boolean;
 }
 
 export interface ModuleView {
@@ -54,6 +57,8 @@ export interface MapInput {
   outcomes?: ReadonlyMap<string, boolean>;
   modules?: readonly Module[];
   stabilityDays?: number;
+  /** Whether a built drill can test an item (the session's drill picker). Defaults to yes. */
+  canServe?: (item: Item) => boolean;
 }
 
 /**
@@ -85,7 +90,9 @@ export function buildMap(input: MapInput): ModuleView[] {
     const moduleId = moduleOfTopic(skill.topic)?.id;
     if (!moduleId) continue;
     const status = statuses.get(skill.id) as SkillStatus;
-    const itemCount = skill.items().length;
+    const items = skill.items();
+    const itemCount = items.length;
+    const practisable = items.some(input.canServe ?? (() => true));
     const p = progress.get(skill.id);
     const learningCount = Math.min(itemCount, p?.learning ?? 0);
     const stableCount = Math.min(itemCount, p?.stable ?? 0);
@@ -99,6 +106,7 @@ export function buildMap(input: MapInput): ModuleView[] {
       stableCount,
       learning: share(learningCount),
       mastery: share(stableCount),
+      practisable,
     });
     byModule.set(moduleId, list);
   }

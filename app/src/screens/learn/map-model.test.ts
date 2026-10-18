@@ -160,6 +160,18 @@ describe('buildMap', () => {
     expect(map[0]!.skills[0]!.stableCount).toBe(4);
     expect(map[0]!.skills[0]!.learningCount).toBe(4);
   });
+
+  it('marks a skill practisable when a built drill can test one of its items', () => {
+    const a = skill('F2.a', 'F2');
+    const b = skill('F2.b', 'F2');
+    const input = { skills: [a, b], goal: 'general' as const, stored: stored(), cards: [] };
+    const practisable = (canServe?: (i: { skillId: string }) => boolean) =>
+      buildMap({ ...input, ...(canServe ? { canServe } : {}) })[0]!.skills.map(
+        (s) => s.practisable,
+      );
+    expect(practisable()).toEqual([true, true]);
+    expect(practisable((i) => i.skillId === 'F2.a')).toEqual([true, false]);
+  });
 });
 
 describe('defaultModule', () => {

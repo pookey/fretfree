@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useAppStore } from '../app-store';
 import { playNotes } from '../audio/audio';
 import { DRILLS } from '../drills/registry';
@@ -23,6 +23,8 @@ const AUTO_ADVANCE_MS = 700;
 
 type Phase =
   | { kind: 'loading' }
+  // Nothing to serve: say so rather than finish a session with no answers.
+  | { kind: 'empty' }
   | { kind: 'prompt'; current: CurrentPrompt }
   | { kind: 'feedback'; current: CurrentPrompt; feedback: DrillFeedback<unknown> }
   | { kind: 'summary'; celebration: Celebration };
@@ -93,6 +95,7 @@ export function SessionScreen() {
       CelebrationTracker.begin({ db, skills: SKILLS }),
     ]).then(([runner, tracker]) => {
       if (!live) return;
+      if (runner.isEmpty) return setPhase({ kind: 'empty' });
       runnerRef.current = runner;
       trackerRef.current = tracker;
       setEndsAt(runner.endsAt);
@@ -158,6 +161,7 @@ export function SessionScreen() {
   }, [phase, advance]);
 
   if (phase.kind === 'summary') return <SessionSummary celebration={phase.celebration} />;
+  if (phase.kind === 'empty') return <EmptySession />;
 
   const current = phase.kind === 'loading' ? null : phase.current;
   const feedback = phase.kind === 'feedback' ? phase.feedback : null;
@@ -269,6 +273,27 @@ export function SessionScreen() {
               ))}
           </div>
         </section>
+      </div>
+    </main>
+  );
+}
+
+/**
+ * No item is due or new in what was asked for. Nothing is recorded: an empty
+ * session earns no XP and extends no streak.
+ */
+function EmptySession() {
+  return (
+    <main className={styles.screen}>
+      <div className={styles.empty} data-testid="session-empty">
+        <h1>Nothing to practise right now</h1>
+        <p>
+          Nothing here is due for review or new to learn. Come back later, or pick another skill on
+          Learn.
+        </p>
+        <Link to="/" className={styles.primary}>
+          Done
+        </Link>
       </div>
     </main>
   );
