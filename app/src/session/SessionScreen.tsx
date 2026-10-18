@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useAppStore } from '../app-store';
 import { playNotes } from '../audio/audio';
 import { DRILLS } from '../drills/registry';
@@ -8,7 +8,11 @@ import { SKILLS, createScheduler, type GuideLevel } from '../engine';
 import { useSizeClass } from '../shell/size-class';
 import { getDb } from '../storage';
 import { getTuning } from '../theory';
-import { SessionRunner, type CurrentPrompt, type SessionSummary } from './runner';
+import { SessionRunner, type CurrentPrompt } from './runner';
+import type { Celebration } from './summary/celebrations';
+import { ComboCounter } from './summary/ComboCounter';
+import { SessionSummary } from './summary/SessionSummary';
+import { CelebrationTracker } from './summary/tracker';
 import styles from './SessionScreen.module.css';
 
 const scheduler = createScheduler();
@@ -18,7 +22,7 @@ type Phase =
   | { kind: 'loading' }
   | { kind: 'prompt'; current: CurrentPrompt }
   | { kind: 'feedback'; current: CurrentPrompt; feedback: DrillFeedback<unknown> }
-  | { kind: 'summary'; summary: SessionSummary };
+  | { kind: 'summary'; celebration: Celebration };
 
 /** Full-screen, distraction-free session (design §7 Session). */
 export function SessionScreen() {
@@ -27,16 +31,20 @@ export function SessionScreen() {
   const sizeClass = useSizeClass();
   const navigate = useNavigate();
   const runnerRef = useRef<SessionRunner | null>(null);
+  const trackerRef = useRef<CelebrationTracker | null>(null);
   const shownAt = useRef(0);
   const busy = useRef(false);
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
   const [progress, setProgress] = useState({ position: 0, length: 1 });
   const [contextOpen, setContextOpen] = useState(true);
+  const [combo, setCombo] = useState(0);
 
   const finish = useCallback(async () => {
     const runner = runnerRef.current;
-    if (!runner) return;
-    setPhase({ kind: 'summary', summary: await runner.finish() });
+    const tracker = trackerRef.current;
+    if (!runner || !tracker) return;
+    const summary = await runner.finish();
+    setPhase({ kind: 'summary', celebration: await tracker.finish(summary) });
   }, []);
 
   const showCurrent = useCallback(async () => {
@@ -52,15 +60,14 @@ export function SessionScreen() {
   useEffect(() => {
     if (!loaded || runnerRef.current) return;
     let live = true;
-    void SessionRunner.start({
-      db: getDb(),
-      scheduler,
-      settings,
-      skills: SKILLS,
-      drills: DRILLS,
-    }).then((runner) => {
+    const db = getDb();
+    void Promise.all([
+      SessionRunner.start({ db, scheduler, settings, skills: SKILLS, drills: DRILLS }),
+      CelebrationTracker.begin({ db, skills: SKILLS }),
+    ]).then(([runner, tracker]) => {
       if (!live) return;
       runnerRef.current = runner;
+      trackerRef.current = tracker;
       void showCurrent();
     });
     return () => {
@@ -80,6 +87,16 @@ export function SessionScreen() {
     busy.current = true;
     const responseMs = performance.now() - shownAt.current;
     const res = await runner.answer(answer, responseMs);
+    const tally = trackerRef.current?.record({
+      itemId: current.entry.itemId,
+      skillId: current.entry.skillId,
+      kind: current.entry.kind,
+      guided: current.entry.guided,
+      correct: res.result.correct,
+      rating: res.rating,
+      responseMs,
+    });
+    if (tally) setCombo(tally.combo);
     void playNotes([...res.sounds.expected, ...(res.sounds.given ?? [])], {
       muted: !settings.soundOn,
       volume: settings.volume,
@@ -101,37 +118,7 @@ export function SessionScreen() {
     return () => window.removeEventListener('keydown', onKey);
   }, [phase, advance]);
 
-  if (phase.kind === 'summary') {
-    const { summary } = phase;
-    return (
-      <div className={styles.screen} data-testid="session-summary">
-        <div className={styles.summary}>
-          <h1>Session complete</h1>
-          <dl>
-            <div>
-              <dt>Answered</dt>
-              <dd data-testid="summary-items">{summary.itemsSeen}</dd>
-            </div>
-            <div>
-              <dt>Accuracy</dt>
-              <dd>{Math.round(summary.accuracy * 100)}%</dd>
-            </div>
-            <div>
-              <dt>New notes</dt>
-              <dd>{summary.newItems}</dd>
-            </div>
-          </dl>
-          <p className={styles.spacingCopy}>
-            Come back tomorrow. Spacing your practice out feels harder than cramming — and that
-            effort is exactly what makes it stick.
-          </p>
-          <Link to="/" className={styles.primary}>
-            Done
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  if (phase.kind === 'summary') return <SessionSummary celebration={phase.celebration} />;
 
   const current = phase.kind === 'loading' ? null : phase.current;
   const feedback = phase.kind === 'feedback' ? phase.feedback : null;
@@ -179,6 +166,7 @@ export function SessionScreen() {
         >
           <span style={{ width: `${(progress.position / progress.length) * 100}%` }} />
         </div>
+        <ComboCounter combo={combo} />
         {sizeClass !== 'compact' && (
           <button
             type="button"

@@ -143,31 +143,3 @@
   text-decoration: none;
   cursor: pointer;
 }
-
-.summary {
-  margin: auto;
-  max-width: 32rem;
-  text-align: center;
-}
-
-.summary dl {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-5);
-}
-
-.summary dt {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-}
-
-.summary dd {
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 800;
-}
-
-.spacingCopy {
-  color: var(--text-muted);
-  margin: var(--space-5) 0;
-}
