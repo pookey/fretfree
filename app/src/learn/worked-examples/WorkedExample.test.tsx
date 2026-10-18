@@ -1,0 +1,106 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { useAppStore } from '../../app-store';
+import { playNotes } from '../../audio/audio';
+import { DEFAULT_SETTINGS } from '../../engine';
+import { WORKED_EXAMPLES } from './index';
+import { WorkedExample } from './WorkedExample';
+
+vi.mock('../../audio/audio', () => ({ playNotes: vi.fn(() => Promise.resolve()) }));
+
+const gb = WORKED_EXAMPLES.find((e) => e.id === 'c2-gb-octaves')!;
+
+const neck = () => screen.getByRole('group', { name: 'Worked example neck' });
+const tap = (string: number, fret: number) =>
+  fireEvent.pointerDown(
+    within(neck()).getByRole('button', { name: `string ${string}, fret ${fret}` }),
+  );
+const stage = () => screen.getByTestId('worked-example').getAttribute('data-stage');
+const next = () => fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+beforeEach(() => {
+  vi.mocked(playNotes).mockClear();
+  useAppStore.setState({ settings: { ...DEFAULT_SETTINGS } });
+});
+
+describe('<WorkedExample>', () => {
+  it('works the example, then fades the guides to a hint, then to none', () => {
+    render(<WorkedExample example={gb} />);
+    // Worked: full guides, the answer shown, the unshifted shape as a ghost.
+    expect(stage()).toBe('worked');
+    expect(neck()).toHaveAttribute('data-guide-level', '3');
+    expect(screen.getByTestId('example-prompt')).toHaveTextContent(
+      'Find the octave of G on string 2.',
+    );
+    expect(screen.getByText(/major 3rd above G, not a 4th/)).toBeInTheDocument();
+    expect(screen.getByTestId('marker-target')).toHaveAttribute('data-fret', '8');
+    expect(screen.getByTestId('marker-ghost')).toHaveAttribute('data-fret', '7');
+    expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('Worked example');
+
+    // Tapping elsewhere only nudges; tapping the answer completes the stage.
+    tap(2, 7);
+    expect(screen.getByTestId('example-instruction')).toHaveTextContent('Tap the highlighted G');
+    expect(screen.queryByRole('button', { name: 'Next' })).toBeNull();
+    tap(2, 8);
+    expect(screen.getByTestId('example-correct')).toBeInTheDocument();
+    expect(playNotes).toHaveBeenCalledWith(['G3', 'G4'], { muted: false, volume: 0.8 });
+    next();
+
+    // Faded: roots and a hint, no answer on the neck.
+    expect(stage()).toBe('faded');
+    expect(neck()).toHaveAttribute('data-guide-level', '2');
+    expect(screen.getByTestId('example-hint')).toHaveTextContent('Two strings up, three frets up.');
+    expect(screen.queryByTestId('marker-target')).toBeNull();
+    tap(1, 5);
+    expect(screen.getByTestId('example-correct')).toHaveTextContent('string 1, fret 5');
+    expect(screen.queryByTestId('example-hint')).toBeNull();
+    next();
+
+    // Independent: inlays only, no hint, no explanation until the answer.
+    expect(stage()).toBe('independent');
+    expect(neck()).toHaveAttribute('data-guide-level', '1');
+    expect(screen.queryByTestId('example-hint')).toBeNull();
+    expect(screen.queryByText(/major 3rd above G/)).toBeNull();
+    tap(2, 10);
+    expect(screen.getByTestId('example-done')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next' })).toBeNull();
+  });
+
+  it('calls out the G–B misconception when the learner falls for it', () => {
+    render(<WorkedExample example={gb} />);
+    tap(2, 8);
+    next();
+    tap(1, 4);
+    const wrong = screen.getByTestId('example-wrong');
+    expect(wrong).toHaveTextContent('That’s G#.');
+    expect(within(wrong).getByRole('complementary', { name: 'Watch out for' })).toHaveTextContent(
+      'Fret 4 is the shape without the G–B shift.',
+    );
+    expect(screen.getByTestId('marker-correct')).toHaveAttribute('data-fret', '5');
+    expect(screen.getByTestId('marker-wrong')).toHaveAttribute('data-fret', '4');
+  });
+
+  it('corrects other mistakes without the callout, then starts again', () => {
+    render(<WorkedExample example={gb} />);
+    tap(2, 8);
+    next();
+    tap(1, 5);
+    next();
+    tap(3, 8);
+    expect(screen.getByTestId('example-wrong')).toHaveTextContent('That’s D#.');
+    expect(screen.queryByTestId('example-trap')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Start again' }));
+    expect(stage()).toBe('worked');
+    expect(screen.queryByTestId('example-done')).toBeNull();
+  });
+
+  it('respects sound settings and accidental spelling', () => {
+    useAppStore.setState({
+      settings: { ...DEFAULT_SETTINGS, soundOn: false, accidentalPref: 'flat' },
+    });
+    render(<WorkedExample example={gb} />);
+    expect(screen.getByTestId('marker-ghost')).toHaveTextContent('Gb');
+    tap(2, 8);
+    expect(playNotes).toHaveBeenCalledWith(['G3', 'G4'], { muted: true, volume: 0.8 });
+  });
+});

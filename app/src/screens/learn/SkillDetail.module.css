@@ -1,0 +1,55 @@
+/* Skill detail additions (design §7 Learn); the row itself is Learn.module.css `.skill`. */
+.skill {
+  flex-wrap: wrap;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.toggle,
+.practise {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.toggle {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.practise {
+  border: none;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.toggle:focus-visible,
+.practise:focus-visible {
+  outline: 3px solid var(--tone);
+  outline-offset: 2px;
+}
+
+/* The example spans the whole row, under the ring, so the neck gets the width. */
+.example {
+  flex: 1 0 100%;
+  min-width: 0;
+}

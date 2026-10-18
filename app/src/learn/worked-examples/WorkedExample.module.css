@@ -1,0 +1,160 @@
+/* A worked example inside the Learn skill detail (design §7 Learn). */
+.example {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-m);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  min-width: 0;
+}
+
+.example p {
+  margin: 0;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Stage pills: the current stage is filled, finished ones get a tick (shape, not only colour). */
+.stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.stages li {
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.stages li[data-done='true']::before {
+  content: '✓ ';
+}
+
+.stages li[aria-current='step'] {
+  border-color: var(--tone);
+  background: var(--tone);
+  color: #10141a;
+}
+
+.idea {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.prompt {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.explain,
+.hint {
+  font-size: 0.9375rem;
+}
+
+.hint {
+  color: var(--tone);
+  font-weight: 600;
+}
+
+/* The neck keeps its 44pt cells (design §7) and scrolls inside the pane if it must. */
+.neck {
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.feedback {
+  min-height: 1.5rem;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.nudge {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.correct {
+  color: var(--correct);
+  font-weight: 600;
+}
+
+.wrong {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.wrongLead {
+  color: var(--wrong);
+}
+
+.callout {
+  padding: var(--space-2) var(--space-3);
+  border-left: 0.25rem solid var(--accent);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+}
+
+.done {
+  display: grid;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.next,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.next {
+  border: none;
+  background: var(--tone);
+  color: #10141a;
+}
+
+.secondary {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.next:focus-visible,
+.secondary:focus-visible {
+  outline: 3px solid var(--tone);
+  outline-offset: 2px;
+}
