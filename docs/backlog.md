@@ -794,7 +794,13 @@ Notes for whoever picks this up:
 - **Owns:** `infra/lib/sync-stack.ts`, `infra/bin/app.ts`, `infra/test/sync-stack.test.ts`, `scripts/deploy.sh`
 - **Acceptance:**
   - A separate CDK stack (`FretworkSync`, us-east-1). It has a Cognito user pool with passwordless email sign-in, where one email carries both a magic link and a 6-digit code: single use, about 15-minute expiry, a few attempts, rate-limited. It also has SES sending from an approved address, an HTTP API with a JWT authoriser, Lambda, and a DynamoDB table partitioned by user.
-  - No account IDs, ARNs or zone IDs in git. Domain and sender come from config with env overrides (`scripts/lib.sh`). DNS records are created only under `guitar.dwellsee.com` (e.g. SES DKIM), as the user approves.
+  - No account IDs, ARNs or zone IDs in git. Domain and sender come from config with env overrides (`scripts/lib.sh`).
+  - **Email is already provisioned by the separate `FretworkEmail` stack** (`infra/lib/email-stack.ts`, deployed with `scripts/deploy-email.sh`, decided 2026-10-18). Don't create SES identities or email DNS records here.
+    - Sender: `no-reply@fretfree.app`, display name **"Fret Free"**. The product is being rebranded, so email copy must never hardcode "Fretwork".
+    - Config: `EMAIL_DOMAIN`, `EMAIL_FROM`, `EMAIL_FROM_NAME` and `EMAIL_SSM_PREFIX` (`/fretwork/email`) in `scripts/lib.sh`.
+    - Look the identity up from SSM String parameters `<prefix>/domain`, `/from-address`, `/from-name`, `/identity-arn` and `/configuration-set`, via `ssm.StringParameter.valueForStringParameter`.
+    - Wire Cognito with `UserPoolEmail.withSES({ fromEmail, fromName, sesRegion: 'us-east-1', configurationSetName, sesVerifiedDomain: 'fretfree.app' })`. In the same account Cognito sends through its service-linked role, so no identity policy is needed.
+    - Until the user's SES production-access request is approved, only verified recipients receive mail. E2E tests must not depend on real delivery.
   - CDK assertion tests. `pnpm ship` deploys both stacks, and smoke checks the API's health route.
 
 ### M7-03 · Sync API handlers
