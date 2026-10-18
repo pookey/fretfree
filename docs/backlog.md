@@ -1,12 +1,13 @@
 # Backlog
 
-Work packages (WPs) for M1–M6 (design §11). The `fretwork-orchestrator` skill reads this file, so **keep the format exact**.
+Work packages (WPs) for M1–M6 and the future M8 (design §11, §12). The `fretwork-orchestrator` skill reads this file, so **keep the format exact**.
 
 ## How this backlog is shaped for parallelism
 
 - **Small:** each WP is ½–2 hours of agent work.
 - **Contracts first.** WPs marked **[contract]** land types, registries and interfaces that others build against. Run them first and merge them fast.
 - **Vertical slices in new files.** A drill is a new `app/src/drills/<id>/` folder (auto-registered). A skill topic is a new `app/src/engine/skills/<topic>.ts` (auto-registered). Screens, Today cards, Progress panels, Explore views and onboarding steps all become one-file-per-entry registries in M1-01.
+- **After** (optional) is a *soft* ordering. By default a WP waits for its After packages too, but when slots would otherwise be idle the planner may start it once its real **Deps** are done. M8 uses this to stay "future" without wasting capacity.
 - **Owns** lists the files and folders a WP may create or change. Two WPs whose Owns overlap must not run at the same time. Globs mean "this folder".
 - **Hotspots** are shared files that only one in-flight WP may touch at a time, whatever the Owns say:
   - `app/src/session/runner.ts`
@@ -35,6 +36,8 @@ Status values: `todo` · `in-progress` · `review` · `done` · `blocked`. Only 
 | Screens / UX | 06, 07, 11, 14, 16, 18, 22 | 07, 11, 12 | 07–11 | 05, 09, 10 | 03, 04 | — |
 | Engine / session (hotspots) | 15, 17 | 08, 09, 13 | — | 06 | 02 | — |
 | Quality | 19, 20, 24 | 14 | 12 | 11 | 08 | 10 |
+
+**M8 (future: reading and meter)** has its own section at the end. Its timing-engine contract (M8-01) is shared with M6-08 and scheduled early. The rest follows M6 via soft `After` ordering.
 
 Milestones group features; they are **not** release gates. Every merged WP ships (`pnpm ship`). Packages from later milestones may start as soon as their dependencies are `done`.
 
@@ -662,8 +665,11 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ### M6-08 · F4 rhythm track plus D20 "Tap and strum rhythm"
 - **Status:** todo
-- **Deps:** M4-06
-- **Owns:** `app/src/engine/skills/f4.ts`, `app/src/drills/d20-rhythm/**`, `app/src/audio/metronome.ts`
+- **Deps:** M4-06, M8-01
+- **Owns:** `app/src/engine/skills/f4.ts`, `app/src/drills/d20-rhythm/**`, `app/e2e/m6-08.spec.ts`
+- **Acceptance:**
+  - Builds on the shared M8-01 timing engine (metronome, tap/mic onsets, latency calibration, `gradeTiming`). Don't build a separate metronome.
+  - D20 covers tap and strum timing against a click (±30 ms target, configurable).
 
 ### M6-09 · D21 "Visualise it" (mental practice)
 - **Status:** todo
@@ -674,3 +680,220 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Status:** todo
 - **Deps:** M6-01, M6-02, M6-03, M6-04, M6-05, M6-06, M6-07, M6-08, M6-09
 - **Owns:** `docs/progress.md`
+
+---
+
+## M8: Reading and meter (future)
+
+Design §12, research/03 Tracks R and T, drills D22–D32.
+
+**Scheduling.** These are future packages, so most carry `After: M6-10`. That's a **soft** ordering: by default the planner schedules them after M1–M6. When slots would otherwise be idle and all their real `Deps` are `done`, the orchestrator may pull them forward (`backlog.mjs plan` does this automatically in its second pass).
+
+**Shared timing engine.** M8-01 is the single timing engine (metronome, onsets, latency calibration, timing grade). The M6 rhythm track (M6-08, F4/D20) builds on it, so M8-01 has no `After` and is scheduled as soon as M4-06 lands.
+
+Every M8 view follows the iPad landscape rule: **the staff sits above the neck, both visible at once** (§12 Screens).
+
+### M8-01 · [contract] Timing engine: metronome, onsets, latency calibration and timing grade
+- **Status:** todo
+- **Deps:** M4-06
+- **Design:** §12 timing engine, §9, §3.2
+- **Owns:** `app/src/timing/**`, `app/e2e/m8-01.spec.ts`
+- **Acceptance:**
+  - A metronome on the Tone.js Transport with per-meter accent patterns (simple, compound, and odd groupings such as 3+2 or 2+2+3), tempo changes, count-in, and the ability to drop beats (the fade-the-click API used by D31).
+  - Tap onset capture (pointer and key) on the audio clock, plus an `OnsetSource` interface with a mic implementation (energy/spectral-flux onset detection in an AudioWorklet, reusing the M5 mic plumbing once it exists) and a fake source for tests.
+  - Latency compensation: `AudioContext.outputLatency` plus a tap-to-click calibration (about 10 s). The result is stored in settings and applied to every onset.
+  - A pure `gradeTiming(offsetsMs, cfg)` maps "on time within ±30–50 ms" (configurable in `engine/config.ts`) to Again/Hard/Good/Easy, consistent with design §3.2.
+  - Pure logic has ≥90% unit coverage, and the onset detector is tested on synthetic signals. Shared with M6-08 (F4/D20). Document the API in a header comment.
+
+### M8-02 · [contract] Notation renderer (VexFlow)
+- **Status:** todo
+- **Deps:** —
+- **After:** M6-10
+- **Design:** §12 rendering
+- **Owns:** `app/src/components/staff/**`, `app/e2e/m8-02.spec.ts`, `package.json` / `app/package.json` / `pnpm-lock.yaml` (adds `vexflow`, MIT; hotspot)
+- **Acceptance:**
+  - A `<Staff>` component on VexFlow covering:
+    - treble clef 8vb (guitar), key and time signatures;
+    - notes and rests (including dotted values, ties, beams and tuplets), accidentals and ledger lines;
+    - an optional `TabStave` under the staff, shown at higher guide levels and fading away.
+  - Hit-testing returns the staff position for a tap (lines, spaces and ledger positions, ≥44pt targets), which D24 needs. Notes can be highlighted and flashed like the fretboard markers.
+  - Lazily loaded: VexFlow stays out of the first-load budget (M1-19). Dark and light themes use the tokens. VoiceOver labels name each note.
+  - RTL tests for rendering and hit-testing; e2e on the iPad profiles.
+
+### M8-03 · [contract] Staff theory (pure)
+- **Status:** todo
+- **Deps:** —
+- **After:** M6-10
+- **Owns:** `app/src/theory/staff.ts`, `app/src/theory/staff.test.ts`
+- **Acceptance:**
+  - Pitch ↔ staff position for treble 8vb, including the ledger-line count (low E = 3 below).
+  - Applying a key signature to an unaltered note, and the spelling of accidentals in context.
+  - Position reading: in a given position (open, 5th, 7th, 9th, 12th), each staff pitch maps to exactly one string and fret.
+  - Exhaustive tests. Exported from `theory/index.ts` as an append-only edit.
+
+### M8-04 · [contract] Meter and rhythm theory (pure)
+- **Status:** todo
+- **Deps:** —
+- **After:** M6-10
+- **Owns:** `app/src/theory/meter.ts`, `app/src/theory/rhythm.ts`, `app/src/theory/meter.test.ts`, `app/src/theory/rhythm.test.ts`
+- **Acceptance:**
+  - Time signatures: simple vs compound, felt beats (6/8 = 2), beat unit, cut time, and odd-meter groupings.
+  - Note and rest values with dots, ties and tuplets, bar-fill validation, and beaming groups per meter.
+  - A rhythm-cell catalogue (`rhythm:dotted-8th-16th`, …) and onset-time expansion at a tempo, consumed by M8-01 grading and the drills.
+
+### M8-05 · T1 and T2 skills, plus D32 "Simple or compound? How many felt beats?"
+- **Status:** todo
+- **Deps:** M8-04
+- **After:** M6-10
+- **Owns:** `app/src/engine/skills/t1.ts`, `app/src/engine/skills/t2.ts`, `app/src/drills/d32-simple-compound/**`, `app/e2e/m8-05.spec.ts`
+- **Acceptance:**
+  - Items look like `meter:6/8:feltBeats` and cover both directions.
+  - 6/8 vs 3/4 confusable pairing. Choice drill with keyboard answers.
+
+### M8-06 · D29 "Complete the bar"
+- **Status:** todo
+- **Deps:** M8-02, M8-04, M8-05
+- **After:** M6-10
+- **Owns:** `app/src/drills/d29-complete-the-bar/**`, `app/e2e/m8-06.spec.ts`
+- **Acceptance:**
+  - Drag or tap note values to fill a bar in the given time signature. Pointer and keyboard paths both work on iPad. Wrong fills are explained ("6/8 groups in dotted quarters").
+
+### M8-07 · T4 and T7 skills, plus D30 "Hear the meter"
+- **Status:** todo
+- **Deps:** M8-01, M8-04
+- **After:** M6-10
+- **Owns:** `app/src/engine/skills/t4.ts`, `app/src/engine/skills/t7.ts`, `app/src/drills/d30-hear-the-meter/**`, `app/e2e/m8-07.spec.ts`
+- **Acceptance:**
+  - Generated strummed or drummed clips: 3/4, 4/4, 6/8 and 12/8 first, then 5/4 and 7/8 (T7).
+  - Sound before symbol: answers are meter names first, with notation shown only after answering. Confusable pairing for 6/8 vs 3/4 and 12/8 vs 4/4 shuffle.
+
+### M8-08 · T3 and T5 skills, plus D31 "Accent and strum in meter"
+- **Status:** todo
+- **Deps:** M8-01, M8-04
+- **After:** M6-10
+- **Owns:** `app/src/engine/skills/t3.ts`, `app/src/engine/skills/t5.ts`, `app/src/drills/d31-accent-strum/**`, `app/e2e/m8-08.spec.ts`
+- **Acceptance:**
+  - Tap or strum with the correct accents against the click. The **click fades out** (drops beats) as accuracy improves, to build internal pulse (guidance hypothesis).
+  - Timing is graded by `gradeTiming`. Counting syllables are shown at high guide levels ("1 e & a", "1 la li").
+
+### M8-09 · R1 skills, plus D22 "Name the note on the staff"
+- **Status:** todo
+- **Deps:** M8-02, M8-03
+- **After:** M6-10
+- **Owns:** `app/src/engine/skills/r1.ts`, `app/src/drills/d22-staff-name/**`, `app/e2e/m8-09.spec.ts`
+- **Acceptance:**
+  - Items look like `staff:E4@treble8vb`, both directions, with ±3 ledger lines. Adjacent line/space confusable pairing.
+  - The target is under 2 s. Keyboard answers A–G.
+
+### M8-10 · R2 skills, plus D23 "Staff → fretboard by position"
+- **Status:** todo
+- **Deps:** M8-02, M8-03, M1-04
+- **After:** M6-10
+- **Owns:** `app/src/engine/skills/r2.ts`, `app/src/drills/d23-staff-to-fret/**`, `app/e2e/m8-10.spec.ts`
+- **Acceptance:**
+  - Items look like `staff→fret:G3@pos5`. Open position first, then the 5th, 7th, 9th and 12th.
+  - On iPad landscape the staff sits above the full neck, with the active position region shown and everything outside it dimmed.
+
+### M8-11 · D24 "Fretboard → staff"
+- **Status:** todo
+- **Deps:** M8-09
+- **After:** M6-10
+- **Owns:** `app/src/drills/d24-fret-to-staff/**`, `app/e2e/m8-11.spec.ts`
+- **Acceptance:**
+  - A highlighted fret; the learner taps the staff position, using M8-02 hit-testing. Wrong answers show both positions and play both notes.
+
+### M8-12 · R3 skills, plus D25 "Read the key signature and apply it"
+- **Status:** todo
+- **Deps:** M8-03, M8-02, M4-01
+- **After:** M6-10
+- **Owns:** `app/src/engine/skills/r3.ts`, `app/src/drills/d25-key-signature/**`, `app/e2e/m8-12.spec.ts`
+
+### M8-13 · R4 rhythm-cell skills, plus D27 "Rhythm reading"
+- **Status:** todo
+- **Deps:** M8-01, M8-02, M8-04
+- **After:** M6-10
+- **Owns:** `app/src/engine/skills/r4.ts`, `app/src/drills/d27-rhythm-reading/**`, `app/e2e/m8-13.spec.ts`
+- **Acceptance:**
+  - Tap the written rhythm against a click, with mic onsets optional. Sound before symbol: hear the cell first on its first exposure.
+  - Dotted vs straight confusable pairing. Graded with `gradeTiming`.
+
+### M8-14 · D28 "Rhythm dictation"
+- **Status:** todo
+- **Deps:** M8-13
+- **After:** M6-10
+- **Owns:** `app/src/drills/d28-rhythm-dictation/**`, `app/e2e/m8-14.spec.ts`
+- **Acceptance:**
+  - Hear a bar, then pick or build its notation from known rhythm cells.
+
+### M8-15 · R5 intervallic and pattern-reading skills, plus drill
+- **Status:** todo
+- **Deps:** M8-09, M2-01
+- **After:** M6-10
+- **Owns:** `app/src/engine/skills/r5.ts`, `app/src/drills/d-staff-intervals/**`, `app/e2e/m8-15.spec.ts`
+- **Acceptance:**
+  - Name the step or skip between adjacent staff notes (target under 1.5 s), building read-ahead chunks. Introduced early in Track R (§12 pedagogy).
+
+### M8-16 · D26 "Sight-read" (mic)
+- **Status:** todo
+- **Deps:** M8-10, M8-13, M5-02
+- **After:** M6-10
+- **Owns:** `app/src/drills/d26-sight-read/**`, `app/src/notation/passage-generator.ts`, `app/src/notation/passage-generator.test.ts`, `app/e2e/m8-16.spec.ts`
+- **Acceptance:**
+  - Generates unlimited fresh 4–8-bar passages from the learner's known notes, position and rhythm cells, so they never memorise a piece (Kopiez & Lee).
+  - The passage scrolls at an adaptive tempo, and the learner keeps going through errors. Graded on ≥90% correct notes (mic, position-unique pitches).
+  - E2E uses the fake pitch source.
+
+### M8-17 · R7 "Tab ↔ staff" and position choice
+- **Status:** todo
+- **Deps:** M8-10
+- **After:** M6-10
+- **Owns:** `app/src/engine/skills/r7.ts`, `app/src/drills/d-tab-staff/**`, `app/e2e/m8-17.spec.ts`
+
+### M8-18 · T6 pickups, repeats and endings
+- **Status:** todo
+- **Deps:** M8-02, M8-04
+- **After:** M6-10
+- **Owns:** `app/src/engine/skills/t6.ts`, `app/src/drills/d-form-reading/**`, `app/e2e/m8-18.spec.ts`
+- **Acceptance:**
+  - Find bar 1 of a pickup melody, and follow repeat signs and first/second endings. Choice and tap drills.
+
+### M8-19 · Explore: notation viewer
+- **Status:** todo
+- **Deps:** M8-02, M8-03, M1-01
+- **After:** M6-10
+- **Owns:** `app/src/screens/explore/views/notation-viewer.tsx`, `app/e2e/m8-19.spec.ts`
+- **Acceptance:**
+  - Tap a note on the staff to see it on the neck, and vice versa. Staff above neck on iPad. Includes "Quiz me on this".
+
+### M8-20 · Explore: metronome
+- **Status:** todo
+- **Deps:** M8-01, M1-01
+- **After:** M6-10
+- **Owns:** `app/src/screens/explore/views/metronome.tsx`, `app/e2e/m8-20.spec.ts`
+- **Acceptance:**
+  - Meter and accent presets (including odd groupings), tap tempo, and a large iPad layout. Uses the M8-01 engine with latency compensation.
+
+### M8-21 · Promote Tracks R and T in onboarding and the frontier
+- **Status:** todo
+- **Deps:** M8-05, M8-09, M1-16, M1-06
+- **After:** M6-10
+- **Owns:** `app/src/engine/frontier.ts`, `app/src/engine/frontier.test.ts`, `app/src/onboarding/steps/notation.tsx`
+- **Acceptance:**
+  - Track T is in everyone's frontier after F4. Track R is promoted for `notation: staff` and for the jazz and general goals, and otherwise stays optional (soft-unlocked and previewable).
+  - Staff ↔ fretboard drills turn on only when the notation preference allows.
+
+### M8-22 · Reading and meter achievements
+- **Status:** todo
+- **Deps:** M1-13, M8-07, M8-08, M8-10
+- **After:** M6-10
+- **Owns:** `app/src/engine/gamification/achievements/reader-*.ts`, `app/src/engine/gamification/achievements/meter-*.ts`
+- **Acceptance:**
+  - "Open-position reader", "5th-position reader", "Waltz, shuffle, march" (meter by ear) and "Steady pulse" (no click for 8 bars). Mastery-based, one file each.
+
+### M8-23 · M8 milestone QA
+- **Status:** todo
+- **Deps:** M8-01, M8-02, M8-03, M8-04, M8-05, M8-06, M8-07, M8-08, M8-09, M8-10, M8-11, M8-12, M8-13, M8-14, M8-15, M8-16, M8-17, M8-18, M8-19, M8-20, M8-21, M8-22
+- **Owns:** `docs/progress.md`, `app/e2e/m8-23.spec.ts`
+- **Acceptance:**
+  - Check the §11 M8 definition of done: staff → fretboard fluent in open and 5th position, and 4/4, 3/4 and 6/8 identified and counted.
+  - A production screenshot pass, and a progress update.

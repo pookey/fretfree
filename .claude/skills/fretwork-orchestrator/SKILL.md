@@ -15,7 +15,7 @@ Everything lives under `.claude/skills/fretwork-orchestrator/`:
 | `state.mjs` | `.orchestrator/state.json`: workers, tabs, ports, events, parallelism samples |
 | `spawn.sh <WP> [worker\|reviewer]` | worktree + branch + `pnpm install` + port block + pane + agent + trust handling + brief |
 | `ensure-ready.sh <pane> <cwd>` | waits for the agent to be ready; accepts "Yes, I trust this folder" **only** for `.orchestrator/worktrees/*` |
-| `send-brief.sh <WP> fix\|rebase [reason]` | follow-up round to a live worker; enforces the 3-attempt limit (exit 7) |
+| `send-brief.sh <WP> fix\|rebase [reason]` | follow-up round to a live worker; caps review rounds and integration failures at 3 each (exit 7) |
 | `poll.sh` | one line per in-flight WP; exit 10 on usage/rate-limit messages |
 | `health.sh` | memory, Playwright and load → suggested ceiling |
 | `integrate.sh <WP>` | **the integration lane**: rebase → ff-merge → mark done → `pnpm ship` → push (exit codes below) |
@@ -44,7 +44,8 @@ Define `O=.claude/skills/fretwork-orchestrator/scripts` in your shell commands.
   - Check `$O/health.sh` every cycle and move the ceiling towards its suggestion, one step at a time. Don't go above 8.
   - **Lower** the ceiling on memory pressure (free memory under 25%), on e2e flakiness caused by contention (timeouts that pass on retry), or when Playwright waits pile up.
   - **Raise** it when things are healthy and the ready set has room.
-- **Work across milestones.** The planner returns any ready WP from M1 to M6 whose dependencies are done. Contracts sort first. Don't wait for a milestone to finish before starting later ready work.
+- **Work across milestones.** The planner returns any ready WP whose dependencies are done. Contracts sort first. Don't wait for a milestone to finish before starting later ready work.
+- **Future work (M8, reading and meter) and soft `After`.** M8 packages carry `After: M6-10`, so the planner's first pass schedules them after M1–M6. Its second pass fills any slots that would otherwise sit idle with packages whose real `Deps` are done, so M8 is pulled forward only when there's spare capacity. The exception is M8-01 (the shared timing engine): it has no `After`, because M6-08 (the F4/D20 rhythm track) depends on it.
 - **Usage limits.** If `poll.sh` exits 10, or any agent mentions a usage or rate limit:
   1. Run `node $O/state.mjs set paused '{"since":"<iso>","reason":"usage limit"}'` and `node $O/state.mjs event usage-limit`.
   2. Spawn nothing new. Let in-flight agents finish.
@@ -124,7 +125,7 @@ $O/integrate.sh <WP>
 
 Stop spawning, finish or park in-flight work, and write the situation to `docs/progress.md` → "Questions for the user" (commit and push it) when:
 
-- a WP fails **3 attempts** (`send-brief.sh` exit 7, or 3 failed integrations);
+- a WP hits **3 review rounds or 3 failed integrations** (`send-brief.sh` exit 7);
 - you hit a product, scope, cost or external-account decision (a new paid service, an App Store account, analytics);
 - production can't be restored by a revert + ship;
 - a trust prompt appears for a directory outside `.orchestrator/worktrees/`;

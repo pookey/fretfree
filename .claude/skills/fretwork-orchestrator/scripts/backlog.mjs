@@ -5,7 +5,9 @@
 //   backlog.mjs show <WP>                 one WP as JSON
 //   backlog.mjs ready [--busy WP,WP]      todo WPs whose deps are done and whose
 //                                         Owns don't overlap in-flight WPs (JSON)
-//   backlog.mjs plan --slots N [--busy …] greedy conflict-free selection of N ready WPs
+//   backlog.mjs plan --slots N [--busy …] greedy conflict-free selection of N ready WPs.
+//                                         Pass 1 honours soft `After` ordering; pass 2 fills
+//                                         any idle slots with WPs whose hard Deps are done.
 //   backlog.mjs set-status <WP> <status>  rewrite the WP's Status line in place
 //   backlog.mjs check                     validate format, deps and IDs
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -28,13 +30,22 @@ export function parse(text) {
   lines.forEach((line, i) => {
     const h = /^### (M\d+-\d+) · (.+)$/.exec(line);
     if (h) {
-      cur = { id: h[1], title: h[2].trim(), line: i, status: null, deps: [], owns: [], design: '' };
+      cur = {
+        id: h[1],
+        title: h[2].trim(),
+        line: i,
+        status: null,
+        deps: [],
+        after: [],
+        owns: [],
+        design: '',
+      };
       wps.push(cur);
       return;
     }
     if (/^#{1,3} /.test(line)) cur = null;
     if (!cur) return;
-    const f = /^- \*\*(Status|Deps|Owns|Design):\*\* (.*)$/.exec(line);
+    const f = /^- \*\*(Status|Deps|After|Owns|Design):\*\* (.*)$/.exec(line);
     if (!f) return;
     const [, key, value] = f;
     if (key === 'Status') {
@@ -42,6 +53,8 @@ export function parse(text) {
       cur.statusLine = i;
     } else if (key === 'Deps') {
       cur.deps = value.match(/M\d+-\d+/g) ?? [];
+    } else if (key === 'After') {
+      cur.after = value.match(/M\d+-\d+/g) ?? [];
     } else if (key === 'Owns') {
       cur.owns = [...value.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
     } else cur.design = value.trim();
@@ -74,8 +87,10 @@ export function conflicts(wpA, wpB) {
   return wpA.owns.some((a) => wpB.owns.some((b) => overlaps(a, b)));
 }
 
-function readyList(wps, busyIds) {
+/** `soft`: also require soft `After` packages to be done (the default ordering). */
+function readyList(wps, busyIds, soft = false) {
   const byId = new Map(wps.map((w) => [w.id, w]));
+  const done = (d) => byId.get(d)?.status === 'done';
   const busy = wps.filter(
     (w) => busyIds.has(w.id) || w.status === 'in-progress' || w.status === 'review',
   );
@@ -83,7 +98,8 @@ function readyList(wps, busyIds) {
     (w) =>
       w.status === 'todo' &&
       !busyIds.has(w.id) &&
-      w.deps.every((d) => byId.get(d)?.status === 'done') &&
+      w.deps.every(done) &&
+      (!soft || w.after.every(done)) &&
       !busy.some((b) => conflicts(w, b)),
   );
 }
@@ -93,16 +109,20 @@ function plan(wps, busyIds, slots) {
   const busy = wps.filter(
     (w) => busyIds.has(w.id) || w.status === 'in-progress' || w.status === 'review',
   );
-  // Contracts first, then lower milestone, then file order.
-  const ready = readyList(wps, busyIds).sort((a, b) => {
+  // Contracts first, then file order (which is milestone order).
+  const byPriority = (a, b) => {
     const c = Number(b.title.includes('[contract]')) - Number(a.title.includes('[contract]'));
     return c || a.line - b.line;
-  });
-  for (const w of ready) {
-    if (chosen.length >= slots) break;
-    if ([...busy, ...chosen].some((b) => conflicts(w, b))) continue;
-    chosen.push(w);
-  }
+  };
+  const take = (list) => {
+    for (const w of list.sort(byPriority)) {
+      if (chosen.length >= slots) break;
+      if (chosen.includes(w) || [...busy, ...chosen].some((b) => conflicts(w, b))) continue;
+      chosen.push(w);
+    }
+  };
+  take(readyList(wps, busyIds, true)); // pass 1: respect soft After ordering
+  take(readyList(wps, busyIds, false)); // pass 2: pull future work forward into idle slots
   return chosen;
 }
 
@@ -147,6 +167,7 @@ if (isMain) {
     title: w.title,
     status: w.status,
     deps: w.deps,
+    after: w.after,
     owns: w.owns,
     design: w.design,
   });
