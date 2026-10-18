@@ -64,11 +64,11 @@ describe('<LearnScreen>', () => {
   });
 
   it('shows modules that are not built yet as coming soon', async () => {
-    renderAt('/learn?module=caged');
+    renderAt('/learn?module=pentatonic');
     await loaded();
     expect(screen.getByTestId('coming-soon')).toBeInTheDocument();
-    expect(within(screen.getByTestId('module-caged')).getByRole('img')).toHaveAccessibleName(
-      'CAGED: coming soon',
+    expect(within(screen.getByTestId('module-pentatonic')).getByRole('img')).toHaveAccessibleName(
+      'Pentatonic: coming soon',
     );
   });
 
