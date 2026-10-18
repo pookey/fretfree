@@ -1,0 +1,149 @@
+/* Daily quests (design §7 Today, §3.7). Three across at regular-wide, one
+   column on narrower widths. Done quests change shape (a tick) as well as
+   colour. */
+.quests {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.header h2 {
+  margin: 0;
+}
+
+.tally {
+  margin: 0;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-3);
+}
+
+.quest {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.quest[data-done='true'] {
+  border-color: var(--correct);
+}
+
+.icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  font-weight: 800;
+}
+
+.quest[data-done='true'] .icon {
+  border-color: var(--correct);
+  background: var(--correct);
+  color: var(--bg);
+}
+
+.body {
+  flex: 1;
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.description {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.meter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  flex: 1;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.quest[data-done='true'] .fill {
+  background: var(--correct);
+}
+
+.count {
+  font-weight: 700;
+}
+
+.reward {
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fill {
+    transition: width 0.4s ease-out;
+  }
+
+  .quest[data-done='true'] .icon {
+    animation: pop 0.4s ease-out;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+  }
+  70% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* The announcement is for screen readers; the tick shows it on screen. */
+.announce {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
