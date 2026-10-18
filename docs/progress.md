@@ -28,7 +28,7 @@ In flight at the handover: M2-09 (placement test; re-verifying after drift from 
 
 **Incidents:** no stop-the-line events and no usage-limit pauses. There were four lane verify failures, all with `main` reset and nothing broken shipped: two load timeouts (M1-17, M1-20, fixed by raising timeouts), one in M2-05, and drift in M2-09 (D5/D6 made the placement test probe C3 intervals). Three rebase conflicts (M1-20, M1-17, M1-18) were each resolved by the worker. The lane was paused once for the rebrand to land. Drift from new drills was the top cause of failures, so specs now have to start sessions with `focusSession`.
 
-**DNS rule (please confirm):** SKILL §7 lets the PM touch only the site's own DNS names. Because production moved, that list was widened to `fretfree.app` and `www.fretfree.app` (plus their ACM validation records). You haven't explicitly confirmed the widening.
+**DNS rule:** confirmed by the user (2026-10-18 evening): only `fretfree.app` and `www.fretfree.app` (plus ACM validation).
 
 ---
 
@@ -192,12 +192,12 @@ The trust-folder prompt never appeared, because worktrees under the trusted repo
 
 ## Questions for the user
 
-**M7 accounts and sync (filed 2026-10-18, deferred; the packages are `blocked` until these are answered):**
-1. **New AWS services.** Sync needs a second stack, `FretworkSync`, beside `FretworkSite`: Cognito, an HTTP API with Lambda, and DynamoDB. At this scale it should cost cents a month, but it's new spend and new surface. OK to add? *The infra session reports that you want a hosted multi-user version. Please confirm here before M7 is unblocked.*
+**M7 accounts and sync (filed 2026-10-18; unblocked 2026-10-18 evening):**
+1. ~~**New AWS services.**~~ **Answered (user, 2026-10-18 evening): "Approved: build the FretworkSync stack (Cognito, API/Lambda, DynamoDB)."** It sends through the existing FretworkEmail SES setup. Accounts stay optional (design §1 principle 8). M7 is unblocked.
 2. ~~**Email sender.**~~ **Answered (2026-10-18, via the infra session):** `no-reply@fretfree.app` ("Fret Free"), from the separate `FretworkEmail` stack, which owns the fretfree.app SES identity, DKIM, MAIL FROM and DMARC. SES production access is granted in eu-west-1.
 3. **Privacy.** Emails and progress would be stored in AWS us-east-1. Is a short privacy note on the About page enough, or do you want a separate privacy policy page? *Partly answered: the infra session is adding a `/privacy` page (linked from About and Settings), and M7-06 would extend it to cover sync.*
 
-**DNS safety rule (2026-10-18):** the PM may touch only the site's own DNS names. It now lists `fretfree.app` and `www.fretfree.app` (plus ACM validation), since production moved. OK to keep it that way?
+~~**DNS safety rule.**~~ **Answered (user, 2026-10-18 evening):** "fretfree.app and www.fretfree.app are the only DNS entries we need." SKILL §7 lists exactly those (plus their ACM validation records).
 
 ### Answered
 

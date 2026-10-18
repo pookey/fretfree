@@ -902,7 +902,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ## M7: Accounts and sync (deferred)
 
-Filed from user feedback (2026-10-18): "allow people to enter an email address to save progress. Login should be optional. To log in, it should email you a link, or a code; both should work. If a user already has progress but no login, it should be transferred to the server so that multiple devices stay in sync." **Not to be worked on yet.** Every package is `blocked` until the user answers the M7 questions in `docs/progress.md` (new AWS services beyond `FretworkSite`, the email sender, and privacy). Design §1 principle 8 still holds: everything works without an account, offline, on one device.
+Filed from user feedback (2026-10-18): "allow people to enter an email address to save progress. Login should be optional. To log in, it should email you a link, or a code; both should work. If a user already has progress but no login, it should be transferred to the server so that multiple devices stay in sync." **Unblocked 2026-10-18 (evening):** the user approved the `FretworkSync` stack (Cognito, HTTP API with Lambda, DynamoDB). The email sender is decided (see M7-02), and the `/privacy` page exists for M7-06 to extend. Design §1 principle 8 still holds: everything works without an account, offline, on one device.
 
 Notes for whoever picks this up:
 - **An installed iPad PWA doesn't open email links.** Tapping a magic link opens Safari, which has separate storage from the home-screen app. So the emailed **code** is the primary path in the installed app. The link signs in the browser it opens in. Every email carries both.
@@ -910,7 +910,7 @@ Notes for whoever picks this up:
 - The scope is accounts and sync. The rest of design §11's M7 (Capacitor build, Web Push reminders, opt-in leagues) builds on this and isn't filed yet.
 
 ### M7-01 · [contract] Sync model and merge rules (pure)
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** —
 - **Design:** §1 (principle 8), §11 M7
 - **Owns:** `app/src/storage/sync/model.ts`, `app/src/storage/sync/merge.ts`, `app/src/storage/sync/*.test.ts`, `app/src/storage/db.ts` (hotspot: new schema version for IDs, `updatedAt`, tombstones and an outbox)
@@ -920,7 +920,7 @@ Notes for whoever picks this up:
   - Document the sync protocol (push and pull with a server cursor) in `docs/design/sync.md`.
 
 ### M7-02 · Infra: passwordless auth and sync API stack
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M7-01
 - **Owns:** `infra/lib/sync-stack.ts`, `infra/bin/app.ts`, `infra/test/sync-stack.test.ts`, `scripts/deploy.sh`
 - **Acceptance:**
@@ -935,7 +935,7 @@ Notes for whoever picks this up:
   - CDK assertion tests. `pnpm ship` deploys both stacks, and smoke checks the API's health route.
 
 ### M7-03 · Sync API handlers
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M7-01, M7-02
 - **Owns:** `infra/lambda/sync/**`
 - **Acceptance:**
@@ -944,7 +944,7 @@ Notes for whoever picks this up:
   - `DELETE /account` removes all of the user's server data and the Cognito user.
 
 ### M7-04 · "Save your progress": optional email sign-in UI
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M7-02
 - **Owns:** `app/src/account/**`, `app/src/routes/account.route.tsx`, `app/src/screens/progress/panels/account.tsx`, `app/e2e/m7-04.spec.ts`
 - **Acceptance:**
@@ -953,7 +953,7 @@ Notes for whoever picks this up:
   - iPad-first layout, a11y (Lighthouse 100), and no analytics. An e2e test runs against a mocked auth endpoint.
 
 ### M7-05 · Client sync engine, including uploading existing progress
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M7-01, M7-03, M7-04
 - **Owns:** `app/src/storage/sync/engine.ts`, `app/src/storage/sync/engine.test.ts`, `app/e2e/m7-05.spec.ts`
 - **Acceptance:**
@@ -963,7 +963,7 @@ Notes for whoever picks this up:
   - A sync status line (last synced, offline, error) in the account panel.
 
 ### M7-06 · Account management and privacy
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M7-04, M7-05
 - **Owns:** `app/src/screens/progress/panels/account-manage.tsx`, `app/src/routes/about.route.tsx`, `docs/design/app-design.md`, `app/e2e/m7-06.spec.ts`
 - **Acceptance:**
@@ -972,7 +972,7 @@ Notes for whoever picks this up:
   - Design §1 principle 8 and §2 (Backend) are updated to describe optional sync.
 
 ### M7-07 · M7 milestone QA
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M7-01, M7-02, M7-03, M7-04, M7-05, M7-06
 - **Owns:** `docs/progress.md`, `app/e2e/m7-07.spec.ts`
 - **Acceptance:**
