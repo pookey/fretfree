@@ -145,6 +145,42 @@ The evidence is `app/e2e/m1-24.spec.ts`. It runs on all four Playwright profiles
 
 **Planner finding** (found while fixing the M1-24 review). `interleave` in `app/src/engine/session.ts` spaces reviews with `gap = floor(reviews / (blocks + 1))`. With fewer due reviews than new blocks + 1, the gap is 0 and every review goes after every new block, despite the doc comment's "short warm-up of reviews". In the first week, Thursday's 3 overdue learning cards were planned behind 3 new blocks (48 prompts). A 10-minute session at a minute per answer never reached them, and a learner who ends a session early skips their due reviews. Design §3.3 puts due reviews first (step 1), and says new items interleave with reviews after their block. A session "the learner can stop at any point" shouldn't hold its reviews back to the very end. The Today warm-up (review-only) isn't affected. Proposed fix: at least one warm-up review when any are due, and reviews spread among blocks with a minimum gap of 1.
 
+## M2 definition of done (M2-14 QA, 2026-10-18)
+
+**M2 is done for its §11 scope.** Design §11 gives M2 no separate definition of done, so this checks its scope: "C1, C3 via D4–D6, G–B shift content, confusable pairing, placement test". Every package M2-01 to M2-13 is live. The final pass ran on `origin/main` at e166173, and production served the same bundle (`index-PSh1y10I.js`). M1-37 (D39 fret landmarks and the empty-lesson guard) and M1-34/35 (learning vs stable) landed earlier today, so a fresh learner's first sessions now include F3 before C1 and C3 open.
+
+The evidence is `app/e2e/m2-14.spec.ts`. It runs on all four Playwright profiles, both locally in `pnpm verify` and against https://fretfree.app (`E2E_BASE_URL=https://fretfree.app pnpm e2e:only e2e/m2-14.spec.ts`, run from `app/`; 11 of 11 passed). It covers:
+- **A cross-drill session.** Seven due reviews (single octaves with and without the G–B shift, "tap every G", D5 names and D6 taps) run in one session focused on the M2 skills. All three drills serve their own items, mixed in FSRS order rather than grouped by drill, and each item is logged once, under the right drill. On the phone the "every G" item runs region by region. Today's due count then drops to 0.
+- **A G–B shift slip across drills.** On iPad, a D6 major 3rd from G to B tapped one fret short is named as the G–B slip. It comes back three prompts later, after D4 and D5 prompts, and is then right. The logs read `[false, true]` for that item.
+- **A screen walk.** It covers the placement test (intro and first probe), Today with its quests, the Whole neck and Intervals modules with their worked examples, Explore's G7 chord view, the first prompt of each M2 drill, the summary and Progress. Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep @screens`, the walk also saves each screen in dark and light: 104 shots from production, on all four profiles. The command is in the spec header.
+
+| §11 scope | Status | Evidence |
+|---|---|---|
+| C1 octave skills (shapes, G–B shift, double octaves, every octave) | ✅ | `c1.test.ts`, `c1-every-octave.test.ts`; `m2-03`, `m2-14` |
+| C3 interval-shape skills (3rds to 7ths, G–B shift items) | ✅ | `c3.test.ts`; `m2-05`, `m2-06`, `m2-14` |
+| D4 octave finder: whole neck on iPad, region by region on compact | ✅ | `m2-03` (≥44pt cells, per-target feedback, a phone in portrait), `m2-14` (all four profiles) |
+| D5 names the interval from two dots | ✅ | `m2-05` (distractors by scope, a legend that fades), `m2-14` |
+| D6 taps the interval from a root | ✅ | `m2-06` (any right position once widened), `m2-14` |
+| G–B shift content | ✅ | `m2-07` (worked → faded → independent; C1, C2 and C3 G–B examples), `m2-03` and `m2-06` (the slip is named), `m2-14` (the slip comes back) |
+| Confusable pairing (seed and learned, with decay) | ✅ | `confusions.test.ts`, `session.test.ts` (unit). No e2e: pairing moves a review at most 2 slots |
+| Placement test | ✅ | `m2-09` (F1, F2, C2 and C3 probes, known items seeded at ≈10 days, skippable), `m2-14` (screens) |
+| Also in M2: quests, focused sessions, Explore v2, FSRS refit | ✅ | `m2-10`, `m2-11`, `m2-12`, `refit.test.ts` |
+| Retake the placement test from Settings | ⏳ pending | **M2-15** (filed today from user feedback, not built) |
+| "Test out" of a locked module | ⏳ pending | **M2-16** (filed today from user feedback, not built) |
+
+**Not covered by placement:** C1 isn't in `placement.topics` (design §3.4 lists F1, F2, C2, C3, C5 and C8), so an experienced player meets octave shapes as new items. C1 is soft-unlocked, so this costs time but never blocks. M2-16 already adds C4.
+
+**Findings** (from the QA run and the production screenshots). None blocks M2:
+1. **Placement-seeded reviews come back grouped by drill (research/02 rule 6).** `dueReviews` in `app/src/engine/session.ts` orders reviews by retrievability, then by item ID. `save.ts` seeds every known item with the same `now` and stability, so all of them reach the same retrievability. Ten days after a placement test, the first review session is sorted by item ID: every `find:` (D2), then every `interval-name:` (D5), every `interval:` (D6), `letter:`, `note@` and `step:`. That is fully blocked, by drill and by skill. The cross-drill e2e reproduced this: seven reviews with the same history came out in three blocks. Learned confusions can't fix it, because pairing moves a review at most 2 slots. Proposed fix: break near-ties (say, retrievability within 0.02) with a round-robin over skill or drill, or a shuffle seeded from the session `rng`, rather than by item ID.
+2. **D4 shows the wrong help panel.** D4 has no context panel of its own, so its sessions fall back to the generic "Musical alphabet" panel (`SessionScreen.tsx`). D5 and D6 show interval legends and the G–B tip. D4 should show octave shapes: 2 strings up, 2 frets higher, or 3 across the G–B pair, plus the double octave.
+3. **Learn: a run-on prerequisite list.** A locked skill reads "It joins your sessions once you're practising Half steps: sharps and flats and Whole steps and Octave shapes" (C3.thirds). The skill titles have their own colons and "and"s, so the list needs commas, or one item per line.
+4. **iPad portrait, D5 and D6:** the neck is centred in a tall empty band, with the help panel pinned at the very bottom, away from the prompt. Nothing is cut off or overlaps. Cosmetic.
+5. **The summary after a review-only session** reads "Learning 7 · Became stable 7" for 7 items. That is by design (M1-35: learning includes stable), but side by side the tiles can read as 14 items. Consider "7 learning (7 stable)" or hiding Learning when it equals Became stable.
+
+6. **Progress has nothing to show for M2.** After a session of octave and interval reviews, the mastery map is still blank: it maps note cells only. The retention forecast still says "Practise a session and you'll see…", and the stats tile says "Notes in rotation: 7" although none of the 7 is a note (`panels/stats.tsx` counts every card). Proposed: label the tile "Items in rotation", and add a per-topic view (C1 and C3 skills with their learning and stable shares, as on Learn) so octave and interval work is visible on Progress.
+
+The production screenshots also confirm the M1 QA fixes: inactive frets recede in light theme and the nut's string names are legible (M1-31), the iPad-portrait mastery map shows fret 12 (M1-32), and Done stays in view on a sideways phone's summary (M1-33).
+
 ## Fan-out incidents and fixes (2026-10-18)
 
 - **Stale Vitest module cache (fixed, a53c400).** Vitest 5's `fsModuleCache` reused a cached `import.meta.glob` expansion in the long-lived main checkout, so `pnpm verify` on main lost M1-03's new skill files while fresh worktrees passed. The quality gate now runs with `fsModuleCache: false`.
