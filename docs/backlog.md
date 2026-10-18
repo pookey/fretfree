@@ -137,7 +137,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Property-style tests show that grinding a stable card can never out-earn doing due reviews.
 
 ### M1-09 · Streak engine: daily goal, freezes, weekend amulet, repair
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-02
 - **Design:** §3.7 streak rows
 - **Owns:** `app/src/engine/gamification/streak.ts`, `app/src/engine/gamification/streak.test.ts`
