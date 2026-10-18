@@ -234,7 +234,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The session ends at the time budget and shows the remaining time.
 
 ### M1-18 · Today quick drills
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-01, M1-17
 - **Design:** §7 Today
 - **Owns:** `app/src/screens/today/cards/quick-drills.tsx`, `app/e2e/m1-18.spec.ts`
