@@ -74,14 +74,18 @@ describe('<D2View>', () => {
     // Includes notes that name an open string (E, A, D, G, B) and accidentals.
     for (const id of ['find:E@s6', 'find:A@s5', 'find:G@s5', 'find:C@s5', 'find:F#@s3']) {
       const p = prompt(id, 2);
-      const { unmount } = view(p, { guideLevel: 3 });
-      const texts = [...neck().querySelectorAll('text')].map((t) => t.textContent);
+      const { container, unmount } = view(p, { guideLevel: 3 });
+      const svg = container.querySelector('svg[data-fret-from]') as SVGElement;
+      const texts = [...svg.querySelectorAll('text')].map((t) => t.textContent);
       expect(texts, id).not.toContain(p.pc);
-      expect(screen.queryAllByTestId(/^marker-/), id).toHaveLength(0);
-      for (const c of screen.getAllByRole('button', { name: /^string \d, fret \d+$/ })) {
-        expect(c.getAttribute('aria-label'), id).not.toMatch(/[A-G]/);
-      }
-      expect(neck().getAttribute('aria-label')).not.toContain(p.pc);
+      expect(svg.querySelectorAll('[data-testid^="marker-"]'), id).toHaveLength(0);
+      // Plain DOM queries: resolving ~100 accessible names per neck is slow in jsdom.
+      const labels = [...svg.querySelectorAll('[data-cell]')].map((c) =>
+        c.getAttribute('aria-label'),
+      );
+      expect(labels, id).toHaveLength(16 * 6);
+      for (const l of labels) expect(l, id).toMatch(/^string \d, fret \d+$/);
+      expect(svg.getAttribute('aria-label')).not.toContain(p.pc);
       unmount();
     }
   });
