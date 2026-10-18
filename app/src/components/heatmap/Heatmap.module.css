@@ -2,6 +2,64 @@
    palette.ts; "slow" is shown by a dimming hatch and a dashed outline, not
    by colour alone. */
 
+.map {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* When the neck can't fit at 44pt cells it scrolls sideways; a fade on the
+   side with more to see, plus the hint below, says so. */
+.edges {
+  position: relative;
+  min-width: 0;
+}
+
+.edges::before,
+.edges::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+.edges::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg), transparent);
+}
+
+.edges::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg), transparent);
+}
+
+.edges[data-more-left='true']::before,
+.edges[data-more-right='true']::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edges::before,
+  .edges::after {
+    transition: none;
+  }
+}
+
+.scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.scrollHint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
 .neck {
   display: block;
   width: 100%;
@@ -106,8 +164,10 @@
   gap: var(--space-4);
 }
 
+/* The map scrolls inside its own box (FretboardHeatmap), so this wrapper
+   only needs to let the panel's grid column shrink below the neck's width. */
 .neckScroll {
-  overflow-x: auto;
+  min-width: 0;
 }
 
 .legend {

@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { createScheduler } from '../../engine/scheduler';
 import { buildHeatmap, forecastByString, type HeatCell } from './aggregate';
 import { CellDetail } from './CellDetail';
+import { OPEN_W, PAD_X } from '../fretboard/geometry';
 import { FretboardHeatmap } from './FretboardHeatmap';
 import { HeatmapLegend } from './HeatmapLegend';
 import { HEAT_COLOURS } from './palette';
@@ -96,6 +97,104 @@ describe('<FretboardHeatmap>', () => {
     expect(neck.getAttribute('viewBox')).toMatch(/^0 /);
     expect(screen.getByRole('button', { name: 'string 3, fret 4' })).toBeInTheDocument();
     expect(screen.queryAllByTestId('heat-tile')).toHaveLength(0);
+  });
+});
+
+describe('<FretboardHeatmap> fit and scroll', () => {
+  /** Give the scroll box a layout jsdom lacks, for as long as the test runs. */
+  function layout(scrollWidth: number, clientWidth: number) {
+    const proto = HTMLElement.prototype;
+    const sw = vi.spyOn(proto, 'scrollWidth', 'get').mockReturnValue(scrollWidth);
+    const cw = vi.spyOn(proto, 'clientWidth', 'get').mockReturnValue(clientWidth);
+    return () => {
+      sw.mockRestore();
+      cw.mockRestore();
+    };
+  }
+
+  it('keeps every hit cell at 44pt or more at its minimum width', () => {
+    render(<FretboardHeatmap cells={cells} fretRange={RANGE} />);
+    const neck = screen.getByRole('group', { name: 'Fretboard mastery map' });
+    const minWidth = parseFloat(neck.style.minWidth);
+    const scale = minWidth / Number(neck.getAttribute('viewBox')!.split(' ')[2]);
+    const widths = within(neck)
+      .getAllByRole('button')
+      .map((b) => Number(b.getAttribute('width')) * scale);
+    expect(Math.min(...widths)).toBeGreaterThanOrEqual(44);
+    // The open-string column reaches over the end padding, so it isn't the narrowest.
+    const open = screen.getByRole('button', { name: /^string 1, fret 0\b/ });
+    expect(Number(open.getAttribute('width'))).toBe(OPEN_W + PAD_X);
+    // 12 frets fit an iPad portrait panel (about 698pt) at that width.
+    expect(minWidth).toBeLessThanOrEqual(680);
+    for (let fret = 1; fret <= 12; fret++) {
+      expect(screen.getByTestId(`heat-fret-${fret}`)).toHaveTextContent(String(fret));
+    }
+  });
+
+  it('says nothing about scrolling when the neck fits', () => {
+    const restore = layout(700, 700);
+    render(<FretboardHeatmap cells={cells} fretRange={RANGE} />);
+    restore();
+    const edges = screen.getByTestId('heatmap-scroll').parentElement!;
+    expect(edges).toHaveAttribute('data-more-left', 'false');
+    expect(edges).toHaveAttribute('data-more-right', 'false');
+    expect(screen.queryByTestId('heatmap-scroll-hint')).toBeNull();
+  });
+
+  it('fades the side with more neck and hints at scrolling when it does not fit', () => {
+    const restore = layout(865, 720);
+    render(<FretboardHeatmap cells={cells} fretRange={{ from: 0, to: 15 }} />);
+    const scroll = screen.getByTestId('heatmap-scroll');
+    const edges = scroll.parentElement!;
+    expect(scroll.scrollLeft).toBe(0);
+    expect(edges).toHaveAttribute('data-more-right', 'true');
+    expect(edges).toHaveAttribute('data-more-left', 'false');
+    expect(screen.getByTestId('heatmap-scroll-hint')).toHaveTextContent(
+      'Scroll sideways to see the rest of the neck →',
+    );
+
+    scroll.scrollLeft = 145;
+    fireEvent.scroll(scroll);
+    restore();
+    expect(edges).toHaveAttribute('data-more-right', 'false');
+    expect(edges).toHaveAttribute('data-more-left', 'true');
+    expect(screen.getByTestId('heatmap-scroll-hint')).toHaveTextContent(
+      '← Scroll sideways to see the rest of the neck',
+    );
+  });
+
+  it('starts a left-handed neck scrolled to the nut, on the right', () => {
+    const restore = layout(865, 720);
+    render(<FretboardHeatmap cells={cells} fretRange={{ from: 0, to: 15 }} handedness="left" />);
+    restore();
+    const scroll = screen.getByTestId('heatmap-scroll');
+    expect(scroll.scrollLeft).toBe(865);
+    expect(scroll.parentElement).toHaveAttribute('data-more-left', 'true');
+  });
+
+  it('re-measures when its box resizes', () => {
+    const observers: ResizeObserverCallback[] = [];
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(cb: ResizeObserverCallback) {
+          observers.push(cb);
+        }
+        observe() {}
+        disconnect = disconnect;
+      },
+    );
+    const { unmount } = render(<FretboardHeatmap cells={cells} fretRange={RANGE} />);
+    const edges = screen.getByTestId('heatmap-scroll').parentElement!;
+    expect(edges).toHaveAttribute('data-more-right', 'false');
+    const restore = layout(800, 600);
+    act(() => observers.forEach((cb) => cb([], {} as ResizeObserver)));
+    restore();
+    expect(edges).toHaveAttribute('data-more-right', 'true');
+    unmount();
+    expect(disconnect).toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });
 
