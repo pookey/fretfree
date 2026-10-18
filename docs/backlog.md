@@ -265,7 +265,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The iPhone smoke project stays green with no horizontal overflow.
 
 ### M1-22 · Settings, sound and About
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-01
 - **Design:** §4, §9, §1
 - **Owns:** `app/src/screens/progress/panels/settings.tsx`, `app/src/routes/about.route.tsx`, `app/src/screens/about/**`, `app/e2e/m1-22.spec.ts`
