@@ -3,8 +3,9 @@ import { Rating, type Grade } from 'ts-fsrs';
 import { DEFAULT_SETTINGS, ENGINE_CONFIG, SKILLS, createScheduler } from '../../engine';
 import { DRILLS } from '../../drills/registry';
 import type { D1Prompt } from '../../drills/d1-name-the-note/logic';
+import { D2_ID, type D2Prompt } from '../../drills/d2-find-the-note/logic';
 import { FretworkDB } from '../../storage';
-import { SessionRunner } from '../runner';
+import { SessionRunner, type CurrentPrompt } from '../runner';
 import { CelebrationTracker } from './tracker';
 
 let db: FretworkDB;
@@ -41,6 +42,22 @@ async function start(maxItems = 12) {
   return { runner, tracker };
 }
 
+/** An answer in the shape the prompt's drill checks: a note name (D1) or a cell (D2). */
+function answerFor(cur: CurrentPrompt, correct: boolean): unknown {
+  if (cur.drill.id === D2_ID) {
+    const prompt = cur.prompt as D2Prompt;
+    if (correct) return prompt.targets[0];
+    const { from, to } = prompt.activeRange;
+    for (let fret = from; fret <= to; fret++) {
+      const pos = { string: prompt.string, fret };
+      if (!prompt.targets.some((t) => t.fret === fret && t.string === pos.string)) return pos;
+    }
+    throw new Error('No wrong cell in the active range');
+  }
+  const expected = (cur.prompt as D1Prompt).expectedPc;
+  return correct ? expected : expected === 'C' ? 'D' : 'C';
+}
+
 /** Answer every prompt, correct unless `wrongAt` includes its position. */
 async function play(
   runner: SessionRunner,
@@ -52,9 +69,7 @@ async function play(
   let i = 0;
   while (!runner.isOver) {
     const cur = runner.currentPrompt()!;
-    const expected = (cur.prompt as D1Prompt).expectedPc;
-    const answer = wrongAt.includes(i) ? (expected === 'C' ? 'D' : 'C') : expected;
-    const res = await runner.answer(answer, responseMs);
+    const res = await runner.answer(answerFor(cur, !wrongAt.includes(i)), responseMs);
     combos.push(
       tracker.record({
         ...cur.entry,
