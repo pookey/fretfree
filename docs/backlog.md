@@ -171,7 +171,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The ring animates unless reduced motion is on. It meets WCAG AA contrast and has VoiceOver labels.
 
 ### M1-12 · Session celebrations
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-08
 - **Design:** §3.7 celebrations, §3.3 step 5
 - **Owns:** `app/src/session/summary/**`, `app/src/components/confetti/**`, `app/e2e/m1-12.spec.ts`
