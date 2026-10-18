@@ -159,7 +159,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Runner tests cover the goal being reached mid-session.
 
 ### M1-11 · Today hero and sidebar streak
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-01, M1-02
 - **Design:** §7 Today, §3.7
 - **Owns:** `app/src/screens/today/cards/hero.tsx`, `app/src/components/goal-ring/**`, `app/src/shell/StreakBadge.tsx`, `app/e2e/m1-11.spec.ts`
