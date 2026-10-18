@@ -368,7 +368,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - RTL covers the open, in-progress, restored and expired states. E2E (`m1-30.spec.ts`, iPad projects; iPhone tagged `@smoke`) breaks a streak on a mocked clock, sees the card, does the double session and sees the streak restored.
 
 ### M1-31 · Fretboard contrast: light-theme inactive frets and nut string names
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §8 fretboard, research/02 (signalling)
 - **Owns:** `app/src/components/fretboard/Fretboard.module.css`, `app/src/components/fretboard/Fretboard.tsx`, `app/src/components/fretboard/Fretboard.test.tsx`, `app/e2e/m1-31.spec.ts`
