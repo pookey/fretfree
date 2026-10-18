@@ -1,0 +1,164 @@
+.staff {
+  /* What the fret numbers knock the lines out with; set it to the surface the staff sits on. */
+  --tab-knockout: var(--bg);
+
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.line {
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  opacity: 0.75;
+}
+
+.bar {
+  stroke: var(--text-muted);
+  stroke-width: 3;
+  opacity: 0.75;
+}
+
+.name {
+  fill: var(--text-muted);
+  font-size: 19px;
+  font-weight: 600;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.number {
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Line marks: a tinted band plus a heavier line; `wrong` is dashed. */
+.band {
+  pointer-events: none;
+  opacity: 0.22;
+}
+
+.band.selected {
+  fill: var(--tone);
+}
+
+.band.correct {
+  fill: var(--correct);
+  animation: flash-band 0.5s ease-out;
+}
+
+.band.wrong {
+  fill: var(--wrong);
+}
+
+.selectedLine,
+.correctLine,
+.wrongLine {
+  stroke-width: 4;
+  opacity: 1;
+}
+
+.selectedLine {
+  stroke: var(--tone);
+}
+
+.correctLine {
+  stroke: var(--correct);
+}
+
+.wrongLine {
+  stroke: var(--wrong);
+  stroke-dasharray: 8 6;
+}
+
+.note {
+  pointer-events: none;
+}
+
+.note text {
+  fill: var(--text);
+  font-size: 22px;
+  font-weight: 700;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+.plain rect {
+  fill: var(--tab-knockout);
+}
+
+.current rect {
+  fill: var(--tab-knockout);
+  stroke: var(--tone);
+  stroke-width: 3;
+}
+
+.ghost rect {
+  fill: var(--tab-knockout);
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+
+.ghost text {
+  fill: var(--text-muted);
+}
+
+.correct circle {
+  fill: var(--correct);
+  stroke: #fff;
+  stroke-width: 3;
+  animation: flash 0.35s ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.wrong rect {
+  fill: var(--wrong);
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.correct text,
+.wrong text {
+  fill: #fff;
+}
+
+.caret {
+  fill: var(--tone);
+  pointer-events: none;
+}
+
+.hit {
+  fill: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.hit:focus-visible {
+  fill: rgb(86 180 233 / 0.18);
+  stroke: var(--tone);
+  stroke-width: 2;
+}
+
+@media (hover: hover) {
+  .hit:hover {
+    fill: rgb(255 255 255 / 0.06);
+  }
+}
+
+@keyframes flash {
+  from {
+    transform: scale(1.4);
+  }
+}
+
+@keyframes flash-band {
+  from {
+    opacity: 0.6;
+  }
+}
