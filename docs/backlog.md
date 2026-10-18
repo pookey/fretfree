@@ -299,6 +299,18 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Neck cells stay ≥44pt on iPad. The prompt copy tells the learner they can tap the neck or a button.
   - Design §6 D3 records both changes. Unit tests cover the new wording and tap → answer mapping. An e2e test (`m1-27.spec.ts`, iPad projects, happy path tagged `@smoke`) answers one prompt by tapping the neck.
 
+### M1-28 · [hotfix] Wrong-answer feedback and Continue always on screen
+- **Status:** todo
+- **Deps:** none
+- **Design:** §7 session, research/02 (immediate feedback)
+- **Owns:** `app/src/session/SessionScreen.tsx`, `app/src/session/SessionScreen.module.css`, `app/src/session/SessionScreen.test.tsx`, `app/e2e/m1-28.spec.ts`
+- **Acceptance:**
+  - User feedback from an iPad: after a wrong answer, "That was B. You'll see it again shortly." and its **Continue** button were below the fold. The learner didn't know to scroll, so the app seemed frozen. M1-20 saw the same on phones held sideways. The cause is that `.feedbackBar` is the last item in the drill area, under the neck.
+  - The feedback bar is always visible without scrolling on every supported viewport: iPad landscape and portrait, iPad mini, iPhone portrait and landscape. Pin it to the bottom of the session viewport (sticky or fixed, respecting `--safe-bottom`), and pad the drill area so it never covers the neck or the answer buttons while a prompt is open.
+  - The wrong-answer state is unmistakable. The bar appears with a short, reduced-motion-safe entrance, and Continue gets focus. **Enter** or **Space** continues (keyboard), and so does a tap on Continue. Correct answers keep their brief "✓" and auto-advance.
+  - The fix is in the session shell, so it covers every drill (D1–D6 and future ones) with no per-drill changes.
+  - E2E (`m1-28.spec.ts`, all iPad projects, iPhone tagged `@smoke`): answer wrong in each registered drill reachable through `focusSession` and assert that Continue's bounding box lies inside the viewport with no scrolling (`window.scrollY` unchanged), and that Enter continues. RTL covers focus and keyboard.
+
 ### M1-26 · Reading question: what you can read, and what you want to learn
 - **Status:** done
 - **Deps:** none
