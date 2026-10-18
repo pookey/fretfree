@@ -1,7 +1,23 @@
-import type { Skill } from '../model';
-import { memo, naturalsOnString, noteItems } from './helpers';
+import { NATURAL_PCS } from '../../theory';
+import { findItemId, type Skill } from '../model';
+import { itemsOf, memo, naturalsOnString, noteItems } from './helpers';
 
-/** F2: natural notes on strings 6 and 5, frets 0–12 (research/03). */
+/**
+ * F2: natural notes on strings 6 and 5, frets 0–12 (research/03). Each fact is
+ * bidirectional (research/02 rule 1): name the note at a fret, and find a
+ * named note on the string.
+ */
+
+function naturals(skillId: string, string: number) {
+  return [
+    ...noteItems(skillId, naturalsOnString(string)),
+    ...itemsOf(
+      skillId,
+      NATURAL_PCS.map((pc) => findItemId(pc, string)),
+    ),
+  ];
+}
+
 export const skills: Skill[] = [
   {
     id: 'F2.string6-naturals',
@@ -9,8 +25,8 @@ export const skills: Skill[] = [
     order: 200,
     title: 'Natural notes on string 6',
     prerequisites: [],
-    drillTypes: ['name-the-note'],
-    items: memo(() => noteItems('F2.string6-naturals', naturalsOnString(6))),
+    drillTypes: ['name-the-note', 'find-the-note'],
+    items: memo(() => naturals('F2.string6-naturals', 6)),
   },
   {
     id: 'F2.string5-naturals',
@@ -18,7 +34,7 @@ export const skills: Skill[] = [
     order: 210,
     title: 'Natural notes on string 5',
     prerequisites: [],
-    drillTypes: ['name-the-note'],
-    items: memo(() => noteItems('F2.string5-naturals', naturalsOnString(5))),
+    drillTypes: ['name-the-note', 'find-the-note'],
+    items: memo(() => naturals('F2.string5-naturals', 5)),
   },
 ];

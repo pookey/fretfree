@@ -146,6 +146,21 @@ describe('SessionRunner', () => {
     expect((await getSkillStates(db)).get('F2.string6-naturals')?.status).toBe('mastered');
   });
 
+  it('plans only items a registered drill can test', async () => {
+    const scheduler = createScheduler({ enableFuzz: false });
+    const skill = SKILLS.find((s) => s.id === 'F2.string6-naturals')!;
+    const find = skill.items().find((i) => i.id.startsWith('find:'))!;
+    await db.cards.put(scheduler.seedKnownCard(find, new Date('2026-09-01T09:00:00Z'), 1));
+    const r = await SessionRunner.start(deps({ scheduler, maxItems: 40 }));
+    const planned = Array.from({ length: r.length }, () => {
+      const id = r.currentPrompt()!.entry.itemId;
+      r.next();
+      return id;
+    });
+    expect(planned.length).toBeGreaterThan(0);
+    expect(planned.every((id) => parseNoteItemId(id) !== null)).toBe(true);
+  });
+
   it('refuses to answer once the session is over', async () => {
     const r = await SessionRunner.start(deps({ maxItems: 0, skills: [] }));
     expect(r.isEmpty).toBe(true);

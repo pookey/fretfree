@@ -18,3 +18,7 @@ export function memo<T>(fn: () => T): () => T {
   let value: T | undefined;
   return () => (value ??= fn());
 }
+
+export function itemsOf(skillId: string, ids: readonly string[]): Item[] {
+  return ids.map((id) => ({ id, skillId }));
+}
