@@ -123,6 +123,14 @@
   max-height: calc(100dvh - 12rem);
 }
 
+/* A phone on its side has no room for the hint line: it would push the
+   letterboxed neck off the bottom. The neck is still an answer surface. */
+@media (max-height: 499px) {
+  .drill[data-size-class='compact'] .hint {
+    display: none;
+  }
+}
+
 /* The context panel, filled with the note wheel (design §6 D3). */
 .context {
   background: var(--bg-raised);
