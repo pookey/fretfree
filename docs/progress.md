@@ -94,6 +94,40 @@ What exists:
 - **Infra:** CDK (S3 + CloudFront OAC + ACM + Route53) in us-east-1. Local delivery through `pnpm ship`, a pre-push hook (isolated verify of the pushed SHA plus a secret scan) and a machine-wide e2e semaphore.
 - **Orchestration:** `docs/backlog.md` has 77 work packages (M1–M6), shaped for parallelism. The `fretwork-orchestrator` skill drives Herdr workers.
 
+## M1 definition of done (M1-24 QA, 2026-10-18)
+
+**M1 is done.** Design §11: "A real learner can do daily sessions on iPad (landscape and portrait), offline, as an installed PWA. The iPhone smoke flow passes." Every M1 package is live, M1-29 (Add to Home Screen) included. The final pass ran on `origin/main` at 57c946d. Production served the same bundle.
+
+The evidence is `app/e2e/m1-24.spec.ts`. It runs on all four Playwright profiles, both locally in `pnpm verify` and against https://fretfree.app (`E2E_BASE_URL=https://fretfree.app ../scripts/e2e-slot.sh playwright test e2e/m1-24.spec.ts`). It covers:
+- **The first week**, on a mocked clock (Europe/London, starting Wednesday). Onboarding with a 5-minute goal, then sessions on three days in a row: the streak reaches 3, Thursday's session clears due reviews, and the heatmap fills in each answered cell. On Friday, Settings switches to a 10-minute goal with the weekend amulet on. Monday opens with the streak still at 3 and no freeze held, and its 10-minute session takes the streak to 4.
+- **Streak repair.** A missed weekday breaks a 2-day streak, and a double session the next day restores it to 3. Until now repair was only unit-tested.
+- **A screenshot pass.** Every M1 screen (onboarding, Today before and after practice, a session prompt, the summary, Learn, Explore, Progress, Settings, About and Privacy) in dark and light, with no horizontal overflow.
+
+| §11 scope or criterion | Status | Evidence |
+|---|---|---|
+| Onboarding: handedness, goals, daily goal, latency calibration | ✅ | `m1-06`, `m1-07`, `m1-26`, `m1-24` |
+| F1–F3 and C2 through D1, D2 and D3 | ✅ | `d1-session`, `m1-04`, `m1-05`, `m1-27` |
+| Full session loop (multi-drill, learning steps, time budget) | ✅ | `m1-17`, `m1-24` |
+| Today (hero, quests, quick drills) | ✅ | `m1-11`, `m1-18`, `m2-10` |
+| Progress heatmap | ✅ | `m1-14`, `m1-24` (fills in from real sessions) |
+| Guide fading and blind mode | ✅ | `m1-15`, `m1-25` |
+| Daily goal and XP | ✅ | `m1-10`, `m1-24` |
+| Streak, freezes, weekend amulet, repair | ✅ | `m1-10` (freezes), `m1-24` (amulet, repair) |
+| Session celebrations and first achievements | ✅ | `m1-12`, `m1-13` |
+| Daily sessions on iPad landscape and portrait | ✅ | `m1-24` first week on `ipad-landscape`, `ipad-portrait` and `ipad-mini-landscape`, locally and on production |
+| Offline | ✅ | `m1-19` (a full session offline; every section reopens offline) |
+| Installed PWA | ✅ | the `pnpm lighthouse` installability, manifest and offline checks (all screens at 100 for accessibility, both themes); `m1-19` (install hint, standalone mode); M1-29 (an Add to Home Screen onboarding step and Today card) |
+| iPhone smoke flow | ✅ | the `iphone-smoke` project (every `@smoke` spec, including the `m1-24` first week), locally and on production |
+
+**Not verified:** installing on a physical iPad. The gate uses Chrome's installability check plus emulated WebKit. The design says reminders ship with sync (M7), so they aren't part of M1.
+
+**Screenshot findings** (production, all four profiles). None of these blocks M1:
+1. **Streak repair is invisible.** It works, but Today never says a double session would restore a broken streak, so learners can't know to try. Design §3.7 presents repair as something the learner does.
+2. **Light theme, session neck:** the inactive frets (13–15 at regular-wide) get a pale grey wash, where the dark theme darkens them, so they read as highlighted rather than dimmed.
+3. **The nut's string names** (E B G D A E) have low contrast on the wood in both themes, and are nearly invisible in light. Lighthouse passes because the neck is SVG.
+4. **iPad portrait, Progress:** the mastery map's 12th fret is cut off at the right edge, label included.
+5. **iPhone landscape:** the session summary's Done link sits below the fold. The page scrolls to it.
+
 ## Fan-out incidents and fixes (2026-10-18)
 
 - **Stale Vitest module cache (fixed, a53c400).** Vitest 5's `fsModuleCache` reused a cached `import.meta.glob` expansion in the long-lived main checkout, so `pnpm verify` on main lost M1-03's new skill files while fresh worktrees passed. The quality gate now runs with `fsModuleCache: false`.
