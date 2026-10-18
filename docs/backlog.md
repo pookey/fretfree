@@ -413,7 +413,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - RTL covers 0/0, learning-only, mixed and mastered rings. E2E (`m1-34.spec.ts`, iPad projects; iPhone tagged `@smoke`): finish a `focusSession`, open Learn, and see a non-zero learning value while stable stays 0.
 
 ### M1-35 · Session summary: tie today's score to learning and stable
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-34
 - **After:** M1-33
 - **Design:** §3.3 step 5, research/02 rules 11 and 15
