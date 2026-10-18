@@ -210,6 +210,44 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
   });
 });
 
+// M1-33: at short heights what's next sits beside the recap, so Done's place
+// doesn't depend on how much the session earned.
+describe('<SessionSummary> layout', () => {
+  it("keeps the recap apart from what's next, with Done last", () => {
+    show({
+      perfect: true,
+      accuracy: 1,
+      bestCombo: 9,
+      competence: [
+        {
+          kind: 'learned',
+          skillId: 'F2.string6-naturals',
+          skillTitle: 'Natural notes on string 6',
+          string: 6,
+          toFret: 12,
+          complete: true,
+        },
+      ],
+    });
+    const article = screen.getByRole('article');
+    const [recap, next] = Array.from(article.children);
+    const done = screen.getByRole('link', { name: 'Done' });
+    expect(article.children).toHaveLength(2);
+    expect(next?.tagName).toBe('FOOTER');
+    expect(next?.lastElementChild).toBe(done);
+    expect(next).toContainElement(screen.getByTestId('summary-spacing'));
+    for (const id of [
+      'summary-headline',
+      'summary-learned-hint',
+      'moment-perfect',
+      'summary-accuracy',
+      'summary-progress',
+    ]) {
+      expect(recap).toContainElement(screen.getByTestId(id));
+    }
+  });
+});
+
 describe('<ComboCounter>', () => {
   it('appears from a short run of correct answers', () => {
     const { rerender } = render(<ComboCounter combo={2} />);
