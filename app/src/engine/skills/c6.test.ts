@@ -56,9 +56,13 @@ describe('C6 skills', () => {
     expect(orders).toEqual([...orders].sort((a, b) => a - b));
   });
 
-  it('gates the first CAGED skill on mastered natural notes (rule 7)', () => {
+  it('gates the first CAGED skill on mastered natural notes and triads (rule 7)', () => {
     const first = getSkill('C6.triad-cores')!;
-    expect(first.prerequisites).toEqual(['F2.string6-naturals', 'F2.string5-naturals']);
+    expect(first.prerequisites).toEqual([
+      'F2.string6-naturals',
+      'F2.string5-naturals',
+      'C5.triads',
+    ]);
     expect(first.softUnlock).toBe(false);
     expect(getSkill('C6.major-shapes')!.prerequisites).toEqual(['C6.triad-cores']);
     expect(getSkill('C6.minor-shapes')!.prerequisites).toEqual([

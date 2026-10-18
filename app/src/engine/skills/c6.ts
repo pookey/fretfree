@@ -23,7 +23,7 @@ interface Group {
   id: string;
   title: string;
   prerequisites: readonly string[];
-  /** Rule 7 gates the first CAGED skill on mastered natural notes; later ones open as usual. */
+  /** Rule 7 gates the first CAGED skill on mastered notes and triads; later ones open as usual. */
   softUnlock: boolean;
   kind: 'caged' | 'caged-core';
   quality: CagedQuality;
@@ -33,8 +33,9 @@ const GROUPS: readonly Group[] = [
   {
     id: 'C6.triad-cores',
     title: 'CAGED triad cores',
-    // Rule 7: natural notes on strings 6 and 5 → CAGED. The roots sit there.
-    prerequisites: ['F2.string6-naturals', 'F2.string5-naturals'],
+    // Rule 7: natural notes on strings 6 and 5 → CAGED (the roots sit there),
+    // and triads before CAGED (research/03: triads are the shapes' cores).
+    prerequisites: ['F2.string6-naturals', 'F2.string5-naturals', 'C5.triads'],
     softUnlock: false,
     kind: 'caged-core',
     quality: 'major',

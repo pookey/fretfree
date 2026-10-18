@@ -7,8 +7,8 @@ import { focusSession } from './helpers/focus';
 // the template around it. Building the A shape where the C shape was asked
 // (they share string 5) is logged as that confusion.
 
-/** Rule 7: natural notes on strings 6 and 5 open CAGED. */
-const PREREQS = ['F2.string6-naturals', 'F2.string5-naturals'];
+/** Rule 7: natural notes on strings 6 and 5, and triads (C5), open CAGED. */
+const PREREQS = ['F2.string6-naturals', 'F2.string5-naturals', 'C5.triads'];
 
 type Shape = 'C' | 'A' | 'G' | 'E' | 'D';
 interface Cell {
@@ -156,17 +156,15 @@ test.describe('M3-05 D9 builds the CAGED shape at a root', () => {
     expect(first).toMatchObject({ guided: true, shape: 'C', strings: [3, 2, 1] });
     await expect(page.getByTestId('d9-count')).toHaveText('Found 0 of 3');
 
-    // iPad shows the whole neck (design §7); a phone a window around the root.
+    // iPad landscape shows the whole neck (design §7); portrait a 12-fret
+    // neck and a phone a window, each around the root.
     const from = Number(await neck(page).getAttribute('data-fret-from'));
     const to = Number(await neck(page).getAttribute('data-fret-to'));
-    if (info.project.name === 'iphone-smoke') {
-      for (const c of [first.root, ...solve(first)]) {
-        expect(c.fret).toBeGreaterThanOrEqual(from);
-        expect(c.fret).toBeLessThanOrEqual(to);
-      }
-    } else {
-      expect(from).toBe(0);
-      expect(to).toBe(info.project.name === 'ipad-portrait' ? 12 : 15);
+    if (info.project.name === 'ipad-portrait') expect(to - from).toBe(12);
+    else if (info.project.name !== 'iphone-smoke') expect([from, to]).toEqual([0, 15]);
+    for (const c of [first.root, ...solve(first)]) {
+      expect(c.fret).toBeGreaterThanOrEqual(from);
+      expect(c.fret).toBeLessThanOrEqual(to);
     }
 
     const seen = new Set<string>();
