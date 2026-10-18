@@ -194,13 +194,24 @@ describe('competenceGains', () => {
   });
 
   it('puts newly mastered skills first and drops their reach lines', () => {
+    // Every item of the skill, both directions (name the note, find the note).
+    const everyItem = STRING6.items().map((i) => card(i.id, 5));
     const lines = competenceGains(
       [STRING6],
       snap([], [[STRING6.id, 'practising']]),
-      snap(known(S6_FRETS), [[STRING6.id, 'mastered']]),
+      snap(everyItem, [[STRING6.id, 'mastered']]),
       CFG,
     );
     expect(lines).toEqual([{ kind: 'mastered', skillId: STRING6.id, skillTitle: STRING6.title }]);
+    // Only one direction known: not mastered yet, but the whole string is.
+    expect(
+      competenceGains(
+        [STRING6],
+        snap([], [[STRING6.id, 'practising']]),
+        snap(known(S6_FRETS), [[STRING6.id, 'mastered']]),
+        CFG,
+      ),
+    ).toEqual([expect.objectContaining({ kind: 'reach', string: 6, toFret: 12, complete: true })]);
     // Already mastered before: not news.
     expect(
       competenceGains(
