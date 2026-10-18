@@ -155,6 +155,19 @@ async function degreeCells(page: Page): Promise<Cell[]> {
   return out;
 }
 
+/**
+ * Start a session from Today. A banner (the install hint) can appear after the
+ * reload and push the link down mid-click, so retry until the session opens.
+ */
+async function startSession(page: Page): Promise<void> {
+  await expect(async () => {
+    if (!new URL(page.url()).pathname.endsWith('/session')) {
+      await page.getByTestId('start-session').click({ timeout: 2_000 });
+    }
+    await expect(promptText(page)).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
+}
+
 async function expectCorrect(page: Page): Promise<void> {
   await expect(page.getByTestId('feedback-correct')).toBeVisible();
   await expect(page.getByTestId('feedback-correct')).toBeHidden();
@@ -164,7 +177,7 @@ test.describe('M2-06 D6 interval tap', () => {
   test('a new shape opens as a worked example, answered on the neck @smoke', async ({ page }) => {
     await freshStart(page);
     await masterSkills(page, NON_C3_SKILLS);
-    await page.getByTestId('start-session').click();
+    await startSession(page);
 
     await expect(promptText(page)).toHaveText(
       'This is the minor 3rd above the root: string 5, 2 frets toward the nut. Tap it to continue.',
@@ -185,7 +198,7 @@ test.describe('M2-06 D6 interval tap', () => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await seedDueIntervals(page);
-    await page.getByTestId('start-session').click();
+    await startSession(page);
 
     await expect(promptText(page)).toHaveText('Tap the major 3rd above the root on string 2');
     await expect(page.getByTestId('d6-explain')).toHaveText('Tap the fret on string 2.');
@@ -233,7 +246,7 @@ test.describe('M2-06 D6 interval tap', () => {
     test.setTimeout(60_000);
     await freshStart(page);
     await seedDueIntervals(page);
-    await page.getByTestId('start-session').click();
+    await startSession(page);
 
     // Ten right answers at the shape scope widen it (the 80–90% band, rule 5).
     for (let i = 0; i < 10; i++) {
