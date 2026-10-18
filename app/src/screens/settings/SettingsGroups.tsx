@@ -14,6 +14,7 @@ import {
   type GamificationRecord,
 } from '../../storage';
 import { TUNINGS } from '../../theory';
+import { DeveloperTools } from './DeveloperTools';
 import styles from '../screens.module.css';
 import local from './settings.module.css';
 
@@ -262,6 +263,7 @@ interface SettingsProps {
  * The settings cards (design §4, §9): everything onboarding asked, plus
  * sound, the weekend amulet and a calibration re-run. Every change saves at
  * once. None of them can switch off spacing or retrieval (research/02 rule 16).
+ * Development builds add a Developer card (`DeveloperTools`); production has none.
  */
 export function SettingsGroups() {
   const settings = useAppStore((s) => s.settings);
@@ -273,6 +275,11 @@ export function SettingsGroups() {
       <SoundSettings settings={settings} update={update} />
       <ReadingSettings settings={settings} update={update} />
       <GuideSettings settings={settings} update={update} />
+      {import.meta.env.DEV && (
+        <Group title="Developer">
+          <DeveloperTools />
+        </Group>
+      )}
     </div>
   );
 }

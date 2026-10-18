@@ -3,18 +3,22 @@ import { Link, useSearchParams } from 'react-router';
 import { useAppStore } from '../../app-store';
 import { DRILLS } from '../../drills/registry';
 import { SKILLS, type CardRecord, type Goal, type SkillStatus } from '../../engine';
+import type { StatusOverlay } from '../../engine/overlay';
 import { latestOutcomes } from '../../engine/progress';
 import { GOAL_OPTIONS } from '../../onboarding/options';
 import { createDrillPicker } from '../../session/drill-picker';
 import { ScreenLayout } from '../../shell/ScreenLayout';
 import { useSizeClass } from '../../shell/size-class';
 import { allCards, getDb, getSkillStates } from '../../storage';
+import { useStatusOverlay } from '../settings/DeveloperTools';
 import { MasteryRing } from './MasteryRing';
 import { ModuleDetail } from './ModuleDetail';
 import { MODULE_STATE_LABEL, buildMap, defaultModule, percent, type ModuleView } from './map-model';
 import styles from './Learn.module.css';
 
 const PICKER = createDrillPicker(SKILLS, DRILLS);
+// The developer switch (M1-36) exists in development builds only; production drops it.
+const useOverlay: () => StatusOverlay | null = import.meta.env.DEV ? useStatusOverlay : () => null;
 
 interface LearnData {
   stored: Map<string, SkillStatus>;
@@ -97,6 +101,7 @@ export function LearnScreen() {
   const compact = sizeClass === 'compact';
   const [params] = useSearchParams();
   const data = useLearnData();
+  const overlay = useOverlay();
   const map = useMemo(
     () =>
       buildMap({
@@ -106,8 +111,9 @@ export function LearnScreen() {
         cards: data?.cards ?? [],
         outcomes: data?.outcomes,
         canServe: PICKER.canServe,
+        overlay,
       }),
-    [goal, data],
+    [goal, data, overlay],
   );
   const picked = map.find((m) => m.module.id === params.get('module'));
   const selected = picked ?? (compact ? undefined : defaultModule(map));

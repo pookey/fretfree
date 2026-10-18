@@ -5,6 +5,8 @@ import { playNotes } from '../audio/audio';
 import { DRILLS } from '../drills/registry';
 import type { DrillFeedback } from '../drills/types';
 import { SKILLS, createScheduler, type GuideLevel } from '../engine';
+import type { StatusOverlay } from '../engine/overlay';
+import { useStatusOverlay } from '../screens/settings/DeveloperTools';
 import { useCompactWindowFrets, useSizeClass } from '../shell/size-class';
 import { getDb } from '../storage';
 import { getTuning } from '../theory';
@@ -20,6 +22,8 @@ import { TimeLeft } from './TimeLeft';
 import styles from './SessionScreen.module.css';
 
 const AUTO_ADVANCE_MS = 700;
+// The developer switch (M1-36) exists in development builds only; production drops it.
+const useOverlay: () => StatusOverlay | null = import.meta.env.DEV ? useStatusOverlay : () => null;
 
 type Phase =
   | { kind: 'loading' }
@@ -36,6 +40,7 @@ export function SessionScreen() {
   const fsrsWeights = settings.fsrsParams?.w;
   const scheduler = useMemo(() => createScheduler({ weights: fsrsWeights }), [fsrsWeights]);
   const loaded = useAppStore((s) => s.loaded);
+  const overlay = useOverlay();
   const sizeClass = useSizeClass();
   const compactFrets = useCompactWindowFrets();
   const compact = sizeClass === 'compact';
@@ -91,6 +96,7 @@ export function SessionScreen() {
         ...parseSessionOptions(routeState),
         drills: DRILLS,
         focus: parseFocus(new URLSearchParams(query), SKILLS),
+        overlay,
       }),
       CelebrationTracker.begin({ db, skills: SKILLS }),
     ]).then(([runner, tracker]) => {
@@ -104,7 +110,7 @@ export function SessionScreen() {
     return () => {
       live = false;
     };
-  }, [loaded, settings, scheduler, query, routeState, showCurrent]);
+  }, [loaded, settings, scheduler, query, routeState, showCurrent, overlay]);
 
   const advance = useCallback(() => {
     runnerRef.current?.next();

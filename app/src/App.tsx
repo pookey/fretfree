@@ -5,6 +5,7 @@ import { guardLoader, ROUTES, type RouteModule } from './routes/registry';
 import { installStreakSettle } from './session/gamification-bridge';
 import { AppShell } from './shell/AppShell';
 import { UpdateToast } from './shell/UpdateToast';
+import { DevUnlockBadge } from './screens/settings/DeveloperTools';
 import { getDb } from './storage';
 
 const toRoute = ({ path, element, guard }: RouteModule) =>
@@ -37,6 +38,7 @@ export function App() {
     <>
       <RouterProvider router={router} />
       <UpdateToast />
+      {import.meta.env.DEV && <DevUnlockBadge />}
     </>
   );
 }
