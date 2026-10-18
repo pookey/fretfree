@@ -425,7 +425,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - RTL covers a first session (learning > 0, stable 0), a session that stabilises items, and an all-review session. E2E (`m1-35.spec.ts`, iPad projects; iPhone tagged `@smoke`) checks the learning count and next-review line after a `focusSession`.
 
 ### M1-36 · Developer-only "unlock every skill" switch
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §3.4
 - **Owns:** `app/src/screens/settings/DeveloperTools.tsx`, `app/src/screens/settings/DeveloperTools.test.tsx`, `app/src/screens/settings/SettingsGroups.tsx`, `app/src/screens/learn/map-model.ts`, `app/e2e/m1-36.spec.ts`
