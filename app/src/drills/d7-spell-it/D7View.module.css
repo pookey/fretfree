@@ -92,7 +92,7 @@
 
 .slot[data-state='given'] {
   background: var(--surface);
-  border-color: var(--accent);
+  border-color: var(--root);
 }
 
 .slot[data-state='empty'] {
@@ -116,8 +116,10 @@
   border-color: var(--correct);
 }
 
+/* Graded wrong, so it shares the wrong colour; the dotted border and ≈ set it
+   apart from a wrong pitch (dashed, ✗). Sunflower stays out of feedback. */
 .slot[data-verdict='enharmonic'] {
-  border-color: var(--accent);
+  border-color: var(--wrong);
   border-style: dotted;
   border-width: 3px;
 }
@@ -140,7 +142,7 @@
 }
 
 .slot[data-verdict='enharmonic'] .mark {
-  color: var(--accent);
+  color: var(--wrong);
 }
 
 .slot[data-verdict='wrong'] .mark {
@@ -263,7 +265,7 @@
 
 .primary {
   border: none;
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--accent-text);
 }
 
