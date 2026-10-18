@@ -206,11 +206,12 @@ test.describe('M1-04 D2 "Find the note"', () => {
     await startFindSession(page);
     for (let i = 0; i < 4; i++) await tapCorrect(page);
     if (info.project.name === 'iphone-smoke') {
-      // Compact: a 5-fret window that starts at the nut, so it gives nothing away.
+      // Compact: a window that starts at the nut, so it gives nothing away. A
+      // phone on its side gets a wider one (M1-20).
       const neck = page.locator('svg[data-fret-from]');
       await expect(neck).toHaveAttribute('data-fret-from', '0');
-      await expect(neck).toHaveAttribute('data-fret-to', '4');
-      await expect(page.getByTestId('d2-window')).toHaveText('Frets 0–4');
+      await expect(neck).toHaveAttribute('data-fret-to', '9');
+      await expect(page.getByTestId('d2-window')).toHaveText('Frets 0–9');
     }
     const a = await tapCorrect(page);
     expect(a.string).toBe(6);

@@ -1,0 +1,67 @@
+import { expect, type Page } from '@playwright/test';
+import { F1_SKILLS, freshStart, masterSkills, noteName } from '../helpers';
+
+// Reaching D2 "Find the note" from a fresh start (the same setup as m1-04).
+
+const NATURALS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+
+/**
+ * Mark every F2 note@ item as known and not due, so the session goes
+ * straight to the find:<pc>@s<n> items D2 tests.
+ */
+export async function seedKnownNotes(page: Page): Promise<void> {
+  const ids: string[] = [];
+  for (const string of [6, 5]) {
+    for (let fret = 0; fret <= 12; fret++) {
+      if (NATURALS.includes(noteName(string, fret))) ids.push(`note@s${string}f${fret}`);
+    }
+  }
+  await page.evaluate(async (itemIds) => {
+    const now = new Date();
+    const due = new Date(now.getTime() + 30 * 86_400_000);
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open('fretwork');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('cards', 'readwrite');
+      for (const itemId of itemIds) {
+        const string = itemId.match(/@s(\d)/)![1];
+        tx.objectStore('cards').put({
+          itemId,
+          skillId: `F2.string${string}-naturals`,
+          fsrs: {
+            due,
+            stability: 30,
+            difficulty: 5,
+            elapsed_days: 0,
+            scheduled_days: 30,
+            learning_steps: 0,
+            reps: 1,
+            lapses: 0,
+            state: 2,
+            last_review: now,
+          },
+          createdAt: now,
+          lastReviewedAt: now,
+        });
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  }, ids);
+}
+
+export async function startFindSession(page: Page): Promise<void> {
+  await freshStart(page);
+  // The F1 note-wheel skills (D3) lead a fresh session; skip them.
+  await masterSkills(page, F1_SKILLS);
+  await seedKnownNotes(page);
+  await page.reload();
+  // 7 naturals to find on each of strings 6 and 5, plus the 14 musical-alphabet items.
+  await expect(page.getByTestId('new-count')).toHaveText('28');
+  await page.getByTestId('start-session').click();
+  await expect(page.getByTestId('d2-prompt')).toBeVisible();
+}
