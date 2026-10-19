@@ -797,7 +797,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Unit tests for target sets and grading, plus an e2e test on the iPad projects.
 
 ### M3-15 · D38 "Build the chord" (tap a voicing)
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-03, M3-04, M3-18
 - **Design:** §6 D38, research/03 C5 ("build a chord by tapping")
 - **Owns:** `app/src/drills/d38-build-the-chord/**`, `app/e2e/m3-15.spec.ts`
