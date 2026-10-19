@@ -32,9 +32,9 @@ const GROUPS: readonly Group[] = [
   {
     id: 'C9.pop',
     title: 'Progressions: pop and rock',
-    // Rule 7: chord construction → progressions. The chords sit on the key's
-    // degrees (C4) and are major and minor triads (C5).
-    prerequisites: ['C4.flat-key-degrees', 'C5.triads'],
+    // Rule 7 and design §5: numerals → progressions. C8 already builds on the
+    // key's degrees (C4) and its triads (C5).
+    prerequisites: ['C8.numerals-major'],
     progressions: ['I-IV-V', 'I-V-vi-IV', 'vi-IV-I-V', 'I-vi-IV-V'],
   },
   {

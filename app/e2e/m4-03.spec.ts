@@ -18,8 +18,8 @@ const TRIADS: Record<string, string[]> = {
 };
 const DEGREE: Record<string, number> = { I: 0, ii: 1, iii: 2, IV: 3, V: 4, vi: 5 };
 
-/** C9.pop opens on chord construction (rule 7). */
-const C9_PREREQUISITES = ['C4.flat-key-degrees', 'C5.triads'];
+/** C9.pop opens on numerals (rule 7), which open on key degrees and triads. */
+const C9_PREREQUISITES = ['C4.flat-key-degrees', 'C5.triads', 'C8.numerals-major'];
 
 /** A chord in `key`, by numeral. */
 const chordOf = (key: string, numeral: string) => TRIADS[key]![DEGREE[numeral]!]!;

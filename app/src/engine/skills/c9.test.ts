@@ -38,10 +38,10 @@ describe('C9 skills', () => {
     expect(pop.indexOf('prog:vi-IV-I-V:build') - pop.indexOf('prog:I-V-vi-IV:build')).toBe(1);
   });
 
-  it('opens on chord construction (rule 7), the rest once pop is under way', () => {
+  it('opens on numerals (rule 7, design §5), the rest once pop is under way', () => {
     expect(getSkill('C9.pop')).toMatchObject({
       topic: 'C9',
-      prerequisites: ['C4.flat-key-degrees', 'C5.triads'],
+      prerequisites: ['C8.numerals-major'],
       drillTypes: ['progression-builder'],
     });
     expect(getSkill('C9.pop')?.softUnlock).toBeUndefined();
