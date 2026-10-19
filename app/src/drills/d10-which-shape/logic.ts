@@ -39,7 +39,10 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  *   down the neck?
  *
  * Every question's answer is the card's shape, so a chain question recalls
- * the shape from its neighbour. The root, the neck position and the question
+ * the shape from its neighbour. That grades the answer shape's card by the
+ * template grain (design §3.1) without the learner seeing that shape, so
+ * naming questions outweigh chain ones (`engine/config/whichShape.ts`); a
+ * chain item kind of its own is a later engine change. The root, the neck position and the question
  * vary per prompt (rule 12). Triad cores are left to D9: a core alone doesn't
  * name its shape (the C and D cores on strings 3–1 are the same grip).
  *
@@ -247,6 +250,9 @@ export function d10Choices(
   count: number,
   rng: () => number,
 ): CagedShapeName[] {
+  // All five keep every button in its place, so the row is learnt by
+  // position. A chain question's named shape stays in it on purpose: a
+  // deliberate distractor that picks out a learner who misreads the question.
   if (count >= CAGED_ORDER.length) return [...CAGED_ORDER];
   const chosen = new Set<CagedShapeName>([shape]);
   const mixUp = likeliestMixUp(ask, shape, shown);

@@ -59,7 +59,7 @@ const ctx = (
 const make = (id: string, over: Parameters<typeof ctx>[0] = {}) =>
   d10MakePrompt({ id, skillId: 'C6.major-shapes' }, ctx(over));
 
-// rng → question, by the default weights (name 3, next 2, previous 1).
+// rng → question, by the default weights (name 3, next 1, previous 1).
 const NAME = 0;
 const NEXT = 0.6;
 const PREVIOUS = 0.9;
@@ -120,10 +120,10 @@ describe('D10 items and scope', () => {
   it('draws questions by the configured weights', () => {
     const asks = ['name', 'next', 'previous'] as const;
     expect(d10PickAsk(asks, () => 0)).toBe('name');
-    expect(d10PickAsk(asks, () => 0.49)).toBe('name');
-    expect(d10PickAsk(asks, () => 0.5)).toBe('next');
-    expect(d10PickAsk(asks, () => 0.83)).toBe('next');
-    expect(d10PickAsk(asks, () => 0.99)).toBe('previous');
+    expect(d10PickAsk(asks, () => 0.59)).toBe('name');
+    expect(d10PickAsk(asks, () => 0.6)).toBe('next');
+    expect(d10PickAsk(asks, () => 0.79)).toBe('next');
+    expect(d10PickAsk(asks, () => 0.8)).toBe('previous');
     expect(d10PickAsk(['previous'], () => 0)).toBe('previous');
     expect(d10PickAsk([], () => 0)).toBeUndefined();
   });
@@ -256,6 +256,7 @@ describe('placements and the chain', () => {
     expect(d10Choices('next', 'D', 'E', 3, r)).toEqual(['A', 'G', 'D']);
     // Before the C shape comes D (round the chain); the A shape is the other way.
     expect(d10Choices('previous', 'D', 'C', 3, () => 0)).toEqual(['A', 'G', 'D']);
+    // Five choices keep the named A shape: a deliberate distractor.
     expect(d10Choices('next', 'G', 'A', 5, r)).toEqual(['C', 'A', 'G', 'E', 'D']);
   });
 });
