@@ -106,7 +106,7 @@ export function d12Keys(mode: MusicalKey['mode'], scopeLevel: number): string[] 
 }
 
 /** Every chord is a dominant 7 (the blues). */
-function isDominantProgression(p: Progression): boolean {
+function isDominantProgression(p: Pick<Progression, 'numerals'>): boolean {
   return p.numerals.every((n) => parseRoman(n)?.quality === 'dominant7');
 }
 
@@ -389,8 +389,18 @@ export function d12WorkedExample(prompt: D12Prompt): string {
   return `In ${from.keyName} this is ${prompt.name}. Each chord keeps its numeral, so in ${prompt.keyName} it is ${chords}.`;
 }
 
-/** The key's chords with their numerals, for the context panel. */
-export function d12KeyChords(prompt: Pick<D12Prompt, 'key'>): D12Tile[] {
+/**
+ * The key's chords with their numerals, for the context panel. A blues is
+ * built from dominant 7s, not the key's triads, so it lists its own chords.
+ */
+export function d12KeyChords(prompt: Pick<D12Prompt, 'key' | 'numerals' | 'expected'>): D12Tile[] {
+  if (isDominantProgression(prompt)) {
+    const own = new Map<string, D12Tile>();
+    prompt.numerals.forEach((roman, i) => {
+      if (!own.has(roman)) own.set(roman, { symbol: prompt.expected[i] as string, roman });
+    });
+    return [...own.values()];
+  }
   return diatonicChords(parseKey(prompt.key)).map((c) => ({ symbol: c.symbol, roman: c.roman }));
 }
 

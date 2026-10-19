@@ -68,6 +68,16 @@ describe('<ProgressionContextPanel>', () => {
     expect(screen.getByTestId('d12-rotation-note')).toBeInTheDocument();
   });
 
+  it('lists a blues’s own dominant 7s, not the key’s triads', () => {
+    renderPanel(prompt('prog:12-bar-blues:build'), 3);
+    const list = screen.getByRole('list', { name: 'Chords in C major' });
+    expect(
+      within(list)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['I7C7', 'IV7F7', 'V7G7']);
+  });
+
   it('spells flats in a minor key', () => {
     renderPanel(prompt('prog:i-bVII-bVI-bVII:build'), 3);
     expect(screen.getByText('i–♭VII–♭VI–♭VII')).toBeInTheDocument();

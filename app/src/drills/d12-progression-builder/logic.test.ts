@@ -305,7 +305,7 @@ describe('D12 words', () => {
   });
 
   it('lists the key’s chords for the panel', () => {
-    expect(d12KeyChords({ key: 'Am' }).map((c) => c.symbol)).toEqual([
+    expect(d12KeyChords(make('prog:i-bVII-bVI-bVII:build')).map((c) => c.symbol)).toEqual([
       'Am',
       'Bdim',
       'C',
@@ -313,6 +313,12 @@ describe('D12 words', () => {
       'Em',
       'F',
       'G',
+    ]);
+    // A blues lists its own dominant 7s, not the key's triads.
+    expect(d12KeyChords(make('prog:12-bar-blues:build'))).toEqual([
+      { symbol: 'C7', roman: 'I7' },
+      { symbol: 'F7', roman: 'IV7' },
+      { symbol: 'G7', roman: 'V7' },
     ]);
   });
 });
