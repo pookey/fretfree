@@ -1,0 +1,88 @@
+/* CAGED visualiser (design §7 Explore). Shares the explorer's controls and legend. */
+.chainBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.play {
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: var(--accent-fill);
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chain button {
+  display: grid;
+  min-height: var(--tap);
+  min-width: 6.5rem;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chain button span {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chain button[aria-pressed='true'] {
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+.play:focus-visible,
+.chain button:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+
+.detail {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* "Rest of the shape": the neck's dashed guide note, drawn on the page. */
+.legend svg[data-style='ghost'] {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+
+/* Each shape fades in as the chain steps; still where motion is unwelcome. */
+@media (prefers-reduced-motion: no-preference) {
+  .stage {
+    animation: enter 0.35s ease-out;
+  }
+}
+
+@keyframes enter {
+  from {
+    opacity: 0.35;
+  }
+}
