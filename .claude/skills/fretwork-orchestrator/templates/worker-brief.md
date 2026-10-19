@@ -42,7 +42,7 @@ You are a **worker agent** on Fretwork, an iPad-first guitar-learning PWA. You b
 ## Before you report
 
 1. `git rebase origin/main` first. Other packages merge while you work, and a spec written against an older `main` can break once theirs land (e.g. new drills change which prompt a fresh session starts with). Resolve conflicts within your Owns.
-1. Then run `pnpm verify:quick` in your worktree. It must pass. It runs every static gate (typecheck, lint, format, unit + coverage, infra tests, build, bundle budget), then Playwright: your own specs when the change stays inside your drill folder and specs, or the full suite when it reaches shared code or registers a new drill. Fix failures; don't skip or weaken tests. Don't also run `pnpm verify`: the PM runs it before integration, and the lane runs it again before shipping.
+1. Then run `pnpm verify:quick` in your worktree. It must pass. It runs every static gate (typecheck, lint, format, unit + coverage, infra tests, build, bundle budget), then Playwright: your own specs when the change stays inside your drill folder and specs, or the full suite when it reaches shared code or registers a new drill. Fix failures; don't skip or weaken tests. Don't also run `pnpm verify`: the PM runs it before integration, and the lane runs it again before shipping. Don't wait for the load average to drop before running checks: `scripts/cpu-slot.sh` and `scripts/e2e-slot.sh` queue them for a free slot on their own.
 2. Make sure everything is committed (`git status` clean).
 3. Write your report to **`{{REPORT}}`** using exactly this structure:
 
