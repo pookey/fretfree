@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
-import { noteAt, type Position } from '../../theory';
+import { computeGeometry, minScale } from '../../components/fretboard/geometry';
+import { noteAt, stringCount, type FretRange, type Position, type Tuning } from '../../theory';
 import type { DrillRenderProps } from '../types';
 import {
   d39ChoiceLabel,
@@ -21,6 +22,15 @@ import styles from './D39View.module.css';
 
 /** The string the keyboard focus moves along in find mode; any string on the fret counts. */
 const FOCUS_STRING = 3;
+
+/**
+ * The shortest the neck may be drawn (px) with every cell still ≥44pt. On iPad
+ * the neck shrinks to the room above the feedback bar, but never below this.
+ */
+function neckMinHeight(fretRange: FretRange, tuning: Tuning): number {
+  const g = computeGeometry({ fretRange, stringCount: stringCount(tuning), handedness: 'right' });
+  return Math.ceil(g.height * minScale(g));
+}
 
 /**
  * D39 view (design §6 D39): the question and fret buttons, the neck below.
@@ -252,6 +262,7 @@ export function D39View({
         data-testid="d39-neck"
         data-mode={mode}
         data-spotlight={spotlight}
+        style={{ '--neck-min-h': `${neckMinHeight(range, tuning)}px` } as CSSProperties}
       >
         <Fretboard
           tuning={tuning}

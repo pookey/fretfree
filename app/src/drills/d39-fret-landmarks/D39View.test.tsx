@@ -232,4 +232,15 @@ describe('<D39View>', () => {
     renderView(prompt('marker:f3'), { withAside: false });
     expect(screen.queryByTestId('context-panel')).toBeNull();
   });
+
+  it('floors the neck at the height that keeps its cells 44pt (M1-41)', () => {
+    // The upper octave's frets are narrower, so it needs a taller neck.
+    const minHeight = () => screen.getByTestId('d39-neck').style.getPropertyValue('--neck-min-h');
+    const { unmount } = renderView(prompt('marker:f7'));
+    expect(minHeight()).toBe('337px');
+    unmount();
+    renderView(prompt('repeat:-12@f15'));
+    expect(neck().getAttribute('data-fret-from')).toBe('12');
+    expect(minHeight()).toBe('368px');
+  });
 });

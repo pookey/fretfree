@@ -107,6 +107,54 @@
   gap: var(--space-3);
 }
 
+/* iPad: the neck takes the room left above the feedback bar and shrinks
+   (letterboxed) to fit it, so a short 0–12 or 12–24 neck on an iPad mini in
+   landscape ends above the bar. It never goes below the height that keeps
+   every cell ≥44pt (--neck-min-h, set by the view): with no room for that,
+   the page scrolls instead. */
+.drill:not([data-size-class='compact']) .neckArea {
+  flex: 1 1 0;
+  min-height: calc(var(--neck-min-h) + var(--space-2));
+  display: flex;
+  flex-direction: column;
+}
+
+.drill:not([data-size-class='compact']) .neckArea svg {
+  flex: none;
+  margin-top: auto;
+  max-height: max(100%, var(--neck-min-h));
+}
+
+/* A short iPad window (an iPad mini or 11-inch iPad in landscape): the 12–24
+   neck is at its 44pt floor, so the prompt column gives up the room instead.
+   Smaller type and gaps, and 44pt fret buttons, keep a worked example with two
+   rows of frets above a neck that ends over the feedback bar. */
+@media (max-height: 54rem) {
+  .drill:not([data-size-class='compact']) {
+    gap: var(--space-3);
+  }
+
+  .drill:not([data-size-class='compact']) .top {
+    gap: var(--space-2);
+  }
+
+  .drill:not([data-size-class='compact']) .prompt {
+    font-size: 1.25rem;
+    line-height: 1.3;
+  }
+
+  .drill:not([data-size-class='compact']) .choices {
+    gap: var(--space-1) var(--space-2);
+  }
+
+  .drill:not([data-size-class='compact']) .choice {
+    min-width: 3rem;
+    min-height: 2.75rem;
+    padding: 0 var(--space-2);
+    font-size: 1.25rem;
+  }
+}
+
 .drill[data-size-class='compact'] .prompt {
   font-size: 1.125rem;
 }
