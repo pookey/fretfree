@@ -765,9 +765,10 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Status:** todo
 - **Deps:** M3-07
 - **Design:** §7 session context panel
-- **Owns:** `app/src/session/context/**`, `app/src/session/SessionScreen.tsx`
+- **Owns:** `app/src/session/SessionScreen.tsx` (hotspot), `app/src/drills/d7-spell-it/ContextPanel*`, `app/src/drills/d8-chord-tone/ContextPanel*`, `app/src/drills/d9-build-caged/ContextPanel*`, `app/e2e/m3-11.spec.ts`
 - **Acceptance:**
-  - Drills declare their context panels: key and diatonic chords, current chord diagram, CAGED chain mini-map, interval legend.
+  - *Scope note (2026-10-19): M2-18 added the drill plugin's optional `contextPanel`, and M2-21 moved D3, D5, D6, D7 and D39 onto it. Build on that, with no second registry.*
+  - Drills declare their context panels: key and diatonic chords (D7), current chord diagram (D8), CAGED chain mini-map (D9; never while D10 serves), interval legend (done in D5).
   - The panel content follows guide fading and is hidden at level 0.
 
 ### M3-13 · D36 "What chord is this?"
