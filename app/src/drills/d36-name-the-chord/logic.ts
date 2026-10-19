@@ -75,6 +75,13 @@ export interface ChordNote extends Position {
 
 export type D36Voicing = 'open' | 'barre' | 'shape';
 
+/** The index-finger barre of a barre chord: across `fret`, strings `from` (1) to `to`. */
+export interface D36Barre {
+  fret: number;
+  from: number;
+  to: number;
+}
+
 /** Where the voicing is drawn: on the neck, or as a chord diagram. */
 export type D36Display = 'neck' | 'diagram';
 
@@ -87,6 +94,8 @@ export interface D36Prompt {
   /** The chord symbol, e.g. `Am7`. */
   chord: string;
   voicing: D36Voicing;
+  /** The barre, for a barre chord. */
+  barre: D36Barre | null;
   display: D36Display;
   /** Every note of the voicing, low to high in pitch. The root is the lowest. */
   notes: ChordNote[];
@@ -156,10 +165,23 @@ function pick<T>(xs: readonly T[], rng: () => number): T | undefined {
   return xs[Math.min(xs.length - 1, Math.floor(rng() * xs.length))];
 }
 
-/** Open if a string rings open; an E or A shape up the neck is a barre chord. */
-function voicingOf(shape: CagedShapeName, notes: readonly Position[]): D36Voicing {
+/**
+ * An E or A shape up the neck whose top string sits at the root's fret is a
+ * barre chord: the index finger lies across that fret, from the root string
+ * to string 1. Grips that leave string 1 out (the m7♭5s) are fingered
+ * note by note.
+ */
+function barreOf(shape: CagedShapeName, notes: readonly ChordNote[]): D36Barre | null {
+  const root = notes[0];
+  if ((shape !== 'E' && shape !== 'A') || !root || root.fret === 0) return null;
+  const top = notes.find((n) => n.string === 1);
+  return top?.fret === root.fret ? { fret: root.fret, from: 1, to: root.string } : null;
+}
+
+/** Open if a string rings open, a barre chord if barred, otherwise a moved shape. */
+function voicingOf(notes: readonly Position[], barre: D36Barre | null): D36Voicing {
   if (notes.some((n) => n.fret === 0)) return 'open';
-  return shape === 'E' || shape === 'A' ? 'barre' : 'shape';
+  return barre ? 'barre' : 'shape';
 }
 
 export function d36MakePrompt(item: Item, ctx: DrillContext): D36Prompt {
@@ -185,13 +207,15 @@ export function d36MakePrompt(item: Item, ctx: DrillContext): D36Prompt {
     .map((n) => ({ ...n, name: chordToneOf(root, kind, n.degree) as string }))
     .sort((a, b) => midiAt(a, tuning) - midiAt(b, tuning));
   const frets = notes.map((n) => n.fret);
+  const barre = barreOf(t.shape, notes);
   return {
     itemId: item.id,
     kind,
     shape: t.shape,
     root,
     chord: nameChord(root, kind),
-    voicing: voicingOf(t.shape, notes),
+    voicing: voicingOf(notes, barre),
+    barre: voicingOf(notes, barre) === 'barre' ? barre : null,
     display,
     notes,
     span: { from: Math.min(...frets), to: Math.max(...frets) },
@@ -351,7 +375,7 @@ export function d36RootLine(prompt: D36Prompt): string {
 export function d36VoicingLine(prompt: D36Prompt): string {
   const { from, to } = prompt.span;
   if (prompt.voicing === 'open') return `Open chord, ${prompt.shape} shape`;
-  if (prompt.voicing === 'barre') return `${prompt.shape}-shape barre at fret ${from}`;
+  if (prompt.barre) return `${prompt.shape}-shape barre at fret ${prompt.barre.fret}`;
   return `${prompt.shape} shape, frets ${from}–${to}`;
 }
 

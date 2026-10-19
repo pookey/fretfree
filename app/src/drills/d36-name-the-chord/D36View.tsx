@@ -54,14 +54,7 @@ function voicingOf(prompt: D36Prompt, reveal: boolean): ChordVoicing {
     style: reveal ? d36DegreeStyle(n.degree) : ('tone' as const),
     label: d36DegreeLabel(n.degree),
   }));
-  const under = prompt.notes.filter((n) => n.fret === prompt.span.from).map((n) => n.string);
-  if (prompt.voicing !== 'barre' || under.length < 2) return { notes };
-  return {
-    notes,
-    barres: [
-      { fret: prompt.span.from, from: Math.min(...under), to: Math.max(...under), finger: 1 },
-    ],
-  };
+  return prompt.barre ? { notes, barres: [{ ...prompt.barre, finger: 1 }] } : { notes };
 }
 
 type ButtonState = 'correct' | 'wrong' | 'expected' | undefined;

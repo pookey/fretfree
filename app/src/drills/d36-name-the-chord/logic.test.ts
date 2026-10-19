@@ -214,6 +214,25 @@ describe('D36 prompts', () => {
     const g = prompt('chord-name:D-shape@major', seq(4 / 7 + 0.01, 0.9));
     expect(d36VoicingLine(g)).toBe('D shape, frets 5–8');
     expect(d36VoicingLine(prompt('chord-name:A-shape@minor'))).toBe('Open chord, A shape');
+    expect(f.barre).toEqual({ fret: 1, from: 1, to: 6 });
+    expect(g.barre).toBeNull();
+  });
+
+  it('calls a moved shape a barre only when it is barred, anchored on the root', () => {
+    // Bm7♭5 7x776x: the ♭5 sits a fret below the root, and nothing is barred.
+    const bm7b5 = prompt('chord-name:E-shape@m7b5', seq(6 / 7 + 0.01, 0.9));
+    expect(grip(bm7b5)).toBe('7x776x');
+    expect(bm7b5).toMatchObject({ voicing: 'shape', barre: null });
+    expect(d36VoicingLine(bm7b5)).toBe('E shape, frets 6–7');
+    // Bm7♭5 x2323x is fingered without a barre too.
+    const a = prompt('chord-name:A-shape@m7b5', seq(6 / 7 + 0.01, 0.9));
+    expect(grip(a)).toBe('x2323x');
+    expect(a.barre).toBeNull();
+    // Bsus2 x24422: barred at the root's fret, from string 5.
+    const sus = prompt('chord-name:A-shape@sus2', seq(6 / 7 + 0.01, 0.9));
+    expect(grip(sus)).toBe('x24422');
+    expect(sus.barre).toEqual({ fret: 2, from: 1, to: 5 });
+    expect(d36VoicingLine(sus)).toBe('A-shape barre at fret 2');
   });
 
   it('draws a true voicing of its quality for every item, scope and rng', () => {
