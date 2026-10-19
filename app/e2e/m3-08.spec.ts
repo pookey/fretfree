@@ -104,7 +104,7 @@ test.describe('M3-08 CAGED visualiser', () => {
     await expect(page.getByTestId('caged-detail')).toHaveText(
       'Root on string 6, frets 8–10. Triad core on strings 3–1. Next up the neck: the D shape.',
     );
-    // Cm E shape at fret 8: its core is G–C–Eb on strings 3–1.
+    // Cm E shape at fret 8: its core is Eb–G–C on strings 3–1.
     await page.getByRole('radio', { name: 'Note names' }).check({ force: true });
     await expect(neck(page).getByTestId('marker-root')).toHaveText('C');
     await expect(neck(page).getByTestId('marker-third')).toHaveText('Eb');

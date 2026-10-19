@@ -259,7 +259,8 @@ describe('<View>', () => {
     mockReducedMotion(false);
     renderView();
     fireEvent.change(screen.getByRole('combobox', { name: 'Root' }), { target: { value: '7' } });
-    expect(screen.getByRole('button', { name: 'Pause' })).toHaveAttribute('aria-pressed', 'true');
+    // The label says what the button does, so it carries no pressed state too.
+    expect(screen.getByRole('button', { name: 'Pause' })).not.toHaveAttribute('aria-pressed');
     expect(screen.getByTestId('caged-name')).toHaveTextContent('G: G shape');
     act(() => vi.advanceTimersByTime(STEP_MS));
     expect(screen.getByTestId('caged-name')).toHaveTextContent('G: E shape');
@@ -282,6 +283,21 @@ describe('<View>', () => {
     expect(screen.getByTestId('caged-name')).toHaveTextContent('G: C shape');
   });
 
+  it("gives a new chord's first shape a full step", () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    mockReducedMotion(false);
+    renderView();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Root' }), { target: { value: '7' } });
+    act(() => vi.advanceTimersByTime(STEP_MS - 300));
+    expect(screen.getByTestId('caged-name')).toHaveTextContent('G: G shape');
+    // Picked just before G's first step was due: A's lowest shape stays a full step.
+    fireEvent.change(screen.getByRole('combobox', { name: 'Root' }), { target: { value: '9' } });
+    act(() => vi.advanceTimersByTime(600));
+    expect(screen.getByTestId('caged-name')).toHaveTextContent('A: A shape');
+    act(() => vi.advanceTimersByTime(STEP_MS - 600));
+    expect(screen.getByTestId('caged-name')).toHaveTextContent('A: G shape');
+  });
+
   it('never plays under reduced motion, and stops if it is turned on mid-chain', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const media = mockReducedMotion(true);
@@ -296,6 +312,12 @@ describe('<View>', () => {
     act(() => media.set(false));
     fireEvent.click(screen.getByRole('button', { name: 'Play the chain' }));
     act(() => media.set(true));
+    act(() => vi.advanceTimersByTime(STEP_MS * 3));
+    expect(screen.getByTestId('caged-name')).toHaveTextContent('Cm: C shape');
+
+    // Turning motion back on doesn't resume the chain unasked.
+    act(() => media.set(false));
+    expect(screen.getByRole('button', { name: 'Play the chain' })).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(STEP_MS * 3));
     expect(screen.getByTestId('caged-name')).toHaveTextContent('Cm: C shape');
   });

@@ -249,6 +249,7 @@ export function View() {
   const playable = !reduced;
   const active = playing && playable;
   const last = content.chain.length - 1;
+  // A new chord restarts the timer, so its first shape gets a full step.
   useEffect(() => {
     if (!active || step === null) return;
     const timer = setTimeout(() => {
@@ -256,7 +257,10 @@ export function View() {
       if (step + 1 >= last) setPlaying(false);
     }, STEP_MS);
     return () => clearTimeout(timer);
-  }, [active, step, last]);
+  }, [active, step, last, content]);
+
+  // Reduced motion stops the chain for good: turning it off again doesn't resume it.
+  if (reduced && playing) setPlaying(false);
 
   // Keep the shape on show in view where the neck scrolls (phones, narrow windows).
   useEffect(() => {
@@ -343,7 +347,6 @@ export function View() {
           <button
             type="button"
             className={own.play}
-            aria-pressed={active}
             onClick={() => (active ? setPlaying(false) : play())}
           >
             {active ? 'Pause' : 'Play the chain'}
