@@ -62,6 +62,12 @@ interface KeyboardGrab extends Carried {
   target: number;
 }
 
+/** Pointer or keyboard state, kept only for the prompt it began on. */
+interface Held<T> {
+  prompt: D12Prompt;
+  value: T;
+}
+
 function fresh(prompt: D12Prompt): Edit {
   return { prompt, slots: emptySlots(prompt), history: [], current: 0 };
 }
@@ -101,10 +107,24 @@ export function D12View({
     [prompt],
   );
 
-  const [drag, setDrag] = useState<PointerDrag | null>(null);
-  const [grab, setGrab] = useState<KeyboardGrab | null>(null);
+  // A drag or a grab ends with its prompt, and when the answer is checked.
+  const [dragHeld, setDragHeld] = useState<Held<PointerDrag> | null>(null);
+  const [grabHeld, setGrabHeld] = useState<Held<KeyboardGrab> | null>(null);
+  const live = (h: Held<unknown>) => !feedback && h.prompt === prompt;
+  const drag = dragHeld && live(dragHeld) ? dragHeld.value : null;
+  const grab = grabHeld && live(grabHeld) ? grabHeld.value : null;
+  const setDrag = useCallback(
+    (value: PointerDrag | null) => setDragHeld(value && { prompt, value }),
+    [prompt],
+  );
+  const setGrab = useCallback(
+    (value: KeyboardGrab | null) => setGrabHeld(value && { prompt, value }),
+    [prompt],
+  );
   const [said, setSaid] = useState('');
-  const press = useRef<(Carried & { x: number; y: number; id: number }) | null>(null);
+  const press = useRef<(Carried & { x: number; y: number; id: number; prompt: D12Prompt }) | null>(
+    null,
+  );
   const dragged = useRef(false);
   const slotRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -165,13 +185,16 @@ export function D12View({
     if (isFull(slots)) onAnswer({ chords: [...slots] });
   }, [slots, onAnswer]);
 
-  /** Put a carried chord down on a slot, or off the chart (removing a placed one). */
+  /**
+   * Put a carried chord down on a slot, or off the chart (removing a placed
+   * one). Back on its own slot changes nothing, so it leaves no Undo step.
+   */
   const drop = useCallback(
     (c: Carried, target: number | null) => {
       if (target === null) {
         if (c.from !== null) clear(c.from);
       } else if (c.from === null) fill(target, c.chord);
-      else move(c.from, target);
+      else if (c.from !== target) move(c.from, target);
     },
     [clear, fill, move],
   );
@@ -188,7 +211,7 @@ export function D12View({
   useEffect(() => {
     const moveTo = (e: globalThis.PointerEvent) => {
       const p = press.current;
-      if (!p || e.pointerId !== p.id) return;
+      if (!p || e.pointerId !== p.id || p.prompt !== prompt || feedback) return;
       if (!dragged.current && Math.hypot(e.clientX - p.x, e.clientY - p.y) < DRAG_THRESHOLD) {
         return;
       }
@@ -205,7 +228,8 @@ export function D12View({
       const p = press.current;
       if (!p || e.pointerId !== p.id) return;
       press.current = null;
-      if (dragged.current) {
+      // A press from an earlier prompt, or one still down at Check, drops nothing.
+      if (dragged.current && p.prompt === prompt && !feedback) {
         const target = slotAt(e.clientX, e.clientY);
         drop(p, target);
         setSaid(
@@ -231,16 +255,18 @@ export function D12View({
       window.removeEventListener('pointerup', release);
       window.removeEventListener('pointercancel', cancel);
     };
-  }, [drop, noun]);
+  }, [drop, noun, prompt, feedback, setDrag]);
 
-  const startPress = (e: PointerEvent, c: Carried) => {
-    if (feedback || (e.pointerType === 'mouse' && e.button !== 0)) return;
-    press.current = { ...c, x: e.clientX, y: e.clientY, id: e.pointerId };
+  const startPress = (e: PointerEvent, c: Carried | null) => {
+    // Browsers send no click to the pressed element after a drag, so a new
+    // press, even on an empty slot, clears the last drag's flag.
     dragged.current = false;
+    if (!c || feedback || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    press.current = { ...c, x: e.clientX, y: e.clientY, id: e.pointerId, prompt };
     setGrab(null);
   };
 
-  /** A click that ends a drag is not a tap. */
+  /** A click that ends a drag (on the element it started from) is not a tap. */
   const tapped = () => {
     if (!dragged.current) return true;
     dragged.current = false;
@@ -320,6 +346,7 @@ export function D12View({
   }, [
     feedback,
     grab,
+    setGrab,
     drop,
     noun,
     slots,
@@ -344,8 +371,10 @@ export function D12View({
     feedback && !feedback.result.correct && answer ? d12Explain(prompt, answer) : [];
   const named = guided || guides.sourceNumerals || Boolean(feedback);
   const target = grab?.target ?? drag?.over ?? null;
-  // A 12-bar chart: smaller slots, and the source chart in two rows of six.
+  // A 12-bar chart: smaller slots, and on an iPad the source chart in two
+  // rows of six. A phone keeps the slots' rows of four.
   const long = slots.length > 4;
+  const sourceColumns = long && sizeClass !== 'compact' ? 6 : columns;
 
   return (
     <div
@@ -369,10 +398,7 @@ export function D12View({
           {prompt.from && (
             <figure className={styles.source} data-testid="d12-source">
               <figcaption>In {prompt.from.keyName}</figcaption>
-              <ol
-                className={styles.chart}
-                style={{ '--columns': long ? 6 : columns } as CSSProperties}
-              >
+              <ol className={styles.chart} style={{ '--columns': sourceColumns } as CSSProperties}>
                 {prompt.from.chords.map((c, i) => (
                   <li key={i}>
                     <span className={styles.chartChord}>{pretty(c)}</span>
@@ -419,9 +445,7 @@ export function D12View({
                     aria-label={`${capitalise(noun)} ${i + 1}${showNumeral ? `, ${numeral}` : ''}: ${
                       chord ? spokenChord(chord) : 'empty'
                     }${verdict ? `, ${verdict}` : ''}`}
-                    onPointerDown={(e) => {
-                      if (chord) startPress(e, { chord, from: i });
-                    }}
+                    onPointerDown={(e) => startPress(e, chord ? { chord, from: i } : null)}
                     onClick={() => {
                       if (tapped()) select(i);
                     }}

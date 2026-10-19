@@ -69,8 +69,10 @@ function pointerDrag(from: Element, to: Element | null, pointerType = 'touch') {
   fireEvent.pointerMove(window, { pointerId: 7, clientX: 14, clientY: 12 });
   fireEvent.pointerMove(window, { pointerId: 7, clientX: 200, clientY: 120 });
   fireEvent.pointerUp(window, { pointerId: 7, clientX: 200, clientY: 120 });
-  // A mouse ends a drag with a click on the pressed element.
-  if (pointerType === 'mouse') fireEvent.click(from);
+  // A mouse sends a click only when it is released over the element it
+  // pressed; a cross-element drag clicks their common ancestor. A moved touch
+  // sends no click.
+  if (pointerType === 'mouse' && to === from) fireEvent.click(from);
 }
 
 afterEach(() => {
@@ -120,6 +122,36 @@ describe('<D12View>', () => {
     // The click that ends a mouse drag doesn't also tap the tile into a slot.
     expect(slotText()).toEqual(['', '', 'Am', 'F']);
     expect(screen.queryByTestId('d12-drag')).not.toBeInTheDocument();
+  });
+
+  it('selects an empty slot by tap after a drag', () => {
+    renderView(prompt());
+    pointerDrag(tile('C'), slots()[0]!);
+    fireEvent.pointerDown(slots()[2]!, { pointerId: 8, button: 0, pointerType: 'touch' });
+    fireEvent.pointerUp(window, { pointerId: 8 });
+    fireEvent.click(slots()[2]!);
+    expect(slots()[2]).toHaveAttribute('data-state', 'current');
+    fireEvent.click(tile('A minor'));
+    expect(slotText()).toEqual(['C', '', 'Am', '']);
+    // And after a mouse drag.
+    pointerDrag(tile('G'), slots()[1]!, 'mouse');
+    fireEvent.pointerDown(slots()[3]!, { pointerId: 8, button: 0, pointerType: 'mouse' });
+    fireEvent.pointerUp(window, { pointerId: 8 });
+    fireEvent.click(slots()[3]!);
+    fireEvent.click(tile('F'));
+    expect(slotText()).toEqual(['C', 'G', 'Am', 'F']);
+  });
+
+  it('ignores a chord dropped back on its own slot, and the click that ends it', () => {
+    renderView(prompt());
+    fireEvent.click(tile('C'));
+    fireEvent.click(tile('G'));
+    pointerDrag(slots()[0]!, slots()[0]!, 'mouse');
+    expect(slotText()).toEqual(['C', 'G', '', '']);
+    expect(slots()[2]).toHaveAttribute('data-state', 'current');
+    // No Undo step was added: one Undo takes back the G.
+    fireEvent.click(undo());
+    expect(slotText()).toEqual(['C', '', '', '']);
   });
 
   it('shows the chord under the pointer while dragging', () => {
@@ -209,6 +241,47 @@ describe('<D12View>', () => {
     expect(status()).toHaveTextContent('Removed C.');
   });
 
+  it('adds no Undo step for a chord put back on its own slot', () => {
+    renderView(prompt());
+    fireEvent.click(tile('C'));
+    fireEvent.click(tile('G'));
+    const first = slots()[0]!;
+    first.focus();
+    key(' ', first);
+    key(' ', first);
+    expect(slotText()).toEqual(['C', 'G', '', '']);
+    fireEvent.click(undo());
+    expect(slotText()).toEqual(['C', '', '', '']);
+  });
+
+  it('drops a keyboard grab or a pointer drag when the answer is checked', () => {
+    const p = prompt();
+    const { rerender, onAnswer } = renderView(p);
+    for (const k of ['2', '6', '1', '5']) key(k);
+    slots()[0]!.focus();
+    key(' ', slots()[0]!);
+    key('ArrowRight', slots()[0]!);
+    expect(slots()[1]).toHaveAttribute('data-state', 'target');
+    // A finger presses a slot, then another taps Check.
+    pointAt(slots()[2]!);
+    fireEvent.pointerDown(slots()[3]!, { pointerId: 4, clientX: 0, clientY: 0, button: 0 });
+    fireEvent.pointerMove(window, { pointerId: 4, clientX: 90, clientY: 90 });
+    expect(screen.getByTestId('d12-drag')).toBeInTheDocument();
+    fireEvent.click(check());
+    expect(onAnswer).toHaveBeenCalledWith({ chords: ['C', 'G', 'Am', 'F'] });
+    rerender(p, { feedback: fb(p, ['C', 'G', 'Am', 'F']) });
+    expect(screen.queryByTestId('d12-drag')).not.toBeInTheDocument();
+    // The next prompt starts with nothing held, even under a finger still down.
+    const next = prompt('prog:I-IV-V:build');
+    rerender(next, { feedback: null });
+    fireEvent.pointerMove(window, { pointerId: 4, clientX: 120, clientY: 90 });
+    fireEvent.pointerUp(window, { pointerId: 4, clientX: 120, clientY: 90 });
+    expect(slots().map((s) => s.getAttribute('data-state'))).toEqual(['current', 'empty', 'empty']);
+    key(' ');
+    expect(slotText()).toEqual(['', '', '']);
+    expect(screen.queryByTestId('d12-drag')).not.toBeInTheDocument();
+  });
+
   it('takes number keys for tiles, Backspace to undo and Enter to check', () => {
     const { onAnswer } = renderView(prompt());
     // Tiles in letter order: Am C Dm Em F G.
@@ -257,6 +330,15 @@ describe('<D12View>', () => {
     expect(slots()).toHaveLength(12);
     expect(slots()[11]).toHaveAccessibleName('Bar 12: empty');
     expect(screen.getByRole('list', { name: 'Progression' })).toHaveStyle('--columns: 4');
+  });
+
+  it('sets a 12-bar source chart in rows of six on an iPad and four on a phone', () => {
+    const p = prompt('prog:12-bar-blues:transpose');
+    const { rerender } = renderView(p, { sizeClass: 'regular' });
+    const chart = () => within(screen.getByTestId('d12-source')).getByRole('list');
+    expect(chart()).toHaveStyle('--columns: 6');
+    rerender(p, { sizeClass: 'compact' });
+    expect(chart()).toHaveStyle('--columns: 4');
   });
 
   it('marks each slot in feedback and explains a rotation', () => {

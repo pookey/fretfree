@@ -166,7 +166,15 @@ test.describe('M4-03 D12 progression builder', () => {
     await touchDrag(page, slots(page).nth(2), null);
     // The worked example's faint answer shows through an empty slot.
     await expect(slots(page).nth(2)).toHaveAccessibleName(/: empty$/);
-    await touchDrag(page, tile(page, five!), slots(page).nth(2));
+    // Clearing the I selects its slot, but after a drag a tap still selects
+    // another empty slot for the next tapped tile.
+    await touchDrag(page, slots(page).nth(0), null);
+    await expect(slots(page).nth(0)).toHaveAttribute('data-state', 'current');
+    await slots(page).nth(2).tap();
+    await expect(slots(page).nth(2)).toHaveAttribute('data-state', 'current');
+    await tile(page, five!).tap();
+    await tile(page, one!).tap();
+    await expect(slots(page)).toHaveText([one!, four!, five!].map(shown));
     await check(page);
     await expect(page.getByTestId('feedback-correct')).toBeVisible();
   });
@@ -211,6 +219,34 @@ test.describe('M4-03 D12 progression builder', () => {
     }
     await page.keyboard.press('Enter');
     await expect(page.getByTestId('feedback-correct')).toBeVisible();
+  });
+
+  test('a 12-bar chart to transpose fits the screen @smoke', async ({ page }) => {
+    // The blues opens once pop is under way and sevenths are known.
+    await masterSkills(page, [...C9_PREREQUISITES, 'C9.pop', 'C5.sevenths']);
+    await focusItem(page, 'prog:12-bar-blues:transpose');
+    const source = page.getByTestId('d12-source');
+    await expect(source).toBeVisible();
+    await expect(source.locator('ol > li')).toHaveCount(12);
+    await expect(slots(page)).toHaveCount(12);
+    // This device, a phone in portrait, then the narrowest phone (an SE, or
+    // Display Zoom). At 320pt the session's own header is too wide, so there
+    // only the chords are checked.
+    const sizes = [page.viewportSize()!, { width: 375, height: 812 }, { width: 320, height: 568 }];
+    for (const size of sizes) {
+      await page.setViewportSize(size);
+      if (size.width > 320) await expectNoHorizontalOverflow(page);
+      // Grid tracks can spill out of a centred chart (off the left edge too)
+      // without scrolling the page, so check every chord's own box.
+      const boxes = await page
+        .locator('[data-testid="d12-source"] li, [data-testid="d12-slot"]')
+        .evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON() as DOMRect));
+      expect(boxes).toHaveLength(24);
+      for (const box of boxes) {
+        expect(box.left).toBeGreaterThanOrEqual(0);
+        expect(box.right).toBeLessThanOrEqual(size.width);
+      }
+    }
   });
 
   test('a phone builds the progression by tapping @smoke', async ({ page }) => {

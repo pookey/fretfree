@@ -366,8 +366,20 @@
   border-radius: var(--radius-s);
 }
 
+/* The source chart shares the width like the slots, so a 12-bar chart fits a phone. */
+.drill[data-size-class='compact'] .source {
+  align-self: stretch;
+}
+
+.drill[data-size-class='compact'] .chart {
+  width: 100%;
+  grid-template-columns: repeat(var(--columns), minmax(0, 4.5rem));
+}
+
 .drill[data-size-class='compact'] .chartChord {
-  min-width: 3rem;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
   font-size: 1rem;
   padding: var(--space-1) var(--space-2);
 }
@@ -409,7 +421,7 @@
   font-size: 1.375rem;
 }
 
-.drill[data-long='true'] .chartChord {
+.drill[data-long='true']:not([data-size-class='compact']) .chartChord {
   min-width: 3.25rem;
   padding: var(--space-1) var(--space-2);
   font-size: 1.0625rem;
