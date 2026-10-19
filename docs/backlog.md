@@ -806,7 +806,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Unit tests for voicing validation, plus an e2e test on the iPad projects.
 
 ### M3-16 · Lazy-load the Explore views (first-load budget)
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §10 non-functional (first-load JS ≤ 250 KB gzip)
 - **Owns:** `app/src/screens/explore/registry.ts`, `app/src/screens/explore/ExploreScreen.tsx`, `app/src/screens/explore/ExploreScreen.test.tsx`, `app/e2e/m3-16.spec.ts`
