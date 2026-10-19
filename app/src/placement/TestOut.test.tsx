@@ -148,7 +148,8 @@ describe('TestOut', () => {
     }
     await answerRight();
     const result = await screen.findByTestId('test-out-result', {}, { timeout: 3000 });
-    expect(result).toHaveFocus();
+    // Focus moves in an effect after the result renders.
+    await waitFor(() => expect(result).toHaveFocus());
     expect(within(result).getByRole('list', { name: 'What the test found' })).toHaveTextContent(
       'Neck basics: known.',
     );
