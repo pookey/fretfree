@@ -6,6 +6,12 @@ export const placement = {
    * C4 (keys) is here because Chords needs both Intervals and Keys mastered.
    */
   topics: ['F1', 'F2', 'C2', 'C3', 'C4', 'C5', 'C8'],
+  /**
+   * Skills of those topics the test leaves out. D8's chord tones apply C5
+   * spelling on the neck: practice, not a gate, and past where the budget
+   * stops a realistic expert (PM decision, M3-04).
+   */
+  skipSkills: ['C5.tones-triads', 'C5.tones-sevenths'],
   /** No new probe starts after this long: the test takes about 3 minutes. */
   budgetMs: 180_000,
   /**

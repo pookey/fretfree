@@ -211,6 +211,18 @@ describe('placementGroups', () => {
     expect(groups[1]!.prerequisites).toEqual(['F1.x']);
   });
 
+  it('leaves out skipped skills, and so drops them as prerequisites', () => {
+    const skills = [skill('C5.a', 'C5'), skill('C5.b', 'C5', ['C5.a']), skill('C5.c', 'C5')];
+    const groups = placementGroups(skills, () => true, ['C5'], ['C5.a', 'C5.c']);
+    expect(groups.map((g) => g.id)).toEqual(['C5.b']);
+    expect(groups[0]!.prerequisites).toEqual([]);
+    // D8's chord tones apply C5 on the neck: practice, not a gate (M3-04).
+    const real = placementGroups(SKILLS, () => true).map((g) => g.id);
+    expect(real).toContain('C5.triads');
+    expect(real).not.toContain('C5.tones-triads');
+    expect(real).not.toContain('C5.tones-sevenths');
+  });
+
   it('covers F1, F2 and C2 with the drills that exist, and extends as drills land', () => {
     const picker = createDrillPicker(SKILLS, DRILLS);
     const groups = placementGroups(SKILLS, (i) => picker.canServe(i));
