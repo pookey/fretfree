@@ -1,6 +1,7 @@
 import type { Card as FsrsCard, Rating } from 'ts-fsrs';
 import type { FittedFsrsParams } from './refit';
 import {
+  BOX_NUMBERS,
   CAGED_ORDER,
   CAGED_QUALITIES,
   chordFormula,
@@ -18,8 +19,10 @@ import {
   type CagedQuality,
   type CagedShapeName,
   type ChordDegree,
+  type BoxNumber,
   type ChordKind,
   type IntervalName,
+  type PentatonicQuality,
   type Position,
 } from '../theory';
 
@@ -178,7 +181,8 @@ export type ItemRef =
   | { kind: 'progression'; progression: string; task: ProgressionTask }
   | { kind: 'chord-tones'; root: string; chord: ChordKind; degree: ChordDegree | null }
   | { kind: 'key-signature' | 'relative-minor' | 'dominant'; tonic: string }
-  | { kind: 'signature-key'; alteration: number };
+  | { kind: 'signature-key'; alteration: number }
+  | { kind: 'penta-box' | 'penta-relative'; box: BoxNumber; quality: PentatonicQuality };
 
 const INT = '(0|[1-9]\\d*)';
 const OFFSET = '([+-][1-9]\\d*)';
@@ -206,6 +210,7 @@ const PROGRESSION_ITEM = /^prog:([A-Za-z0-9-]+):(build|transpose)$/;
 const CHORD_TONES_ITEM = /^chord-tones:(?:(b{0,2}\d|#\d)@)?([A-G][#b]?[A-Za-z0-9]*)$/;
 const KEY_FACT_ITEM = new RegExp(`^(key-signature|relative-minor|dominant):${PC}$`);
 const SIGNATURE_KEY_ITEM = /^signature-key:(0|[1-7][#b])$/;
+const PENTA_ITEM = /^(penta-box|penta-relative):([1-5])@(major|minor)$/;
 
 function count(n: number, what: string): number {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Invalid ${what}: ${n}`);
@@ -674,6 +679,36 @@ export function parseSignatureKeyItemId(id: string): { alteration: number } | nu
   return { alteration: sig.endsWith('#') ? n : -n };
 }
 
+/**
+ * `penta-box:1@minor`: build minor pentatonic box 1 around its CAGED shape
+ * (C7). `penta-relative:1@minor` finds the relative major's root in that box.
+ * The root and neck position vary per prompt, so one card holds the box in
+ * every key (research/02 rule 12).
+ */
+export function pentaItemId(
+  kind: 'penta-box' | 'penta-relative',
+  box: BoxNumber,
+  quality: PentatonicQuality,
+): string {
+  if (!BOX_NUMBERS.includes(box)) throw new RangeError(`Invalid box: ${String(box)}`);
+  if (quality !== 'major' && quality !== 'minor') {
+    throw new RangeError(`Invalid pentatonic quality: ${String(quality)}`);
+  }
+  return `${kind}:${box}@${quality}`;
+}
+
+export function parsePentaItemId(
+  id: string,
+): { kind: 'penta-box' | 'penta-relative'; box: BoxNumber; quality: PentatonicQuality } | null {
+  const m = PENTA_ITEM.exec(id);
+  if (!m) return null;
+  return {
+    kind: m[1] as 'penta-box' | 'penta-relative',
+    box: Number(m[2]) as BoxNumber,
+    quality: m[3] as PentatonicQuality,
+  };
+}
+
 export function itemId(ref: ItemRef): string {
   switch (ref.kind) {
     case 'note':
@@ -732,6 +767,9 @@ export function itemId(ref: ItemRef): string {
       return keyFactItemId(ref.kind, ref.tonic);
     case 'signature-key':
       return signatureKeyItemId(ref.alteration);
+    case 'penta-box':
+    case 'penta-relative':
+      return pentaItemId(ref.kind, ref.box, ref.quality);
   }
 }
 
@@ -780,5 +818,7 @@ export function parseItemId(id: string): ItemRef | null {
   if (keyFact) return keyFact;
   const signatureKey = parseSignatureKeyItemId(id);
   if (signatureKey) return { kind: 'signature-key', ...signatureKey };
+  const penta = parsePentaItemId(id);
+  if (penta) return penta;
   return null;
 }
