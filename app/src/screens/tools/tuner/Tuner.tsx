@@ -7,11 +7,11 @@ import { useSizeClass } from '../../../shell/size-class';
 import { STANDARD_TUNING } from '../../../theory';
 import { TUNER_CONFIG } from './config';
 import {
+  adviceLabel,
   createPitchSmoother,
   formatCents,
   isVoiced,
   needleAngle,
-  pegAdvice,
   readPitch,
   stringOrdinal,
   tunerStrings,
@@ -44,9 +44,9 @@ export interface TunerProps {
 }
 
 /**
- * The tuner (design §7 Tools, §9): a needle and cents readout for the note
- * the mic hears, the nearest string in standard tuning, and reference tones
- * to tune by ear. It doubles as the mic check: `data-state="working"` on the
+ * The tuner (design §7 Tools, §9): a needle and cents readout against the
+ * string being tuned (the one the learner tapped, else the nearest in
+ * standard tuning), the note heard, and reference tones to tune by ear. It doubles as the mic check: `data-state="working"` on the
  * mic panel once a note has been heard. The mic is requested only when the
  * learner taps Start, and released when the tuner closes.
  */
@@ -61,6 +61,8 @@ export function Tuner({ source: given, playTone = playReferenceTone }: TunerProp
   const [frequency, setFrequency] = useState<number | null>(null);
   const [heard, setHeard] = useState(false);
   const [sounding, setSounding] = useState<TunerString | null>(null);
+  // The string the learner tapped; null tunes whichever string is nearest.
+  const [chosen, setChosen] = useState<number | null>(null);
   const soundingRef = useRef(false);
   const toneTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -94,6 +96,7 @@ export function Tuner({ source: given, playTone = playReferenceTone }: TunerProp
   };
 
   const play = (s: TunerString) => {
+    setChosen(s.string);
     if (!soundOn) return;
     playTone(s.name, { muted: false, volume });
     soundingRef.current = true;
@@ -109,8 +112,9 @@ export function Tuner({ source: given, playTone = playReferenceTone }: TunerProp
   const listening = state === 'running' && !sounding;
   const reading =
     listening && frequency !== null
-      ? readPitch(frequency, strings, { pref: accidentalPref })
+      ? readPitch(frequency, strings, { target: chosen, pref: accidentalPref })
       : null;
+  const target = reading?.string ?? strings.find((s) => s.string === chosen) ?? null;
 
   return (
     <div className={styles.tuner} data-layout={layout}>
@@ -121,10 +125,18 @@ export function Tuner({ source: given, playTone = playReferenceTone }: TunerProp
         onStart={start}
         onStop={() => source.stop()}
       />
-      <Dial reading={reading} state={state} sounding={sounding} />
+      <Dial
+        reading={reading}
+        target={target}
+        chosen={chosen !== null}
+        state={state}
+        sounding={sounding}
+        onAuto={() => setChosen(null)}
+      />
       <ReferenceTones
         strings={strings}
         reading={reading}
+        chosen={chosen}
         sounding={sounding}
         soundOn={soundOn}
         onPlay={play}
@@ -227,12 +239,6 @@ function arc(fromDeg: number, toDeg: number, r: number): string {
 
 const TICKS = Array.from({ length: 21 }, (_, i) => i * 5 - 50);
 
-const ADVICE_LABEL = {
-  'in-tune': 'In tune',
-  'tune-up': 'Flat: tune up',
-  'tune-down': 'Sharp: tune down',
-} as const;
-
 function idleLabel(state: PitchSourceState, sounding: TunerString | null): string {
   if (sounding) return `Playing ${sounding.name}. The needle waits while it sounds.`;
   if (state === 'running') return 'Play a string';
@@ -241,15 +247,24 @@ function idleLabel(state: PitchSourceState, sounding: TunerString | null): strin
 
 function Dial({
   reading,
+  target,
+  chosen,
   state,
   sounding,
+  onAuto,
 }: {
   reading: TunerReading | null;
+  /** The string being tuned, if any yet. */
+  target: TunerString | null;
+  /** Whether the learner picked `target` (rather than it being the nearest). */
+  chosen: boolean;
   state: PitchSourceState;
   sounding: TunerString | null;
+  onAuto: () => void;
 }) {
   const inTune = reading?.advice === 'in-tune';
   const angle = reading ? needleAngle(reading.cents) : 0;
+  const advice = reading ? adviceLabel(reading.cents) : '';
   const band = needleAngle(TUNER_CONFIG.inTuneCents);
   const meter = reading
     ? {
@@ -257,8 +272,8 @@ function Dial({
         'aria-label': 'Tuning needle',
         'aria-valuemin': -50,
         'aria-valuemax': 50,
-        'aria-valuenow': Math.round(reading.cents),
-        'aria-valuetext': `${reading.name}, ${formatCents(reading.cents)}, ${ADVICE_LABEL[reading.advice].toLowerCase()}`,
+        'aria-valuenow': Math.max(-50, Math.min(50, Math.round(reading.cents))),
+        'aria-valuetext': `${reading.string.name} string, ${formatCents(reading.cents)}, ${advice.toLowerCase()}`,
       }
     : {};
   return (
@@ -308,18 +323,23 @@ function Dial({
         </svg>
       </div>
       <div className={styles.readout}>
+        <p className={styles.label} data-testid="tuner-string">
+          {target
+            ? `${stringOrdinal(target.string)} string${chosen ? '' : ' · nearest'}`
+            : 'Standard tuning: E A D G B E'}
+        </p>
         <p className={styles.note} data-testid="tuner-note">
-          {reading ? (
+          {target ? (
             <>
-              {reading.pc}
-              <sub>{reading.octave}</sub>
+              {target.pc}
+              <sub>{target.name.slice(target.pc.length)}</sub>
             </>
           ) : (
             <span className={styles.placeholder}>–</span>
           )}
         </p>
         <p className={styles.cents} data-testid="tuner-cents">
-          {reading ? formatCents(reading.cents) : ' '}
+          {reading ? formatCents(reading.cents) : '\u00a0'}
         </p>
         <p className={styles.advice} data-testid="tuner-advice">
           {reading ? (
@@ -327,34 +347,21 @@ function Dial({
               <span aria-hidden className={styles.adviceIcon}>
                 {inTune ? '✓' : reading.advice === 'tune-up' ? '↑' : '↓'}
               </span>
-              {ADVICE_LABEL[reading.advice]}
+              {advice}
             </>
           ) : (
             idleLabel(state, sounding)
           )}
         </p>
-        <NearestString reading={reading} />
-      </div>
-    </div>
-  );
-}
-
-// --- The nearest string ----------------------------------------------------------
-
-function NearestString({ reading }: { reading: TunerReading | null }) {
-  return (
-    <div className={styles.string} data-testid="tuner-string">
-      <h2 className={styles.label}>Nearest string</h2>
-      {reading ? (
-        <p>
-          <span className={styles.stringName}>
-            {stringOrdinal(reading.string.string)} string · {reading.string.name}
-          </span>
-          : <span data-advice={reading.stringAdvice}>{pegAdvice(reading.stringCents)}</span>
+        <p className={styles.heard} data-testid="tuner-heard">
+          {reading ? `Heard ${reading.heard.name}` : '\u00a0'}
         </p>
-      ) : (
-        <p className={styles.muted}>Standard tuning, low to high: E A D G B E.</p>
-      )}
+        {chosen && (
+          <button type="button" className={styles.secondary} onClick={onAuto}>
+            Tune the nearest string
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -364,12 +371,14 @@ function NearestString({ reading }: { reading: TunerReading | null }) {
 function ReferenceTones({
   strings,
   reading,
+  chosen,
   sounding,
   soundOn,
   onPlay,
 }: {
   strings: readonly TunerString[];
   reading: TunerReading | null;
+  chosen: number | null;
   sounding: TunerString | null;
   soundOn: boolean;
   onPlay: (s: TunerString) => void;
@@ -381,28 +390,28 @@ function ReferenceTones({
         Reference tones
       </h2>
       <p className={styles.muted}>
-        Tap a string to hear its note, then tune by ear. The needle waits while it sounds.
+        Tap a string to tune it and hear its note. The needle waits while it sounds.
       </p>
       <ul className={styles.strings}>
         {strings.map((s) => {
-          const nearest = reading?.string.string === s.string;
-          const inTune = nearest && reading?.stringAdvice === 'in-tune';
+          const target = (reading?.string.string ?? chosen) === s.string;
+          const inTune = target && reading?.advice === 'in-tune';
           return (
             <li key={s.string}>
               <button
                 type="button"
                 className={styles.stringButton}
                 aria-label={`${s.name}, ${stringOrdinal(s.string)} string`}
-                data-nearest={nearest}
+                aria-pressed={chosen === s.string}
+                data-target={target}
                 data-in-tune={inTune}
                 data-sounding={sounding?.string === s.string}
-                disabled={!soundOn}
                 onClick={() => onPlay(s)}
               >
                 <span className={styles.stringPc}>{s.pc}</span>
                 <span className={styles.stringMeta}>{s.name}</span>
                 <span className={styles.stringMark} aria-hidden>
-                  {inTune ? '✓' : nearest ? '◆' : sounding?.string === s.string ? '♪' : ''}
+                  {inTune ? '✓' : target ? '◆' : sounding?.string === s.string ? '♪' : ''}
                 </span>
               </button>
             </li>
@@ -411,7 +420,7 @@ function ReferenceTones({
       </ul>
       {!soundOn && (
         <p className={styles.muted}>
-          Sound is off, so reference tones are silent.{' '}
+          Sound is off, so tapping a string picks it without a tone.{' '}
           <Link to="/settings">Turn it on in Settings</Link>.
         </p>
       )}

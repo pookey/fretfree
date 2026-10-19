@@ -58,9 +58,16 @@ test.describe('the tuner', () => {
     await expect(page.getByTestId('tuner-note')).toHaveText('A2');
     await expect(page.getByTestId('tuner-cents')).toHaveText('−12 cents');
     await expect(page.getByTestId('tuner-advice')).toContainText('Flat: tune up');
-    await expect(page.getByTestId('tuner-string')).toContainText('5th string · A2');
-    await expect(page.getByTestId('tuner-string')).toContainText('Tune up 12 cents');
+    await expect(page.getByTestId('tuner-string')).toHaveText('5th string · nearest');
+    await expect(page.getByTestId('tuner-heard')).toHaveText('Heard A2');
     await expect(page.getByTestId('in-tune-mark')).toHaveCount(0);
+
+    // A string a semitone flat is never "in tune", though G#2 itself is.
+    await play(page, 'G#2');
+    await expect(page.getByTestId('tuner-note')).toHaveText('A2');
+    await expect(page.getByTestId('tuner-advice')).toContainText('Flat: tune up about 1 semitone');
+    await expect(page.getByTestId('in-tune-mark')).toHaveCount(0);
+    await expect(page.getByTestId('tuner-heard')).toHaveText('Heard G#2');
 
     await play(page, 'E2', 3);
     await expect(page.getByTestId('tuner-advice')).toContainText('In tune');
@@ -99,8 +106,16 @@ test.describe('the tuner', () => {
     await page.getByRole('button', { name: 'D3, 4th string' }).click();
     await expect(page.getByTestId('tuner-advice')).toContainText('Playing D3.');
     await play(page, 'D3');
-    await expect(page.getByTestId('tuner-note')).toHaveText('–');
+    await expect(page.getByRole('meter')).toHaveCount(0);
     await expect(micCheck(page)).toHaveAttribute('data-state', 'listening');
+    // The tapped string stays the one being tuned.
+    await expect(page.getByTestId('tuner-note')).toHaveText('D3');
+    await expect(page.getByRole('button', { name: 'D3, 4th string' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Tune the nearest string' }).click();
+    await expect(page.getByTestId('tuner-string')).toHaveText('Standard tuning: E A D G B E');
   });
 
   test('tells the learner when the mic stops, and restarts it', async ({ page }) => {
@@ -134,25 +149,32 @@ test.describe('the tuner', () => {
 test.describe('the tuner on the real detector', () => {
   /**
    * Counts getUserMedia calls and refuses them, as a learner tapping Don’t
-   * Allow. Installed on the loaded page, not by an init script: WebKit can
-   * skip init scripts on a navigation the service worker answers.
+   * Allow. Installed on the loaded page (WebKit can skip init scripts on a
+   * navigation the service worker answers), on both the prototype and the
+   * instance, and checked, so a stub that didn't take fails loudly.
    */
   async function refuseMic(page: Page): Promise<void> {
-    await page.evaluate(() => {
+    const installed = await page.evaluate(() => {
       const w = window as unknown as { micRequests: number };
       w.micRequests = 0;
       const refuse = () => {
         w.micRequests += 1;
         return Promise.reject(new DOMException('Permission denied', 'NotAllowedError'));
       };
+      const stub = { value: refuse, configurable: true, writable: true };
+      if (typeof MediaDevices !== 'undefined') {
+        Object.defineProperty(MediaDevices.prototype, 'getUserMedia', stub);
+      }
       const devices = navigator.mediaDevices as MediaDevices | undefined;
-      if (devices) devices.getUserMedia = refuse;
+      if (devices) Object.defineProperty(devices, 'getUserMedia', stub);
       else Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia: refuse } });
+      return navigator.mediaDevices.getUserMedia === refuse;
     });
+    expect(installed).toBe(true);
   }
 
   const micRequests = (page: Page) =>
-    page.evaluate(() => (window as unknown as { micRequests: number }).micRequests);
+    page.evaluate(() => (window as unknown as { micRequests?: number }).micRequests ?? 'reloaded');
 
   test('@smoke opens from Tools without asking for the mic, and explains a refusal', async ({
     page,

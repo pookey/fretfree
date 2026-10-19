@@ -27,6 +27,7 @@ function renderTuner() {
 
 const micCheck = () => screen.getByTestId('mic-check');
 const note = () => screen.getByTestId('tuner-note');
+const heard = () => screen.getByTestId('tuner-heard');
 
 async function startTuner() {
   fireEvent.click(screen.getByRole('button', { name: 'Start tuner' }));
@@ -63,41 +64,60 @@ describe('<Tuner>', () => {
     expect(screen.getByTestId('tuner-advice')).toHaveTextContent('Play a string');
   });
 
-  it('shows the note, its cents, the needle and the nearest string', async () => {
+  it('reads the needle and cents against the nearest string, the note heard second', async () => {
     renderTuner();
     await startTuner();
     play('A2', { cents: -12 });
+    expect(screen.getByTestId('tuner-string')).toHaveTextContent('5th string · nearest');
     expect(note()).toHaveTextContent('A2');
     expect(screen.getByTestId('tuner-cents')).toHaveTextContent('−12 cents');
     expect(screen.getByTestId('tuner-advice')).toHaveTextContent('Flat: tune up');
+    expect(heard()).toHaveTextContent('Heard A2');
     const needle = screen.getByRole('meter', { name: 'Tuning needle' });
     expect(needle).toHaveAttribute('aria-valuenow', '-12');
-    expect(needle).toHaveAttribute('aria-valuetext', 'A2, −12 cents, flat: tune up');
+    expect(needle).toHaveAttribute('aria-valuetext', 'A2 string, −12 cents, flat: tune up');
     expect(Number(needle.getAttribute('data-angle'))).toBeCloseTo(-14.4);
     expect(screen.queryByTestId('in-tune-mark')).toBeNull();
-    const string = screen.getByTestId('tuner-string');
-    expect(string).toHaveTextContent('5th string · A2');
-    expect(string).toHaveTextContent('Tune up 12 cents');
-    expect(screen.getByRole('button', { name: 'A2, 5th string' })).toHaveAttribute(
-      'data-nearest',
-      'true',
-    );
+    const a = screen.getByRole('button', { name: 'A2, 5th string' });
+    expect(a).toHaveAttribute('data-target', 'true');
+    expect(a).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('marks in tune within ±5 cents by shape and words, not colour alone', async () => {
+  it('marks in tune within ±5 whole cents by shape and words, not colour alone', async () => {
     renderTuner();
     await startTuner();
     play('E2', { cents: 4 });
     expect(screen.getByTestId('tuner-advice')).toHaveTextContent('✓In tune');
     expect(screen.getByTestId('in-tune-mark')).toBeInTheDocument();
-    expect(screen.getByTestId('tuner-string')).toHaveTextContent('In tune');
     const low = screen.getByRole('button', { name: 'E2, 6th string' });
     expect(low).toHaveAttribute('data-in-tune', 'true');
     expect(low).toHaveTextContent('✓');
 
+    // The readout and the verdict agree at the edge of the band.
+    play('E2', { cents: 5.4 });
+    expect(screen.getByTestId('tuner-cents')).toHaveTextContent('+5 cents');
+    expect(screen.getByTestId('tuner-advice')).toHaveTextContent('In tune');
+
     play('E2', { cents: 9 });
     expect(screen.getByTestId('tuner-advice')).toHaveTextContent('Sharp: tune down');
     expect(screen.queryByTestId('in-tune-mark')).toBeNull();
+  });
+
+  it('never shows a string a semitone flat as in tune', async () => {
+    renderTuner();
+    await startTuner();
+    play('G#2');
+    expect(note()).toHaveTextContent('A2');
+    expect(screen.getByTestId('tuner-cents')).toHaveTextContent('−100 cents');
+    expect(screen.getByTestId('tuner-advice')).toHaveTextContent('Flat: tune up about 1 semitone');
+    expect(screen.getByTestId('tuner-advice')).not.toHaveTextContent('In tune');
+    expect(screen.queryByTestId('in-tune-mark')).toBeNull();
+    expect(screen.getByRole('meter')).toHaveAttribute('aria-valuenow', '-50');
+    expect(screen.getByRole('button', { name: 'A2, 5th string' })).toHaveAttribute(
+      'data-in-tune',
+      'false',
+    );
+    expect(heard()).toHaveTextContent('Heard G#2');
   });
 
   it('says the mic is working once it hears a note: the mic check', async () => {
@@ -115,13 +135,16 @@ describe('<Tuner>', () => {
     expect(screen.queryByRole('meter')).toBeNull();
   });
 
-  it('spells notes the learner’s way', async () => {
+  it('spells the heard note the learner’s way', async () => {
     useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, accidentalPref: 'flat' } });
     renderTuner();
     await startTuner();
     play('A#2');
-    expect(note()).toHaveTextContent('Bb2');
-    expect(screen.getByTestId('tuner-string')).toHaveTextContent('Tune down about 1 semitone');
+    expect(note()).toHaveTextContent('A2');
+    expect(heard()).toHaveTextContent('Heard Bb2');
+    expect(screen.getByTestId('tuner-advice')).toHaveTextContent(
+      'Sharp: tune down about 1 semitone',
+    );
   });
 
   it.each([
@@ -187,11 +210,39 @@ describe('<Tuner>', () => {
     );
     expect(screen.getByTestId('tuner-advice')).toHaveTextContent('Playing E4.');
     play('E4');
-    expect(note()).toHaveTextContent('–');
+    expect(screen.queryByRole('meter')).toBeNull();
+    expect(heard()).not.toHaveTextContent('Heard');
 
     act(() => vi.advanceTimersByTime(TUNER_CONFIG.referenceTone.muteMicMs));
+    play('E4', { cents: -20 });
+    expect(heard()).toHaveTextContent('Heard E4');
+    expect(screen.getByTestId('tuner-advice')).toHaveTextContent('Flat: tune up');
+  });
+
+  it('tunes the string the learner tapped until they ask for the nearest again', async () => {
+    vi.useFakeTimers();
+    renderTuner();
+    fireEvent.click(screen.getByRole('button', { name: 'E2, 6th string' }));
+    // Chosen before the mic starts: the dial already names the string.
+    expect(note()).toHaveTextContent('E2');
+    expect(screen.getByTestId('tuner-string')).toHaveTextContent('6th string');
+    expect(screen.getByTestId('tuner-string')).not.toHaveTextContent('nearest');
+    expect(screen.getByRole('button', { name: 'E2, 6th string' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await startTuner();
+    act(() => vi.advanceTimersByTime(TUNER_CONFIG.referenceTone.muteMicMs));
+    // G3 is a string of its own, but the learner is tuning the low E.
     play('G3');
+    expect(note()).toHaveTextContent('E2');
+    expect(screen.getByTestId('tuner-advice')).toHaveTextContent('Sharp: tune down about 15');
+    expect(screen.queryByTestId('in-tune-mark')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tune the nearest string' }));
     expect(note()).toHaveTextContent('G3');
+    expect(screen.getByTestId('tuner-string')).toHaveTextContent('3rd string · nearest');
+    expect(screen.getByTestId('tuner-advice')).toHaveTextContent('In tune');
   });
 
   it('works without a mic: tones play before the tuner ever starts', () => {
@@ -201,13 +252,15 @@ describe('<Tuner>', () => {
     expect(source.startCalls).toBe(0);
   });
 
-  it('says so when sound is off, rather than playing nothing', () => {
+  it('picks a string silently when sound is off, and says why', () => {
     useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, soundOn: false } });
     renderTuner();
     const button = screen.getByRole('button', { name: 'A2, 5th string' });
-    expect(button).toBeDisabled();
     fireEvent.click(button);
     expect(playTone).not.toHaveBeenCalled();
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    expect(note()).toHaveTextContent('A2');
+    expect(screen.getByText(/tapping a string picks it without a tone/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Turn it on in Settings' })).toHaveAttribute(
       'href',
       '/settings',

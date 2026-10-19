@@ -65,56 +65,61 @@ export function nearestString(
 /** Which way to turn the peg: flat means tune up. */
 export type Advice = 'in-tune' | 'tune-up' | 'tune-down';
 
+/**
+ * Judged on whole cents, the number the readout shows, so `+5 cents` never
+ * sits beside "tune down".
+ */
 export function advise(cents: number, inTuneCents: number = TUNER_CONFIG.inTuneCents): Advice {
-  if (Math.abs(cents) <= inTuneCents) return 'in-tune';
-  return cents < 0 ? 'tune-up' : 'tune-down';
+  const whole = Math.round(cents);
+  if (Math.abs(whole) <= inTuneCents) return 'in-tune';
+  return whole < 0 ? 'tune-up' : 'tune-down';
 }
 
-export interface TunerReading {
-  readonly frequency: number;
+/** The note the mic hears: secondary to the string being tuned. */
+export interface HeardNote {
   /** The nearest equal-tempered note. */
   readonly midi: number;
   /** Scientific pitch name, e.g. `G#2`. */
   readonly name: string;
-  readonly pc: string;
-  readonly octave: number;
-  /** Cents from `midi`, −50 to +50: the needle. */
-  readonly cents: number;
-  /** The note against its own pitch: what the needle shows. */
-  readonly advice: Advice;
-  /** The nearest open string in the tuning. */
-  readonly string: TunerString;
-  /** Cents from that string's open pitch: how far to turn its peg. */
-  readonly stringCents: number;
-  /** Which way to turn that string's peg. */
-  readonly stringAdvice: Advice;
 }
 
+export interface TunerReading {
+  readonly frequency: number;
+  readonly heard: HeardNote;
+  /** The string being tuned: the one the learner chose, else the nearest. */
+  readonly string: TunerString;
+  /** Cents from that string's open pitch: the needle, and how far to turn its peg. */
+  readonly cents: number;
+  readonly advice: Advice;
+}
+
+/**
+ * Reads a frequency against a string, never against the nearest semitone: a
+ * string tuned a semitone flat reads "tune up", not "in tune" as some other
+ * note. `target` (a string number) is the string the learner chose; without
+ * one, the nearest string is the target.
+ */
 export function readPitch(
   frequency: number,
   strings: readonly TunerString[],
   {
+    target,
     pref = 'sharp',
     a4 = MIC_CONFIG.a4,
     inTuneCents = TUNER_CONFIG.inTuneCents,
-  }: { pref?: AccidentalPref; a4?: number; inTuneCents?: number } = {},
+  }: { target?: number | null; pref?: AccidentalPref; a4?: number; inTuneCents?: number } = {},
 ): TunerReading {
-  const exact = frequencyToMidi(frequency, a4);
-  const midi = Math.round(exact);
-  const cents = (exact - midi) * 100;
-  const { name, pc } = midiToFretNote(midi, pref);
-  const nearest = nearestString(frequency, strings);
+  const midi = Math.round(frequencyToMidi(frequency, a4));
+  const chosen = strings.find((s) => s.string === target);
+  const { string, cents } = chosen
+    ? { string: chosen, cents: centsBetween(frequency, chosen.frequency) }
+    : nearestString(frequency, strings);
   return {
     frequency,
-    midi,
-    name,
-    pc,
-    octave: Math.floor(midi / 12) - 1,
+    heard: { midi, name: midiToFretNote(midi, pref).name },
+    string,
     cents,
     advice: advise(cents, inTuneCents),
-    string: nearest.string,
-    stringCents: nearest.cents,
-    stringAdvice: advise(nearest.cents, inTuneCents),
   };
 }
 
@@ -232,15 +237,15 @@ export function stringOrdinal(string: number): string {
 }
 
 /**
- * How to turn the nearest string's peg: `In tune`, `Tune up 12 cents`, or,
- * beyond half a semitone, `Tune down about 2 semitones`.
+ * What to do with the peg: `In tune`, `Flat: tune up`, or, beyond half a
+ * semitone, `Flat: tune up about 2 semitones`.
  */
-export function pegAdvice(cents: number, inTuneCents: number = TUNER_CONFIG.inTuneCents): string {
+export function adviceLabel(cents: number, inTuneCents: number = TUNER_CONFIG.inTuneCents): string {
   const advice = advise(cents, inTuneCents);
   if (advice === 'in-tune') return 'In tune';
-  const way = advice === 'tune-up' ? 'Tune up' : 'Tune down';
+  const label = advice === 'tune-up' ? 'Flat: tune up' : 'Sharp: tune down';
   const off = Math.abs(cents);
-  if (off <= 50) return `${way} ${formatCents(off).replace('+', '')}`;
+  if (off <= 50) return label;
   const semitones = Math.round(off / 100);
-  return `${way} about ${semitones} ${semitones === 1 ? 'semitone' : 'semitones'}`;
+  return `${label} about ${semitones} ${semitones === 1 ? 'semitone' : 'semitones'}`;
 }

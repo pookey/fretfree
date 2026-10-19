@@ -4,12 +4,12 @@ import type { PitchFrame } from '../../../mic/types';
 import { DROP_D_TUNING } from '../../../theory';
 import {
   advise,
+  adviceLabel,
   centsBetween,
   createPitchSmoother,
   formatCents,
   isVoiced,
   nearestString,
-  pegAdvice,
   needleAngle,
   readPitch,
   stringOrdinal,
@@ -58,9 +58,21 @@ describe('cents', () => {
     expect(advise(0)).toBe('in-tune');
     expect(advise(5)).toBe('in-tune');
     expect(advise(-5)).toBe('in-tune');
-    expect(advise(-5.1)).toBe('tune-up');
-    expect(advise(5.1)).toBe('tune-down');
+    expect(advise(-6)).toBe('tune-up');
+    expect(advise(6)).toBe('tune-down');
     expect(advise(8, 10)).toBe('in-tune');
+  });
+
+  it('judges in tune on the whole cents the readout shows', () => {
+    for (const cents of [5.4, -5.4, 5.49, -5.5]) {
+      expect(formatCents(cents)).toMatch(/^[+−]5 cents$/);
+      expect(advise(cents)).toBe('in-tune');
+      expect(adviceLabel(cents)).toBe('In tune');
+    }
+    expect(formatCents(5.5)).toBe('+6 cents');
+    expect(advise(5.5)).toBe('tune-down');
+    expect(formatCents(-5.6)).toBe('−6 cents');
+    expect(advise(-5.6)).toBe('tune-up');
   });
 
   it('swings the needle in proportion, pinned at ±50 cents', () => {
@@ -100,31 +112,44 @@ describe('nearestString', () => {
 });
 
 describe('readPitch', () => {
-  it('names the note, its cents and the string it is', () => {
+  it('reads cents against the nearest string, and names the note heard', () => {
     const r = readPitch(hz(45, -12), STRINGS);
-    expect(r).toMatchObject({ midi: 45, name: 'A2', pc: 'A', octave: 2, advice: 'tune-up' });
-    expect(r.cents).toBeCloseTo(-12);
     expect(r.string.name).toBe('A2');
-    expect(r.stringCents).toBeCloseTo(-12);
-    expect(r.stringAdvice).toBe('tune-up');
+    expect(r.cents).toBeCloseTo(-12);
+    expect(r.advice).toBe('tune-up');
+    expect(r.heard).toEqual({ midi: 45, name: 'A2' });
   });
 
   it('reads an in-tune string as in tune', () => {
     const r = readPitch(hz(40, 3), STRINGS);
-    expect(r).toMatchObject({ name: 'E2', advice: 'in-tune', stringAdvice: 'in-tune' });
+    expect(r).toMatchObject({ string: { name: 'E2' }, advice: 'in-tune' });
   });
 
-  it('tells a string a semitone flat to tune up, though the note itself is in tune', () => {
+  it('never calls a string a semitone flat in tune, though it is in tune as another note', () => {
     const r = readPitch(hz(44), STRINGS, { pref: 'flat' });
-    expect(r).toMatchObject({ name: 'Ab2', advice: 'in-tune', stringAdvice: 'tune-up' });
     expect(r.string.name).toBe('A2');
-    expect(r.stringCents).toBeCloseTo(-100);
+    expect(r.cents).toBeCloseTo(-100);
+    expect(r.advice).toBe('tune-up');
+    expect(adviceLabel(r.cents)).toBe('Flat: tune up about 1 semitone');
+    expect(r.heard.name).toBe('Ab2');
   });
 
-  it('rounds to the nearest note at the half-way point', () => {
-    expect(readPitch(hz(45, 49), STRINGS)).toMatchObject({ name: 'A2', advice: 'tune-down' });
-    expect(readPitch(hz(45, 51), STRINGS).name).toBe('A#2');
-    expect(readPitch(hz(45, 51), STRINGS).cents).toBeCloseTo(-49);
+  it('reads against the string the learner chose, however far off', () => {
+    // G#2 is nearest the A string, but the learner is tuning the low E.
+    const r = readPitch(hz(44), STRINGS, { target: 6 });
+    expect(r.string.name).toBe('E2');
+    expect(r.cents).toBeCloseTo(400);
+    expect(r.advice).toBe('tune-down');
+    expect(readPitch(hz(40, 2), STRINGS, { target: 6 }).advice).toBe('in-tune');
+    // An unknown or cleared target falls back to the nearest string.
+    expect(readPitch(hz(44), STRINGS, { target: 9 }).string.name).toBe('A2');
+    expect(readPitch(hz(44), STRINGS, { target: null }).string.name).toBe('A2');
+  });
+
+  it('names the heard note to the nearest semitone', () => {
+    expect(readPitch(hz(45, 49), STRINGS).heard.name).toBe('A2');
+    expect(readPitch(hz(45, 51), STRINGS).heard.name).toBe('A#2');
+    expect(readPitch(hz(45, 51), STRINGS).cents).toBeCloseTo(51);
   });
 
   it('honours concert pitch and the in-tune band', () => {
@@ -219,11 +244,12 @@ describe('readout words', () => {
     ]);
   });
 
-  it('says which way to turn the peg, and how far', () => {
-    expect(pegAdvice(4)).toBe('In tune');
-    expect(pegAdvice(-12.2)).toBe('Tune up 12 cents');
-    expect(pegAdvice(30)).toBe('Tune down 30 cents');
-    expect(pegAdvice(-98)).toBe('Tune up about 1 semitone');
-    expect(pegAdvice(210)).toBe('Tune down about 2 semitones');
+  it('says flat or sharp and which way to turn the peg, and how far beyond half a semitone', () => {
+    expect(adviceLabel(4)).toBe('In tune');
+    expect(adviceLabel(-12.2)).toBe('Flat: tune up');
+    expect(adviceLabel(30)).toBe('Sharp: tune down');
+    expect(adviceLabel(-98)).toBe('Flat: tune up about 1 semitone');
+    expect(adviceLabel(210)).toBe('Sharp: tune down about 2 semitones');
+    expect(adviceLabel(8, 10)).toBe('In tune');
   });
 });
