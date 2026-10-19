@@ -847,7 +847,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Size the neck so it clears the bar on every iPad project without scrolling, keeping cells ≥44pt. Flip `clearsBar: true` for D39 in `m2-21.spec.ts` and make it pass.
 
 ### M3-18 · Lazy-load drill views and the onboarding and placement routes
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-16
 - **Design:** §10 non-functional (first-load JS ≤ 250 KB gzip), §6 drill plugin interface
 - **Owns:** `app/src/drills/registry.ts` (hotspot), `app/src/drills/types.ts` (contract hub: additive only), `app/src/session/SessionScreen.tsx` (hotspot: Suspense around the drill view only), `app/src/routes/registry.ts` (hotspot), `app/src/routes/onboarding.route.tsx`, `app/src/routes/placement.route.tsx`, `app/e2e/m3-18.spec.ts`
