@@ -212,11 +212,21 @@ test.describe('M2-16 test out of a locked module', () => {
     await expect(detail(page).getByTestId('module-state')).toHaveText('Locked: preview');
     await expect(page.getByTestId('module-intervals')).toHaveAttribute('data-state', 'open');
 
-    // Only the keys are left to prove, so a second test-out asks just those.
-    await page.goto('/learn?module=intervals');
-    await page.goto('/learn?module=chords');
-    await expect(page.getByRole('region', { name: 'Already know this?' })).toContainText(
+    // Only the keys are left to prove, so testing out again asks just those.
+    await result(page).getByRole('button', { name: 'Test out again' }).click();
+    await expect(result(page)).toHaveCount(0);
+    const offer = page.getByRole('region', { name: 'Already know this?' });
+    await expect(offer).toContainText(
       'a short test of Spell the sharp keys and Spell the flat keys',
     );
+    await expect(offer.getByRole('button', { name: 'Test out' })).toBeFocused();
+    const seen = await takeTestOut(page, () => true);
+    expect(seen.every((id) => id.startsWith('spell-key:'))).toBe(true);
+    await expect(result(page).getByRole('list', { name: 'What the test found' })).toHaveText(
+      /^Keys: known\.$/,
+    );
+    await expect(result(page)).toContainText('Chords is open.');
+    await expect(result(page).getByRole('button', { name: 'Test out again' })).toHaveCount(0);
+    await expect(detail(page).getByTestId('module-state')).toHaveText('In progress');
   });
 });

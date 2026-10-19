@@ -62,7 +62,20 @@
   cursor: pointer;
 }
 
-.primary:focus-visible {
+.secondary {
+  min-height: var(--tap);
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
   outline: 3px solid var(--tone);
   outline-offset: 2px;
 }

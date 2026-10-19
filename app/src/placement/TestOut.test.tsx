@@ -89,6 +89,12 @@ function renderOffer({
 
 const dialog = () => screen.getByRole('dialog', { name: 'Test out' });
 
+/** Tap "Test out": the probes start once the learner's cards are read. */
+async function startTestOut() {
+  fireEvent.click(screen.getByRole('button', { name: 'Test out' }));
+  await screen.findByRole('dialog', { name: 'Test out' });
+}
+
 async function answerRight() {
   const id = screen.getByTestId('placement-probe').dataset.item!;
   const group = within(dialog()).getByRole('group', { name: 'Name the highlighted note' });
@@ -130,7 +136,7 @@ describe('TestOut', () => {
   it('starts at once, and a fluent test-out masters the prerequisite and opens the module', async () => {
     const onSaved = vi.fn();
     renderOffer({ onSaved });
-    fireEvent.click(screen.getByRole('button', { name: 'Test out' }));
+    await startTestOut();
     expect(dialog()).toHaveAttribute('aria-modal', 'true');
     expect(
       within(dialog()).getByRole('progressbar', { name: 'Test out progress' }),
@@ -161,7 +167,7 @@ describe('TestOut', () => {
 
   it('a test-out ended early says what to practise, and opens nothing', async () => {
     renderOffer();
-    fireEvent.click(screen.getByRole('button', { name: 'Test out' }));
+    await startTestOut();
     await answerRight();
     fireEvent.click(within(dialog()).getByRole('button', { name: 'Finish now' }));
     const result = await screen.findByTestId('test-out-result');
@@ -173,11 +179,62 @@ describe('TestOut', () => {
 
   it('a slow answer fails the test-out: every probe must be fluent', async () => {
     renderOffer();
-    fireEvent.click(screen.getByRole('button', { name: 'Test out' }));
+    await startTestOut();
     // Correct but well past the speed target.
     t = 10_000;
     await answerRight();
     const result = await screen.findByTestId('test-out-result', {}, { timeout: 3000 });
     expect(result).toHaveTextContent('Neck basics: let’s practise those first.');
+  });
+  it('a still-locked module can be tested out again', async () => {
+    renderOffer();
+    await startTestOut();
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Finish now' }));
+    const result = await screen.findByTestId('test-out-result');
+    fireEvent.click(within(result).getByRole('button', { name: 'Test out again' }));
+    expect(screen.queryByTestId('test-out-result')).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Already know this?' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Test out' })).toHaveFocus();
+    await startTestOut();
+    expect(screen.getByTestId('placement-probe')).toBeInTheDocument();
+  });
+
+  it('an opened module offers no second test-out', async () => {
+    const { rerender } = renderOffer();
+    await startTestOut();
+    for (let i = 0; i < 3; i++) {
+      const id = screen.getByTestId('placement-probe').dataset.item!;
+      await answerRight();
+      await nextProbe(id);
+    }
+    await answerRight();
+    const result = await screen.findByTestId('test-out-result', {}, { timeout: 3000 });
+    expect(within(result).queryByRole('button', { name: 'Test out again' })).toBeNull();
+    // Nor once the screen reloads and the module isn't locked.
+    rerender(
+      <MemoryRouter>
+        <TestOut
+          module={MODULE}
+          offer={false}
+          statuses={derive()}
+          skills={SKILLS}
+          drills={DRILLS}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole('button', { name: 'Test out again' })).toBeNull();
+  });
+
+  it('asks first about an item whose own card is still weak', async () => {
+    // The last of the 8 `note@` items: the shuffle alone would start with the first.
+    const weak = STRING6.items()
+      .filter((i) => i.id.startsWith('note@'))
+      .at(-1)!;
+    const scheduler = createScheduler({ enableFuzz: false });
+    await db.cards.put(scheduler.seedKnownCard(weak, NOW, 1));
+    const { unmount } = renderOffer();
+    await startTestOut();
+    expect(screen.getByTestId('placement-probe').dataset.item).toBe(weak.id);
+    unmount();
   });
 });

@@ -33,7 +33,8 @@ import styles from './TestOut.module.css';
  * `statuses` are the derived skill statuses (`skillStatuses`); the offer
  * waits for them, and shows only while a first skill is locked by a
  * prerequisite a drill can test. Once started, the test and its result stay
- * put while `onSaved` lets the screen reload what it shows.
+ * put while `onSaved` lets the screen reload what it shows; if the module is
+ * still locked, "Test out again" brings the offer back for what's left.
  */
 export function TestOut({
   module,
@@ -62,6 +63,7 @@ export function TestOut({
     statuses: ReadonlyMap<string, SkillStatus>;
     skillIds: readonly string[];
   } | null>(null);
+  const [returned, setReturned] = useState(false);
   const picker = useMemo(() => createDrillPicker(skills, drills), [skills, drills]);
   const needs = useMemo(
     () => (statuses ? unmetPrerequisites(module, skills, statuses) : []),
@@ -71,6 +73,11 @@ export function TestOut({
     () => testOutGroups(needs, skills, (i) => picker.canServe(i)).map((g) => g.id),
     [needs, skills, picker],
   );
+
+  const again = () => {
+    setStarted(null);
+    setReturned(true);
+  };
 
   if (started) {
     const renderResult = (summary: PlacementSummary) => {
@@ -100,6 +107,12 @@ export function TestOut({
             <Link to={practiseHref(first.id)} className={styles.primary}>
               Start a {module.title} session
             </Link>
+          )}
+          {/* Still locked: the offer comes back, scoped to what's left. */}
+          {!opened && offer && probed.length > 0 && (
+            <button type="button" className={styles.secondary} onClick={again}>
+              Test out again
+            </button>
           )}
         </>
       );
@@ -134,6 +147,8 @@ export function TestOut({
         type="button"
         className={styles.primary}
         onClick={() => setStarted({ statuses, skillIds: probed })}
+        // Back from "Test out again": focus stays on the action.
+        autoFocus={returned}
       >
         Test out
       </button>
