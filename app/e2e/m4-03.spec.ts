@@ -235,17 +235,20 @@ test.describe('M4-03 D12 progression builder', () => {
     const sizes = [page.viewportSize()!, { width: 375, height: 812 }, { width: 320, height: 568 }];
     for (const size of sizes) {
       await page.setViewportSize(size);
-      if (size.width > 320) await expectNoHorizontalOverflow(page);
       // Grid tracks can spill out of a centred chart (off the left edge too)
-      // without scrolling the page, so check every chord's own box.
-      const boxes = await page
-        .locator('[data-testid="d12-source"] li, [data-testid="d12-slot"]')
-        .evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON() as DOMRect));
-      expect(boxes).toHaveLength(24);
-      for (const box of boxes) {
-        expect(box.left).toBeGreaterThanOrEqual(0);
-        expect(box.right).toBeLessThanOrEqual(size.width);
-      }
+      // without scrolling the page, so check every chord's own box. The size
+      // class follows a resize asynchronously, so wait for the layout to settle.
+      await expect(async () => {
+        const boxes = await page
+          .locator('[data-testid="d12-source"] li, [data-testid="d12-slot"]')
+          .evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON() as DOMRect));
+        expect(boxes).toHaveLength(24);
+        for (const box of boxes) {
+          expect(box.left).toBeGreaterThanOrEqual(0);
+          expect(box.right).toBeLessThanOrEqual(size.width);
+        }
+      }).toPass({ timeout: 5_000 });
+      if (size.width > 320) await expectNoHorizontalOverflow(page);
     }
   });
 
