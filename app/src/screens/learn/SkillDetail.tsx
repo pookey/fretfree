@@ -2,8 +2,7 @@ import { useId, useState } from 'react';
 import { Link } from 'react-router';
 import { getSkill, isFrontier } from '../../engine';
 import { practiseHref } from '../../learn/worked-examples/focus';
-import { exampleFor } from '../../learn/worked-examples';
-import { WorkedExample } from '../../learn/worked-examples/WorkedExample';
+import { useWorkedExamples } from '../../learn/worked-examples/lazy';
 import { MasteryRing } from './MasteryRing';
 import { SKILL_STATUS_LABEL, skillRingState, type SkillView } from './map-model';
 import styles from './Learn.module.css';
@@ -38,10 +37,12 @@ function statusCopy(view: SkillView): { text: string; needs: string[] } {
  * callout is the module's (`ModuleDetail`); examples add their own targeted
  * one when the learner falls for it. Practice is offered on the frontier only:
  * gating stays on (research/02 rule 7), while any example can be previewed.
+ * Examples load on demand, so the toggle appears once they have.
  */
 export function SkillDetail({ view }: { view: SkillView }) {
   const { skill } = view;
-  const example = exampleFor(skill);
+  const examples = useWorkedExamples();
+  const example = examples?.exampleFor(skill);
   const [open, setOpen] = useState(false);
   const exampleId = useId();
   // A skill no built drill can test would open an empty session.
@@ -101,9 +102,9 @@ export function SkillDetail({ view }: { view: SkillView }) {
           </div>
         )}
       </div>
-      {example && open && (
+      {examples && example && open && (
         <div id={exampleId} className={local.example}>
-          <WorkedExample example={example} />
+          <examples.View example={example} />
         </div>
       )}
     </li>

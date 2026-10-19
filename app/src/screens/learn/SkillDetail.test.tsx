@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { getSkill, type Skill, type SkillStatus } from '../../engine';
+import { loadWorkedExamples } from '../../learn/worked-examples/lazy';
 import { SkillDetail } from './SkillDetail';
 import type { SkillView } from './map-model';
 
@@ -31,14 +32,15 @@ function renderSkill(id: string, status: SkillStatus, practisable = true) {
 }
 
 describe('<SkillDetail>', () => {
-  it('opens the worked example and offers focused practice on the frontier', () => {
+  it('opens the worked example and offers focused practice on the frontier', async () => {
     renderSkill('F2.string6-naturals', 'unlocked');
     expect(screen.getByText('Its new items join your daily sessions.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Practise this now' })).toHaveAttribute(
       'href',
       '/session?skill=F2.string6-naturals',
     );
-    const toggle = screen.getByRole('button', { name: 'Worked example' });
+    // The examples load on demand, so the toggle appears once they have.
+    const toggle = await screen.findByRole('button', { name: 'Worked example' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByTestId('worked-example')).toBeNull();
     fireEvent.click(toggle);
@@ -51,22 +53,24 @@ describe('<SkillDetail>', () => {
     expect(screen.queryByTestId('worked-example')).toBeNull();
   });
 
-  it('previews a locked skill’s example without offering practice (gating stays on)', () => {
+  it('previews a locked skill’s example without offering practice (gating stays on)', async () => {
     renderSkill('C2.all-notes', 'locked');
     expect(screen.getByText(/Preview only/)).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Practise this now' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Worked example' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Worked example' }));
     expect(screen.getByTestId('worked-example')).toHaveTextContent('Octaves across the G–B shift');
   });
 
-  it('shows neither action for a mastered skill with no example', () => {
+  it('shows neither action for a mastered skill with no example', async () => {
+    await loadWorkedExamples();
     renderSkill('F3.markers', 'mastered');
     expect(screen.getByText('Mastered. Reviews keep it fresh.')).toBeInTheDocument();
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.queryByRole('link')).toBeNull();
   });
 
-  it('offers practice without an example', () => {
+  it('offers practice without an example', async () => {
+    await loadWorkedExamples();
     renderSkill('F3.markers', 'practising');
     expect(screen.queryByRole('button', { name: 'Worked example' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Practise this now' })).toBeInTheDocument();
