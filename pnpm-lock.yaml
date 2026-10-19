@@ -193,6 +193,9 @@ importers:
 
   app:
     dependencies:
+      '@tombatossals/chords-db':
+        specifier: 0.5.1
+        version: 0.5.1
       dexie:
         specifier: 4.4.6
         version: 4.4.6
@@ -1472,6 +1475,9 @@ packages:
     engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
+
+  '@tombatossals/chords-db@0.5.1':
+    resolution: {integrity: sha512-5kLLtwOxmnFfpVTYfYiw1Q22NJ8msb5JeyDLre09XnUFx2l6KSeqPtJQPsVPOak4BUenlsv/j2H65KBVhB6qgQ==}
 
   '@tonaljs/abc-notation@4.9.3':
     resolution: {integrity: sha512-t1mH17qPEDSHqSa4+enqeYPEf/6vLZD8aavsMGY1eiXGUO3lIc6sjkI2skQEmhFlMCTEx6HO/dJQL3Det7U2Kw==}
@@ -4395,6 +4401,8 @@ snapshots:
   '@testing-library/user-event@14.6.8(@testing-library/dom@10.4.2)':
     dependencies:
       '@testing-library/dom': 10.4.2
+
+  '@tombatossals/chords-db@0.5.1': {}
 
   '@tonaljs/abc-notation@4.9.3':
     dependencies:

@@ -16,6 +16,7 @@
     "e2e:prod": "E2E_BASE_URL=${SITE_URL:-https://fretfree.app} playwright test --grep @smoke"
   },
   "dependencies": {
+    "@tombatossals/chords-db": "0.5.1",
     "dexie": "4.4.6",
     "react": "19.3.1",
     "react-dom": "19.3.1",
