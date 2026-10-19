@@ -32,7 +32,7 @@ function renderView(p: D7Prompt, opts: Opts = {}) {
     tuning: STANDARD_TUNING,
     feedback: opts.feedback ?? null,
     onAnswer,
-    aside: opts.withAside ? <aside /> : undefined,
+    aside: opts.withAside ? <aside data-testid="context-panel" /> : undefined,
   };
   const utils = render(<D7View prompt={p} {...props} />);
   const rerender = (next: D7Prompt, more: Partial<typeof props> = {}) =>
@@ -258,16 +258,10 @@ describe('<D7View>', () => {
     expect(screen.getByText(/Tap/)).toHaveTextContent('Tap 6th to continue.');
   });
 
-  it('fills the context panel with the scale recipe or chord formula', () => {
-    const { rerender } = renderView(prompt(), { withAside: true, guideLevel: 1 });
-    const panel = () => screen.getByTestId('context-panel');
-    expect(panel()).toHaveTextContent('Major scale');
-    expect(panel()).toHaveTextContent('W W H W W W H');
-    expect(panel()).not.toHaveTextContent('B–C');
-    rerender(prompt('spell-chord:m7@B'), { guideLevel: 2, aside: <aside /> });
-    expect(panel()).toHaveTextContent('Chord formula');
-    expect(panel()).toHaveTextContent('Bm7 = 1 b3 5 b7');
-    expect(panel()).toHaveTextContent('B–C');
+  it('places the context panel beside the question on iPad landscape', () => {
+    renderView(prompt(), { withAside: true });
+    const panel = screen.getByTestId('context-panel');
+    expect(panel.previousElementSibling).toContainElement(screen.getByTestId('d7-subject'));
   });
 
   it('places the context panel below on narrower screens', () => {

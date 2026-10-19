@@ -167,28 +167,6 @@ export function D7View({
 
   const hint = d7Hint(prompt);
 
-  const context = aside ? (
-    <aside className={styles.context} aria-label="Context" data-testid="context-panel">
-      <h2>{prompt.kind === 'chord' ? 'Chord formula' : 'Major scale'}</h2>
-      {prompt.kind === 'chord' ? (
-        <p>
-          <strong>{prompt.subject}</strong> = {prompt.slots.map((s) => s.label).join(' ')}
-        </p>
-      ) : (
-        <p>
-          Steps from the tonic: <strong>W W H W W W H</strong>
-        </p>
-      )}
-      <p>{hint}</p>
-      {level >= 2 && (
-        <p>
-          No sharp between <strong>B–C</strong> and <strong>E–F</strong>: they are a half step
-          apart.
-        </p>
-      )}
-    </aside>
-  ) : null;
-
   const rows = ROWS.filter((r) => prompt.choices.some((c) => c.slice(1) === r));
 
   return (
@@ -310,10 +288,10 @@ export function D7View({
             </div>
           )}
         </div>
-        {sizeClass === 'regular-wide' && context}
+        {sizeClass === 'regular-wide' && aside}
       </div>
       {/* iPad portrait: below. Compact: the session styles it as a sheet. */}
-      {sizeClass !== 'regular-wide' && context}
+      {sizeClass !== 'regular-wide' && aside}
     </div>
   );
 }

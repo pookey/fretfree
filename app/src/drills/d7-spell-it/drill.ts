@@ -1,5 +1,6 @@
 import { SKILLS } from '../../engine/skills';
 import type { DrillType } from '../types';
+import { SpellingContextPanel } from './ContextPanel';
 import { D7View } from './D7View';
 import {
   D7_ID,
@@ -31,6 +32,7 @@ const spellIt: DrillType<D7Prompt, D7Answer> = {
   gradedResponseMs: d7GradedResponseMs,
   conceptOf: d7ConceptOf,
   render: D7View,
+  contextPanel: SpellingContextPanel,
 };
 
 export default spellIt;
