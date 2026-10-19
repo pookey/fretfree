@@ -93,7 +93,9 @@ describe('the scope of a test-out', () => {
   it('finds a module’s first skills: those whose prerequisites lie outside it', () => {
     expect(entrySkills(CHORDS, SKILLS).map((s) => s.id)).toEqual(['C5.triads']);
     expect(entrySkills(INTERVALS, SKILLS).map((s) => s.id)).toEqual(['C3.thirds']);
-    expect(moduleSkills(KEYS, SKILLS).every((s) => s.topic === 'C4')).toBe(true);
+    // Keys is C4's spelling and I3's signatures (M4-05).
+    expect(moduleSkills(KEYS, SKILLS).every((s) => ['C4', 'I3'].includes(s.topic))).toBe(true);
+    expect(entrySkills(KEYS, SKILLS).map((s) => s.id)).toEqual(['C4.sharp-keys']);
   });
 
   it('asks for the C3 and C4 skills C5.triads needs, on a fresh profile', () => {
