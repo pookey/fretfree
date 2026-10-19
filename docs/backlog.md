@@ -932,7 +932,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Choices must not give the answer away (see M4-02's review: no structure a learner can exploit without knowing the key). Unit tests for item generation and grading. E2E: the circle's Quiz button starts a D40 session.
 
 ### M4-06 · Audio engine v2
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **Design:** §9
 - **Owns:** `app/src/audio/**`
