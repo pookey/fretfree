@@ -99,6 +99,19 @@
   font-size: 0.875rem;
 }
 
+/* iPad portrait (M1-40, as M2-20): one column from the top (prompt, answers,
+   neck, then help), not the neck centred in a tall empty band with help pinned
+   below. */
+.drill[data-size-class='regular'] {
+  justify-content: flex-start;
+}
+
+/* Help (the session's context panel) spans the neck's width below it, so its
+   rows spread out, not down. */
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
 .drill[data-size-class='compact'] {
   gap: var(--space-2);
   justify-content: flex-start;
