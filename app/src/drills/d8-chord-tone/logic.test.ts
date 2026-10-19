@@ -50,7 +50,7 @@ import {
 } from './logic';
 import { D8_KINDS, placements, templatesFor } from './voicings';
 
-const item = (id: string): Item => ({ id, skillId: 'C5.tones-triads' });
+const item = (id: string): Item => ({ id, skillId: 'C5.tones-roots' });
 
 /** A deterministic rng cycling through fixed values. */
 function seq(...values: number[]): () => number {
@@ -65,7 +65,12 @@ const ctx = (rng: () => number, scopeLevel = 0, tuning = STANDARD_TUNING) => ({
   rng,
 });
 
-const ITEM_IDS = ['C5.tones-triads', 'C5.tones-sevenths'].flatMap((id) =>
+const ITEM_IDS = [
+  'C5.tones-roots',
+  'C5.tones-thirds',
+  'C5.tones-fifths',
+  'C5.tones-sevenths',
+].flatMap((id) =>
   getSkill(id)!
     .items()
     .map((i) => i.id),

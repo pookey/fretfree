@@ -16,7 +16,7 @@ function seq(...values: number[]): () => number {
 
 const prompt = (id: string, rng = seq(0, 0.75)) =>
   d8MakePrompt(
-    { id, skillId: 'C5.tones-triads' },
+    { id, skillId: 'C5.tones-roots' },
     { tuning: STANDARD_TUNING, accidentalPref: 'sharp', scopeLevel: 0, rng },
   );
 

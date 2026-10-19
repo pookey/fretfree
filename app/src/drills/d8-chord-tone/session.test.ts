@@ -9,6 +9,13 @@ import { D8_ID, d8Targets, type D8Prompt } from './logic';
 /** D8 through the real session runner (plan → prompt → grade → FSRS → persist). */
 
 const skill = (id: string) => SKILLS.find((s) => s.id === id) as Skill;
+const STAGES = ['C5.tones-roots', 'C5.tones-thirds', 'C5.tones-fifths'];
+const STAGE_OF = (itemId: string) =>
+  STAGES.find((id) =>
+    skill(id)
+      .items()
+      .some((i) => i.id === itemId),
+  ) as string;
 
 let db: FretworkDB;
 let n = 0;
@@ -35,8 +42,8 @@ async function master(skillIds: readonly string[], guideLevel: 0 | 1 = 0) {
 
 describe('D8 in a session', () => {
   it('starts with the root, guided, in both directions', async () => {
-    const triads = skill('C5.tones-triads');
-    await master(triads.prerequisites);
+    const roots = skill('C5.tones-roots');
+    await master(roots.prerequisites);
     const r = await SessionRunner.start({
       db,
       scheduler: createScheduler({ enableFuzz: false }),
@@ -46,7 +53,7 @@ describe('D8 in a session', () => {
       now: () => clock,
       rng: () => 0,
       maxItems: 4,
-      focus: { skillIds: ['C5.tones-triads'], itemIds: [] },
+      focus: { skillIds: ['C5.tones-roots'], itemIds: [] },
     });
     const cur = r.currentPrompt()!;
     expect(cur.drill.id).toBe(D8_ID);
@@ -68,16 +75,16 @@ describe('D8 in a session', () => {
     const ids = ['chord-tone-name:3@major', 'chord-tone-name:5@minor', 'chord-tone-name:b3@minor'];
     await db.cards.bulkPut(
       ids.map((id, i) =>
-        scheduler.seedKnownCard({ id, skillId: 'C5.tones-triads' }, clock, 1 + i * 0.01),
+        scheduler.seedKnownCard({ id, skillId: STAGE_OF(id) }, clock, 1 + i * 0.01),
       ),
     );
-    await master(['C5.tones-triads', ...skill('C5.tones-triads').prerequisites], 1);
+    await master([...STAGES.slice(0, 2), ...skill('C5.tones-roots').prerequisites], 1);
     const due = new Date(clock.getTime() + 86_400_000 * 30);
     const r = await SessionRunner.start({
       db,
       scheduler,
       settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 500 },
-      skills: [skill('C5.tones-triads')],
+      skills: STAGES.map(skill),
       drills: DRILLS,
       now: () => due,
       rng: () => 0,
@@ -102,5 +109,37 @@ describe('D8 in a session', () => {
     expect(Math.abs(order.indexOf(ids[0]!) - order.indexOf(ids[2]!))).toBe(1);
     const [confusion] = await db.confusions.toArray();
     expect([confusion?.a, confusion?.b].sort()).toEqual(['M3', 'm3']);
+  });
+
+  it('serves the root stage first, and 3rds only once it is mastered', async () => {
+    const start = () =>
+      SessionRunner.start({
+        db,
+        scheduler: createScheduler({ enableFuzz: false }),
+        settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 500 },
+        skills: SKILLS,
+        drills: DRILLS,
+        now: () => clock,
+        rng: () => 0,
+        maxItems: 12,
+        focus: { skillIds: STAGES, itemIds: [] },
+      });
+    const served = async () => {
+      const r = await start();
+      const skills = new Set<string>();
+      for (let cur = r.currentPrompt(); cur; r.next(), cur = r.currentPrompt()) {
+        skills.add(cur.entry.skillId);
+        await r.answer(d8Targets(cur.prompt as D8Prompt)[0]!, 1200);
+      }
+      await r.finish();
+      return skills;
+    };
+    await master(skill('C5.tones-roots').prerequisites);
+    expect([...(await served())]).toEqual(['C5.tones-roots']);
+    // Practising the roots isn't enough: rule 7 gates each stage on mastery.
+    expect([...(await served())]).toEqual(['C5.tones-roots']);
+    await master(['C5.tones-roots']);
+    expect(await served()).toContain('C5.tones-thirds');
+    expect(await served()).not.toContain('C5.tones-fifths');
   });
 });

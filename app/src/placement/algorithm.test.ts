@@ -219,8 +219,8 @@ describe('placementGroups', () => {
     // D8's chord tones apply C5 on the neck: practice, not a gate (M3-04).
     const real = placementGroups(SKILLS, () => true).map((g) => g.id);
     expect(real).toContain('C5.triads');
-    expect(real).not.toContain('C5.tones-triads');
-    expect(real).not.toContain('C5.tones-sevenths');
+    for (const id of ['C5.tones-roots', 'C5.tones-thirds', 'C5.tones-fifths', 'C5.tones-sevenths'])
+      expect(real).not.toContain(id);
   });
 
   it('covers F1, F2 and C2 with the drills that exist, and extends as drills land', () => {

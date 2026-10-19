@@ -129,14 +129,23 @@ async function solve(page: Page): Promise<Task> {
   return task;
 }
 
-/** The triad skill's cards: each tone, tapped then named. */
-const TRIAD_TONES = ['1@major', '1@minor', '3@major', 'b3@minor', '5@major', '5@minor'].flatMap(
-  (t) => [`chord-tone:${t}`, `chord-tone-name:${t}`],
+/** The root, 3rd and 5th stages' cards (M3-17): each tone, tapped then named. */
+const TRIAD_TONES = (
+  [
+    ['C5.tones-roots', ['1@major', '1@minor']],
+    ['C5.tones-thirds', ['3@major', 'b3@minor']],
+    ['C5.tones-fifths', ['5@major', '5@minor']],
+  ] as const
+).flatMap(([skillId, tones]) =>
+  tones.flatMap((t) => [
+    { itemId: `chord-tone:${t}`, skillId },
+    { itemId: `chord-tone-name:${t}`, skillId },
+  ]),
 );
 const DUE = ['chord-tone-name:3@major', 'chord-tone-name:b3@minor'];
 
 /**
- * File the triad skill's name cards for the 3rd and ♭3 as due reviews, at
+ * File the 3rd stage's name cards for the 3rd and ♭3 as due reviews, at
  * `guideLevel`, and its other cards as not due, so the session serves just
  * those two, unguided and side by side. Reloads.
  */
@@ -151,10 +160,10 @@ async function seedThirdReviews(page: Page, guideLevel: 0 | 1 | 2): Promise<void
       });
       const tx = db.transaction(['cards', 'skillStates'], 'readwrite');
       const now = Date.now();
-      for (const itemId of cards) {
+      for (const { itemId, skillId } of cards) {
         tx.objectStore('cards').put({
           itemId,
-          skillId: 'C5.tones-triads',
+          skillId,
           fsrs: {
             due: new Date(due.includes(itemId) ? now - DAY : now + 30 * DAY),
             stability: 3,
@@ -172,11 +181,11 @@ async function seedThirdReviews(page: Page, guideLevel: 0 | 1 | 2): Promise<void
         });
       }
       const states = tx.objectStore('skillStates');
-      for (const skillId of prereqs) {
+      for (const skillId of [...prereqs, 'C5.tones-roots']) {
         states.put({ skillId, status: 'mastered', guideLevel: 0, rollingAccuracy: 1 });
       }
       states.put({
-        skillId: 'C5.tones-triads',
+        skillId: 'C5.tones-thirds',
         status: 'practising',
         guideLevel,
         rollingAccuracy: 0.85,
@@ -214,7 +223,7 @@ test.describe('M3-04 D8 finds the chord tone in a shape', () => {
   }, info) => {
     await freshStart(page);
     await masterSkills(page, PREREQS);
-    await focusSession(page, 'C5.tones-triads');
+    await focusSession(page, 'C5.tones-roots');
 
     // The first card taps the root of a major shape, as a worked example
     // with the full guides: the outline is drawn (design §3.5, level 3).
@@ -255,7 +264,7 @@ test.describe('M3-04 D8 finds the chord tone in a shape', () => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await seedThirdReviews(page, 1);
-    await focusSession(page, 'C5.tones-triads');
+    await focusSession(page, 'C5.tones-thirds');
 
     let task: Task | null = null;
     for (let i = 0; i < 2; i++) {
@@ -293,7 +302,7 @@ test.describe('M3-04 D8 finds the chord tone in a shape', () => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await seedThirdReviews(page, 2);
-    await focusSession(page, 'C5.tones-triads');
+    await focusSession(page, 'C5.tones-thirds');
 
     const task = await readTask(page);
     expect(task).toMatchObject({ mode: 'name', guided: false });
@@ -306,7 +315,13 @@ test.describe('M3-04 D8 finds the chord tone in a shape', () => {
   test('7th chords offer both 7ths, and the ♭7 is found in the shape', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
-    await masterSkills(page, [...PREREQS, 'C5.tones-triads', 'C5.sevenths']);
+    await masterSkills(page, [
+      ...PREREQS,
+      'C5.tones-roots',
+      'C5.tones-thirds',
+      'C5.tones-fifths',
+      'C5.sevenths',
+    ]);
     await focusSession(page, 'C5.tones-sevenths');
 
     // The 3rd of a 7 chord comes first, then its ♭7.

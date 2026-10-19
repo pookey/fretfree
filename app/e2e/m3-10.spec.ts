@@ -23,7 +23,7 @@ async function tap(page: Page, string: number, fret: number): Promise<void> {
 
 test.describe('M3-10 worked examples for C4–C6', () => {
   test('find the root first, then read the 3rd for major or minor', async ({ page }) => {
-    await openExample(page, 'chords', 'C5.tones-triads');
+    await openExample(page, 'chords', 'C5.tones-roots');
     await expect(page.getByTestId('example-prompt')).toHaveText(
       'Find the root, then tap its 3rd. Its distance from the root decides major or minor.',
     );
@@ -112,7 +112,7 @@ test.describe('M3-10 worked examples for C4–C6', () => {
   });
 
   test('the root-first example on a phone @smoke', async ({ page }) => {
-    await openExample(page, 'chords', 'C5.tones-triads');
+    await openExample(page, 'chords', 'C5.tones-roots');
     await tap(page, 3, 6);
     await next(page);
     await expect(stage(page)).toHaveAttribute('data-stage', 'faded');

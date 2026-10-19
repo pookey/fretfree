@@ -13,6 +13,7 @@ import type {
   GamificationEventRecord,
   GamificationRecord,
 } from './gamification-model';
+import { upgradeC5ToneStages } from './migrations/c5-tone-stages';
 import {
   OUTBOX,
   SYNC_BOOKKEEPING_TABLES,
@@ -79,6 +80,12 @@ export const SCHEMA_VERSIONS: readonly {
       [SYNC_STATE]: 'key',
     },
     upgrade: backfillSyncMeta,
+  },
+  {
+    // M3-17: D8's chord tones in stages; old rows move to their stage's skill.
+    version: 3,
+    stores: {},
+    upgrade: upgradeC5ToneStages,
   },
 ];
 

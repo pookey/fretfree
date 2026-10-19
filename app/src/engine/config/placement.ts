@@ -11,7 +11,7 @@ export const placement = {
    * spelling on the neck: practice, not a gate, and past where the budget
    * stops a realistic expert (PM decision, M3-04).
    */
-  skipSkills: ['C5.tones-triads', 'C5.tones-sevenths'],
+  skipSkills: ['C5.tones-roots', 'C5.tones-thirds', 'C5.tones-fifths', 'C5.tones-sevenths'],
   /** No new probe starts after this long: the test takes about 3 minutes. */
   budgetMs: 180_000,
   /**

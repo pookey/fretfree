@@ -10,18 +10,22 @@ import { itemsOf, memo } from './helpers';
  * (open, barre or CAGED), root and position per prompt, so a card meets its
  * degree in many keys and voicings (research/02 rule 12).
  *
- * The root comes first, then the 3rd, the 5th and the 7th (user request,
- * 2026-10-18): the triad skill lists its roots, then its 3rds, then its 5ths,
- * and new items enter in that order. The 3rd and ♭3 share a skill and
- * interleave, as do the ♭7 and the 7 (rule 6); the drill keys them by
- * interval (`M3`/`m3`, `m7`/`M7`), so the interval seed pairs apply. The
- * seventh skill pairs each 7th with its chord's 3rd, the two notes that
- * decide a seventh chord's quality.
+ * In stages (user request, 2026-10-18): "find the root first, then the 3rd,
+ * 5th and 7th". Each stage opens once the one before is mastered, so the
+ * root is solid before a 3rd is asked relative to it. The 3rd and ♭3 share a
+ * stage and interleave, as do the ♭7 and the 7 (rule 6); the drill keys them
+ * by interval (`M3`/`m3`, `m7`/`M7`), so the interval seed pairs apply. The
+ * 7th stage pairs each 7th with its chord's 3rd, the two notes that decide a
+ * seventh chord's quality.
  *
- * Two stages, not one per degree, keep the placement test's expert run
- * within its 3-minute budget (one probe group per skill). The triad stage is
- * gated on the natural notes of strings 6 and 5, where the shapes root
- * (rule 7), and on spelling triads (C5), so neither soft-unlocks.
+ * The root stage is gated on the natural notes of strings 6 and 5, where the
+ * shapes root (rule 7), and on spelling triads (C5); the 7th stage also on
+ * spelling 7th chords. None soft-unlocks. The placement test skips these
+ * skills (`placement.skipSkills`) to stay within its budget.
+ *
+ * Until M3-17 the root, 3rd and 5th were one skill, `C5.tones-triads`, with
+ * the same item IDs; `storage/migrations/c5-tone-stages.ts` moves its cards,
+ * reviews and state onto the stages.
  */
 
 const DRILLS = ['chord-tone'];
@@ -37,18 +41,32 @@ interface Group {
 
 const GROUPS: readonly Group[] = [
   {
-    id: 'C5.tones-triads',
-    title: 'Find the root, 3rd and 5th in a chord shape',
-    // Roots first; then major's 3rd next to minor's ♭3.
+    id: 'C5.tones-roots',
+    title: 'Find the root in a chord shape',
     tones: [
       ['1', 'major'],
       ['1', 'minor'],
+    ],
+    prerequisites: ['F2.string6-naturals', 'F2.string5-naturals', 'C5.triads'],
+  },
+  {
+    id: 'C5.tones-thirds',
+    title: 'Find the 3rd in a chord shape',
+    // Major's 3rd next to minor's ♭3.
+    tones: [
       ['3', 'major'],
       ['b3', 'minor'],
+    ],
+    prerequisites: ['C5.tones-roots'],
+  },
+  {
+    id: 'C5.tones-fifths',
+    title: 'Find the 5th in a chord shape',
+    tones: [
       ['5', 'major'],
       ['5', 'minor'],
     ],
-    prerequisites: ['F2.string6-naturals', 'F2.string5-naturals', 'C5.triads'],
+    prerequisites: ['C5.tones-thirds'],
   },
   {
     id: 'C5.tones-sevenths',
@@ -62,7 +80,7 @@ const GROUPS: readonly Group[] = [
       ['b3', 'm7'],
       ['b7', 'm7'],
     ],
-    prerequisites: ['C5.tones-triads', 'C5.sevenths'],
+    prerequisites: ['C5.tones-fifths', 'C5.sevenths'],
   },
 ];
 

@@ -15,8 +15,9 @@ const MINI_PANEL_MAX = 195;
 
 const SHAPES = ['C', 'A', 'G', 'E', 'D'] as const;
 const D9_PREREQS = ['F2.string6-naturals', 'F2.string5-naturals', 'C5.triads'];
-const D8_PREREQS = D9_PREREQS;
-const TRIAD_TONES = ['1@major', '1@minor', '3@major', 'b3@minor', '5@major', '5@minor'];
+/** D8's 3rd stage (M3-17), after its root stage. */
+const D8_PREREQS = [...D9_PREREQS, 'C5.tones-roots'];
+const THIRDS = ['3@major', 'b3@minor'];
 const SHARP_KEYS = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#'];
 
 type Level = 0 | 1 | 2 | 3;
@@ -64,10 +65,10 @@ const startD9 = (page: Page, level: Level) =>
 const startD8 = (page: Page, level: Level) =>
   seedReviews(page, {
     mastered: D8_PREREQS,
-    skillId: 'C5.tones-triads',
+    skillId: 'C5.tones-thirds',
     // Tap cards only, so a tap off the shape answers wrong and the feedback stays.
-    due: TRIAD_TONES.map((t) => `chord-tone:${t}`),
-    later: TRIAD_TONES.map((t) => `chord-tone-name:${t}`),
+    due: THIRDS.map((t) => `chord-tone:${t}`),
+    later: THIRDS.map((t) => `chord-tone-name:${t}`),
     level,
   });
 

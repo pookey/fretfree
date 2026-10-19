@@ -17,13 +17,18 @@ const ctx = (rng: () => number, scopeLevel = 0) => ({
   rng,
 });
 
-const ITEM_IDS = ['C5.tones-triads', 'C5.tones-sevenths'].flatMap((id) =>
+const ITEM_IDS = [
+  'C5.tones-roots',
+  'C5.tones-thirds',
+  'C5.tones-fifths',
+  'C5.tones-sevenths',
+].flatMap((id) =>
   getSkill(id)!
     .items()
     .map((i) => i.id),
 );
 
-const item = (id: string) => ({ id, skillId: 'C5.tones-triads' });
+const item = (id: string) => ({ id, skillId: 'C5.tones-roots' });
 describe('d8DiagramVoicing', () => {
   /** Prompts across items, shapes, roots and scopes, so every voicing kind turns up. */
   const prompts = ITEM_IDS.flatMap((id) =>

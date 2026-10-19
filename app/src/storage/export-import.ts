@@ -1,4 +1,5 @@
 import { SCHEMA_VERSION, TABLE_NAMES, type FretworkDB } from './db';
+import { restageTables } from './migrations/c5-tone-stages';
 import { decodeDates, encodeDates, withLegacyUids } from './sync/model';
 
 /** Design §3.6: JSON export/import of all local data. */
@@ -62,11 +63,13 @@ export function parseExport(json: string): ExportFile {
  * future versions that change row shapes must transform rows here.
  */
 export async function importData(db: FretworkDB, file: ExportFile): Promise<void> {
+  // v3 staged D8's chord tones (M3-17).
+  const tables = file.schemaVersion < 3 ? restageTables(file.tables) : file.tables;
   await db.transaction('rw', db.tables, async () => {
     for (const name of TABLE_NAMES) {
       const table = db.table(name);
       await table.clear();
-      const rows = file.tables[name];
+      const rows = tables[name];
       if (!Array.isArray(rows) || rows.length === 0) continue;
       // Rows from a v1 file have no uid: give them the same content-derived
       // uids a v1 database gets on upgrade, so sync doesn't duplicate them.
