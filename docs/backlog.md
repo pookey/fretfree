@@ -661,7 +661,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - RTL covers both.
 
 ### M2-21 · Move every drill's help panel onto `contextPanel`
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §6 (drill plugin interface), §7 session context panel
 - **Owns:** `app/src/drills/d3-note-wheel/`, `app/src/drills/d5-interval-name/`, `app/src/drills/d6-interval-tap/`, `app/src/drills/d7-spell-it/`, `app/src/drills/d39-fret-landmarks/` (their view, panel and CSS files only), `app/e2e/m2-21.spec.ts`
