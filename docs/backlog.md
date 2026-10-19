@@ -772,7 +772,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ### M3-13 · D36 "What chord is this?"
 - **Status:** todo
-- **Deps:** M3-03, M3-04, M3-05
+- **Deps:** M3-03, M3-04, M3-05, M3-18
 - **Design:** §6 D36, research/03 C5 ("name the chord from its dots")
 - **Owns:** `app/src/drills/d36-name-the-chord/**`, `app/src/engine/skills/c5-name.ts`, `app/e2e/m3-13.spec.ts`
 - **Acceptance:**
@@ -784,7 +784,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ### M3-14 · D37 "Chord tones across the neck" (multi-target)
 - **Status:** todo
-- **Deps:** M3-03, M2-03
+- **Deps:** M3-03, M2-03, M3-18
 - **Design:** §6 D37, §7 (iPad multi-target drills), research/03 C7/I2
 - **Owns:** `app/src/drills/d37-chord-tones-neck/**`, `app/src/engine/skills/c5-tones.ts`, `app/e2e/m3-14.spec.ts`
 - **Acceptance:**
@@ -796,7 +796,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ### M3-15 · D38 "Build the chord" (tap a voicing)
 - **Status:** todo
-- **Deps:** M3-03, M3-04
+- **Deps:** M3-03, M3-04, M3-18
 - **Design:** §6 D38, research/03 C5 ("build a chord by tapping")
 - **Owns:** `app/src/drills/d38-build-the-chord/**`, `app/e2e/m3-15.spec.ts`
 - **Acceptance:**
@@ -844,6 +844,19 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Acceptance:**
   - From the M2-21 review: D39's 0–12 neck on iPad mini landscape is 468px tall and ends under the pinned feedback bar (about 59px of page scroll).
   - Size the neck so it clears the bar on every iPad project without scrolling, keeping cells ≥44pt. Flip `clearsBar: true` for D39 in `m2-21.spec.ts` and make it pass.
+
+### M3-18 · Lazy-load drill views and the onboarding and placement routes
+- **Status:** todo
+- **Deps:** M3-16
+- **Design:** §10 non-functional (first-load JS ≤ 250 KB gzip), §6 drill plugin interface
+- **Owns:** `app/src/drills/registry.ts` (hotspot), `app/src/drills/types.ts` (contract hub: additive only), `app/src/session/SessionScreen.tsx` (hotspot: Suspense around the drill view only), `app/src/routes/registry.ts` (hotspot), `app/src/routes/onboarding.route.tsx`, `app/src/routes/placement.route.tsx`, `app/e2e/m3-18.spec.ts`
+- **Acceptance:**
+  - From M3-16's measurement. After lazy Explore, first-load JS is about 244 KB of 250 KB, and every new drill adds 2.4–3.7 KB, so the budget is nearly gone. The next-largest app contributors are drill views (about 11.8 KB: `drills/registry.ts` globs every `drill.ts` with `eager: true`, and each plugin imports its view) and the onboarding and placement routes (about 9.8 KB, eager route glob).
+  - Keep each drill plugin's pure logic and metadata eager (the session planner needs it), but load each drill's `View` component on demand, with Suspense in `SessionScreen` and an accessible loading state. No drill behaviour changes.
+  - Make the onboarding and placement routes lazy route elements. They run once per learner.
+  - The session must not stall: prefetch the next drill's view chunk while the current prompt is on screen, so a drill switch never shows a spinner on a normal connection. Everything works offline after the first load (the precache covers the chunks).
+  - Record before and after first-load sizes. Target: at least 15 KB freed.
+  - E2E (`m3-18.spec.ts`): a multi-drill session switches drills without visible loading after the first prompt; onboarding and placement still work offline after a first load. Existing specs stay green.
 
 ### M3-12 · M3 milestone QA
 - **Status:** todo
