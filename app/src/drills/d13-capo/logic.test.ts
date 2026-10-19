@@ -25,6 +25,7 @@ import {
   d13Sounds,
   d13Spoken,
   d13TypeKey,
+  d13TypedHint,
   d13WorkedExample,
   d13WrongDirection,
   type D13Answer,
@@ -352,6 +353,16 @@ describe('d13TypeKey', () => {
     expect(d13TypeKey('', 'Enter', 'sound', keys)).toEqual({ typed: '', answer: null });
     expect(d13TypeKey('', 'x', 'sound', keys)).toEqual({ typed: '', answer: null });
     expect(d13TypeKey('B', 'Escape', 'sound', keys)).toEqual({ typed: '', answer: null });
+    // A letter no button starts on is dropped, not kept waiting.
+    expect(d13TypeKey('', 'D', 'sound', keys)).toEqual({ typed: '', answer: null });
+    expect(d13TypeKey('A', 'c', 'sound', keys)).toEqual({ typed: '', answer: null });
+  });
+
+  it('offers Enter only when Enter would answer', () => {
+    expect(d13TypedHint('A', 'sound', keys)).toBe('Typed A. Press Enter to answer.');
+    expect(d13TypedHint('B', 'sound', keys)).toBe('Typed B. Type # or - next.');
+    expect(d13TypedHint('1', 'fret', ['1', '10', '11'])).toBe('Typed 1. Press Enter to answer.');
+    expect(d13TypedHint('1', 'fret', ['3', '10', '11'])).toBe('Typed 1. Type the next digit.');
   });
 
   it('matches minor key buttons by their tonic', () => {

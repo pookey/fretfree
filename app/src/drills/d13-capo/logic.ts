@@ -420,6 +420,16 @@ export function d13TypeKey(
   return ask === 'fret' ? typeFret(typed, key, choices) : typeKeyName(typed, key, choices);
 }
 
+/** What the hint says while a typed answer waits: Enter only when it would answer. */
+export function d13TypedHint(typed: string, ask: D13Ask, choices: readonly string[]): string {
+  const next = d13TypeKey(typed, 'Enter', ask, choices).answer
+    ? 'Press Enter to answer.'
+    : ask === 'fret'
+      ? 'Type the next digit.'
+      : 'Type # or - next.';
+  return `Typed ${d13Pretty(typed)}. ${next}`;
+}
+
 function typeFret(typed: string, key: string, choices: readonly string[]) {
   if (key === 'Enter') {
     return choices.includes(typed) ? { typed: '', answer: typed } : { typed, answer: null };
@@ -450,6 +460,8 @@ function typeKeyName(typed: string, key: string, choices: readonly string[]) {
     const altered = [`${letter}#`, `${letter}b`].some((n) => byChroma(n) !== null);
     const natural = byChroma(letter);
     if (natural && !altered) return { typed: '', answer: natural };
+    // A letter no button starts on leads nowhere, so it is dropped.
+    if (!natural && !altered) return { typed: '', answer: null };
     return { typed: letter, answer: null };
   }
   if ((key === '#' || key === '+' || key === '-') && typed.length === 1) {

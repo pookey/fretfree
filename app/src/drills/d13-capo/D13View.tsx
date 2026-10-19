@@ -11,6 +11,7 @@ import {
   d13Question,
   d13Spoken,
   d13TypeKey,
+  d13TypedHint,
   d13WorkedExample,
   type D13Answer,
   type D13Prompt,
@@ -62,7 +63,7 @@ export function D13View({
 
   let hint = '';
   if (feedback) hint = feedback.result.correct ? '' : d13Explain(prompt, feedback.answer);
-  else if (typed) hint = `Typed ${d13Pretty(typed)}. Press Enter to answer.`;
+  else if (typed) hint = d13TypedHint(typed, ask, choices);
   else if (guides.hint && !guided) hint = d13Hint(prompt);
 
   return (
