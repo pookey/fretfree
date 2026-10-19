@@ -60,10 +60,15 @@ const fake = vi.hoisted(() => {
       return [...this.events.values()].map((e) => Number.parseInt(e.at, 10));
     },
   };
+  /** Draw runs its callbacks on an animation frame; `flushDraw` is that frame. */
+  const drawQueue: (() => void)[] = [];
+  const flushDraw = () => drawQueue.splice(0).forEach((cb) => cb());
   const ctx = { state: 'running' };
   return {
     voices,
     output,
+    drawQueue,
+    flushDraw,
     transport,
     ctx,
     start: vi.fn(async () => undefined),
@@ -71,7 +76,7 @@ const fake = vi.hoisted(() => {
       now: () => 10,
       getContext: () => ctx,
       getTransport: () => transport,
-      getDraw: () => ({ schedule: (cb: () => void) => cb() }),
+      getDraw: () => ({ schedule: (cb: () => void) => drawQueue.push(cb) }),
       PluckSynth: FakePluck,
       Volume: FakeVolume,
       Filter: FakeFilter,
@@ -95,6 +100,7 @@ beforeEach(() => {
   fake.transport.loop = false;
   fake.transport.start.mockClear();
   fake.transport.stop.mockClear();
+  fake.drawQueue.length = 0;
   fake.start.mockClear();
   fake.ctx.state = 'running';
 });
@@ -280,6 +286,7 @@ describe('playProgression', () => {
     expect(fake.transport.ticks().sort((a, b) => a - b)).toEqual([0, 0, 384, 384, 768]);
 
     fake.transport.fire(0);
+    fake.flushDraw();
     expect(onChord).toHaveBeenLastCalledWith(0);
     expect(allAttacks().map((a) => [a.note, a.dur])).toEqual([
       ['G2', 2],
@@ -287,12 +294,18 @@ describe('playProgression', () => {
       ['D3', 2],
     ]);
     fake.transport.fire(384);
+    fake.flushDraw();
     expect(onChord).toHaveBeenLastCalledWith(1);
 
-    fake.transport.fire(768);
-    expect(onEnd).toHaveBeenCalledTimes(1);
+    // The Transport is released on its own clock, without waiting for a frame
+    // (which never comes in a hidden tab); only the UI's onEnd waits for one.
+    fake.transport.fire(768, 23);
     await playback.done;
+    expect(fake.transport.stop).toHaveBeenLastCalledWith(23);
     expect(fake.transport.events.size).toBe(0);
+    expect(onEnd).not.toHaveBeenCalled();
+    fake.flushDraw();
+    expect(onEnd).toHaveBeenCalledTimes(1);
     // A natural end lets the last chord ring.
     expect(fake.voices.every((v) => v.releases.length === 0)).toBe(true);
     playback.stop();
@@ -336,6 +349,65 @@ describe('playProgression', () => {
     expect(fake.transport.events.size).toBe(0);
   });
 
+  it('drops a chord cue still waiting for its frame when stopped', async () => {
+    const audio = await unlocked();
+    const onChord = vi.fn();
+    const onEnd = vi.fn();
+    const playback = await audio.playProgression([G, C], { onChord, onEnd });
+    fake.transport.fire(0);
+    playback.stop();
+    expect(onEnd).toHaveBeenCalledTimes(1);
+    fake.flushDraw();
+    expect(onChord).not.toHaveBeenCalled();
+  });
+
+  it('lets only the latest of two overlapping starts play', async () => {
+    const audio = await unlocked();
+    const first = audio.playProgression([G], { loop: true });
+    const second = await audio.playProgression([C]);
+    expect((await first).started).toBe(false);
+    await (
+      await first
+    ).done;
+    expect(second.started).toBe(true);
+    expect(fake.transport.start).toHaveBeenCalledTimes(1);
+    fake.transport.fire(0);
+    expect(allAttacks().map((a) => a.note)).toEqual(C.notes);
+    expect(fake.transport.loop).toBe(false);
+    second.stop();
+    await second.done;
+    expect(fake.transport.events.size).toBe(0);
+  });
+
+  it('cancels a start still waiting when stopAudio is called', async () => {
+    const audio = await unlocked();
+    const pending = audio.playProgression([G], { loop: true });
+    audio.stopAudio();
+    expect((await pending).started).toBe(false);
+    expect(fake.transport.start).not.toHaveBeenCalled();
+    expect(fake.transport.events.size).toBe(0);
+  });
+
+  it('settles overlapping starts and stops made while the first tap unlocks', async () => {
+    const audio = await import('./audio');
+    void audio.unlockAudio();
+    const first = audio.playProgression([G], { loop: true });
+    const second = audio.playProgression([C]);
+    expect((await first).started).toBe(false);
+    expect((await second).started).toBe(true);
+    fake.transport.fire(0);
+    expect(allAttacks().map((a) => a.note)).toEqual(C.notes);
+
+    const third = audio.playProgression([G], { loop: true });
+    audio.stopAudio();
+    expect((await third).started).toBe(false);
+    await (
+      await second
+    ).done;
+    expect(fake.transport.events.size).toBe(0);
+    expect(fake.transport.start).toHaveBeenCalledTimes(1);
+  });
+
   it('strums an up-stroke on the top strings', async () => {
     const audio = await unlocked();
     await audio.playProgression([{ notes: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'] }], {
@@ -355,6 +427,7 @@ describe('playProgression', () => {
     expect(playback.started).toBe(true);
     expect(fake.output.mute).toBe(true);
     fake.transport.fire(0);
+    fake.flushDraw();
     expect(onChord).toHaveBeenCalledWith(0);
   });
 

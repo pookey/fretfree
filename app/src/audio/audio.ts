@@ -28,6 +28,8 @@ let guitar: Guitar | null = null;
 let nextVoice = 0;
 let output: AudioOutput = { volume: AUDIO.defaultVolume, muted: false };
 let current: Playback | null = null;
+/** Bumped by every start and stop, so a start still waiting on `ready` can tell it was overtaken. */
+let generation = 0;
 
 export function loadTone(): Promise<ToneModule> {
   return (tonePromise ??= import('tone').then((Tone) => (toneModule = Tone)));
@@ -196,8 +198,9 @@ export interface Playback {
 
 const NOT_STARTED: Playback = { started: false, stop: () => undefined, done: Promise.resolve() };
 
-/** Stop the playing progression, if any, and damp every string. */
+/** Stop the playing progression, if any, cancel one still starting, and damp every string. */
 export function stopAudio(): void {
+  generation++;
   current?.stop();
   if (guitar && toneModule) guitar.damp(toneModule.now());
 }
@@ -214,16 +217,21 @@ export async function playProgression(
   const plan = planProgression(chords, opts);
   const bpm = opts.bpm ?? AUDIO.progression.bpm;
   beatSeconds(bpm); // Validates the tempo before anything starts.
+  const mine = ++generation;
   current?.stop();
   if (plan.totalBeats === 0) return NOT_STARTED;
   const audio = await ready(opts);
-  if (!audio) return NOT_STARTED;
+  // A later start or a stop while this one waited (on the unlock, say) wins.
+  if (!audio || mine !== generation) return NOT_STARTED;
   const { Tone, guitar: g } = audio;
   const transport = Tone.getTransport();
   const draw = Tone.getDraw();
   const at = (beat: number) => `${Math.round(beat * transport.PPQ)}i`;
   const strumOpts = { gap: opts.gap, upStrings: opts.upStrings };
 
+  let finished = false;
+  let resolve!: () => void;
+  const done = new Promise<void>((r) => (resolve = r));
   transport.stop();
   transport.position = 0;
   transport.bpm.value = bpm;
@@ -240,24 +248,39 @@ export async function playProgression(
     );
   }
   plan.chordStarts.forEach((beat, i) => {
-    ids.push(transport.schedule((time) => draw.schedule(() => opts.onChord?.(i), time), at(beat)));
+    ids.push(
+      transport.schedule(
+        // The cue waits for an animation frame, by which time the progression may have stopped.
+        (time) =>
+          draw.schedule(() => {
+            if (!finished) opts.onChord?.(i);
+          }, time),
+        at(beat),
+      ),
+    );
   });
 
-  let finished = false;
-  let resolve!: () => void;
-  const done = new Promise<void>((r) => (resolve = r));
-  const finish = (damp: boolean) => {
-    if (finished) return;
+  /** Release the Transport and settle `done`. False if it had already finished. */
+  const finish = (damp: boolean, time?: number) => {
+    if (finished) return false;
     finished = true;
     for (const id of ids) transport.clear(id);
-    transport.stop();
+    transport.stop(time);
     transport.loop = false;
+    // Damping cancels the resonance of strokes the Transport has already queued
+    // ahead of the audio clock, so nothing rings on after a stop.
     if (damp) g.damp(Tone.now());
     if (current === playback) current = null;
     resolve();
-    opts.onEnd?.();
+    return true;
   };
-  const playback: Playback = { started: true, stop: () => finish(true), done };
+  const playback: Playback = {
+    started: true,
+    stop: () => {
+      if (finish(true)) opts.onEnd?.();
+    },
+    done,
+  };
 
   if (opts.loop) {
     transport.loopStart = 0;
@@ -265,8 +288,12 @@ export async function playProgression(
     transport.loop = true;
   } else {
     transport.loop = false;
+    // The Transport is released on its own clock, which keeps running in a
+    // hidden tab; only the UI's `onEnd` waits for an animation frame.
     ids.push(
-      transport.schedule((time) => draw.schedule(() => finish(false), time), at(plan.totalBeats)),
+      transport.schedule((time) => {
+        if (finish(false, time)) draw.schedule(() => opts.onEnd?.(), time);
+      }, at(plan.totalBeats)),
     );
   }
   current = playback;
