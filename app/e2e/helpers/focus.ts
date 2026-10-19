@@ -11,4 +11,8 @@ export async function focusSession(page: Page, skillId: string | readonly string
   const query = new URLSearchParams(ids.map((id) => ['skill', id]));
   await page.goto(`/session?${query.toString()}`);
   await expect(page.getByTestId('session')).toBeVisible();
+  // The screen renders before the runner has planned and started the session.
+  // Wait for that too, or a spec that steps a fake clock next can do it before
+  // the session's start time and lose the first answer's minute under load.
+  await expect(page.getByText('Preparing your session…')).toBeHidden({ timeout: 15_000 });
 }
