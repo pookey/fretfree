@@ -38,6 +38,7 @@ import {
   d37ShowsCount,
   d37ShowsRoots,
   d37Sounds,
+  d37TapName,
   d37WrongTaps,
   type D37Answer,
   type D37Prompt,
@@ -303,6 +304,29 @@ describe('D37 feedback', () => {
     expect(d37Explain(d, fb(d, [cellOf(d, 'F')]))).toMatch(/, which isn't the 3rd\./);
     expect(d37Explain(d, fb(d, d.targets.slice(1)))).toBe(
       '1 was still to find, ringed on the neck. E (3) in frets 0–12.',
+    );
+  });
+});
+
+describe('D37 wrong-tap names', () => {
+  const sharp = (id: string) =>
+    d37MakePrompt(
+      { id, skillId: 'x' },
+      { tuning: STANDARD_TUNING, accidentalPref: 'sharp', scopeLevel: 1, rng: () => 0 },
+    );
+
+  it('spells a degree from the root whatever the preference, and other notes by it', () => {
+    const c = sharp('chord-tones:C');
+    expect(d37TapName(c, at(4, 1))).toBe('E♭');
+    expect(d37TapName(c, at(6, 1))).toBe('F');
+    expect(d37TapName(c, at(6, 2))).toBe('F♯');
+    const third = sharp('chord-tones:3@C');
+    expect(d37TapName(third, at(4, 1))).toBe('E♭');
+    expect(d37TapName(third, at(6, 3))).toBe('G');
+    const seventh = sharp('chord-tones:7@Cmaj7');
+    expect(d37TapName(seventh, at(3, 3))).toBe('B♭');
+    expect(d37Explain(c, fb(c, [at(4, 1)]))).toMatch(
+      /^You tapped E♭ \(string 4, fret 1\): the ♭3rd, which makes C minor\./,
     );
   });
 });

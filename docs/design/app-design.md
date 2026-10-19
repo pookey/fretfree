@@ -311,6 +311,14 @@ interface DrillType<P = unknown, A = unknown> {
 - **Confusions.** A wrong quality is keyed as D7 keys it (`triad:maj`/`triad:min`, `chord:7`/`chord:maj7`, `chord:m7`/`chord:m7b5`), so the seed pairs apply. The right quality on a wrong root logs no confusion.
 - **Nothing gives the answer away** (M1-25): before an answer the dots are plain, with no root squares, degree or note labels, chord name or shape name, at any guide level; the outline shows from level 2. The first rep is a worked example that labels every degree and names the chord. Feedback labels every dot with its degree by shape and colour, and says which notes decided the quality ("The 3rd is C, a minor 3rd above A"); a wrong root adds where the root is.
 
+**D37 items and grading:**
+
+- **One card per chord** (user request, 2026-10-18: "highlight all notes in a C chord"). `chord-tones:C` asks "tap every note of C major", and `chord-tones:3@C` "tap every 3rd of C major". The chord is in the ID, so Explore's "Quiz me on this" opens that chord's cards. `C5.neck-triads` has, for each root, the major and minor chord, then the 3rd and the ♭3. `C5.neck-sevenths` has 7, maj7 and m7, then the ♭7 of 7 and the 7 of maj7. A degree fact is asked once: the 3rd of C7 is the 3rd of C. Roots start at C, natural roots first. The stage is gated on spelling the chords (C5) and on every octave (C1); placement skips it.
+- **Scope.** Level 0 is a box: the frets one CAGED shape of the chord spans (`theory/voicings.ts`), picked per prompt, up to fret 15 (rule 12; I2 "chord tones inside a box"). Level 1 is frets 0–12 on every string. Compact screens run a range wider than their window region by region, from the nut.
+- **Multi-target, as D4.** Each tap is marked at once by its degree (R square, 3rd circle, 5th triangle, 7th hexagon: the explorer's markers). The round answers at the last target, at the first wrong tap, or on "Done", and is graded on completion time per target. Feedback rings missed notes with their degree labels, marks wrong taps, and outlines the box's CAGED shape from guide level 2. On compact, feedback opens on the region holding the first miss, and the learner steps through the others.
+- **Confusions** use D7's concepts (`triad:maj`/`triad:min`, `chord:7`/`chord:maj7`, `chord:m7`/`chord:m7b5`) for chord cards and interval keys (`M3`/`m3`, `m7`/`M7`) for degree cards. A wrong note that swaps the chord's quality (E♭ in C major) is logged against its pair; a wrong note is spelled from the root when it is a degree.
+- **Guides.** The count shows from guide level 2. Degree cards square the roots from level 2, and the box's shape is named then. String names drop while an open string holds an answer.
+
 **D39 items and grading:**
 
 - **Name the marker** (`marker:f7`): frets 0–12 are drawn with every fret but one dimmed, and the learner names the spotlit fret. Scope level 0 offers the five landmarks (3, 5, 7, 9, 12). Level 1 offers every fret from 1 to 12.

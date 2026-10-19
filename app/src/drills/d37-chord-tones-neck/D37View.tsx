@@ -28,6 +28,7 @@ import {
   d37Rounds,
   d37ShowsCount,
   d37ShowsRoots,
+  d37TapName,
   d37TargetAt,
   d37WrongTaps,
   type D37Answer,
@@ -159,7 +160,7 @@ export function D37View({
       ...d37WrongTaps(prompt, taps).map((p): FretMarker => ({
         ...p,
         style: 'wrong',
-        label: d8Display(noteAt(p, tuning, prompt.accidentalPref).pc),
+        label: d37TapName(prompt, p),
         forceLabel: true,
       })),
     );

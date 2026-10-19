@@ -3,6 +3,7 @@ import {
   allStrings,
   chordDegreeSemitones,
   chordFormula,
+  chordToneOf,
   chromaOf,
   degreeInChord,
   inRange,
@@ -387,21 +388,54 @@ function toneLine(prompt: D37Prompt): string {
     .join(', ');
 }
 
+/** A chord kind that holds each degree, to spell a degree from the root. */
+const KIND_WITH: Partial<Record<ChordDegree, ChordKind>> = {
+  b3: 'minor',
+  '3': 'major',
+  b7: '7',
+  '7': 'maj7',
+};
+
+/**
+ * The degree a tapped note plays from the root, and the chord that spells
+ * it: one of the chord's own (a 5th tapped for a 3rd), the one it turns the
+ * chord into (E♭ makes C minor), or the twin of the asked degree (the ♭3 for
+ * the 3rd). Any other note has none.
+ */
+function tapDegree(
+  prompt: D37Prompt,
+  pos: Position,
+): { degree: ChordDegree; kind: ChordKind } | null {
+  const note = noteAt(pos, prompt.tuning).pc;
+  const own = degreeInChord(prompt.root, prompt.kind, note);
+  if (own) return { degree: own, kind: prompt.kind };
+  const swapped = prompt.degree === null ? SWAPPED[prompt.kind]?.[semitonesAt(prompt, pos)] : null;
+  if (swapped)
+    return { degree: degreeInChord(prompt.root, swapped, note) as ChordDegree, kind: swapped };
+  const twin = prompt.degree === null ? null : twinOf(prompt, pos);
+  const kind = twin && KIND_WITH[twin];
+  return twin && kind ? { degree: twin, kind } : null;
+}
+
+/** A tapped note's name: spelled from the root when it is a degree (E♭ in C, not D♯). */
+export function d37TapName(prompt: D37Prompt, pos: Position): string {
+  const d = tapDegree(prompt, pos);
+  const spelled = d && chordToneOf(prompt.root, d.kind, d.degree);
+  return d8Display(spelled ?? noteAt(pos, prompt.tuning, prompt.accidentalPref).pc);
+}
+
 /** What a wrong tap was: "E♭ (string 3, fret 8): the ♭3rd, which makes C minor". */
 function tapLine(prompt: D37Prompt, pos: Position): string {
-  const note = noteAt(pos, prompt.tuning, prompt.accidentalPref).pc;
-  const at = `${d8Display(note)} (${where(pos)})`;
-  const swapped = prompt.degree === null ? SWAPPED[prompt.kind]?.[semitonesAt(prompt, pos)] : null;
-  if (swapped) {
-    const other = { root: prompt.root, kind: swapped, chord: nameChord(prompt.root, swapped) };
-    const degree = degreeInChord(prompt.root, swapped, note) as ChordDegree;
-    return `${at}: the ${d8DegreeName(degree)}, which makes ${d37ChordName(other)}`;
+  const at = `${d37TapName(prompt, pos)} (${where(pos)})`;
+  const d = tapDegree(prompt, pos);
+  if (prompt.degree === null) {
+    if (!d) return `${at}, which isn't in ${d37ChordName(prompt)}`;
+    const other = { root: prompt.root, kind: d.kind, chord: nameChord(prompt.root, d.kind) };
+    return `${at}: the ${d8DegreeName(d.degree)}, which makes ${d37ChordName(other)}`;
   }
-  if (prompt.degree === null) return `${at}, which isn't in ${d37ChordName(prompt)}`;
   const asked = d8DegreeName(prompt.degree);
-  const degree = degreeInChord(prompt.root, prompt.kind, note) ?? twinOf(prompt, pos);
-  return degree
-    ? `${at}: the ${d8DegreeName(degree)}, not the ${asked}`
+  return d
+    ? `${at}: the ${d8DegreeName(d.degree)}, not the ${asked}`
     : `${at}, which isn't the ${asked}`;
 }
 
