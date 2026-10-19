@@ -27,7 +27,7 @@ export const C3_SKILLS = [
 ];
 
 /** The playable 3rd shapes (C3.thirds): adjacent strings, low to high. */
-const THIRDS_SHAPES = ['s6→s5', 's5→s4', 's4→s3', 's3→s2', 's2→s1'].flatMap((pair) =>
+export const THIRDS_SHAPES = ['s6→s5', 's5→s4', 's4→s3', 's3→s2', 's2→s1'].flatMap((pair) =>
   ['m3', 'M3'].map((iv) => `${iv}@${pair}`),
 );
 
@@ -52,13 +52,30 @@ export interface SeedCard {
   reviewedDaysAgo?: number;
 }
 
-/** Mark `mastered` skills mastered and store `cards` as known review cards. Reloads the page. */
+export interface SeedPractising {
+  skillId: string;
+  /** 0 = no guides; higher levels show more help, such as the context panel. */
+  guideLevel: number;
+}
+
+/**
+ * Mark `mastered` skills mastered, `practising` skills in practice at their
+ * guide level, and store `cards` as known review cards. Reloads the page.
+ */
 export async function seedIntervals(
   page: Page,
-  { mastered, cards }: { mastered: readonly string[]; cards: readonly SeedCard[] },
+  {
+    mastered,
+    cards,
+    practising = [],
+  }: {
+    mastered: readonly string[];
+    cards: readonly SeedCard[];
+    practising?: readonly SeedPractising[];
+  },
 ): Promise<void> {
   await page.evaluate(
-    async ({ mastered, cards }) => {
+    async ({ mastered, cards, practising }) => {
       const DAY = 86_400_000;
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
         const req = indexedDB.open('fretwork');
@@ -96,13 +113,21 @@ export async function seedIntervals(
           rollingAccuracy: 1,
         });
       }
+      for (const { skillId, guideLevel } of practising) {
+        tx.objectStore('skillStates').put({
+          skillId,
+          status: 'practising',
+          guideLevel,
+          rollingAccuracy: 0.8,
+        });
+      }
       await new Promise<void>((resolve, reject) => {
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
       });
       db.close();
     },
-    { mastered, cards },
+    { mastered, cards, practising },
   );
   await page.reload();
 }

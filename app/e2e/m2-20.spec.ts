@@ -1,7 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart } from './helpers';
 import { focusSession } from './helpers/focus';
-import { C3_SKILLS, SKILLS_BEFORE_C3 } from './helpers/intervals';
+import {
+  C3_SKILLS,
+  SKILLS_BEFORE_C3,
+  THIRDS_SHAPES,
+  seedIntervals,
+  type SeedCard,
+} from './helpers/intervals';
 
 // M2-20: on iPad portrait, D5 and D6 stack prompt, answers, neck and help as
 // one column from the top, instead of centring the neck in a tall empty band
@@ -16,10 +22,6 @@ const MAX_PROMPT_GAP = 0.15;
 const MIN_CELL = 44;
 const PORTRAIT = 'ipad-portrait';
 
-const THIRDS = [6, 5, 4, 3, 2].flatMap((from) =>
-  ['m3', 'M3'].map((interval) => `${interval}@s${from}→s${from - 1}`),
-);
-
 /**
  * C3.thirds in practice at guide level 2 (so the help panel shows), with
  * every other skill mastered. `due` picks the drill: `interval-name:` cards
@@ -27,64 +29,19 @@ const THIRDS = [6, 5, 4, 3, 2].flatMap((from) =>
  * Reloads.
  */
 async function seedThirds(page: Page, due: 'interval-name' | 'interval'): Promise<void> {
-  await page.evaluate(
-    async ({ mastered, shapes, due }) => {
-      const DAY = 86_400_000;
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const req = indexedDB.open('fretwork');
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-      const tx = db.transaction(['cards', 'skillStates'], 'readwrite');
-      const now = Date.now();
-      const card = (itemId: string, dueAt: number, stability: number) => ({
-        itemId,
-        skillId: 'C3.thirds',
-        fsrs: {
-          due: new Date(dueAt),
-          stability,
-          difficulty: 5,
-          elapsed_days: 0,
-          scheduled_days: 3,
-          learning_steps: 0,
-          reps: 3,
-          lapses: 0,
-          state: 2,
-          last_review: new Date(now - 3 * DAY),
-        },
-        createdAt: new Date(now - 6 * DAY),
-        lastReviewedAt: new Date(now - 3 * DAY),
-      });
-      const cards = tx.objectStore('cards');
-      for (const s of shapes) {
-        for (const prefix of ['interval-name', 'interval']) {
-          const id = `${prefix}:${s}`;
-          cards.put(prefix === due ? card(id, now - DAY, 3) : card(id, now + 30 * DAY, 60));
-        }
-      }
-      const states = tx.objectStore('skillStates');
-      for (const skillId of mastered) {
-        states.put({ skillId, status: 'mastered', guideLevel: 0, rollingAccuracy: 1 });
-      }
-      states.put({
-        skillId: 'C3.thirds',
-        status: 'practising',
-        guideLevel: 2,
-        rollingAccuracy: 0.8,
-      });
-      await new Promise<void>((resolve, reject) => {
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-      db.close();
-    },
-    {
-      mastered: [...SKILLS_BEFORE_C3, ...C3_SKILLS.filter((s) => s !== 'C3.thirds')],
-      shapes: THIRDS,
-      due,
-    },
+  const cards: SeedCard[] = THIRDS_SHAPES.flatMap((shape) =>
+    (['interval-name', 'interval'] as const).map((prefix) => ({
+      itemId: `${prefix}:${shape}`,
+      skillId: 'C3.thirds',
+      ...(prefix === due ? { dueInDays: -1, stability: 3 } : { dueInDays: 30, stability: 60 }),
+      reviewedDaysAgo: 3,
+    })),
   );
-  await page.reload();
+  await seedIntervals(page, {
+    mastered: [...SKILLS_BEFORE_C3, ...C3_SKILLS.filter((s) => s !== 'C3.thirds')],
+    cards,
+    practising: [{ skillId: 'C3.thirds', guideLevel: 2 }],
+  });
 }
 
 type Box = { x: number; y: number; width: number; height: number };
