@@ -622,7 +622,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m2-18.spec.ts`, iPad projects): a D4 focus session shows the octave panel; a D1 session still shows the alphabet.
 
 ### M2-19 · Progress shows interval and octave work
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §7 Progress
 - **Owns:** `app/src/screens/progress/panels/stats.tsx`, `app/src/screens/progress/panels/topics.tsx`, `app/src/screens/progress/panels/topics.test.tsx`, `app/src/screens/progress/panels/topics.module.css`, `app/e2e/m2-19.spec.ts`
