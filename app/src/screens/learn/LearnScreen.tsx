@@ -13,7 +13,14 @@ import { allCards, getDb, getSkillStates } from '../../storage';
 import { useStatusOverlay } from '../settings/DeveloperTools';
 import { MasteryRing } from './MasteryRing';
 import { ModuleDetail } from './ModuleDetail';
-import { MODULE_STATE_LABEL, buildMap, defaultModule, percent, type ModuleView } from './map-model';
+import {
+  MODULE_STATE_LABEL,
+  buildMap,
+  defaultModule,
+  percent,
+  skillStatuses,
+  type ModuleView,
+} from './map-model';
 import styles from './Learn.module.css';
 
 const PICKER = createDrillPicker(SKILLS, DRILLS);
@@ -26,7 +33,8 @@ interface LearnData {
   outcomes: Map<string, boolean>;
 }
 
-function useLearnData(): LearnData | null {
+/** `version`: bump it to load again, e.g. after a test-out. */
+function useLearnData(version = 0): LearnData | null {
   const [data, setData] = useState<LearnData | null>(null);
   useEffect(() => {
     let live = true;
@@ -44,7 +52,7 @@ function useLearnData(): LearnData | null {
     return () => {
       live = false;
     };
-  }, []);
+  }, [version]);
   return data;
 }
 
@@ -100,7 +108,9 @@ export function LearnScreen() {
   const sizeClass = useSizeClass();
   const compact = sizeClass === 'compact';
   const [params] = useSearchParams();
-  const data = useLearnData();
+  const [version, setVersion] = useState(0);
+  const data = useLearnData(version);
+  const statuses = useMemo(() => data && skillStatuses(SKILLS, data.stored), [data]);
   const overlay = useOverlay();
   const map = useMemo(
     () =>
@@ -157,7 +167,11 @@ export function LearnScreen() {
                 ← All modules
               </Link>
             )}
-            <ModuleDetail view={selected} />
+            <ModuleDetail
+              view={selected}
+              statuses={statuses ?? undefined}
+              onChange={() => setVersion((v) => v + 1)}
+            />
           </div>
         )}
       </div>

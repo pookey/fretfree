@@ -1,4 +1,5 @@
-import { ENGINE_CONFIG } from '../../engine';
+import { ENGINE_CONFIG, type SkillStatus } from '../../engine';
+import { TestOut } from '../../placement/TestOut';
 import { MasteryRing } from './MasteryRing';
 import { MODULE_STATE_LABEL, percent, type ModuleView } from './map-model';
 import { SkillDetail } from './SkillDetail';
@@ -11,8 +12,20 @@ const TRACK_NOTE = {
   future: 'A future track, planned for a later release.',
 } as const;
 
-/** The right-hand pane (design §7 Learn): a module and the detail of its skills. */
-export function ModuleDetail({ view }: { view: ModuleView }) {
+/**
+ * The right-hand pane (design §7 Learn): a module and the detail of its
+ * skills. A locked module offers a test-out (M2-16) once `statuses` (the
+ * derived skill statuses) are loaded; `onChange` reloads them after it.
+ */
+export function ModuleDetail({
+  view,
+  statuses,
+  onChange,
+}: {
+  view: ModuleView;
+  statuses?: ReadonlyMap<string, SkillStatus>;
+  onChange?: () => void;
+}) {
   const { module } = view;
   const track = TRACK_NOTE[module.track];
   return (
@@ -55,6 +68,15 @@ export function ModuleDetail({ view }: { view: ModuleView }) {
           You can preview this module now. Its skills start feeding your sessions once you've made
           progress on what they build on.
         </p>
+      )}
+      {view.skills.length > 0 && (
+        <TestOut
+          key={module.id}
+          module={module}
+          offer={view.state === 'locked'}
+          statuses={statuses}
+          onSaved={onChange}
+        />
       )}
       {module.misconception && (
         <aside className={styles.callout} aria-label="Watch out for">

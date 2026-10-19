@@ -6,7 +6,7 @@ import { DRILLS } from '../drills/registry';
 import type { AnyDrillType, DrillFeedback } from '../drills/types';
 import { ENGINE_CONFIG } from '../engine/config';
 import { gradeAnswer, speedTargets } from '../engine/grading';
-import type { Skill } from '../engine/model';
+import type { Item, Skill } from '../engine/model';
 import { createScheduler, type Scheduler } from '../engine/scheduler';
 import { SKILLS } from '../engine/skills';
 import { createDrillPicker } from '../session/drill-picker';
@@ -24,6 +24,7 @@ import {
   type Probe,
 } from './algorithm';
 import { savePlacement, type PlacementSummary, type ProbeLog } from './save';
+import { testOutGroups } from './test-out';
 import onboarding from '../onboarding/Onboarding.module.css';
 import styles from './PlacementTest.module.css';
 
@@ -49,6 +50,16 @@ type Phase =
 
 const perfNow = () => performance.now();
 
+/** A test-out of a locked module (M2-16): the probe scoped to the skills it needs. */
+export interface TestOutScope {
+  /** The prerequisite skills to probe (`unmetPrerequisites`). */
+  skillIds: readonly string[];
+  /** The result in place of the placement test's, under the same focus target. */
+  renderResult: (summary: PlacementSummary) => ReactNode;
+  /** Called once the result is saved, e.g. to reload what the screen shows. */
+  onSaved?: (summary: PlacementSummary) => void;
+}
+
 /**
  * The placement test (design §3.4, §4 step 6): about 3 minutes of adaptive
  * probes through the drills themselves, run full screen so each drill keeps
@@ -60,6 +71,10 @@ const perfNow = () => performance.now();
  * the page is `inert`, so focus and the screen reader stay in the test.
  * Unless `scheduler` is given, cards are scheduled with the learner's refit
  * FSRS weights, as sessions do (a retake can run long after a refit).
+ *
+ * With `testOut`, it probes only the given skills, starts at once, and holds
+ * them to the test-out bar (`ENGINE_CONFIG.placement.testOut`): every probe
+ * fluent, and a skill that passes is mastered.
  */
 export function PlacementTest({
   doneAction,
@@ -70,6 +85,7 @@ export function PlacementTest({
   drills = DRILLS,
   db = getDb(),
   scheduler: given,
+  testOut,
 }: {
   doneAction?: ReactNode;
   now?: () => number;
@@ -79,6 +95,7 @@ export function PlacementTest({
   drills?: readonly AnyDrillType[];
   db?: FretworkDB;
   scheduler?: Scheduler;
+  testOut?: TestOutScope;
 }) {
   const settings = useAppStore((s) => s.settings);
   const fsrsWeights = settings.fsrsParams?.w;
@@ -96,12 +113,16 @@ export function PlacementTest({
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const heading = useRef<HTMLHeadingElement>(null);
   const result = useRef<HTMLParagraphElement>(null);
+  const testOutResult = useRef<HTMLDivElement>(null);
   const overlay = useRef<HTMLDivElement>(null);
 
   const picker = useMemo(() => createDrillPicker(skills, drills), [skills, drills]);
   const tuning = getTuning(settings.tuning);
   const targets = speedTargets(settings.latencyBaselineMs);
   const running = phase.kind === 'probe' || phase.kind === 'feedback';
+  const tiers = testOut ? CFG.testOut.tiers : CFG.tiers;
+  const budgetMs = testOut ? CFG.testOut.budgetMs : CFG.budgetMs;
+  const title = testOut ? 'Test out' : 'Placement test';
 
   useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
@@ -117,7 +138,8 @@ export function PlacementTest({
     };
   }, [running]);
   useEffect(() => {
-    if (phase.kind === 'done' || phase.kind === 'failed') result.current?.focus();
+    if (phase.kind === 'done' || phase.kind === 'failed')
+      (testOutResult.current ?? result.current)?.focus();
   }, [phase.kind]);
 
   const finish = async () => {
@@ -134,8 +156,10 @@ export function PlacementTest({
         scheduler,
         targets,
         now: clock(),
+        masterKnown: testOut !== undefined,
       });
       setPhase({ kind: 'done', summary });
+      testOut?.onSaved?.(summary);
     } catch (e) {
       console.error('Placement test not saved', e);
       setPhase({ kind: 'failed' });
@@ -147,7 +171,7 @@ export function PlacementTest({
     const s = state.current;
     if (!s) return;
     setShare(progress(s));
-    const probe = nextProbe(s, now() - startedAt.current);
+    const probe = nextProbe(s, now() - startedAt.current, budgetMs);
     if (!probe) return void finish();
     const drill = picker.pick(probe.item);
     if (!drill) throw new Error(`No drill can test ${probe.item.id}`);
@@ -162,14 +186,25 @@ export function PlacementTest({
   };
 
   const start = () => {
-    state.current = startPlacement(
-      placementGroups(skills, (i) => picker.canServe(i)),
-      rng,
-    );
+    const canServe = (i: Item) => picker.canServe(i);
+    const groups = testOut
+      ? testOutGroups(testOut.skillIds, skills, canServe)
+      : placementGroups(skills, canServe);
+    state.current = startPlacement(groups, rng, tiers);
     logs.current = [];
     startedAt.current = now();
     advance();
   };
+
+  // A test-out was asked for by a tap on "Test out": no second start button.
+  const autoStart = useRef(testOut !== undefined);
+  useEffect(() => {
+    if (!autoStart.current) return;
+    autoStart.current = false;
+    start();
+    // Once, on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onAnswer = (answer: unknown) => {
     if (phase.kind !== 'probe' || !state.current) return;
@@ -220,13 +255,13 @@ export function PlacementTest({
       >
         <header className={styles.header}>
           <h2 id={headingId} ref={heading} tabIndex={-1}>
-            Placement test
+            {title}
           </h2>
           <progress
             className={styles.progress}
             max={1}
             value={share}
-            aria-label="Placement test progress"
+            aria-label={`${title} progress`}
           />
           <button type="button" className={onboarding.link} onClick={() => void finish()}>
             Finish now
@@ -280,7 +315,7 @@ export function PlacementTest({
 
   return (
     <div className={styles.placement}>
-      {phase.kind === 'ready' && (
+      {phase.kind === 'ready' && !testOut && (
         <>
           <p className={onboarding.lead}>
             About {MINUTES} minutes of quick questions that get harder as you go. Answer what you
@@ -295,7 +330,13 @@ export function PlacementTest({
       {phase.kind === 'saving' && <p className={onboarding.lead}>Saving what you know…</p>}
       {phase.kind === 'done' && (
         <>
-          <Result summary={phase.summary} skills={skills} ref={result} />
+          {testOut ? (
+            <div ref={testOutResult} tabIndex={-1} data-testid="test-out-result">
+              {testOut.renderResult(phase.summary)}
+            </div>
+          ) : (
+            <Result summary={phase.summary} skills={skills} ref={result} />
+          )}
           {doneAction}
         </>
       )}

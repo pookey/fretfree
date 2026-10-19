@@ -1,0 +1,68 @@
+/* "Already know this? Test out" (M2-16), in a locked module's detail pane.
+   The probes themselves run full screen (PlacementTest.module.css). */
+.testOut {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-l);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.testOut h3 {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.testOut p {
+  margin: 0;
+}
+
+.testOut [data-testid='test-out-result'] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.testOut [data-testid='test-out-result']:focus {
+  outline: none;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.report {
+  margin: 0;
+  padding-left: var(--space-5);
+  font-weight: 600;
+}
+
+.report li + li {
+  margin-top: var(--space-1);
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-5);
+  border: none;
+  border-radius: var(--radius-m);
+  background: var(--accent-fill);
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary:focus-visible {
+  outline: 3px solid var(--tone);
+  outline-offset: 2px;
+}
