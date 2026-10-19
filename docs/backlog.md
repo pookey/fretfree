@@ -895,10 +895,15 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Deps:** M4-01
 - **Owns:** `app/src/engine/skills/c10.ts`, `app/src/drills/d13-capo/**`, `app/e2e/m4-04.spec.ts`
 
-### M4-05 · I3 skills plus interactive circle of fifths
+### M4-05 · I3 skills, D40 "Key-signature cards" and an interactive circle of fifths
 - **Status:** todo
 - **Deps:** M4-01, M1-01
-- **Owns:** `app/src/engine/skills/i3.ts`, `app/src/screens/explore/views/circle-of-fifths.tsx`, `app/src/screens/explore/views/circle-of-fifths.meta.ts`, `app/e2e/m4-05.spec.ts`
+- **Design:** §6, §Explore, research/03 I3
+- **Owns:** `app/src/engine/skills/i3.ts`, `app/src/drills/d40-key-signature/**`, `app/src/screens/explore/views/circle-of-fifths.*`, `app/e2e/m4-05.spec.ts`, plus a D40 row in design §6
+- **Acceptance:**
+  - User decision (2026-10-19): I3 gets its own small choice drill now, instead of waiting for M8's D25. **D40 "Key-signature cards"** has item kinds for how many sharps or flats a key has (and which), which major key has a given signature, the relative minor, and the V. It follows the M3-18 lazy-view contract.
+  - I3 skills in `engine/skills/i3.ts` point at D40. The interactive circle of fifths (built on M4-01's helpers) is an Explore view whose "Quiz me on this" focuses I3.
+  - Choices must not give the answer away (see M4-02's review: no structure a learner can exploit without knowing the key). Unit tests for item generation and grading. E2E: the circle's Quiz button starts a D40 session.
 
 ### M4-06 · Audio engine v2
 - **Status:** todo
