@@ -5,6 +5,7 @@ import { STANDARD_TUNING } from '../../theory';
 import { LandmarksContextPanel } from './ContextPanel';
 import fretLandmarks from './drill';
 import { d39MakePrompt } from './logic';
+import { resolveView } from '../lazy-view';
 
 const prompt = d39MakePrompt(
   { id: 'marker:f3', skillId: 'F3.markers' },
@@ -24,8 +25,8 @@ const panel = (guideLevel: GuideLevel, guided = false) =>
   ).container;
 
 describe('<LandmarksContextPanel>', () => {
-  it('is the D39 plugin’s context panel', () => {
-    expect(fretLandmarks.contextPanel).toBe(LandmarksContextPanel);
+  it('is the D39 plugin’s context panel', async () => {
+    expect(await resolveView(fretLandmarks.contextPanel!)).toBe(LandmarksContextPanel);
   });
 
   it('lists the markers, with the 12th-fret repeat from level 2', () => {

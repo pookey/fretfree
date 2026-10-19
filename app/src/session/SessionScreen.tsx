@@ -1,8 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Component,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useAppStore } from '../app-store';
 import { playNotes } from '../audio/audio';
-import { DRILLS } from '../drills/registry';
+import { DRILLS, preloadDrill } from '../drills/registry';
 import type { DrillFeedback } from '../drills/types';
 import { SKILLS, createScheduler, type GuideLevel } from '../engine';
 import type { StatusOverlay } from '../engine/overlay';
@@ -53,6 +62,8 @@ export function SessionScreen() {
   const trackerRef = useRef<CelebrationTracker | null>(null);
   const shownAt = useRef(0);
   const busy = useRef(false);
+  // Set while the next prompt's view downloads, so Continue can't skip past it.
+  const switching = useRef(false);
   const continueRef = useRef<HTMLButtonElement>(null);
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
   const [progress, setProgress] = useState({ position: 0, length: 1 });
@@ -81,6 +92,13 @@ export function SessionScreen() {
     setProgress({ position: runner.position, length: Math.max(1, runner.length) });
     const current = runner.currentPrompt();
     if (!current) return finish();
+    // Drill views load on demand. The chunk is normally prefetched already;
+    // waiting for it keeps a download out of the response time. A failed
+    // download renders the drill's load-failed message instead.
+    switching.current = true;
+    await preloadDrill(current.drill).catch(() => undefined);
+    switching.current = false;
+    if (runnerRef.current !== runner || runner.isFinished) return;
     shownAt.current = performance.now();
     setPhase({ kind: 'prompt', current });
   }, [finish]);
@@ -107,7 +125,12 @@ export function SessionScreen() {
       runnerRef.current = runner;
       trackerRef.current = tracker;
       setEndsAt(runner.endsAt);
-      void showCurrent();
+      // Once the first prompt is up, prefetch every other drill's view: the
+      // picker chooses the next drill only when its prompt comes up, so a
+      // switch never waits on a download (offline, the precache serves them).
+      void showCurrent().then(() => {
+        for (const d of DRILLS) void preloadDrill(d).catch(() => undefined);
+      });
     });
     return () => {
       live = false;
@@ -115,6 +138,7 @@ export function SessionScreen() {
   }, [loaded, settings, scheduler, query, routeState, showCurrent, overlay]);
 
   const advance = useCallback(() => {
+    if (switching.current) return;
     runnerRef.current?.next();
     void showCurrent();
   }, [showCurrent]);
@@ -233,21 +257,31 @@ export function SessionScreen() {
       </header>
 
       <div className={styles.body} data-testid="session">
-        <section className={styles.drillArea}>
+        <section className={styles.drillArea} data-drill={current?.drill.id}>
           {current && Drill ? (
-            <Drill
-              prompt={current.prompt}
-              guideLevel={guideLevel}
-              guided={current.entry.guided}
-              handedness={settings.handedness}
-              sizeClass={sizeClass}
-              compactFrets={compactFrets}
-              tuning={getTuning(settings.tuning)}
-              feedback={feedback}
-              onAnswer={(a: unknown) => void onAnswer(a)}
-              aside={aside}
-              blindMode={settings.blindMode}
-            />
+            <DrillLoadFailed key={current.drill.id} title={current.drill.title}>
+              <Suspense
+                fallback={
+                  <p role="status" className={styles.loading} data-testid="drill-loading">
+                    Loading {current.drill.title}…
+                  </p>
+                }
+              >
+                <Drill
+                  prompt={current.prompt}
+                  guideLevel={guideLevel}
+                  guided={current.entry.guided}
+                  handedness={settings.handedness}
+                  sizeClass={sizeClass}
+                  compactFrets={compactFrets}
+                  tuning={getTuning(settings.tuning)}
+                  feedback={feedback}
+                  onAnswer={(a: unknown) => void onAnswer(a)}
+                  aside={aside}
+                  blindMode={settings.blindMode}
+                />
+              </Suspense>
+            </DrillLoadFailed>
           ) : (
             <p className={styles.loading}>Preparing your session…</p>
           )}
@@ -286,6 +320,34 @@ export function SessionScreen() {
       </div>
     </main>
   );
+}
+
+/**
+ * Catches a drill view whose chunk failed to download (offline before the
+ * service worker cached it). A failed lazy import stays failed, so the way
+ * back is a reload.
+ */
+class DrillLoadFailed extends Component<
+  { title: string; children: ReactNode },
+  { failed: boolean }
+> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  override render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div role="alert" className={styles.loading}>
+        <p>Couldn’t load {this.props.title}. Check your connection, then reload.</p>
+        <button type="button" className={styles.primary} onClick={() => window.location.reload()}>
+          Reload
+        </button>
+      </div>
+    );
+  }
 }
 
 /** The default context panel: the musical alphabet and its half steps. */

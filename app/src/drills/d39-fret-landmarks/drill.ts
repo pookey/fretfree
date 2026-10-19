@@ -1,6 +1,5 @@
+import { lazyView } from '../lazy-view';
 import type { DrillType } from '../types';
-import { LandmarksContextPanel } from './ContextPanel';
-import { D39View } from './D39View';
 import {
   D39_ID,
   D39_SCOPE,
@@ -28,8 +27,8 @@ const fretLandmarks: DrillType<D39Prompt, D39Answer> = {
   sounds: d39Sounds,
   feedbackPositions: d39FeedbackPositions,
   conceptOf: d39ConceptOf,
-  render: D39View,
-  contextPanel: LandmarksContextPanel,
+  render: lazyView(() => import('./D39View').then((m) => m.D39View)),
+  contextPanel: lazyView(() => import('./ContextPanel').then((m) => m.LandmarksContextPanel)),
 };
 
 export default fretLandmarks;

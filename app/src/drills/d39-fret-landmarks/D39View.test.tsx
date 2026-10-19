@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { GuideLevel } from '../../engine/model';
 import { STANDARD_TUNING } from '../../theory';
 import type { SizeClass } from '../../shell/size-class';
+import { resolveView } from '../lazy-view';
 import { getDrill } from '../registry';
 import type { DrillFeedback } from '../types';
 import { D39View } from './D39View';
@@ -58,8 +59,8 @@ const buttons = () =>
     .map((b) => b.textContent);
 
 describe('<D39View>', () => {
-  it('is registered as the fret-landmarks drill', () => {
-    expect(getDrill('fret-landmarks')?.render).toBe(D39View);
+  it('is registered as the fret-landmarks drill', async () => {
+    expect(await resolveView(getDrill('fret-landmarks')!.render)).toBe(D39View);
   });
 
   it('spotlights one marker and offers the landmark frets, with no fret numbers', () => {

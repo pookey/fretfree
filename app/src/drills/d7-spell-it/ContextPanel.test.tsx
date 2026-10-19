@@ -5,6 +5,7 @@ import { STANDARD_TUNING } from '../../theory';
 import { SpellingContextPanel } from './ContextPanel';
 import spellIt from './drill';
 import { d7Hint, d7MakePrompt, type D7Prompt } from './logic';
+import { resolveView } from '../lazy-view';
 
 const prompt = (id = 'spell-key:F#') =>
   d7MakePrompt(
@@ -35,20 +36,8 @@ function panel(
 const chords = () => screen.queryByTestId('diatonic-chords');
 
 describe('<SpellingContextPanel>', () => {
-  it('is the D7 plugin’s context panel, loaded on first use', async () => {
-    const Panel = spellIt.contextPanel!;
-    render(
-      <Panel
-        prompt={prompt()}
-        guideLevel={2}
-        guided={false}
-        handedness="right"
-        tuning={STANDARD_TUNING}
-        feedback={null}
-      />,
-    );
-    expect(await screen.findByRole('heading', { name: 'Major scale' })).toBeInTheDocument();
-    expect(screen.getByTestId('diatonic-chords')).toBeInTheDocument();
+  it('is the D7 plugin’s context panel', async () => {
+    expect(await resolveView(spellIt.contextPanel!)).toBe(SpellingContextPanel);
   });
 
   it('shows the major-scale steps and the hint, without the half-step rule at level 1', () => {

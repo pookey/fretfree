@@ -1,6 +1,5 @@
+import { lazyView } from '../lazy-view';
 import type { DrillType } from '../types';
-import { IntervalContextPanel } from './ContextPanel';
-import { D5View } from './D5View';
 import {
   D5_ID,
   D5_SCOPE,
@@ -28,8 +27,8 @@ const intervalName: DrillType<D5Prompt, D5Answer> = {
   sounds: d5Sounds,
   feedbackPositions: d5FeedbackPositions,
   conceptOf: d5ConceptOf,
-  render: D5View,
-  contextPanel: IntervalContextPanel,
+  render: lazyView(() => import('./D5View').then((m) => m.D5View)),
+  contextPanel: lazyView(() => import('./ContextPanel').then((m) => m.IntervalContextPanel)),
 };
 
 export default intervalName;

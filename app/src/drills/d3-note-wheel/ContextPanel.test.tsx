@@ -6,6 +6,7 @@ import type { DrillFeedback } from '../types';
 import { NoteWheelContextPanel } from './ContextPanel';
 import noteWheel from './drill';
 import { d3Check, d3MakePrompt, d3TapAnswer, type D3Answer, type D3Prompt } from './logic';
+import { resolveView } from '../lazy-view';
 
 const prompt = (id: string, accidentalPref: 'sharp' | 'flat' = 'sharp') =>
   d3MakePrompt(
@@ -38,8 +39,8 @@ const wheelNote = (pc: string) =>
   within(screen.getByTestId('note-wheel')).getByTestId(`wheel-note-${pc}`);
 
 describe('<NoteWheelContextPanel>', () => {
-  it('is the D3 plugin’s context panel', () => {
-    expect(noteWheel.contextPanel).toBe(NoteWheelContextPanel);
+  it('is the D3 plugin’s context panel', async () => {
+    expect(await resolveView(noteWheel.contextPanel!)).toBe(NoteWheelContextPanel);
   });
 
   it('shows the note wheel, highlighting B–C and E–F', () => {

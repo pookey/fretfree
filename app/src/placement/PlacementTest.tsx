@@ -1,8 +1,17 @@
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
+import {
+  Suspense,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { useAppStore } from '../app-store';
 import { playNotes } from '../audio/audio';
-import { DRILLS } from '../drills/registry';
+import { DRILLS, preloadDrill } from '../drills/registry';
 import type { AnyDrillType, DrillFeedback } from '../drills/types';
 import { ENGINE_CONFIG } from '../engine/config';
 import { gradeAnswer, speedTargets } from '../engine/grading';
@@ -126,6 +135,12 @@ export function PlacementTest({
   const title = testOut ? 'Test out' : 'Placement test';
 
   useEffect(() => () => clearTimeout(timer.current), []);
+  // Drill views load on demand: fetch them before the first probe needs one,
+  // so a probe's response time never includes a download.
+  const viewsReady = useMemo(
+    () => Promise.all(drills.map((d) => preloadDrill(d))).catch(() => undefined),
+    [drills],
+  );
   useEffect(() => {
     if (!running) return;
     // The overlay is portalled to <body>; everything beside it goes inert.
@@ -203,8 +218,8 @@ export function PlacementTest({
     autoStart.current = false;
     const groups = testOutGroups(testOut.skillIds, skills, (i) => picker.canServe(i));
     const ids = groups.flatMap((g) => g.items.map((i) => i.id));
-    db.cards.bulkGet(ids).then(
-      (cards) =>
+    Promise.all([db.cards.bulkGet(ids), viewsReady]).then(
+      ([cards]) =>
         begin(
           withWeakItems(
             groups,
@@ -286,19 +301,21 @@ export function PlacementTest({
           data-testid="placement-probe"
           data-item={shown.probe.item.id}
         >
-          <Drill
-            key={`${shown.probe.group.id}:${shown.probe.item.id}`}
-            prompt={shown.prompt}
-            guideLevel={PROBE_GUIDE_LEVEL}
-            guided={false}
-            handedness={settings.handedness}
-            sizeClass={sizeClass}
-            compactFrets={compactFrets}
-            tuning={tuning}
-            feedback={feedback}
-            onAnswer={onAnswer}
-            blindMode={settings.blindMode}
-          />
+          <Suspense fallback={<p role="status">Loading {shown.drill.title}…</p>}>
+            <Drill
+              key={`${shown.probe.group.id}:${shown.probe.item.id}`}
+              prompt={shown.prompt}
+              guideLevel={PROBE_GUIDE_LEVEL}
+              guided={false}
+              handedness={settings.handedness}
+              sizeClass={sizeClass}
+              compactFrets={compactFrets}
+              tuning={tuning}
+              feedback={feedback}
+              onAnswer={onAnswer}
+              blindMode={settings.blindMode}
+            />
+          </Suspense>
           <div className={styles.feedbackBar} aria-live="polite">
             {!feedback && (
               <button type="button" className={styles.secondary} onClick={notSure}>

@@ -13,6 +13,7 @@ import {
   shapeTitle,
 } from './ContextPanel';
 import { d4Check, d4MakePrompt, type D4Answer, type D4Prompt } from './logic';
+import { resolveView } from '../lazy-view';
 
 const prompt = (id: string, tuning: Tuning = STANDARD_TUNING) =>
   d4MakePrompt(
@@ -115,8 +116,8 @@ describe('octaveShapes', () => {
 });
 
 describe('<OctaveContextPanel>', () => {
-  it('is the D4 plugin’s context panel', () => {
-    expect(octaveFinder.contextPanel).toBe(OctaveContextPanel);
+  it('is the D4 plugin’s context panel', async () => {
+    expect(await resolveView(octaveFinder.contextPanel!)).toBe(OctaveContextPanel);
   });
 
   it('draws every shape with a square note and a round octave at full guides', () => {

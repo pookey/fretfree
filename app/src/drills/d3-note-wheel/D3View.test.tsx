@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { GuideLevel } from '../../engine/model';
 import { STANDARD_TUNING } from '../../theory';
 import type { SizeClass } from '../../shell/size-class';
+import { resolveView } from '../lazy-view';
 import { getDrill } from '../registry';
 import type { DrillFeedback } from '../types';
 import { D3View } from './D3View';
@@ -55,8 +56,8 @@ const tapFeedback = (p: D3Prompt, string: number, fret: number): DrillFeedback<D
 };
 
 describe('<D3View>', () => {
-  it('is registered as the note-wheel drill', () => {
-    expect(getDrill('note-wheel')?.render).toBe(D3View);
+  it('is registered as the note-wheel drill', async () => {
+    expect(await resolveView(getDrill('note-wheel')!.render)).toBe(D3View);
   });
 
   it('asks the question and answers by button', () => {

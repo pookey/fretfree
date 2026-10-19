@@ -7,6 +7,7 @@ import { getDrill } from '../registry';
 import type { DrillFeedback } from '../types';
 import { D7View } from './D7View';
 import { d7Check, d7MakePrompt, type D7Answer, type D7Prompt } from './logic';
+import { resolveView } from '../lazy-view';
 
 const prompt = (id = 'spell-key:F#', scopeLevel = 0) =>
   d7MakePrompt(
@@ -50,9 +51,9 @@ const undo = () => screen.getByRole('button', { name: 'Undo' });
 const key = (k: string) => fireEvent.keyDown(window, { key: k });
 
 describe('<D7View>', () => {
-  it('is registered as the spell-it drill for every C4 and C5 skill', () => {
+  it('is registered as the spell-it drill for every C4 and C5 skill', async () => {
     const drill = getDrill('spell-it');
-    expect(drill?.render).toBe(D7View);
+    expect(await resolveView(drill!.render)).toBe(D7View);
     expect(drill?.skills).toEqual([
       'C4.sharp-keys',
       'C4.flat-keys',

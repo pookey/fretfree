@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { generatorParameters, type Grade } from 'ts-fsrs';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useAppStore } from '../app-store';
-import { getDrill } from '../drills/registry';
+import { getDrill, preloadDrill } from '../drills/registry';
 import {
   DEFAULT_SETTINGS,
   createScheduler,
@@ -20,6 +20,9 @@ import { PlacementTest } from './PlacementTest';
 // the test asks 3 probes and needs all 3 fluent.
 const SKILLS = [getSkill('F2.string6-naturals') as Skill];
 const DRILLS = [getDrill('name-the-note')!];
+
+// The component preloads its drills' views on mount; these tests tap Start at once.
+beforeAll(() => preloadDrill(DRILLS[0]!));
 
 let db: FretworkDB;
 let n = 0;

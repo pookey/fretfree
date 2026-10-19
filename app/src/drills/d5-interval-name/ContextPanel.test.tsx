@@ -6,6 +6,7 @@ import type { DrillFeedback } from '../types';
 import { IntervalContextPanel } from './ContextPanel';
 import intervalName from './drill';
 import { d5Check, d5MakePrompt, type D5Answer, type D5Prompt } from './logic';
+import { resolveView } from '../lazy-view';
 
 const prompt = (id = 'interval-name:M3@s6→s5') =>
   d5MakePrompt(
@@ -39,8 +40,8 @@ const legendRow = (name: string) =>
   legend().querySelector(`[data-interval="${name}"]`) as HTMLElement | null;
 
 describe('<IntervalContextPanel>', () => {
-  it('is the D5 plugin’s context panel', () => {
-    expect(intervalName.contextPanel).toBe(IntervalContextPanel);
+  it('is the D5 plugin’s context panel', async () => {
+    expect(await resolveView(intervalName.contextPanel!)).toBe(IntervalContextPanel);
   });
 
   it('lists names, half steps and tips at guide level 3', () => {

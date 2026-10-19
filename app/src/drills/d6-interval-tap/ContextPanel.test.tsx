@@ -5,6 +5,7 @@ import { STANDARD_TUNING, type Position } from '../../theory';
 import { IntervalTapContextPanel } from './ContextPanel';
 import intervalTap from './drill';
 import { d6Check, d6MakePrompt, type D6Prompt } from './logic';
+import { resolveView } from '../lazy-view';
 
 const prompt = (id: string) =>
   d6MakePrompt(
@@ -29,8 +30,8 @@ function panel(
 }
 
 describe('<IntervalTapContextPanel>', () => {
-  it('is the D6 plugin’s context panel', () => {
-    expect(intervalTap.contextPanel).toBe(IntervalTapContextPanel);
+  it('is the D6 plugin’s context panel', async () => {
+    expect(await resolveView(intervalTap.contextPanel!)).toBe(IntervalTapContextPanel);
   });
 
   it('names the interval and its size, with the G–B rule from level 2', () => {

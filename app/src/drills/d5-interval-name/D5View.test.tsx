@@ -7,6 +7,7 @@ import { getDrill } from '../registry';
 import type { DrillFeedback } from '../types';
 import { D5View } from './D5View';
 import { d5Check, d5MakePrompt, type D5Answer, type D5Prompt } from './logic';
+import { resolveView } from '../lazy-view';
 
 const prompt = (id = 'interval-name:M3@s6→s5', scopeLevel = 0, r = 0) =>
   d5MakePrompt(
@@ -52,9 +53,9 @@ const markers = (style: string) =>
 const fb = (p: D5Prompt, answer: D5Answer) => ({ answer, result: d5Check(p, answer) });
 
 describe('<D5View>', () => {
-  it('is registered as the interval-name drill for every C3 skill', () => {
+  it('is registered as the interval-name drill for every C3 skill', async () => {
     const drill = getDrill('interval-name');
-    expect(drill?.render).toBe(D5View);
+    expect(await resolveView(drill!.render)).toBe(D5View);
     expect(drill?.inputModes).toContain('choice');
   });
 

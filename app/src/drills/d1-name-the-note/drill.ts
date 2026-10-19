@@ -1,5 +1,5 @@
+import { lazyView } from '../lazy-view';
 import type { DrillType } from '../types';
-import { D1View } from './D1View';
 import {
   D1_ID,
   D1_SCOPE,
@@ -26,7 +26,7 @@ const nameTheNote: DrillType<D1Prompt, D1Answer> = {
   sounds: d1Sounds,
   feedbackPositions: d1FeedbackPositions,
   conceptOf: d1ConceptOf,
-  render: D1View,
+  render: lazyView(() => import('./D1View').then((m) => m.D1View)),
 };
 
 export default nameTheNote;

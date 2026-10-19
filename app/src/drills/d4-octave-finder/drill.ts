@@ -1,6 +1,5 @@
+import { lazyView } from '../lazy-view';
 import type { DrillType } from '../types';
-import { OctaveContextPanel } from './ContextPanel';
-import { D4View } from './D4View';
 import {
   D4_ID,
   D4_SCOPE,
@@ -30,8 +29,8 @@ const octaveFinder: DrillType<D4Prompt, D4Answer> = {
   sounds: d4Sounds,
   feedbackPositions: d4FeedbackPositions,
   conceptOf: d4ConceptOf,
-  render: D4View,
-  contextPanel: OctaveContextPanel,
+  render: lazyView(() => import('./D4View').then((m) => m.D4View)),
+  contextPanel: lazyView(() => import('./ContextPanel').then((m) => m.OctaveContextPanel)),
 };
 
 export default octaveFinder;

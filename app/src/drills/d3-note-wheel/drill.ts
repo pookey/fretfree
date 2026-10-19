@@ -1,6 +1,5 @@
+import { lazyView } from '../lazy-view';
 import type { DrillType } from '../types';
-import { NoteWheelContextPanel } from './ContextPanel';
-import { D3View } from './D3View';
 import {
   D3_ID,
   D3_SCOPE,
@@ -28,8 +27,8 @@ const noteWheel: DrillType<D3Prompt, D3Answer> = {
   sounds: d3Sounds,
   feedbackPositions: d3FeedbackPositions,
   conceptOf: d3ConceptOf,
-  render: D3View,
-  contextPanel: NoteWheelContextPanel,
+  render: lazyView(() => import('./D3View').then((m) => m.D3View)),
+  contextPanel: lazyView(() => import('./ContextPanel').then((m) => m.NoteWheelContextPanel)),
 };
 
 export default noteWheel;

@@ -1,5 +1,5 @@
+import { lazyView } from '../lazy-view';
 import type { DrillType } from '../types';
-import { D10View } from './D10View';
 import {
   D10_ID,
   D10_SCOPE,
@@ -27,7 +27,7 @@ const whichShape: DrillType<D10Prompt, D10Answer> = {
   sounds: d10Sounds,
   feedbackPositions: d10FeedbackPositions,
   conceptOf: d10ConceptOf,
-  render: D10View,
+  render: lazyView(() => import('./D10View').then((m) => m.D10View)),
 };
 
 export default whichShape;

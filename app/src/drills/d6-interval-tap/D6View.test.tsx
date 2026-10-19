@@ -7,6 +7,7 @@ import { getDrill } from '../registry';
 import type { DrillFeedback } from '../types';
 import { D6View } from './D6View';
 import { D6_ID, d6Check, d6MakePrompt, type D6Prompt } from './logic';
+import { resolveView } from '../lazy-view';
 
 /** Root on fret 5 for shapes valid on frets 1–12. */
 const prompt = (id: string, scopeLevel = 0) =>
@@ -60,9 +61,9 @@ const markers = (style: string) =>
     }));
 
 describe('<D6View>', () => {
-  it('is registered as the interval-tap drill for every C3 group', () => {
+  it('is registered as the interval-tap drill for every C3 group', async () => {
     const drill = getDrill(D6_ID);
-    expect(drill?.render).toBe(D6View);
+    expect(await resolveView(drill!.render)).toBe(D6View);
     expect(drill?.skills).toContain('C3.thirds');
     expect(drill?.skills).toContain('C3.sevenths');
   });
