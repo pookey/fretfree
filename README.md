@@ -42,6 +42,18 @@ pnpm verify           # typecheck, lint, format check, unit tests (with coverage
 
 The e2e tests use Playwright on iPad Pro 11" (landscape and portrait), iPad mini (landscape) and iPhone 15 (smoke tests only). Install the browsers once with `pnpm --filter app exec playwright install webkit`.
 
+### Try it on an iPad
+
+FretFree is designed for the iPad first, so try changes on one. Run the dev server on your local network, with the iPad on the same Wi-Fi:
+
+```bash
+pnpm dev --host       # prints a Network URL, e.g. http://192.168.1.20:5173
+```
+
+Open the Network URL in Safari on the iPad. Edits hot-reload there as they do on your computer. If nothing loads, allow incoming connections for Node in the macOS firewall. A LAN address over plain HTTP isn't a secure context, so offline mode and Add to Home Screen don't work this way. To test those, serve a production build over HTTPS (see [Host it anywhere](#host-it-anywhere)).
+
+Development builds add a **Developer** card to Settings with an **Unlock every skill** switch, so you can try any module without mastering its prerequisites first. A badge stays on screen while it's on. The switch is kept per device and never changes your progress: practice on the skills it unlocks isn't saved, and turning it off restores your real progress. Production builds don't include it.
+
 ## Host it anywhere
 
 The app is a static site with no backend: progress lives in the browser's IndexedDB. Build it and serve `app/dist` from any static host (nginx, Caddy, GitHub Pages, Netlify, a Raspberry Pi):
