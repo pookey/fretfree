@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TOOLS } from '../screens/tools/registry';
 import { NAV_ITEMS, navItems } from '../shell/nav';
 import { collectRoutes, guardLoader, ROUTES, type RouteModule } from './registry';
 
@@ -27,11 +28,14 @@ describe('route registry', () => {
     ]);
   });
 
-  it('generates the five sections from route nav entries, in order', () => {
+  it('generates the sections from route nav entries, in order', () => {
+    // Tools joins the nav once a tool is registered (design §7 Tools).
+    const tools = TOOLS.length > 0 ? [['/tools', 'Tools']] : [];
     expect(NAV_ITEMS.map((n) => [n.to, n.label])).toEqual([
       ['/', 'Today'],
       ['/learn', 'Learn'],
       ['/explore', 'Explore'],
+      ...tools,
       ['/progress', 'Progress'],
       ['/settings', 'Settings'],
     ]);

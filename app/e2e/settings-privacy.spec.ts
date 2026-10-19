@@ -43,7 +43,9 @@ test.describe('Settings and Privacy', () => {
   test('every section in the nav keeps a full-size tap target @smoke', async ({ page }) => {
     await freshStart(page);
     const links = page.getByRole('navigation', { name: 'Sections' }).getByRole('link');
-    await expect(links).toHaveCount(5);
+    // Five sections, plus Tools once a tool is registered (design §7).
+    await expect(links.first()).toBeVisible();
+    expect([5, 6]).toContain(await links.count());
     for (const link of await links.all()) {
       const box = (await link.boundingBox())!;
       expect(box.width).toBeGreaterThanOrEqual(44);
