@@ -1,38 +1,69 @@
 /**
- * Minimal note playback (design §9). Tone.js is loaded lazily so it stays out
- * of the first-load bundle, and the AudioContext is unlocked on the first tap
- * (an iOS requirement).
+ * Audio output (design §9): a plucked guitar for single notes, strummed
+ * chords and whole progressions on the Tone Transport, with a master volume
+ * and silent mode. Tone.js is loaded lazily so it stays out of the first-load
+ * bundle, and the AudioContext is unlocked on a tap (an iOS requirement).
  */
+import { AUDIO } from './config';
+import {
+  beatSeconds,
+  planProgression,
+  type ProgressionChord,
+  type ProgressionTiming,
+} from './progression';
+import { strumHits, type StrumOptions } from './strum';
+import { createGuitar, type Guitar } from './voice';
+
+export type { ProgressionChord, StrumPattern, StrumPatternName } from './progression';
+export { STRUM_PATTERNS } from './progression';
+export type { StrumDirection } from './strum';
 
 type ToneModule = typeof import('tone');
-type Synth = import('tone').PolySynth;
 
 let tonePromise: Promise<ToneModule> | null = null;
-let synth: Synth | null = null;
+let toneModule: ToneModule | null = null;
+let unlockPromise: Promise<void> | null = null;
 let unlocked = false;
+let guitar: Guitar | null = null;
+let nextVoice = 0;
+let output: AudioOutput = { volume: AUDIO.defaultVolume, muted: false };
+let current: Playback | null = null;
 
 export function loadTone(): Promise<ToneModule> {
-  return (tonePromise ??= import('tone'));
+  return (tonePromise ??= import('tone').then((Tone) => (toneModule = Tone)));
 }
 
 export function isAudioUnlocked(): boolean {
   return unlocked;
 }
 
-export async function unlockAudio(): Promise<void> {
-  if (unlocked) return;
-  const Tone = await loadTone();
-  await Tone.start();
-  unlocked = true;
+export function unlockAudio(): Promise<void> {
+  if (unlocked) return Promise.resolve();
+  if (unlockPromise) return unlockPromise;
+  // Once Tone is loaded, resume inside the gesture itself: Safari needs that.
+  const start = toneModule ? toneModule.start() : loadTone().then((Tone) => Tone.start());
+  return (unlockPromise = start
+    .then(() => {
+      unlocked = true;
+    })
+    .finally(() => {
+      unlockPromise = null;
+    }));
 }
 
-/** Unlock audio on the first pointer or key press anywhere in the app. */
+/**
+ * Unlock audio on a pointer or key press anywhere in the app. It stays
+ * installed: iOS suspends the context when the app is backgrounded, and the
+ * next tap resumes it from inside the gesture, where Safari allows it.
+ */
 export function installAudioUnlock(
   target: Pick<Document, 'addEventListener' | 'removeEventListener'> = document,
 ) {
   const handler = () => {
-    target.removeEventListener('pointerdown', handler, true);
-    target.removeEventListener('keydown', handler, true);
+    if (toneModule) {
+      if (toneModule.getContext().state === 'running') return;
+      unlocked = false;
+    }
     void unlockAudio().catch(() => {
       /* Audio stays silent if the browser refuses; the app still works. */
     });
@@ -42,24 +73,11 @@ export function installAudioUnlock(
   return handler;
 }
 
-async function getSynth(): Promise<Synth> {
-  if (synth) return synth;
-  const Tone = await loadTone();
-  // A plucked-string-like envelope on a polyphonic triangle synth.
-  synth = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: 'triangle8' },
-    envelope: { attack: 0.004, decay: 0.6, sustain: 0.08, release: 0.8 },
-  }).toDestination();
-  return synth;
-}
-
-export interface PlayOptions {
+export interface AudioOutput {
   /** 0–1. */
-  volume?: number;
-  muted?: boolean;
-  /** Seconds between successive notes; 0 plays them together. */
-  gap?: number;
-  duration?: number;
+  volume: number;
+  /** Silent mode: nothing sounds. A progression still runs, so its chord cues still fire. */
+  muted: boolean;
 }
 
 /** Linear 0–1 volume to decibels for Tone. */
@@ -68,12 +86,190 @@ export function volumeToDb(volume: number): number {
   return v === 0 ? -Infinity : 20 * Math.log10(v);
 }
 
-export async function playNotes(notes: readonly string[], opts: PlayOptions = {}): Promise<void> {
-  if (opts.muted || notes.length === 0 || !unlocked) return;
+export function getAudioOutput(): AudioOutput {
+  return output;
+}
+
+/** Change the master volume or silent mode. It applies at once, mid-progression too. */
+export function setAudioOutput(next: Partial<AudioOutput>): void {
+  output = { ...output, ...next };
+  if (!guitar) return;
+  guitar.output.volume.value = volumeToDb(output.volume);
+  guitar.output.mute = output.muted;
+}
+
+/** Anything shaped like the app store: the output follows `soundOn` and `volume`. */
+export interface SoundSettingsSource {
+  getState(): { settings: { soundOn: boolean; volume: number } };
+  subscribe(
+    listener: (state: { settings: { soundOn: boolean; volume: number } }) => void,
+  ): () => void;
+}
+
+/** Keep the master output in step with the learner's sound settings. Returns an unsubscribe. */
+export function syncAudioOutput(source: SoundSettingsSource): () => void {
+  let last: { soundOn: boolean; volume: number } | null = null;
+  const apply = ({ settings }: { settings: { soundOn: boolean; volume: number } }) => {
+    if (last && last.soundOn === settings.soundOn && last.volume === settings.volume) return;
+    last = { soundOn: settings.soundOn, volume: settings.volume };
+    setAudioOutput({ volume: settings.volume, muted: !settings.soundOn });
+  };
+  apply(source.getState());
+  return source.subscribe(apply);
+}
+
+interface SoundOptions {
+  /** 0–1. Sets the master volume, as the settings do. */
+  volume?: number;
+  /** Silence this call. Silent mode (`setAudioOutput`) silences every call. */
+  muted?: boolean;
+}
+
+/** Tone and the guitar, once the context is unlocked; `null` while it isn't. */
+async function ready(opts: SoundOptions): Promise<{ Tone: ToneModule; guitar: Guitar } | null> {
+  // The first tap starts the unlock and may also be the tap that plays a note.
+  if (!unlocked && unlockPromise) await unlockPromise.catch(() => undefined);
+  if (!unlocked) return null;
   const Tone = await loadTone();
-  const s = await getSynth();
-  s.volume.value = volumeToDb(opts.volume ?? 0.8);
-  const now = Tone.now();
-  const gap = opts.gap ?? 0.45;
-  notes.forEach((n, i) => s.triggerAttackRelease(n, opts.duration ?? 0.9, now + i * gap));
+  guitar ??= createGuitar(Tone);
+  setAudioOutput(opts.volume === undefined ? {} : { volume: opts.volume });
+  return { Tone, guitar };
+}
+
+export interface PlayOptions extends SoundOptions {
+  /** Seconds between successive notes; 0 plays them together. */
+  gap?: number;
+  /** Seconds each note rings before release. */
+  duration?: number;
+}
+
+/** Pluck notes one after another (or together, with `gap: 0`). */
+export async function playNotes(notes: readonly string[], opts: PlayOptions = {}): Promise<void> {
+  if (opts.muted || output.muted || notes.length === 0) return;
+  const audio = await ready(opts);
+  if (!audio) return;
+  const now = audio.Tone.now();
+  const gap = opts.gap ?? AUDIO.notes.gap;
+  const duration = opts.duration ?? AUDIO.notes.duration;
+  notes.forEach((n, i) => {
+    // Notes played together need a string each; a melody moves across strings.
+    const voice = gap === 0 ? i : nextVoice++;
+    audio.guitar.pluck(n, now + i * gap, duration, voice);
+  });
+}
+
+export interface StrumChordOptions extends SoundOptions, StrumOptions {
+  /** Seconds the chord rings before release. */
+  duration?: number;
+}
+
+/** Strum a chord: a down-stroke runs low to high, an up-stroke catches the top strings. */
+export async function strum(notes: readonly string[], opts: StrumChordOptions = {}): Promise<void> {
+  if (opts.muted || output.muted || notes.length === 0) return;
+  const audio = await ready(opts);
+  if (!audio) return;
+  const now = audio.Tone.now();
+  const duration = opts.duration ?? AUDIO.strum.duration;
+  for (const hit of strumHits(notes, opts)) {
+    audio.guitar.pluck(hit.note, now + hit.offset, duration, hit.voice);
+  }
+}
+
+export interface ProgressionOptions
+  extends ProgressionTiming, Omit<StrumOptions, 'direction'>, Pick<SoundOptions, 'volume'> {
+  bpm?: number;
+  /** Repeat until stopped. */
+  loop?: boolean;
+  /** Called (on an animation frame) as each chord starts, rests included. */
+  onChord?: (index: number) => void;
+  /** Called once when the progression ends or is stopped. */
+  onEnd?: () => void;
+}
+
+export interface Playback {
+  /** False when audio isn't unlocked yet, or there was nothing to play. */
+  started: boolean;
+  stop(): void;
+  /** Settles when the progression ends or is stopped. */
+  done: Promise<void>;
+}
+
+const NOT_STARTED: Playback = { started: false, stop: () => undefined, done: Promise.resolve() };
+
+/** Stop the playing progression, if any, and damp every string. */
+export function stopAudio(): void {
+  current?.stop();
+  if (guitar && toneModule) guitar.damp(toneModule.now());
+}
+
+/**
+ * Play a chord progression on the Tone Transport, strummed in a pattern.
+ * Starting one stops the one before. Times are in Transport ticks, so the
+ * strokes stay on the beat however the clock jitters.
+ */
+export async function playProgression(
+  chords: readonly ProgressionChord[],
+  opts: ProgressionOptions = {},
+): Promise<Playback> {
+  const plan = planProgression(chords, opts);
+  const bpm = opts.bpm ?? AUDIO.progression.bpm;
+  beatSeconds(bpm); // Validates the tempo before anything starts.
+  current?.stop();
+  if (plan.totalBeats === 0) return NOT_STARTED;
+  const audio = await ready(opts);
+  if (!audio) return NOT_STARTED;
+  const { Tone, guitar: g } = audio;
+  const transport = Tone.getTransport();
+  const draw = Tone.getDraw();
+  const at = (beat: number) => `${Math.round(beat * transport.PPQ)}i`;
+  const strumOpts = { gap: opts.gap, upStrings: opts.upStrings };
+
+  transport.stop();
+  transport.position = 0;
+  transport.bpm.value = bpm;
+  const ids: number[] = [];
+  for (const e of plan.events) {
+    const notes = chords[e.chord]?.notes ?? [];
+    ids.push(
+      transport.schedule((time) => {
+        const ring = e.length * beatSeconds(transport.bpm.value);
+        for (const hit of strumHits(notes, { ...strumOpts, direction: e.direction })) {
+          g.pluck(hit.note, time + hit.offset, ring, hit.voice);
+        }
+      }, at(e.beat)),
+    );
+  }
+  plan.chordStarts.forEach((beat, i) => {
+    ids.push(transport.schedule((time) => draw.schedule(() => opts.onChord?.(i), time), at(beat)));
+  });
+
+  let finished = false;
+  let resolve!: () => void;
+  const done = new Promise<void>((r) => (resolve = r));
+  const finish = (damp: boolean) => {
+    if (finished) return;
+    finished = true;
+    for (const id of ids) transport.clear(id);
+    transport.stop();
+    transport.loop = false;
+    if (damp) g.damp(Tone.now());
+    if (current === playback) current = null;
+    resolve();
+    opts.onEnd?.();
+  };
+  const playback: Playback = { started: true, stop: () => finish(true), done };
+
+  if (opts.loop) {
+    transport.loopStart = 0;
+    transport.loopEnd = at(plan.totalBeats);
+    transport.loop = true;
+  } else {
+    transport.loop = false;
+    ids.push(
+      transport.schedule((time) => draw.schedule(() => finish(false), time), at(plan.totalBeats)),
+    );
+  }
+  current = playback;
+  transport.start(`+${AUDIO.progression.leadIn}`);
+  return playback;
 }
