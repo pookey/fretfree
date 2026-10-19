@@ -32,6 +32,9 @@ const ALL_SKILLS = [
   'C6.minor-cores',
   'C6.minor-shapes',
   'C6.dominant7-shapes',
+  'C7.minor-boxes',
+  'C7.major-boxes',
+  'C7.relative',
 ];
 
 /**
