@@ -1,7 +1,7 @@
 import type { GuideLevel } from '../../engine/model';
 import type { IntervalName } from '../../theory';
 import { d5LegendRows, d5LegendTips } from './logic';
-import styles from './D5View.module.css';
+import styles from './ContextPanel.module.css';
 
 interface Props {
   choices: readonly IntervalName[];

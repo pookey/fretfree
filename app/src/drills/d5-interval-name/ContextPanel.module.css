@@ -1,0 +1,63 @@
+/* D5's context panel: the interval legend. The session's panel supplies the
+   box and the heading colour. */
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: var(--space-1) var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.legend li {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  align-items: baseline;
+  column-gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-left: 3px solid transparent;
+  font-size: 0.875rem;
+}
+
+/* The abbreviation spans both lines; the name and count stack beside it, so
+   two columns fit the landscape panel without wrapping. */
+.legend strong {
+  grid-row: span 2;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.legend span {
+  white-space: nowrap;
+}
+
+.steps {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+/* Feedback rows differ by mark and border style, not colour alone. */
+.legend li[data-state='expected'] {
+  border-left-color: var(--correct);
+  background: var(--surface);
+}
+
+.legend li[data-state='expected'] strong::after {
+  content: ' ✓';
+  color: var(--correct);
+}
+
+.legend li[data-state='wrong'] {
+  border-left: 3px dashed var(--wrong);
+}
+
+.legend li[data-state='wrong'] strong::after {
+  content: ' ✗';
+  color: var(--wrong);
+}

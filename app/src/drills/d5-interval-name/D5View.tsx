@@ -3,7 +3,6 @@ import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard
 import type { GuideLevel } from '../../engine/model';
 import { neckWindow } from '../../shell/size-class';
 import type { DrillRenderProps } from '../types';
-import { IntervalLegend } from './IntervalLegend';
 import {
   D5_FRETS,
   d5FeedbackPositions,
@@ -17,8 +16,8 @@ import styles from './D5View.module.css';
 
 /**
  * D5 view: two dots on the neck (the root as a square, the upper note as a
- * circle), interval buttons above, and the interval legend in the context
- * panel (design §6 D5, §7 session).
+ * circle) and interval buttons above (design §6 D5, §7 session). The
+ * interval legend is the drill's context panel (`ContextPanel.tsx`).
  */
 export function D5View({
   prompt,
@@ -86,25 +85,6 @@ export function D5View({
     markers = [root, { ...prompt.upper, style: 'target' }];
   }
 
-  // The session hands over its context panel only when it should be shown
-  // (help on, guide level > 0, not compact); D5 fills it with the legend.
-  const context = aside ? (
-    <aside className={styles.context} aria-label="Context" data-testid="context-panel">
-      <h2>Intervals</h2>
-      <IntervalLegend
-        choices={choices}
-        guideLevel={level}
-        gbShift={prompt.gbShift}
-        {...(feedback
-          ? {
-              expected: prompt.interval,
-              ...(feedback.result.correct ? {} : { given: feedback.answer }),
-            }
-          : {})}
-      />
-    </aside>
-  ) : null;
-
   return (
     <div className={styles.drill} data-size-class={sizeClass} data-testid="d5-drill">
       <div className={styles.upper}>
@@ -149,7 +129,7 @@ export function D5View({
             })}
           </div>
         </div>
-        {sizeClass === 'regular-wide' && context}
+        {sizeClass === 'regular-wide' && aside}
       </div>
       <div className={styles.neckArea}>
         <Fretboard
@@ -165,7 +145,7 @@ export function D5View({
         />
       </div>
       {/* iPad portrait: below the neck. Compact: the session styles it as a sheet. */}
-      {sizeClass !== 'regular-wide' && context}
+      {sizeClass !== 'regular-wide' && aside}
     </div>
   );
 }

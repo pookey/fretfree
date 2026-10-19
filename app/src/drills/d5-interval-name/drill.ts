@@ -1,4 +1,5 @@
 import type { DrillType } from '../types';
+import { IntervalContextPanel } from './ContextPanel';
 import { D5View } from './D5View';
 import {
   D5_ID,
@@ -28,6 +29,7 @@ const intervalName: DrillType<D5Prompt, D5Answer> = {
   feedbackPositions: d5FeedbackPositions,
   conceptOf: d5ConceptOf,
   render: D5View,
+  contextPanel: IntervalContextPanel,
 };
 
 export default intervalName;

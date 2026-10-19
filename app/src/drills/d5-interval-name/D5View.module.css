@@ -12,8 +12,10 @@
   align-items: flex-start;
 }
 
+/* Landscape: the panel is wider than usual, two columns of legend rows, so a
+   12-interval legend stays short and the full neck fits below it. */
 .upper > aside {
-  flex: 0 0 var(--context-w);
+  flex: 0 0 26rem;
 }
 
 .top {
@@ -103,7 +105,7 @@
 }
 
 /* Help spans the neck's width below it, so its rows spread out, not down. */
-.drill[data-size-class='regular'] > .context {
+.drill[data-size-class='regular'] > aside {
   align-self: stretch;
 }
 
@@ -132,87 +134,4 @@
   min-height: 1.5em;
   color: var(--text-muted);
   text-align: center;
-}
-
-/* The context panel, filled with the interval legend (design §6 D5). */
-.context {
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-l);
-  padding: var(--space-4);
-  align-self: start;
-}
-
-.context h2 {
-  margin: 0 0 var(--space-3);
-  font-size: 1rem;
-  color: var(--text-muted);
-}
-
-.context p {
-  margin: var(--space-2) 0 0;
-  font-size: 0.875rem;
-  line-height: 1.4;
-}
-
-/* Landscape: two columns of rows, so a 12-interval legend stays short and the
-   full neck fits below it. */
-.upper > .context {
-  flex-basis: 26rem;
-}
-
-.legend {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
-  gap: var(--space-1) var(--space-3);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.legend li {
-  display: grid;
-  grid-template-columns: 3rem 1fr;
-  align-items: baseline;
-  column-gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
-  border-left: 3px solid transparent;
-  font-size: 0.875rem;
-}
-
-/* The abbreviation spans both lines; the name and count stack beside it, so
-   two columns fit the landscape panel without wrapping. */
-.legend strong {
-  grid-row: span 2;
-  font-size: 1rem;
-  white-space: nowrap;
-}
-
-.legend span {
-  white-space: nowrap;
-}
-
-.steps {
-  color: var(--text-muted);
-  font-size: 0.8125rem;
-}
-
-/* Feedback rows differ by mark and border style, not colour alone. */
-.legend li[data-state='expected'] {
-  border-left-color: var(--correct);
-  background: var(--surface);
-}
-
-.legend li[data-state='expected'] strong::after {
-  content: ' ✓';
-  color: var(--correct);
-}
-
-.legend li[data-state='wrong'] {
-  border-left: 3px dashed var(--wrong);
-}
-
-.legend li[data-state='wrong'] strong::after {
-  content: ' ✗';
-  color: var(--wrong);
 }

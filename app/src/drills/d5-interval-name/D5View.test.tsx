@@ -36,7 +36,7 @@ function renderView(p: D5Prompt, opts: Opts = {}) {
       tuning={STANDARD_TUNING}
       feedback={opts.feedback ?? null}
       onAnswer={onAnswer}
-      aside={opts.withAside === false ? undefined : <aside />}
+      aside={opts.withAside === false ? undefined : <aside data-testid="context-panel" />}
     />,
   );
   return { onAnswer, ...utils };
@@ -50,9 +50,6 @@ const markers = (style: string) =>
     text: m.textContent?.trim() ?? '',
   }));
 const fb = (p: D5Prompt, answer: D5Answer) => ({ answer, result: d5Check(p, answer) });
-const legend = () => screen.queryByTestId('interval-legend');
-const legendRow = (name: string) =>
-  legend()?.querySelector(`[data-interval="${name}"]`) as HTMLElement | null;
 
 describe('<D5View>', () => {
   it('is registered as the interval-name drill for every C3 skill', () => {
@@ -108,17 +105,14 @@ describe('<D5View>', () => {
       'This is a major 3rd (M3), 4 half steps up from F#. Tap M3 to continue.',
     );
     expect(markers('target')).toEqual([{ string: 5, fret: 1, text: 'M3' }]);
-    // The worked example shows full guides, so the legend has its tips.
-    expect(screen.getByTestId('interval-legend')).toHaveAttribute('data-level', '3');
   });
 
-  it('marks a right answer on the neck and in the legend', () => {
+  it('marks a right answer on the neck', () => {
     const p = prompt();
     renderView(p, { feedback: fb(p, 'M3') });
     expect(markers('correct')).toEqual([{ string: 5, fret: 1, text: 'M3' }]);
     expect(markers('wrong')).toEqual([]);
     expect(screen.getByRole('button', { name: 'M3' })).toHaveAttribute('data-state', 'correct');
-    expect(legendRow('M3')).toHaveAttribute('data-state', 'expected');
     expect(screen.getByTestId('d5-hint')).toBeEmptyDOMElement();
   });
 
@@ -129,8 +123,6 @@ describe('<D5View>', () => {
     expect(markers('wrong')).toEqual([{ string: 5, fret: 0, text: 'm3' }]);
     expect(screen.getByRole('button', { name: 'm3' })).toHaveAttribute('data-state', 'wrong');
     expect(screen.getByRole('button', { name: 'M3' })).toHaveAttribute('data-state', 'expected');
-    expect(legendRow('m3')).toHaveAttribute('data-state', 'wrong');
-    expect(legendRow('M3')).toHaveAttribute('data-state', 'expected');
   });
 
   it('fades the hint with the other guides: gone at level 0', () => {
@@ -156,38 +148,11 @@ describe('<D5View>', () => {
     }
   });
 
-  describe('interval legend in the context panel', () => {
-    it('lists names, half steps and tips at guide level 3', () => {
-      renderView(prompt(), { guideLevel: 3 });
+  describe('context panel placement', () => {
+    it('sits beside the prompt on iPad landscape', () => {
+      renderView(prompt());
       const panel = screen.getByTestId('context-panel');
-      expect(within(panel).getByRole('heading', { name: 'Intervals' })).toBeInTheDocument();
-      expect(legendRow('M3')).toHaveTextContent('M3major 3rd4 half steps');
-      expect(legendRow('m2')).toHaveTextContent('1 half step');
-      expect(panel).toHaveTextContent(/Count half steps up from the square/);
-      // String 6 to 5 does not cross G–B, so no shift tip.
-      expect(panel).not.toHaveTextContent(/from G to B/);
-    });
-
-    it('explains the G–B shift at level 3 only on shapes that cross it', () => {
-      const { unmount } = renderView(prompt('interval-name:M3@s3→s2'), { guideLevel: 3 });
-      expect(screen.getByTestId('context-panel')).toHaveTextContent(
-        /crosses from G to B, which are a major 3rd apart/,
-      );
-      unmount();
-      renderView(prompt('interval-name:M3@s3→s2'), { guideLevel: 2 });
-      expect(screen.getByTestId('context-panel')).not.toHaveTextContent(/from G to B/);
-    });
-
-    it('drops the tips at level 2', () => {
-      renderView(prompt(), { guideLevel: 2 });
-      expect(legendRow('M3')).toHaveTextContent('4 half steps');
-      expect(screen.getByTestId('context-panel')).not.toHaveTextContent(/Count half steps/);
-    });
-
-    it('only decodes the names at level 1', () => {
-      renderView(prompt(), { guideLevel: 1 });
-      expect(legendRow('M3')).toHaveTextContent(/^M3major 3rd$/);
-      expect(screen.getByTestId('context-panel')).not.toHaveTextContent(/half step/);
+      expect(neck().compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     });
 
     it('is absent when the session withholds the panel', () => {
@@ -200,7 +165,6 @@ describe('<D5View>', () => {
         const { unmount } = renderView(prompt(), { sizeClass });
         const drill = screen.getByTestId('d5-drill');
         expect(drill.lastElementChild, sizeClass).toBe(screen.getByTestId('context-panel'));
-        expect(legend(), sizeClass).not.toBeNull();
         unmount();
       }
     });
