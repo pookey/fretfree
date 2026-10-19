@@ -199,24 +199,31 @@ test.describe('M6-02 pentatonic boxes over their CAGED shapes', () => {
     await expect(neck(page).getByTestId('marker-target')).toHaveCount(0);
 
     // Box 1 holds the root and the ♭3 on string 1 (frets r and r + 3, with r
-    // the root's fret on string 6); box 2 holds the ♭3 and the 4 (r + 3, r + 5).
+    // the root's fret on string 6). Box 2 holds the ♭3 and the 4 (r + 3,
+    // r + 5); box 5, below, the ♭7 and the root (r − 2, r). Tap box 2's 4, or
+    // box 5's ♭7 when the neck shown ends before it.
     const r = Math.min(...task!.roots.filter((c) => c.string === 6).map((c) => c.fret));
-    const wrong = { string: 1, fret: r + 5 };
-    expect(chromaAt(wrong)).toBe((task!.root + 5) % 12);
+    const shownTo = Number(await neck(page).getAttribute('data-fret-to'));
+    const above = r + 5 <= shownTo;
+    const wrong = { string: 1, fret: above ? r + 5 : r - 2 };
+    const other = above ? 2 : 5;
+    expect(chromaAt(wrong)).toBe((task!.root + (above ? 5 : 10)) % 12);
     await cellAt(page, wrong).click();
 
     await expect(page.getByTestId('feedback-wrong')).toContainText('pentatonic box 1');
-    await expect(page.getByTestId('dpb-explain')).toContainText('in box 2');
+    await expect(page.getByTestId('dpb-explain')).toContainText(`in box ${other}`);
     await expect(neck(page).getByTestId('marker-wrong')).toHaveCount(1);
     await expect(neck(page).getByTestId('marker-ghost')).toHaveCount(task!.answer.length);
-    expect(await confusionPairs(page)).toEqual([['penta-box:1@minor', 'penta-box:2@minor']]);
+    expect(await confusionPairs(page)).toEqual([
+      ['penta-box:1@minor', `penta-box:${other}@minor`].sort(),
+    ]);
 
     // Every cell is a comfortable target on iPad (design §7: ≥ 44pt).
     const box = await cellAt(page, { string: 3, fret: 7 }).boundingBox();
     expect(box!.width).toBeGreaterThanOrEqual(44);
     await expectNoHorizontalOverflow(page);
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByTestId('dpb-explain')).not.toContainText('in box 2');
+    await expect(page.getByTestId('dpb-explain')).not.toContainText(`in box ${other}`);
   });
 
   test('the relative root in a box, and the own root as its confusion', async ({ page }, info) => {
