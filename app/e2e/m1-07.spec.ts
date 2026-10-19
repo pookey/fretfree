@@ -6,8 +6,8 @@ import { skipInstallTip } from './helpers/install';
 // trimmed median tap time becomes the baseline for every speed target.
 
 const TRIALS = 16;
-const ONBOARDING_STEPS = 7;
-// Calibration is step 6; the placement test (M2-09) follows it.
+const ONBOARDING_STEPS = 8;
+// Calibration is step 6; the mic step (M5-04) and the placement test (M2-09) follow it.
 const CALIBRATION_STEP = 6;
 
 // The page clock is paused during a run, so tap times don't depend on how busy
@@ -87,7 +87,8 @@ test.describe('M1-07 latency calibration', () => {
     const ms = await runCalibration(page);
     await expectNoHorizontalOverflow(page);
     await choice.getByRole('button', { name: 'Continue' }).click();
-    await page.getByRole('button', { name: 'Skip this step' }).click();
+    for (let n = CALIBRATION_STEP; n < ONBOARDING_STEPS; n++)
+      await page.getByRole('button', { name: 'Skip this step' }).click();
     await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 
     await expectStoredBaseline(page, `${ms} ms`);
