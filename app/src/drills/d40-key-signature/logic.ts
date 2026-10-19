@@ -1,9 +1,4 @@
-import {
-  parseKeyFactItemId,
-  parseSignatureKeyItemId,
-  type GuideLevel,
-  type Item,
-} from '../../engine/model';
+import { parseKeyFactItemId, parseSignatureKeyItemId, type Item } from '../../engine/model';
 import {
   CIRCLE_OF_FIFTHS,
   chromaOf,
@@ -38,6 +33,9 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  *   key's own, so the key itself is never offered, and its IV often is.
  *
  * Buttons are in a fixed order: signatures by count, keys alphabetically.
+ *
+ * The words (questions, facts, explanations, the panel's rules) are in
+ * `text.ts`, which only the lazy view loads.
  */
 
 export const D40_ID = 'key-signature';
@@ -70,12 +68,12 @@ export const D40_SCOPE = { minLevel: 0, maxLevel: 2 };
 const RUNS = [2, 3, 4];
 
 /** The keys D40 asks about: C4's fifteen, each with a real signature. */
-const KEYS = CIRCLE_OF_FIFTHS.flatMap((e) => [
+export const D40_KEYS = CIRCLE_OF_FIFTHS.flatMap((e) => [
   e.major,
   ...(e.enharmonic ? [e.enharmonic.major] : []),
 ]);
 
-const KEY_OF_ALTERATION = new Map(KEYS.map((k) => [alterationOf(k), k]));
+const KEY_OF_ALTERATION = new Map(D40_KEYS.map((k) => [alterationOf(k), k]));
 
 const LETTERS = 'ABCDEFG';
 const ACCIDENTAL_ORDER = ['b', '', '#'];
@@ -93,14 +91,14 @@ function byLetter(names: readonly string[]): Map<string, string[]> {
   return new Map([...LETTERS].map((l) => [l, names.filter((n) => n.charAt(0) === l).sort(byName)]));
 }
 
-const MAJORS_BY_LETTER = byLetter(KEYS);
-const MINORS_BY_LETTER = byLetter(KEYS.map(relativeMinor));
+const MAJORS_BY_LETTER = byLetter(D40_KEYS);
+const MINORS_BY_LETTER = byLetter(D40_KEYS.map(relativeMinor));
 
-function alterationOf(tonic: string): number {
+export function alterationOf(tonic: string): number {
   return keySignature(majorKey(tonic)).alteration;
 }
 
-function keyWith(alteration: number): string {
+export function keyWith(alteration: number): string {
   const key = KEY_OF_ALTERATION.get(alteration);
   if (key === undefined) throw new RangeError(`No major key has alteration ${alteration}`);
   return key;
@@ -131,7 +129,7 @@ export function parseSignatureCode(code: string): number | null {
 
 function parse(item: Item): { kind: D40Kind; tonic: string } | null {
   const fact = parseKeyFactItemId(item.id);
-  if (fact) return KEYS.includes(fact.tonic) ? fact : null;
+  if (fact) return D40_KEYS.includes(fact.tonic) ? fact : null;
   const sig = parseSignatureKeyItemId(item.id);
   if (sig) return { kind: 'signature-key', tonic: keyWith(sig.alteration) };
   return null;
@@ -140,7 +138,7 @@ function parse(item: Item): { kind: D40Kind; tonic: string } | null {
 export function d40CanTest(item: Item): boolean {
   const ref = parse(item);
   // C♯'s V is G♯ major, a key with a double sharp: no card.
-  return ref !== null && !(ref.kind === 'dominant' && !KEYS.includes(dominantOf(ref.tonic)));
+  return ref !== null && !(ref.kind === 'dominant' && !D40_KEYS.includes(dominantOf(ref.tonic)));
 }
 
 /** A uniform pick of `0 … n-1`, safe against an rng that returns 1. */
@@ -265,18 +263,18 @@ function concept(kind: D40Kind, tonic: string): string {
 }
 
 /** The key whose fact a choice is, or null for a choice no card answers. */
-function keyOfChoice(kind: D40Kind, choice: string): string | null {
+export function keyOfChoice(kind: D40Kind, choice: string): string | null {
   switch (kind) {
     case 'key-signature': {
       const a = parseSignatureCode(choice);
       return a === null ? null : (KEY_OF_ALTERATION.get(a) ?? null);
     }
     case 'signature-key':
-      return KEYS.includes(choice) ? choice : null;
+      return D40_KEYS.includes(choice) ? choice : null;
     case 'relative-minor':
-      return KEYS.find((k) => relativeMinor(k) === choice) ?? null;
+      return D40_KEYS.find((k) => relativeMinor(k) === choice) ?? null;
     case 'dominant':
-      return KEYS.find((k) => dominantOf(k) === choice) ?? null;
+      return D40_KEYS.find((k) => dominantOf(k) === choice) ?? null;
   }
 }
 
@@ -303,40 +301,11 @@ export function d40DescribeAnswer(answer: D40Answer): string {
   return answer;
 }
 
-// --- Text -------------------------------------------------------------------
+// --- Display ----------------------------------------------------------------
 
 /** Display form: `F#` → `F♯`, `Bb` → `B♭`. */
 export function pretty(note: string): string {
   return note.replace('#', '♯').replace(/^([A-G])b/, '$1♭');
-}
-
-/** Accessible name: `F#` → `F sharp`, `Bb` → `B flat`. */
-export function spoken(note: string): string {
-  const letter = note.charAt(0);
-  const acc = note.slice(1);
-  return acc === '#' ? `${letter} sharp` : acc === 'b' ? `${letter} flat` : letter;
-}
-
-function plural(n: number, what: string): string {
-  return `${n} ${what}${n === 1 ? '' : 's'}`;
-}
-
-/** `3 flats`, `1 sharp`, `No sharps or flats`. */
-export function signatureName(alteration: number): string {
-  if (alteration === 0) return 'No sharps or flats';
-  return plural(Math.abs(alteration), alteration > 0 ? 'sharp' : 'flat');
-}
-
-/** The altered notes, in signature order: `B♭ E♭ A♭`. */
-export function signatureNotes(alteration: number): string[] {
-  return keySignature(majorKey(keyWith(alteration))).accidentals.map(pretty);
-}
-
-/** `3 flats: B♭ E♭ A♭`. */
-function signatureLine(alteration: number): string {
-  return alteration === 0
-    ? 'no sharps or flats'
-    : `${signatureName(alteration)}: ${signatureNotes(alteration).join(' ')}`;
 }
 
 /** A choice as the learner reads it: `3♭`, `E♭`, `Cm`. */
@@ -353,151 +322,6 @@ export function display(kind: D40Kind, choice: string): string {
       return pretty(choice);
   }
 }
-
-/** A choice's accessible name: `3 flats: B flat, E flat, A flat`, `E flat major`, `C minor`. */
-export function spokenChoice(kind: D40Kind, choice: string): string {
-  switch (kind) {
-    case 'key-signature': {
-      const a = parseSignatureCode(choice) ?? 0;
-      if (a === 0) return 'No sharps or flats';
-      const notes = keySignature(majorKey(keyWith(a)))
-        .accidentals.map(spoken)
-        .join(', ');
-      return `${signatureName(a)}: ${notes}`;
-    }
-    case 'relative-minor':
-      return `${spoken(choice)} minor`;
-    case 'signature-key':
-    case 'dominant':
-      return `${spoken(choice)} major`;
-  }
-}
-
-/** What the card is about, in large type: `E♭ major`, or `3 flats`. */
-export function d40Subject(prompt: D40Prompt): string {
-  return prompt.kind === 'signature-key'
-    ? signatureName(prompt.alteration)
-    : `${pretty(prompt.tonic)} major`;
-}
-
-/** The question under the subject. */
-export function d40Task(prompt: D40Prompt): string {
-  switch (prompt.kind) {
-    case 'key-signature':
-      return 'How many sharps or flats?';
-    case 'signature-key':
-      return 'Which major key?';
-    case 'relative-minor':
-      return 'Its relative minor?';
-    case 'dominant':
-      return 'Which key is its V?';
-  }
-}
-
-/**
- * The fact and why, in one line: the worked example on a new item's first
- * rep (rule 8), and the answer's name in feedback (rule 10).
- */
-export function d40Fact(prompt: D40Prompt): string {
-  const key = `${pretty(prompt.tonic)} major`;
-  const a = prompt.alteration;
-  switch (prompt.kind) {
-    case 'key-signature':
-      return a === 0
-        ? `${key} has no sharps or flats.`
-        : `${key} has ${signatureLine(a)}. ${a > 0 ? 'Sharps' : 'Flats'} always come in the order ${order(a)}.`;
-    case 'signature-key': {
-      if (a === 0) return `No sharps or flats is ${key}.`;
-      const notes = signatureNotes(a);
-      if (a > 0) {
-        return `${signatureLine(a)} is ${key}: a half step above the last sharp, ${notes[notes.length - 1] as string}.`;
-      }
-      if (a === -1) return `1 flat, B♭, is ${key}.`;
-      return `${signatureLine(a)} is ${key}: the second-last flat names the key.`;
-    }
-    case 'relative-minor': {
-      const minor = `${pretty(prompt.answer)} minor`;
-      const shared =
-        a === 0 ? 'no sharps or flats either' : `its ${signatureName(a).toLowerCase()}`;
-      return `${minor} is the relative minor of ${key}: it shares ${shared}, and ${pretty(prompt.answer)} is the 6th of ${key}.`;
-    }
-    case 'dominant':
-      return `${pretty(prompt.answer)} is the V of ${key}: a 5th up, the next key clockwise on the circle.`;
-  }
-}
-
-/** Why a wrong choice is wrong: what it is the answer to. */
-export function d40Explain(prompt: D40Prompt, answer: D40Answer): string | null {
-  if (answer === prompt.answer) return null;
-  switch (prompt.kind) {
-    case 'key-signature': {
-      const a = parseSignatureCode(answer);
-      if (a === null) return null;
-      return a === 0
-        ? 'No sharps or flats is C major.'
-        : `${signatureName(a)} is ${pretty(keyWith(a))} major.`;
-    }
-    case 'signature-key':
-      return KEYS.includes(answer)
-        ? `${pretty(answer)} major has ${signatureLine(alterationOf(answer))}.`
-        : null;
-    case 'relative-minor': {
-      const major = keyOfChoice(prompt.kind, answer);
-      return major
-        ? `${pretty(answer)} minor is the relative minor of ${pretty(major)} major.`
-        : null;
-    }
-    case 'dominant': {
-      if (answer === subdominantOf(prompt.tonic)) {
-        return `${pretty(answer)} is the IV of ${pretty(prompt.tonic)} major, a 5th down: the V is the other way round the circle.`;
-      }
-      const below = keyOfChoice(prompt.kind, answer);
-      return below ? `${pretty(answer)} is the V of ${pretty(below)} major.` : null;
-    }
-  }
-}
-
-function order(alteration: number): string {
-  return alteration > 0 ? 'F C G D A E B' : 'B E A D G C F';
-}
-
-/** What the context panel shows (rule 9: faded within and across sessions). */
-export interface D40Guides {
-  /** The rule for the kind of card. */
-  rule: string | null;
-  /** The orders of sharps and flats. */
-  orders: boolean;
-  /** Level 2+: the keys in circle order, for counting round (signature cards only). */
-  circle: boolean;
-}
-
-export function d40Guides(kind: D40Kind, guideLevel: GuideLevel): D40Guides {
-  if (guideLevel <= 0) return { rule: null, orders: false, circle: false };
-  const signatures = kind === 'key-signature' || kind === 'signature-key';
-  return {
-    rule: RULES[kind],
-    orders: signatures || guideLevel >= 2,
-    circle: signatures && guideLevel >= 2,
-  };
-}
-
-const RULES: Record<D40Kind, string> = {
-  'key-signature':
-    'Each step clockwise round the circle adds a sharp; each step anticlockwise adds a flat.',
-  'signature-key':
-    'Sharps: the key is a half step above the last sharp. Flats: the second-last flat names the key (1 flat is F).',
-  'relative-minor':
-    'A relative minor shares its major key’s signature. Its tonic is the major’s 6th, a minor 3rd down.',
-  dominant: 'The V is a 5th up: the next key clockwise, with one more sharp or one fewer flat.',
-};
-
-/** The sharp keys and the flat keys, in circle order, for the panel. */
-export const SHARP_KEY_ORDER = KEYS.filter((k) => alterationOf(k) >= 0)
-  .sort((a, b) => alterationOf(a) - alterationOf(b))
-  .map(pretty);
-export const FLAT_KEY_ORDER = KEYS.filter((k) => alterationOf(k) <= 0)
-  .sort((a, b) => alterationOf(b) - alterationOf(a))
-  .map(pretty);
 
 // --- Sound ------------------------------------------------------------------
 

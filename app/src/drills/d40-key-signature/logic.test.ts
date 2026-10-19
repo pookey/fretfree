@@ -11,28 +11,30 @@ import {
   d40Choices,
   d40ConceptOf,
   d40DescribeAnswer,
-  d40Explain,
-  d40Fact,
-  d40Guides,
   d40KeyFor,
   d40KeyToAnswer,
   d40MakePrompt,
   d40RunSize,
   d40Sounds,
-  d40Subject,
-  d40Task,
   display,
   dominantOf,
   parseSignatureCode,
   signatureCode,
-  signatureName,
-  signatureNotes,
-  spokenChoice,
   subdominantOf,
   tonicTriad,
   type D40Kind,
   type D40Prompt,
 } from './logic';
+import {
+  d40Explain,
+  d40Fact,
+  d40Guides,
+  d40Subject,
+  d40Task,
+  signatureName,
+  signatureNotes,
+  spokenChoice,
+} from './text';
 
 const item = (id: string): Item => ({ id, skillId: 'I3.test' });
 

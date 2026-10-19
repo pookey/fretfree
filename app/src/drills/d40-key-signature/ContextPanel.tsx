@@ -1,11 +1,6 @@
 import type { DrillContextPanelProps } from '../types';
-import {
-  FLAT_KEY_ORDER,
-  SHARP_KEY_ORDER,
-  d40Guides,
-  type D40Answer,
-  type D40Prompt,
-} from './logic';
+import { type D40Answer, type D40Prompt } from './logic';
+import { FLAT_KEY_ORDER, SHARP_KEY_ORDER, d40Guides } from './text';
 import styles from './ContextPanel.module.css';
 
 /**

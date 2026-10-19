@@ -1,19 +1,14 @@
 import { useEffect } from 'react';
 import type { DrillRenderProps } from '../types';
 import {
-  d40Explain,
-  d40Fact,
   d40KeyFor,
   d40KeyToAnswer,
-  d40Subject,
-  d40Task,
   display,
   parseSignatureCode,
-  signatureNotes,
-  spokenChoice,
   type D40Answer,
   type D40Prompt,
 } from './logic';
+import { d40Explain, d40Fact, d40Subject, d40Task, signatureNotes, spokenChoice } from './text';
 import styles from './D40View.module.css';
 
 /**
