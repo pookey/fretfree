@@ -1,6 +1,6 @@
 # Work package {{WP}}: review brief
 
-You are a **fresh reviewer**. A worker agent has finished work package {{WP}} on branch `{{BRANCH}}` in the worktree `{{WORKTREE}}`. Review it **read-only**: don't edit files, commit or run `pnpm dev`. You may run `pnpm test` and read anything. Leave Playwright alone, because other agents share the machine's browser slots.
+You are a **fresh reviewer**. A worker agent has finished work package {{WP}} on branch `{{BRANCH}}` in the worktree `{{WORKTREE}}`. Review it **read-only**: don't edit files, commit or run `pnpm dev`. You may read anything and run targeted unit tests (`pnpm --filter app exec vitest run <paths>`). Don't run the whole unit suite (`pnpm test`) or `pnpm verify`: the worker already ran the gates, and the PM and the lane run the full verify again. Leave Playwright alone, because other agents share the machine's browser slots.
 
 ## The package
 

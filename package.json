@@ -19,6 +19,7 @@
     "lighthouse": "pnpm build && node scripts/lighthouse.mjs",
     "verify": "./scripts/cpu-slot.sh pnpm verify:static && pnpm --filter app e2e:only",
     "verify:static": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test:all && pnpm build && node scripts/check-bundle.mjs",
+    "verify:quick": "./scripts/verify-quick.sh",
     "deploy": "./scripts/deploy.sh",
     "smoke": "./scripts/smoke.sh",
     "ship": "./scripts/ship.sh",
