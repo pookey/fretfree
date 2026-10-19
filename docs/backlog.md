@@ -740,7 +740,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Unit and RTL tests.
 
 ### M3-08 · Explore: CAGED visualiser
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-01, M3-01
 - **Owns:** `app/src/screens/explore/views/caged.tsx`, `app/e2e/m3-08.spec.ts`
 - **Acceptance:**
