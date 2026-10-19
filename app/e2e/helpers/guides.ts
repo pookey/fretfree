@@ -31,6 +31,8 @@ const OTHER_SKILLS = [
   'C6.minor-cores',
   'C6.minor-shapes',
   'C6.dominant7-shapes',
+  'C8.numerals-major',
+  'C8.nashville',
   'C10.capo-g-c-d',
   'C10.capo-a-e',
   'C10.capo-minor',
