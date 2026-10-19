@@ -642,7 +642,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m2-20.spec.ts`, ipad-portrait): the gap between prompt and neck is under a set fraction of the viewport, and the answer controls are in view without scrolling.
 
 ### M1-39 · Dev unlock reaches Explore's "Quiz me", and document LAN testing
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §3.4, §7 Explore
 - **Owns:** `app/src/screens/explore/views/fretboard-explorer.tsx`, `app/src/screens/explore/views/fretboard-explorer.test.tsx`, `README.md` (development section only)
