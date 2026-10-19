@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import { computeGeometry, minScale } from '../../components/fretboard/geometry';
 import { noteAt, stringCount, type FretRange, type Position, type Tuning } from '../../theory';
@@ -123,6 +123,12 @@ export function D39View({
     answered: Boolean(feedback),
   });
   const range = feedback ? d39FeedbackRange(prompt, feedback.answer) : prompt.range;
+  // A repeat's feedback range is a new object each render: key on its frets.
+  const { from: rangeFrom, to: rangeTo } = range;
+  const minNeckHeight = useMemo(
+    () => neckMinHeight({ from: rangeFrom, to: rangeTo }, tuning),
+    [rangeFrom, rangeTo, tuning],
+  );
   const pc = (p: Position) => noteAt(p, tuning, prompt.accidentalPref).pc;
   // The fret whose column stays lit while the rest of the neck is dimmed.
   const spotlight = feedback
@@ -262,7 +268,7 @@ export function D39View({
         data-testid="d39-neck"
         data-mode={mode}
         data-spotlight={spotlight}
-        style={{ '--neck-min-h': `${neckMinHeight(range, tuning)}px` } as CSSProperties}
+        style={{ '--neck-min-h': `${minNeckHeight}px` } as CSSProperties}
       >
         <Fretboard
           tuning={tuning}
