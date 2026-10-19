@@ -1,11 +1,13 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { installAudioUnlock } from './audio/audio';
+import { useAppStore } from './app-store';
+import { installAudioUnlock, syncAudioOutput } from './audio/audio';
 import { installPitchDetector } from './mic/detector';
 import './styles/global.css';
 
 installAudioUnlock();
+syncAudioOutput(useAppStore);
 installPitchDetector();
 
 // E2E only: a Playwright spec sets `window.__fretworkFakeMic = true` with
