@@ -66,7 +66,14 @@ async function doubleSession(page: Page): Promise<void> {
   await focusSession(page, 'F2.string6-naturals');
   const summary = page.getByTestId('session-summary');
   const feedback = page.getByTestId('feedback-correct');
+  const prompt = page.getByTestId('marker-target').first();
   for (let i = 0; i < DOUBLE_MINUTES + 5 && !(await summary.isVisible()); i++) {
+    // The session screen shows before its runner starts. Step the clock only
+    // once a prompt is up, or the runner's start lands after the step and the
+    // first answer counts a fraction of a minute (an eleventh answer then
+    // makes up the goal).
+    await expect(prompt.or(summary)).toBeVisible();
+    if (await summary.isVisible()) break;
     await page.clock.fastForward(GAP);
     await answer(page, await targetNote(page));
     await expect(feedback).toBeVisible();
