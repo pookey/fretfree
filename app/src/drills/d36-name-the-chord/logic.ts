@@ -208,14 +208,15 @@ export function d36MakePrompt(item: Item, ctx: DrillContext): D36Prompt {
     .sort((a, b) => midiAt(a, tuning) - midiAt(b, tuning));
   const frets = notes.map((n) => n.fret);
   const barre = barreOf(t.shape, notes);
+  const voicing = voicingOf(notes, barre);
   return {
     itemId: item.id,
     kind,
     shape: t.shape,
     root,
     chord: nameChord(root, kind),
-    voicing: voicingOf(notes, barre),
-    barre: voicingOf(notes, barre) === 'barre' ? barre : null,
+    voicing,
+    barre: voicing === 'barre' ? barre : null,
     display,
     notes,
     span: { from: Math.min(...frets), to: Math.max(...frets) },
