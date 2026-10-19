@@ -47,6 +47,9 @@ export default defineConfig({
     // Verify runs while several worktrees verify at once (load 40–50 on 10
     // cores). The 5 s default failed healthy tests in the integration lane.
     testTimeout: 20_000,
+    // Several worktrees test at once, and each run used to start a worker per
+    // core. Cap it so concurrent runs share the machine; the lane raises it.
+    maxWorkers: Number(process.env.VITEST_MAX_WORKERS ?? 4),
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {

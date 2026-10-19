@@ -10,6 +10,9 @@ const external = Boolean(process.env.E2E_BASE_URL);
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
+  // Two e2e slots (plus the lane's) run at once; cap browsers per run so they
+  // share the machine. The integration lane raises it.
+  workers: Number(process.env.PW_WORKERS ?? 4),
   retries: process.env.CI ? 2 : 0,
   reporter: [['list']],
   use: {

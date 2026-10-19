@@ -46,7 +46,10 @@ echo "integrate: shipping $(git rev-parse --short HEAD)"
 phase_file="$ORCH/logs/$WP-ship-phase"
 rm -f "$phase_file"
 set +e
-SHIP_PHASE_FILE="$phase_file" pnpm ship >>"$log" 2>&1
+# The lane has reserved CPU and e2e slots (scripts/cpu-slot.sh, e2e-slot.sh),
+# and more test workers than a worktree check, because every ship waits on it.
+FRETWORK_LANE=1 PW_WORKERS="${PW_WORKERS:-6}" VITEST_MAX_WORKERS="${VITEST_MAX_WORKERS:-6}" \
+  SHIP_PHASE_FILE="$phase_file" pnpm ship >>"$log" 2>&1
 rc=$?
 set -e
 if ((rc != 0)); then
