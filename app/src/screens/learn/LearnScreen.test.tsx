@@ -62,9 +62,13 @@ describe('<LearnScreen>', () => {
     expect(within(detail).getByRole('heading', { level: 2 })).toHaveTextContent('Whole neck');
     expect(within(detail).getByTestId('module-state')).toHaveTextContent('Locked: preview');
     expect(within(detail).getByTestId('preview-note')).toBeInTheDocument();
-    expect(within(detail).getByTestId('skill-C2.all-notes')).toHaveTextContent(
-      /Preview only.*practising:Natural notes on string 6Natural notes on string 5/,
-    );
+    const skill = within(detail).getByTestId('skill-C2.all-notes');
+    expect(skill).toHaveTextContent(/Preview only.*practising:/);
+    expect(
+      within(within(skill).getByRole('list', { name: 'Prerequisites' }))
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['Natural notes on string 6', 'Natural notes on string 5']);
     expect(within(detail).getByRole('complementary', { name: 'Watch out for' })).toBeVisible();
   });
 

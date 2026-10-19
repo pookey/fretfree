@@ -69,7 +69,12 @@ export function SkillDetail({ view }: { view: SkillView }) {
         </p>
         <p className={styles.skillCopy}>{text}</p>
         {needs.length > 0 && (
-          <ul className={`${styles.skillCopy} ${local.needs}`} aria-label="Prerequisites">
+          // An explicit role: WebKit drops list semantics, and the label, from unbulleted lists.
+          <ul
+            className={`${styles.skillCopy} ${local.needs}`}
+            role="list"
+            aria-label="Prerequisites"
+          >
             {needs.map((title) => (
               <li key={title}>{title}</li>
             ))}

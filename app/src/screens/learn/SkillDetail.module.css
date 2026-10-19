@@ -58,4 +58,5 @@
 .needs {
   margin-top: var(--space-1);
   padding-left: 1.25rem;
+  list-style: disc; /* The module's skill list sets none, and it inherits. */
 }
