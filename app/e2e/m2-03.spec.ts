@@ -41,10 +41,22 @@ function cellsOf(note: string, from = 0, to = 12): Cell[] {
   return out;
 }
 
+/**
+ * Start a session focused on one seeded item (`/session?item=<id>`), so the
+ * spec never depends on which drill an unfocused session serves first. Waits
+ * until the session is planned and its drill is on screen; under a loaded
+ * machine that can outlast the default assertion timeout.
+ */
+async function focusItem(page: Page, itemId: string): Promise<void> {
+  await page.goto(`/session?${new URLSearchParams({ item: itemId }).toString()}`);
+  await expect(page.getByTestId('session')).toBeVisible();
+  await expect(page.getByText('Preparing your session…')).toBeHidden({ timeout: 15_000 });
+}
+
 async function startEveryG(page: Page, guideLevel: 0 | 1 | 2 | 3 = 2): Promise<Cell> {
   await freshStart(page);
   await seedDueItems(page, EVERY_G, guideLevel);
-  await page.getByTestId('start-session').click();
+  await focusItem(page, EVERY_G[0]!.itemId);
   await expect(prompt(page)).toContainText('Tap every G');
   const [dot] = await markerCells(page, 'root');
   expect(noteName(dot!.string, dot!.fret)).toBe('G');
@@ -137,7 +149,7 @@ test.describe('M2-03 D4 octave finder', () => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await seedDueItems(page, [{ itemId: 'octave:s4f5→s2', skillId: 'C1.octaves-gb-shift' }], 1);
-    await page.getByTestId('start-session').click();
+    await focusItem(page, 'octave:s4f5→s2');
     await expect(prompt(page)).toHaveText('Tap the octave of G on string 2');
     expect(await markerCells(page, 'root')).toEqual([{ string: 4, fret: 5 }]);
 
