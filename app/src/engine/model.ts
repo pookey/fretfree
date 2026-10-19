@@ -161,7 +161,8 @@ export type ItemRef =
   | { kind: 'spell-chord'; chord: ChordKind; root: string }
   | { kind: 'degree' | 'degree-of'; degree: number; tonic: string }
   | { kind: 'caged' | 'caged-core'; shape: CagedShapeName; quality: CagedQuality }
-  | { kind: 'chord-tone' | 'chord-tone-name'; degree: ChordDegree; chord: ChordKind };
+  | { kind: 'chord-tone' | 'chord-tone-name'; degree: ChordDegree; chord: ChordKind }
+  | { kind: 'chord-name'; shape: CagedShapeName; chord: ChordKind };
 
 const INT = '(0|[1-9]\\d*)';
 const OFFSET = '([+-][1-9]\\d*)';
@@ -181,6 +182,7 @@ const SPELL_CHORD_ITEM = new RegExp(`^spell-chord:([A-Za-z0-9]+)@${PC}$`);
 const DEGREE_ITEM = new RegExp(`^(degree|degree-of):([1-7])@${PC}$`);
 const CAGED_ITEM = /^(caged|caged-core):([CAGED])-shape@(major|minor|dominant7)$/;
 const CHORD_TONE_ITEM = /^(chord-tone|chord-tone-name):(b{0,2}\d|#\d)@([A-Za-z0-9]+)$/;
+const CHORD_NAME_ITEM = /^chord-name:([CAGED])-shape@([A-Za-z0-9]+)$/;
 
 function count(n: number, what: string): number {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Invalid ${what}: ${n}`);
@@ -429,6 +431,27 @@ export function parseChordToneItemId(
   return { kind: m[1] as 'chord-tone' | 'chord-tone-name', degree, chord };
 }
 
+/**
+ * `chord-name:A-shape@m7`: name the chord from its dots (D36), root then
+ * quality, for a m7 voicing from the A-shape family. The root and neck
+ * position vary per prompt, so one card holds the shape-and-quality pairing
+ * in every key (research/02 rule 12).
+ */
+export function chordNameItemId(shape: CagedShapeName, chord: ChordKind): string {
+  if (!CAGED_ORDER.includes(shape)) throw new RangeError(`Invalid CAGED shape: ${String(shape)}`);
+  if (!isChordKind(chord)) throw new RangeError(`Invalid chord kind: ${String(chord)}`);
+  return `chord-name:${shape}-shape@${chord}`;
+}
+
+export function parseChordNameItemId(
+  id: string,
+): { shape: CagedShapeName; chord: ChordKind } | null {
+  const m = CHORD_NAME_ITEM.exec(id);
+  const chord = m?.[2] as string;
+  if (!m || !isChordKind(chord)) return null;
+  return { shape: m[1] as CagedShapeName, chord };
+}
+
 export function itemId(ref: ItemRef): string {
   switch (ref.kind) {
     case 'note':
@@ -465,6 +488,8 @@ export function itemId(ref: ItemRef): string {
     case 'chord-tone':
     case 'chord-tone-name':
       return chordToneItemId(ref.kind, ref.degree, ref.chord);
+    case 'chord-name':
+      return chordNameItemId(ref.shape, ref.chord);
   }
 }
 
@@ -497,5 +522,7 @@ export function parseItemId(id: string): ItemRef | null {
   if (caged) return caged;
   const chordTone = parseChordToneItemId(id);
   if (chordTone) return chordTone;
+  const chordName = parseChordNameItemId(id);
+  if (chordName) return { kind: 'chord-name', ...chordName };
   return null;
 }
