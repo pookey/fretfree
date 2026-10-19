@@ -219,16 +219,33 @@ export function d5LegendRows(choices: readonly IntervalName[], level: GuideLevel
 }
 
 /**
+ * Past this many choices the legend packs each interval onto one line and the
+ * answer buttons sit in rows of six, so the widest scope (all 12 intervals)
+ * still fits above the neck on an iPad mini in landscape.
+ */
+export const D5_LINE_LEGEND_ABOVE = 4;
+
+/** The legend shows one line per interval (`M3 major 3rd · 4`). */
+export function d5LineLegend(choiceCount: number): boolean {
+  return choiceCount > D5_LINE_LEGEND_ABOVE;
+}
+
+/**
  * Level-3 tips. The G–B tip shows only on shapes that cross that pair: its
  * wording holds in any tuning that keeps G and B a major 3rd apart, which is
- * what `gbShift` flags.
+ * what `gbShift` flags. A one-line legend drops the count tip: every row
+ * already shows its count, the prompt's hint gives the direction, and a scope
+ * that wide is only reached after the narrower ones taught the counting.
  */
-export function d5LegendTips(level: GuideLevel, gbShift: boolean): string[] {
+export function d5LegendTips(level: GuideLevel, gbShift: boolean, choiceCount: number): string[] {
   if (level < 3) return [];
-  const count = 'Count half steps up from the square (the lower note) to the round dot.';
-  if (!gbShift) return [count];
-  return [
-    count,
-    'This shape crosses from G to B, which are a major 3rd apart, not a 4th: so the note on B sits a fret higher than it would across a 4th.',
-  ];
+  const tips = d5LineLegend(choiceCount)
+    ? []
+    : ['Count half steps up from the square (the lower note) to the round dot.'];
+  if (gbShift) {
+    tips.push(
+      'This shape crosses from G to B, which are a major 3rd apart, not a 4th: so the note on B sits a fret higher than it would across a 4th.',
+    );
+  }
+  return tips;
 }

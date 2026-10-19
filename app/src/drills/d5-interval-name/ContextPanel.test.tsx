@@ -8,10 +8,10 @@ import intervalName from './drill';
 import { d5Check, d5MakePrompt, type D5Answer, type D5Prompt } from './logic';
 import { resolveView } from '../lazy-view';
 
-const prompt = (id = 'interval-name:M3@s6→s5') =>
+const prompt = (id = 'interval-name:M3@s6→s5', scopeLevel = 0) =>
   d5MakePrompt(
     { id, skillId: 'C3.thirds' },
-    { tuning: STANDARD_TUNING, accidentalPref: 'sharp', scopeLevel: 0, rng: () => 0 },
+    { tuning: STANDARD_TUNING, accidentalPref: 'sharp', scopeLevel, rng: () => 0 },
   );
 
 const fb = (p: D5Prompt, answer: D5Answer): DrillFeedback<D5Answer> => ({
@@ -93,5 +93,46 @@ describe('<IntervalContextPanel>', () => {
     panel(p, { feedback: fb(p, 'm3') });
     expect(legendRow('m3')).toHaveAttribute('data-state', 'wrong');
     expect(legendRow('M3')).toHaveAttribute('data-state', 'expected');
+  });
+
+  describe('at a wide scope', () => {
+    it('packs every interval onto one line, keeping "half steps" for screen readers', () => {
+      panel(prompt('interval-name:M3@s6→s5', 2), { guideLevel: 3 });
+      expect(legend()).toHaveAttribute('data-layout', 'lines');
+      expect(legend().querySelectorAll('li')).toHaveLength(12);
+      // Seen as `M3 major 3rd · 4`; the dot is hidden from screen readers.
+      expect(legendRow('M3')).toHaveTextContent('M3major 3rd· 4 half steps');
+      expect(legendRow('M3')!.querySelector('[aria-hidden="true"]')).toHaveTextContent('·');
+      expect(legendRow('M3')!.querySelector('.visually-hidden')).toHaveTextContent('half steps');
+      expect(legendRow('m2')).toHaveTextContent('1 half step');
+      expect(legendRow('m2')).not.toHaveTextContent('half steps');
+    });
+
+    it('drops the count tip but keeps the G–B tip', () => {
+      const plain = panel(prompt('interval-name:M3@s6→s5', 2), { guideLevel: 3 });
+      expect(plain.container.querySelectorAll('p')).toHaveLength(0);
+      plain.unmount();
+      const gb = panel(prompt('interval-name:M3@s3→s2', 2), { guideLevel: 3 });
+      expect(gb.container).not.toHaveTextContent(/Count half steps/);
+      expect(gb.container).toHaveTextContent(/crosses from G to B/);
+    });
+
+    it('still marks the answer by mark and border style in feedback', () => {
+      const p = prompt('interval-name:M3@s6→s5', 2);
+      panel(p, { guideLevel: 3, feedback: fb(p, 'P8') });
+      expect(legendRow('M3')).toHaveAttribute('data-state', 'expected');
+      expect(legendRow('P8')).toHaveAttribute('data-state', 'wrong');
+    });
+
+    it('fades the counts with the guide level', () => {
+      panel(prompt('interval-name:M3@s6→s5', 1), { guideLevel: 1 });
+      expect(legend()).toHaveAttribute('data-layout', 'lines');
+      expect(legendRow('M3')).toHaveTextContent(/^M3major 3rd$/);
+    });
+
+    it('keeps the stacked rows at four choices', () => {
+      panel(prompt(), { guideLevel: 3 });
+      expect(legend()).toHaveAttribute('data-layout', 'stacked');
+    });
   });
 });

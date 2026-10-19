@@ -170,4 +170,13 @@ describe('<D5View>', () => {
       }
     });
   });
+
+  it('marks a wide scope so the answers sit in rows of six beside a wider panel', () => {
+    const { unmount } = renderView(prompt('interval-name:M3@s6→s5', 2));
+    expect(screen.getByTestId('d5-drill')).toHaveAttribute('data-wide', 'true');
+    expect(screen.getAllByRole('button')).toHaveLength(12);
+    unmount();
+    renderView(prompt());
+    expect(screen.getByTestId('d5-drill')).not.toHaveAttribute('data-wide');
+  });
 });

@@ -17,6 +17,7 @@ import {
   d5KeyToAnswer,
   d5LegendRows,
   d5LegendTips,
+  d5LineLegend,
   d5MakePrompt,
   d5Sounds,
   d5WorkedExample,
@@ -214,11 +215,20 @@ describe('interval legend', () => {
     expect(d5LegendRows(choices, 1)[3]).toEqual({ name: 'M3', long: 'major 3rd' });
     expect(d5LegendRows(choices, 2)[3]).toEqual({ name: 'M3', long: 'major 3rd', semitones: 4 });
     expect(d5LegendRows(choices, 3)).toHaveLength(4);
-    expect(d5LegendTips(2, true)).toEqual([]);
-    expect(d5LegendTips(3, false)).toEqual([
+    expect(d5LegendTips(2, true, 4)).toEqual([]);
+    expect(d5LegendTips(3, false, 4)).toEqual([
       'Count half steps up from the square (the lower note) to the round dot.',
     ]);
-    expect(d5LegendTips(3, true)).toHaveLength(2);
-    expect(d5LegendTips(3, true)[1]).toMatch(/G to B, which are a major 3rd apart/);
+    expect(d5LegendTips(3, true, 4)).toHaveLength(2);
+    expect(d5LegendTips(3, true, 4)[1]).toMatch(/G to B, which are a major 3rd apart/);
+  });
+
+  it('packs past four choices into one-line rows without the count tip', () => {
+    expect(d5LineLegend(4)).toBe(false);
+    expect(d5LineLegend(5)).toBe(true);
+    expect(d5LegendTips(3, false, 12)).toEqual([]);
+    // The G–B tip stays: the counts on the rows don't explain the shifted fret.
+    expect(d5LegendTips(3, true, 12)).toEqual([expect.stringMatching(/G to B/)]);
+    expect(d5LegendTips(2, true, 12)).toEqual([]);
   });
 });

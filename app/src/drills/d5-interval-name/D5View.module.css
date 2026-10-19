@@ -18,6 +18,25 @@
   flex: 0 0 26rem;
 }
 
+/* A wide scope (more than four choices, up to all 12 intervals): a wider
+   panel of one-line legend rows, and the answers in rows of six at 48px, so
+   both columns stay short enough for the neck on an iPad mini (M2-22). */
+.drill[data-wide] .upper > aside {
+  flex-basis: 32rem;
+}
+
+.drill[data-wide] .choices {
+  max-width: calc(6 * 4rem + 5 * var(--space-2));
+}
+
+.drill[data-size-class='regular-wide'][data-wide] .top {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='regular-wide'][data-wide] .choice {
+  min-height: 3rem;
+}
+
 .top {
   flex: 1;
   min-width: 0;

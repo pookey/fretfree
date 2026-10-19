@@ -8,6 +8,7 @@ import {
   d5FeedbackPositions,
   d5KeyFor,
   d5KeyToAnswer,
+  d5LineLegend,
   d5WorkedExample,
   type D5Answer,
   type D5Prompt,
@@ -86,7 +87,12 @@ export function D5View({
   }
 
   return (
-    <div className={styles.drill} data-size-class={sizeClass} data-testid="d5-drill">
+    <div
+      className={styles.drill}
+      data-size-class={sizeClass}
+      data-wide={d5LineLegend(choices.length) || undefined}
+      data-testid="d5-drill"
+    >
       <div className={styles.upper}>
         <div className={styles.top}>
           <p className={styles.prompt} id="drill-prompt">
