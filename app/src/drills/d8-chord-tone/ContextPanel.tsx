@@ -5,6 +5,7 @@ import {
   d8DegreeSpoken,
   d8DegreeStyle,
   d8Display,
+  d8ShowsRoots,
   type D8Answer,
   type D8Prompt,
 } from './logic';
@@ -58,7 +59,7 @@ export function ChordTonePanel({
           </li>
         ))}
       </ul>
-      {guideLevel >= 3 && (
+      {guideLevel >= 3 && d8ShowsRoots(prompt, guideLevel, guided) && (
         <p>Count up from a root square: the 3rds sit nearby, the 5th a string or two away.</p>
       )}
     </div>

@@ -143,8 +143,8 @@ export function D8View({
     const many = d8Targets(prompt).length > 1;
     question = guided ? (
       <>
-        {many ? 'These are' : 'This is'} the {degree} of {chord}. Tap {many ? 'one' : 'it'} to
-        continue.
+        The {many ? `${degree}s` : degree} of {chord} {many ? 'are' : 'is'} marked. Tap{' '}
+        {many ? 'one' : 'it'} to continue.
       </>
     ) : (
       <>

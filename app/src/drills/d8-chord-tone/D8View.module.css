@@ -148,6 +148,11 @@
   max-height: calc(100dvh - 9rem);
 }
 
+/* Name mode adds a row of answer buttons above the neck. */
+.drill[data-size-class='compact'][data-mode='name'] .neckArea svg {
+  max-height: calc(100dvh - 12rem);
+}
+
 /* A phone on its side has no room for the feedback line; the session's
    feedback bar still says what was right. */
 @media (max-height: 499px) {

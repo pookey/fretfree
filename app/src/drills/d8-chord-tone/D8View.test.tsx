@@ -102,7 +102,7 @@ describe('<D8View> tap mode', () => {
     view(prompt('chord-tone:5@major', seq(0.2, 0.75)), { guided: true });
     // A major, A shape: two 5ths (strings 4 and 1).
     expect(screen.getByTestId('d8-prompt')).toHaveTextContent(
-      'These are the 5th of A. Tap one to continue.',
+      'The 5ths of A are marked. Tap one to continue.',
     );
     expect(markers('target')).toEqual([
       { string: 4, fret: 2, label: '5' },
