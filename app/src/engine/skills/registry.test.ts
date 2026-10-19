@@ -36,6 +36,8 @@ describe('skill registry', () => {
       'C5.triads',
       'C5.sevenths',
       'C5.sus-add',
+      'C5.tones-triads',
+      'C5.tones-sevenths',
       'C6.triad-cores',
       'C6.major-shapes',
       'C6.minor-cores',
