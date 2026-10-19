@@ -1,0 +1,409 @@
+/* The tuner (design §7 Tools). iPad first: the dial beside the mic and string
+   panels, the reference strings across the bottom; one column on compact. */
+.tuner {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'mic'
+    'dial'
+    'reference';
+}
+
+/* iPad: the dial on the left, the mic and the reference strings beside it,
+   so everything fits one landscape screen. */
+.tuner[data-layout='split'] {
+  gap: var(--space-5);
+  grid-template-columns: minmax(0, 3fr) minmax(18rem, 2fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'dial mic'
+    'dial reference';
+}
+
+.mic,
+.dial,
+.reference {
+  padding: var(--space-4);
+  border-radius: var(--radius-l);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.tuner[data-layout='split'] .dial,
+.tuner[data-layout='split'] .reference {
+  padding: var(--space-5);
+}
+
+.label {
+  margin: 0 0 var(--space-2);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.muted {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* --- Mic check --- */
+
+.mic {
+  grid-area: mic;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.micState {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.mic[data-state='working'] .micState {
+  font-weight: 600;
+}
+
+.working {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: var(--space-2);
+  border-radius: 50%;
+  background: var(--correct);
+  color: #fff;
+  font-size: 0.875rem;
+}
+
+.micActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.micActions:empty {
+  display: none;
+}
+
+.primary,
+.secondary {
+  min-height: var(--tap);
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-m);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary {
+  border: none;
+  background: var(--accent-fill);
+  color: var(--accent-text);
+  font-size: 1.125rem;
+}
+
+.secondary {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* --- Dial --- */
+
+.dial {
+  grid-area: dial;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.gauge {
+  width: 100%;
+  max-width: 20rem;
+}
+
+.tuner[data-layout='split'] .gauge {
+  max-width: 30rem;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.band {
+  fill: none;
+  stroke: var(--correct);
+  stroke-width: 18;
+  opacity: 0.35;
+}
+
+.tick,
+.tickZero {
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.tickZero {
+  stroke: var(--text);
+  stroke-width: 3;
+}
+
+.end {
+  fill: var(--text-muted);
+  font-size: 18px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.markOff {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.markOn {
+  fill: var(--correct);
+}
+
+.markTick {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.needle {
+  transform-box: view-box;
+  transform-origin: 120px 132px;
+  transition: transform 90ms linear;
+  stroke: var(--tone);
+  fill: var(--tone);
+}
+
+.needle line {
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.dial[data-advice='in-tune'] .needle {
+  stroke: var(--correct);
+  fill: var(--correct);
+}
+
+.needle[data-idle='true'] {
+  stroke: var(--text-muted);
+  fill: var(--text-muted);
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .needle {
+    transition: none;
+  }
+}
+
+.readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.readout p {
+  margin: 0;
+}
+
+.note {
+  font-family: var(--font-display);
+  min-height: 1em;
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tuner[data-layout='split'] .note {
+  font-size: 5rem;
+}
+
+.placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.note sub {
+  font-size: 0.4em;
+  vertical-align: baseline;
+  margin-left: 0.05em;
+  color: var(--text-muted);
+}
+
+.cents {
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.readout .advice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.5rem;
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-4);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.dial[data-advice='in-tune'] .advice {
+  border-color: var(--correct);
+  color: var(--text);
+}
+
+.dial[data-advice='tune-up'] .advice,
+.dial[data-advice='tune-down'] .advice {
+  border-style: dashed;
+  border-color: var(--tone);
+  color: var(--text);
+}
+
+.adviceIcon {
+  font-size: 1.25rem;
+}
+
+/* A phone on its side: too short to stack, so the dial sits beside the rest. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .tuner[data-layout='stack'] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'dial mic'
+      'dial reference';
+    align-items: start;
+  }
+
+  .tuner[data-layout='stack'] .gauge {
+    max-width: 14rem;
+  }
+
+  .tuner[data-layout='stack'] .note {
+    font-size: 3rem;
+  }
+
+  .tuner[data-layout='stack'] .strings {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* --- Nearest string --- */
+
+.string {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+  align-self: stretch;
+}
+
+.stringName {
+  font-weight: 700;
+}
+
+/* --- Reference tones --- */
+
+.reference {
+  grid-area: reference;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.reference h2 {
+  margin: 0;
+}
+
+.strings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.tuner[data-layout='split'] .strings {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.stringButton {
+  position: relative;
+  width: 100%;
+  min-height: 3.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) 0;
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tuner[data-layout='split'] .stringButton {
+  min-height: 4.5rem;
+}
+
+.stringButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.stringPc {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.tuner[data-layout='split'] .stringPc {
+  font-size: 2rem;
+}
+
+.stringMeta {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.stringMark {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-2);
+  font-size: 0.875rem;
+}
+
+.stringButton[data-nearest='true'] {
+  border-color: var(--tone);
+  border-style: dashed;
+}
+
+.stringButton[data-in-tune='true'] {
+  border-color: var(--correct);
+  border-style: solid;
+}
+
+.stringButton[data-sounding='true'] {
+  border-color: var(--accent);
+}
