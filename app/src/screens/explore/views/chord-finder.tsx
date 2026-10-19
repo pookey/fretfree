@@ -163,18 +163,48 @@ function chartType(type: string): string {
   return type;
 }
 
+/** Letters charts avoid: double sharps and flats, and E#, B#, Cb, Fb. */
+const AWKWARD = /##|bb|^(?:E#|B#|Cb|Fb)$/;
+
+/** How awkward a chord's spelling reads, judged on its first three notes (root, 3rd, 5th). */
+function awkwardness(root: string, type: string): number {
+  return Chord.get(`${root}${type}`)
+    .notes.slice(0, 3)
+    .filter((n) => AWKWARD.test(n)).length;
+}
+
+/**
+ * A detected chord respelled as charts write it. Tapped notes are spelled by
+ * the learner's preference, so a Bb chord arrives as A# (A# C## E#). The
+ * root gives way to its enharmonic twin when the twin's triad reads more
+ * plainly: A# → Bb, G# → Ab, C# → Db, and Gbm → F#m under flats, as C5
+ * spells its chords (`c5Roots`). F#maj7 keeps F#: its triad is plain. The
+ * bass then takes the chord's own spelling.
+ */
+function respell(root: string, type: string, bass: string | null) {
+  const twin = Note.enharmonic(root);
+  const spelled = awkwardness(twin, type) < awkwardness(root, type) ? twin : root;
+  const tone =
+    bass === null
+      ? undefined
+      : Chord.get(`${spelled}${type}`).notes.find((n) => chromaOf(n) === chromaOf(bass));
+  return { root: spelled, bass: bass === null ? null : (tone ?? bass) };
+}
+
 /**
  * Names for a set of pitch classes, bass first, best first. tonal finds every
  * reading; a common chord beats an odd one (E G C is C/E before Em#5), and
  * among sensible readings one with its root in the bass comes first (C E G A
  * is C6 before Am7/C). Odd readings are kept only when nothing else fits.
+ * Roots are spelled as charts write them (`respell`): A# D F is Bb.
  */
 export function readChord(pcs: readonly string[], limit = 4): ChordReading[] {
   if (pcs.length < 2) return [];
   const ranked = Chord.detect([...pcs], { assumePerfectFifth: true })
     .map((raw, index) => {
-      const { root, type, bass } = splitSymbol(raw);
-      return { root, type, bass, index, tier: typeTier(type) };
+      const split = splitSymbol(raw);
+      const { root, bass } = respell(split.root, split.type, split.bass);
+      return { root, type: split.type, bass, index, tier: typeTier(split.type) };
     })
     .sort(
       (a, b) =>
@@ -185,13 +215,14 @@ export function readChord(pcs: readonly string[], limit = 4): ChordReading[] {
     );
   return ranked
     .filter((r, i) => i === 0 || r.tier < 2)
-    .slice(0, limit)
     .map((r) => ({
       symbol: `${r.root}${chartType(r.type)}${r.bass ? `/${r.bass}` : ''}`,
       root: r.root,
       bass: r.bass,
       name: Chord.get(`${r.root}${r.type}`).type,
-    }));
+    }))
+    .filter((r, i, all) => all.findIndex((o) => o.symbol === r.symbol) === i)
+    .slice(0, limit);
 }
 
 // ---------------------------------------------------------------------------
@@ -297,7 +328,7 @@ export function pickedMarkers(
 // Voicings from chords-db
 
 /** One shape in chords-db: frets low string first, relative to `baseFret`; -1 muted, 0 open. */
-interface BookPosition {
+export interface BookPosition {
   readonly frets: readonly number[];
   readonly fingers: readonly number[];
   readonly baseFret: number;
@@ -449,13 +480,23 @@ export type VoicingLookup =
     }
   | { readonly ok: false; readonly message: string };
 
-/** A position's sounding chromas, low string first. */
-function chromasOf(position: BookPosition): number[] {
+/** A position's sounding MIDI notes, low string first. */
+function midisOf(position: BookPosition): number[] {
   return position.frets.flatMap((rel, i) => {
     if (rel < 0) return [];
     const string = position.frets.length - i;
-    return [midiAt({ string, fret: rel === 0 ? 0 : position.baseFret + rel - 1 }) % 12];
+    return [midiAt({ string, fret: rel === 0 ? 0 : position.baseFret + rel - 1 })];
   });
+}
+
+/** A position's sounding chromas, low string first. */
+function chromasOf(position: BookPosition): number[] {
+  return midisOf(position).map((m) => m % 12);
+}
+
+/** The chroma of a position's lowest-pitched note (not always on its lowest string). */
+export function bassOf(position: BookPosition): number {
+  return Math.min(...midisOf(position)) % 12;
 }
 
 /**
@@ -515,7 +556,7 @@ export function lookUpVoicings(
         c.suffix.length > slashPrefix.length &&
         chromaOf(c.suffix.slice(slashPrefix.length)) === chromaOf(bass),
     );
-    const withBass = shapes.filter((p) => chromasOf(p)[0] === chromaOf(bass));
+    const withBass = shapes.filter((p) => bassOf(p) === chromaOf(bass));
     const slashShapes = (slash?.positions ?? []).filter((p) =>
       chromasOf(p).every((c) => tones.has(c) || c === chromaOf(bass)),
     );

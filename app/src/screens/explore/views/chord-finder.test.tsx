@@ -11,6 +11,7 @@ import { DROP_D_TUNING, STANDARD_TUNING, chromaOf, midiAt } from '../../../theor
 import {
   BOOK_SUFFIXES,
   STRUM_GAP,
+  bassOf,
   View,
   bassFirst,
   bookVoicing,
@@ -109,6 +110,27 @@ describe('readChord', () => {
     expect(readChord(['C', 'Eb', 'Gb', 'A'], 2)).toHaveLength(2);
   });
 
+  it('spells a root as charts do when the tapped spelling needs double sharps or flats', () => {
+    // Sharp preference: A# D F is Bb (not A# C## E#), and so on.
+    expect(readChord(['A#', 'D', 'F'])[0]?.symbol).toBe('Bb');
+    expect(readChord(['D#', 'G', 'A#'])[0]?.symbol).toBe('Eb');
+    expect(readChord(['G#', 'C', 'D#'])[0]?.symbol).toBe('Ab');
+    expect(readChord(['A#', 'D', 'F', 'G#'])[0]?.symbol).toBe('Bb7');
+    // Flat preference: Gb A Db is F#m (not Gb Bbb Db).
+    expect(readChord(['Gb', 'A', 'Db'])[0]?.symbol).toBe('F#m');
+    expect(readChord(['C#', 'F', 'G#'])[0]?.symbol).toBe('Db');
+    // A plain triad keeps its spelling, either way, even with an E# 7th.
+    expect(readChord(['F#', 'A#', 'C#'])[0]?.symbol).toBe('F#');
+    expect(readChord(['F#', 'A#', 'C#', 'F'])[0]?.symbol).toBe('F#maj7');
+    expect(readChord(['C#', 'E', 'G#'])[0]?.symbol).toBe('C#m');
+    expect(readChord(['Db', 'F', 'Ab'])[0]?.symbol).toBe('Db');
+  });
+
+  it('spells the bass of a respelled slash chord from the chord', () => {
+    expect(readChord(['D', 'F', 'A#'])[0]).toMatchObject({ symbol: 'Bb/D', root: 'Bb', bass: 'D' });
+    expect(readChord(['A#', 'D#', 'G'])[0]).toMatchObject({ symbol: 'Eb/Bb', bass: 'Bb' });
+  });
+
   it('names nothing for fewer than two notes or a cluster', () => {
     expect(readChord([])).toEqual([]);
     expect(readChord(['C'])).toEqual([]);
@@ -157,9 +179,18 @@ describe('pickedMarkers', () => {
   });
 
   it('spells them for the chord', () => {
-    // Ab C E: G#aug spells C as B#.
+    // G# C E tapped under the sharp preference reads as Abaug: Ab C E.
     const aug = pickedNotes(picks([4, 6], [3, 5], [2, 5]), STANDARD_TUNING, 'sharp');
-    expect(pickedMarkers(aug, chordTones('G#aug')).map((m) => m.label)).toEqual(['G#', 'B#', 'E']);
+    const [reading] = readChord(bassFirst(aug));
+    expect(reading?.symbol).toBe('Abaug');
+    expect(pickedMarkers(aug, chordTones(reading!.symbol)).map((m) => m.label)).toEqual([
+      'Ab',
+      'C',
+      'E',
+    ]);
+    // An F# minor tapped under the flat preference keeps F#'s letters.
+    const fsm = pickedNotes(picks([4, 4], [3, 2], [2, 2]), STANDARD_TUNING, 'flat');
+    expect(pickedMarkers(fsm, chordTones('F#m')).map((m) => m.label)).toEqual(['F#', 'A', 'C#']);
   });
 });
 
@@ -304,6 +335,18 @@ describe('bookVoicing', () => {
       bookVoicing({ frets: [-1, -1, 1, 1, 1, -1], fingers: [0, 0, 1, 1, 1, 0], baseFret: 5 }, tones)
         .where,
     ).toBe('fret 5');
+  });
+});
+
+describe('bassOf', () => {
+  it('takes the lowest pitch, not the lowest sounding string', () => {
+    // String 6 at fret 7 (B2) over an open string 5 (A2): the bass is A.
+    expect(
+      bassOf({ frets: [3, 0, -1, -1, -1, -1], fingers: [1, 0, 0, 0, 0, 0], baseFret: 5 }),
+    ).toBe(9);
+    expect(bassOf({ frets: [-1, 3, 2, 0, 1, 0], fingers: [0, 3, 2, 0, 1, 0], baseFret: 1 })).toBe(
+      0,
+    );
   });
 });
 
@@ -540,6 +583,24 @@ describe('<View>', () => {
     expect(screen.getByTestId('chord-name')).toHaveTextContent('C');
     expect(screen.getAllByTestId('marker-root').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'string 6, fret 3, G, picked' })).toBeInTheDocument();
+  });
+
+  it('names a tapped flat-root chord as charts do, under the default sharp preference', () => {
+    vi.spyOn(audio, 'playNotes').mockResolvedValue();
+    renderView();
+    // The Bb barre, x13331.
+    for (const [string, fret] of [
+      [5, 1],
+      [4, 3],
+      [3, 3],
+      [2, 3],
+      [1, 1],
+    ] as const) {
+      fireEvent.pointerDown(cell(string, fret));
+    }
+    expect(screen.getByTestId('chord-name')).toHaveTextContent('Bb (major)');
+    expect(screen.getByTestId('chord-notes')).toHaveTextContent(/^Bb R\s*F 5\s*Bb R\s*D 3\s*F 5$/);
+    expect(screen.getByRole('button', { name: 'Voicings of Bb' })).toBeInTheDocument();
   });
 
   it('opens the voicings of a tapped chord', () => {
