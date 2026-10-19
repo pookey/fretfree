@@ -10,10 +10,11 @@ export const placement = {
    * Skills of those topics the test leaves out. D8's chord tones apply C5
    * spelling on the neck: practice, not a gate, and past where the budget
    * stops a realistic expert (PM decision, M3-04). D36's chord naming
-   * likewise (M3-13), and D38's chord building (M3-15). C8's Nashville
-   * numbers are its Roman numerals in another notation, and the budget has
-   * room for one C8 group (M4-02): Roman numerals are probed, Nashville
-   * opens softly.
+   * likewise (M3-13), and D38's chord building (M3-15). D37's whole-neck
+   * rounds are practice too, and far longer than a probe (M3-14). C8's
+   * Nashville numbers are its Roman numerals in another notation, and the
+   * budget has room for one C8 group (M4-02): Roman numerals are probed,
+   * Nashville opens softly.
    */
   skipSkills: [
     'C5.tones-roots',
@@ -26,6 +27,8 @@ export const placement = {
     'C5.build-triads',
     'C5.build-sevenths',
     'C5.build-sus',
+    'C5.neck-triads',
+    'C5.neck-sevenths',
     'C8.nashville',
   ],
   /** No new probe starts after this long: the test takes about 3 minutes. */
