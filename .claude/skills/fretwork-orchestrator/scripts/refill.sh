@@ -5,6 +5,12 @@
 source "$(dirname "$0")/common.sh"
 need_herdr
 [[ "$($STATE show | jq -r .paused)" == null ]] || { echo "paused; not spawning"; exit 0; }
+# Mid-integration, local main already marks the WP done, so the planner would
+# start its dependants, but spawn.sh cuts from origin/main, which lacks it.
+if pgrep -f "$SKILL_DIR/scripts/integrate.sh" >/dev/null; then
+  echo "lane integrating; skipping refill (run it again after the ship)"
+  exit 0
+fi
 h="$("$SKILL_DIR/scripts/health.sh")"
 echo "$h"
 sug="$(grep -oE 'suggested=[0-9]+' <<<"$h" | cut -d= -f2)"
