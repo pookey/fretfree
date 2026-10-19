@@ -51,7 +51,7 @@ export function seventhStep(root: Position, chord: SeventhChord, toString: numbe
  */
 const example: WorkedExample = {
   id: 'c5-seventh-shapes',
-  for: ['C5.tones-sevenths', 'C5.sevenths'],
+  for: ['C5.tones-sevenths', 'C5.sevenths', 'C5.name-sevenths'],
   title: 'The 7 in “7” and in “maj7”',
   idea: 'A7’s 7th is a flat 7th, a whole step below the root. Only Amaj7 takes the major 7th, a half step below.',
   steps: [

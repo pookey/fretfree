@@ -9,9 +9,18 @@ export const placement = {
   /**
    * Skills of those topics the test leaves out. D8's chord tones apply C5
    * spelling on the neck: practice, not a gate, and past where the budget
-   * stops a realistic expert (PM decision, M3-04).
+   * stops a realistic expert (PM decision, M3-04). D36's chord naming
+   * likewise (M3-13).
    */
-  skipSkills: ['C5.tones-roots', 'C5.tones-thirds', 'C5.tones-fifths', 'C5.tones-sevenths'],
+  skipSkills: [
+    'C5.tones-roots',
+    'C5.tones-thirds',
+    'C5.tones-fifths',
+    'C5.tones-sevenths',
+    'C5.name-triads',
+    'C5.name-sevenths',
+    'C5.name-sus',
+  ],
   /** No new probe starts after this long: the test takes about 3 minutes. */
   budgetMs: 180_000,
   /**
