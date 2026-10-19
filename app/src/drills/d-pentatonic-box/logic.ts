@@ -16,6 +16,8 @@ import {
   pentatonicScale,
   previousBox,
   relativeBoxNumber,
+  relativeMajor,
+  relativeMinor,
   samePosition,
   stringCount,
   type AccidentalPref,
@@ -247,6 +249,22 @@ function neighboursOf(
   ];
 }
 
+/**
+ * The relative key's root as keys are spelled (G minor → B♭ major, whatever
+ * the accidental preference), unless that spelling needs E♯, B♯, C♭, F♭ or a
+ * double accidental (D♯ major → B♯ minor): then the preference's spelling.
+ */
+export function dpbRelativeRoot(
+  root: string,
+  quality: PentatonicQuality,
+  pref: AccidentalPref,
+): string {
+  const chroma = (chromaOf(root) + (quality === 'minor' ? 3 : 9)) % 12;
+  const named = quality === 'minor' ? relativeMajor(root) : relativeMinor(root);
+  const plain = /^[A-G][#b]?$/.test(named) && !['E#', 'B#', 'Cb', 'Fb'].includes(named);
+  return plain && chromaOf(named) === chroma ? named : chromaToPc(chroma, pref);
+}
+
 export function dpbMakePrompt(item: Item, ctx: DrillContext): DpbPrompt {
   const ref = parsePentaItemId(item.id);
   const { tuning, accidentalPref } = ctx;
@@ -282,7 +300,7 @@ export function dpbMakePrompt(item: Item, ctx: DrillContext): DpbPrompt {
         ? boxNotes.filter((n) => !inShape(n))
         : boxNotes.filter((n) => chromaOf(n.pc) === relChroma),
     relative: {
-      root: chromaToPc(relChroma, accidentalPref),
+      root: dpbRelativeRoot(root, quality, accidentalPref),
       quality: otherQuality(quality),
       box: relativeBoxNumber(box, quality),
     },

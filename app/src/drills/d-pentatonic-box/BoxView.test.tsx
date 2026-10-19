@@ -181,7 +181,7 @@ describe('<BoxView> relative', () => {
     // Even at full guides the box's dots carry no names before an answer (rule 4).
     expect(markers('tone').every((m) => m.label === '')).toBe(true);
     expect(screen.getByTestId('dpb-explain')).toHaveTextContent(
-      'The squares are the roots, C. The relative major is D♯.',
+      'The squares are the roots, C. The relative major is E♭.',
     );
     expect(screen.getByTestId('dpb-count')).toHaveTextContent('Found 0 of 3');
   });
@@ -195,7 +195,7 @@ describe('<BoxView> relative', () => {
     const p = prompt('penta-relative:1@minor');
     const { onAnswer } = view(p);
     tap(at(6, 11));
-    expect(markers('correct')).toEqual([{ string: 6, fret: 11, label: 'D♯' }]);
+    expect(markers('correct')).toEqual([{ string: 6, fret: 11, label: 'E♭' }]);
     tap(at(4, 10));
     expect(onAnswer).toHaveBeenCalledWith([at(6, 11), at(4, 10)]);
   });
@@ -204,7 +204,7 @@ describe('<BoxView> relative', () => {
     const p = prompt('penta-relative:1@minor');
     view(p, { guided: true });
     expect(screen.getByTestId('dpb-prompt')).toHaveTextContent(
-      'In this Cm box, the relative major’s root is D♯. Tap each D♯ to continue.',
+      'In this Cm box, the relative major’s root is E♭. Tap each E♭ to continue.',
     );
     expect(cells('target')).toEqual(['s6f11', 's3f8', 's1f11']);
   });
@@ -215,7 +215,7 @@ describe('<BoxView> relative', () => {
     expect(screen.getByTestId('dpb-explain')).toHaveTextContent("the box's own root");
     expect(markers('wrong')).toEqual([{ string: 4, fret: 10, label: 'C' }]);
     expect(cells('root')).toEqual(['s6f8', 's1f8']);
-    expect(markers('ghost').map((m) => m.label)).toEqual(['D♯', 'D♯', 'D♯']);
+    expect(markers('ghost').map((m) => m.label)).toEqual(['E♭', 'E♭', 'E♭']);
     expect(markers('tone').map((m) => m.label)).toContain('♭7');
   });
 });

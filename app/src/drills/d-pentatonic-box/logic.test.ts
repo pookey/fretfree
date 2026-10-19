@@ -36,6 +36,7 @@ import {
   dpbMakePrompt,
   dpbMissed,
   dpbPlacements,
+  dpbRelativeRoot,
   dpbRegularWindow,
   dpbScopeFor,
   dpbShowsCount,
@@ -200,7 +201,7 @@ describe('overlay prompts (penta-box)', () => {
     expect(dpbDegreeLine(p.targets)).toBe('♭3 4 ♭7 4 ♭7 ♭3');
     expect(p.targets.map((n) => n.pc)).toEqual(['D#', 'F', 'A#', 'F', 'A#', 'D#']);
     expect(p.boxNotes).toHaveLength(12);
-    expect(p.relative).toEqual({ root: 'D#', quality: 'major', box: 5 });
+    expect(p.relative).toEqual({ root: 'Eb', quality: 'major', box: 5 });
   });
 
   it('places the boxes either side, without the notes they share', () => {
@@ -323,9 +324,18 @@ describe('relative prompts (penta-relative)', () => {
     expect(p).toMatchObject({ mode: 'relative', root: 'C', shape: 'E', neighbours: [] });
     expect(p.given).toEqual(p.boxNotes);
     expect(cells(p.targets)).toEqual(['s6f11', 's3f8', 's1f11']);
-    expect(p.relative).toEqual({ root: 'D#', quality: 'major', box: 5 });
-    expect(dpbSubject(p)).toBe('D♯, the relative major of Cm');
+    expect(p.relative).toEqual({ root: 'Eb', quality: 'major', box: 5 });
+    expect(dpbSubject(p)).toBe('E♭, the relative major of Cm');
     expect(make('penta-relative:1@minor', { pref: 'flat' }).relative.root).toBe('Eb');
+  });
+
+  it('spells the relative key as keys are spelled, falling back to the preference', () => {
+    expect(dpbRelativeRoot('G', 'minor', 'sharp')).toBe('Bb');
+    expect(dpbRelativeRoot('A#', 'minor', 'sharp')).toBe('C#');
+    expect(dpbRelativeRoot('Db', 'major', 'flat')).toBe('Bb');
+    // D♯ major's relative is B♯ minor: spelled C instead.
+    expect(dpbRelativeRoot('D#', 'major', 'sharp')).toBe('C');
+    expect(dpbRelativeRoot('Gb', 'major', 'flat')).toBe('Eb');
   });
 
   it('finds the relative minor’s root in a major box', () => {
@@ -343,7 +353,7 @@ describe('relative prompts (penta-relative)', () => {
     expect(dpbIgnores(p, at(6, 8))).toBe(false);
     expect(dpbCheck(p, [at(6, 11), at(4, 10)])).toEqual({
       correct: false,
-      expected: 'D♯, the relative major of Cm',
+      expected: 'E♭, the relative major of Cm',
       confusedWith: 'penta-relative:5@major',
       concept: 'penta-relative:1@minor',
     });
@@ -354,7 +364,7 @@ describe('relative prompts (penta-relative)', () => {
   });
 
   it('explains the relative link, and each kind of mistake', () => {
-    const what = 'D♯ is a minor 3rd up from C: this box is also D♯ major box 5.';
+    const what = 'E♭ is a minor 3rd up from C: this box is also E♭ major box 5.';
     expect(dpbExplain(p, fb(p, p.targets.map(pos)))).toBe(`That's it. ${what}`);
     expect(dpbExplain(p, fb(p, [at(6, 11)]))).toBe(`${what} 2 still to find, ringed on the neck.`);
     expect(dpbExplain(p, fb(p, [at(4, 10)]))).toBe(

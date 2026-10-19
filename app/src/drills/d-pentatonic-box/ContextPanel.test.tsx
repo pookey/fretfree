@@ -45,8 +45,14 @@ describe('<BoxChainPanel>', () => {
         feedback={null}
       />,
     );
-    expect(await screen.findByRole('heading', { name: 'Cm pentatonic boxes' })).toBeVisible();
-  });
+    // The first lazy load transforms every drill's views: seconds on a busy machine.
+    const heading = await screen.findByRole(
+      'heading',
+      { name: 'Cm pentatonic boxes' },
+      { timeout: 30_000 },
+    );
+    expect(heading).toBeVisible();
+  }, 40_000);
 
   it('marks the asked box, and keeps the shapes back below guide level 2', () => {
     panel(prompt(), 1);
@@ -76,7 +82,7 @@ describe('<BoxChainPanel>', () => {
     unmount();
     panel(p, 1, { answered: true });
     expect(screen.getByTestId('dpb-relative')).toHaveTextContent(
-      'Cm box 1 is D♯ major box 5: the same notes at the same frets.',
+      'Cm box 1 is E♭ major box 5: the same notes at the same frets.',
     );
   });
 });
