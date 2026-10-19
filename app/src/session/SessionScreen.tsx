@@ -12,6 +12,7 @@ import { getDb } from '../storage';
 import { getTuning } from '../theory';
 import { parseFocus } from './focus';
 import { parseSessionOptions } from './options';
+import { contextPanelShown } from './context/visibility';
 import { refitIfDue } from './refit-bridge';
 import { SessionRunner, type CurrentPrompt } from './runner';
 import type { Celebration } from './summary/celebrations';
@@ -176,8 +177,10 @@ export function SessionScreen() {
   const guideLevel = (current?.guideLevel ?? 3) as GuideLevel;
   // The context panel follows guide fading: less at lower levels, hidden at 0.
   // On compact the drill places it as usual and the screen styles it as a sheet.
-  const showContext = helpOpen && guideLevel > 0;
-  // A drill may bring its own panel contents; the rest get the alphabet.
+  const showContext = contextPanelShown(helpOpen, guideLevel);
+  // A drill may bring its own panel contents (design §7: the key and its
+  // chords, the chord diagram, the CAGED chain, the interval legend); the
+  // rest get the alphabet. Heavy parts load lazily (`context/parts.ts`).
   const Panel = current?.drill.contextPanel;
   const aside = showContext ? (
     <aside className={styles.context} aria-label="Context" data-testid="context-panel">

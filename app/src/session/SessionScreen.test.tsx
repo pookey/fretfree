@@ -151,3 +151,29 @@ describe('<SessionScreen> with nothing to serve', () => {
     expect(await getDb().gamificationEvents.count()).toBe(0);
   });
 });
+
+describe('<SessionScreen> context panel (M3-11)', () => {
+  beforeEach(async () => {
+    await seedOneReview();
+    useAppStore.setState({ loaded: true });
+  });
+
+  it('is hidden at guide level 0, even with help open', async () => {
+    renderSession();
+    await choice('G');
+    expect(screen.getByRole('button', { name: 'Hide help' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.queryByTestId('context-panel')).not.toBeInTheDocument();
+  });
+
+  it('shows from level 1, and the help toggle hides it', async () => {
+    await getDb().skillStates.update('F2.string6-naturals', { guideLevel: 1 });
+    renderSession();
+    await choice('G');
+    expect(screen.getByTestId('context-panel')).toHaveAccessibleName('Context');
+    fireEvent.click(screen.getByRole('button', { name: 'Hide help' }));
+    expect(screen.queryByTestId('context-panel')).not.toBeInTheDocument();
+  });
+});
