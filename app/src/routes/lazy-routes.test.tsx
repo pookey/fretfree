@@ -15,11 +15,13 @@ describe('lazyElement', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('is what the run-once routes render', () => {
+  it('is what the rarely opened routes render', () => {
     const type = (path: string) =>
       (ROUTES.find((r) => r.path === path)?.element as ReactElement | undefined)?.type;
     expect(type('/onboarding')).toBe(Suspense);
     expect(type('/placement')).toBe(Suspense);
+    expect(type('/about')).toBe(Suspense);
+    expect(type('/privacy')).toBe(Suspense);
     expect(type('/')).not.toBe(Suspense);
   });
 });

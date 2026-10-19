@@ -120,7 +120,7 @@ test.describe('M3-18 lazy drill views and run-once routes', () => {
     expect(chunks).toEqual([]);
   });
 
-  test('onboarding, placement and a session work offline after a first load', async ({
+  test('onboarding, placement, About, Privacy and a session work offline after a first load', async ({
     page,
     context,
   }) => {
@@ -147,6 +147,11 @@ test.describe('M3-18 lazy drill views and run-once routes', () => {
     await expect(dialog.getByTestId('placement-probe')).toBeVisible();
     await expect(dialog.getByRole('status')).toHaveCount(0);
     await expect(dialog.getByRole('group').first()).toBeVisible();
+
+    await page.goto('/about');
+    await expect(page.getByRole('heading', { name: 'About FretFree', level: 1 })).toBeVisible();
+    await page.goto('/privacy');
+    await expect(page.getByRole('heading', { name: 'Privacy', level: 1 })).toBeVisible();
 
     await focusSession(page, 'F2.string6-naturals');
     await expect(page.locator('[data-drill="name-the-note"]')).toBeVisible();
