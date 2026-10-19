@@ -1,4 +1,5 @@
 import type { DrillType } from '../types';
+import { CagedChainPanel } from './ContextPanel';
 import { D9View } from './D9View';
 import {
   D9_ID,
@@ -36,6 +37,7 @@ const buildCaged: DrillType<D9Prompt, D9Answer> = {
   feedbackPositions: d9FeedbackPositions,
   conceptOf: d9ConceptOf,
   render: D9View,
+  contextPanel: CagedChainPanel,
 };
 
 export default buildCaged;

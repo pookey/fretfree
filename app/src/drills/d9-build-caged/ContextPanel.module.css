@@ -1,0 +1,47 @@
+/* D9's context panel: the chain's order as one row, then the mini-map once
+   the shape is built. It fits above the neck on an iPad mini in landscape. */
+.panel h2 {
+  margin: 0 0 var(--space-2);
+}
+
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.order {
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  display: flex;
+  gap: var(--space-2);
+  font-weight: 700;
+}
+
+.order li {
+  min-width: 1.75rem;
+  padding: 0.125rem var(--space-1);
+  text-align: center;
+  border: 2px solid transparent;
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+}
+
+/* The asked shape: a border and full-strength text, not only a colour. */
+.order li[aria-current='true'] {
+  border-color: var(--text);
+  color: var(--text);
+  background: var(--surface);
+}
+
+/* Holds the mini-map's height while its chunk loads (its viewBox is 288 × 73). */
+.mapSlot {
+  aspect-ratio: 288 / 73;
+}
+
+.panel .caption {
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}

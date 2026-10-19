@@ -1,0 +1,69 @@
+/* The CAGED mini-map: the neck's marker vocabulary at a glance size. The
+   current shape's band has a heavier border and bold letter, not only a colour. */
+.map {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.string,
+.wire {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.nut {
+  stroke: var(--text-muted);
+  stroke-width: 2.5;
+}
+
+.spot {
+  fill: var(--surface);
+}
+
+.band rect {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.band text {
+  font-size: 9px;
+  font-weight: 600;
+  text-anchor: middle;
+  fill: var(--text-muted);
+}
+
+.band[data-current='true'] rect {
+  fill: var(--surface);
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+.band[data-current='true'] text {
+  font-weight: 800;
+  fill: var(--text);
+}
+
+.root {
+  fill: var(--root);
+}
+
+.third,
+.tone {
+  fill: var(--tone);
+}
+
+.fifth {
+  fill: var(--chord-fifth);
+}
+
+.seventh {
+  fill: var(--chord-seventh);
+}
+
+.ghost {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1;
+}
