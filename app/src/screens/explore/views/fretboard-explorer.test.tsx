@@ -16,6 +16,9 @@ import {
   quizFocus,
 } from './fretboard-explorer';
 
+/** The developer "unlock every skill" switch (M1-36). */
+const DEV_UNLOCK_KEY = 'fretwork.dev.unlockAll';
+
 /** Every registered skill open, as for a learner who has unlocked them all. */
 const ALL_OPEN: ReadonlySet<string> = new Set(SKILLS.map((s) => s.id));
 
@@ -233,6 +236,21 @@ describe('frontierSkillIds', () => {
     // Mastered skills are no longer the frontier.
     expect(frontier.has('C1.octaves')).toBe(false);
   });
+
+  it('lays the developer overlay over the derived statuses, as the runner does', () => {
+    const unlocked = frontierSkillIds(SKILLS, new Map(), { unlockAll: true });
+    expect(FRESH.has('C3.sevenths')).toBe(false);
+    expect(unlocked.has('C3.sevenths')).toBe(true);
+    expect(quizFocus(explorerContent(0, 'chord:7'), 'intervals', unlocked)).toEqual({
+      skillIds: C3_SHOWN_BY_C7,
+    });
+    // Mastered skills stay mastered under the overlay (rule 11).
+    const mastered = new Map<string, SkillStatus>([['C1.octaves', 'mastered']]);
+    expect(frontierSkillIds(SKILLS, mastered, { unlockAll: true }).has('C1.octaves')).toBe(false);
+    // Without the overlay, nothing changes.
+    expect(frontierSkillIds(SKILLS, new Map(), null)).toEqual(FRESH);
+    expect(frontierSkillIds(SKILLS, new Map(), {})).toEqual(FRESH);
+  });
 });
 
 describe('intervalSkillIds', () => {
@@ -249,6 +267,7 @@ describe('intervalSkillIds', () => {
 
 describe('<View>', () => {
   afterEach(async () => {
+    localStorage.removeItem(DEV_UNLOCK_KEY);
     await getDb().skillStates.clear();
   });
 
@@ -355,6 +374,39 @@ describe('<View>', () => {
     );
     fireEvent.click(screen.getByRole('radio', { name: 'Note names' }));
     expect(quiz()).toHaveAttribute('href', focusHref({ skillIds: noteSkillIds(SKILLS) }));
+  });
+
+  function quizC7Intervals() {
+    renderView();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Show' }), {
+      target: { value: 'chord:7' },
+    });
+    fireEvent.click(screen.getByRole('radio', { name: 'Intervals' }));
+  }
+
+  it('quizzes locked skills with the developer switch on', async () => {
+    localStorage.setItem(DEV_UNLOCK_KEY, '1');
+    quizC7Intervals();
+    await waitFor(() =>
+      expect(quiz()).toHaveAttribute('href', focusHref({ skillIds: C3_SHOWN_BY_C7 })),
+    );
+  });
+
+  it('still refuses locked skills with the developer switch off', async () => {
+    // Practising 3rds soft-unlocks 4ths and 5ths; 7ths stay locked.
+    await putSkillState(getDb(), {
+      skillId: 'C3.thirds',
+      status: 'practising',
+      guideLevel: 3,
+      rollingAccuracy: 0,
+    });
+    quizC7Intervals();
+    await waitFor(() =>
+      expect(quiz()).toHaveAttribute(
+        'href',
+        focusHref({ skillIds: ['C3.thirds', 'C3.fourths-fifths'] }),
+      ),
+    );
   });
 
   it('shrinks long labels to fit the 5th triangle', () => {

@@ -14,8 +14,10 @@ import {
   type Skill,
   type SkillStatus,
 } from '../../../engine';
+import { overlayStatus, type StatusOverlay } from '../../../engine/overlay';
 import { focusHref, noteSkillIds, type SessionFocus } from '../../../session/focus';
 import { getDb, getSkillStates } from '../../../storage';
+import { useStatusOverlay } from '../../settings/DeveloperTools';
 import {
   INTERVALS,
   STANDARD_TUNING,
@@ -294,17 +296,20 @@ export function intervalSkillIds(
 /**
  * The skills a session may serve new items from (unlocked or practising), as
  * the runner derives them: in registry order, so prerequisites resolve first.
+ * The overlay (the development build's "unlock every skill") applies after
+ * derivation, as in the runner, so prerequisites resolve on real statuses.
  */
 export function frontierSkillIds(
   skills: readonly Skill[],
   stored: ReadonlyMap<string, SkillStatus>,
+  overlay?: StatusOverlay | null,
 ): Set<string> {
   const statuses = new Map(stored);
   const out = new Set<string>();
   for (const skill of skills) {
     const status = deriveStatus(skill, statuses, stored.get(skill.id));
     statuses.set(skill.id, status);
-    if (isFrontier(status)) out.add(skill.id);
+    if (isFrontier(overlayStatus(status, overlay))) out.add(skill.id);
   }
   return out;
 }
@@ -381,20 +386,27 @@ function Swatch({ style }: { style: MarkerStyle }) {
   );
 }
 
-/** The learner's frontier skills, read once from storage; empty until loaded. */
+// The developer switch (M1-36) exists in development builds only; production drops it.
+const useOverlay: () => StatusOverlay | null = import.meta.env.DEV ? useStatusOverlay : () => null;
+
+/**
+ * The learner's frontier skills, read from storage; empty until loaded. With
+ * the developer switch on, it is the frontier sessions will serve.
+ */
 function useFrontier(): ReadonlySet<string> {
   const [frontier, setFrontier] = useState<ReadonlySet<string>>(() => new Set());
+  const overlay = useOverlay();
   useEffect(() => {
     let live = true;
     void getSkillStates(getDb()).then((states) => {
       if (!live) return;
       const stored = new Map([...states.values()].map((s) => [s.skillId, s.status]));
-      setFrontier(frontierSkillIds(SKILLS, stored));
+      setFrontier(frontierSkillIds(SKILLS, stored, overlay));
     });
     return () => {
       live = false;
     };
-  }, []);
+  }, [overlay]);
   return frontier;
 }
 
