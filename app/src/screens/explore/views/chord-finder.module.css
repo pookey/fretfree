@@ -1,0 +1,148 @@
+/* Chord finder (design §7 Explore). Shares the explorer's controls, summary and legend. */
+.intro {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.part + .part {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+.reading {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.reading strong {
+  font-size: 1.5rem;
+}
+
+.actions,
+.lookup,
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3) var(--space-4);
+}
+
+.actions {
+  margin-bottom: var(--space-3);
+}
+
+.lookup {
+  margin-bottom: var(--space-3);
+}
+
+.primary {
+  min-height: var(--tap);
+  padding: 0 var(--space-5);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: var(--accent-fill);
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary:disabled,
+.actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.primary:focus-visible,
+.cardActions button:focus-visible,
+.actions button:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+
+.symbol input {
+  min-height: var(--tap);
+  width: 10rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.symbol input:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+
+.status {
+  margin: 0 0 var(--space-3);
+}
+
+.note {
+  color: var(--text-muted);
+}
+
+/* Four diagrams across on a regular-wide iPad, two on a phone. */
+.voicings {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--bg-raised);
+}
+
+.where {
+  margin: 0;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cardActions {
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.credit {
+  margin: var(--space-4) 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.credit a {
+  color: inherit;
+}
+
+/* "Added note": the neck's dashed ring, drawn on the page. */
+.legend svg[data-style='ghost'] {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+
+@media (max-width: 40rem) {
+  .voicings {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .card {
+    padding: var(--space-2);
+  }
+}
