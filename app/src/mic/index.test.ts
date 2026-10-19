@@ -553,6 +553,26 @@ describe('createFakePitchSource', () => {
     expect(source.startCalls).toBe(2);
   });
 
+  it('can lose its input while running, ending the sounding note', async () => {
+    const source = createFakePitchSource();
+    const log = record(source);
+    source.loseInput(); // not running: nothing to lose
+    expect(source.state).toBe('idle');
+    await source.start();
+    source.play('A2');
+    source.loseInput();
+    expect(source.state).toBe('error');
+    expect(source.error?.reason).toBe('lost');
+    expect(log.ends.map((e) => e.note.name)).toEqual(['A2']);
+    source.play('A2');
+    expect(log.frames).toHaveLength(15);
+    source.loseInput();
+    await source.start();
+    expect(source.state).toBe('running');
+    source.play('A2');
+    expect(log.notes).toHaveLength(2);
+  });
+
   it('rejects an invalid note name', async () => {
     const source = createFakePitchSource();
     await source.start();

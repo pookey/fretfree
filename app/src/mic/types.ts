@@ -48,7 +48,8 @@ export interface NoteEnd {
  * - `idle`: never started, or stopped.
  * - `starting`: waiting for permission and audio start-up.
  * - `running`: frames are flowing.
- * - `error`: start failed; see `PitchSource.error`. `start()` may be retried.
+ * - `error`: start failed, or a running source lost its input; see
+ *   `PitchSource.error`. `start()` may be retried.
  */
 export type PitchSourceState = 'idle' | 'starting' | 'running' | 'error';
 
@@ -60,7 +61,12 @@ export type PitchSourceErrorReason =
   /** Permission was granted but no input device exists. */
   | 'no-device'
   /** Anything else, e.g. the worklet failed to load. */
-  | 'failed';
+  | 'failed'
+  /**
+   * A running source lost its input: the mic was unplugged, another app (a
+   * call) took it, or the system suspended audio (iOS backgrounding the page).
+   */
+  | 'lost';
 
 export class PitchSourceError extends Error {
   readonly reason: PitchSourceErrorReason;
@@ -110,12 +116,14 @@ export interface PitchSource {
 export interface PitchDriver {
   /**
    * Starts producing frames through `emit`; resolves once running. May reject
-   * with a `PitchSourceError`. `createPitchSource` calls it synchronously from
+   * with a `PitchSourceError`. Once running, it calls `fail` (reason `lost`)
+   * if the input goes away; the source then stops it and enters `error`.
+   * `createPitchSource` calls it synchronously from
    * `PitchSource.start()` (so it runs inside the user gesture) and never calls
    * it again until the previous call has settled and, if it resolved, `stop()`
    * has been called.
    */
-  start(emit: (frame: PitchFrame) => void): Promise<void>;
+  start(emit: (frame: PitchFrame) => void, fail: (error: PitchSourceError) => void): Promise<void>;
   /**
    * Stops producing frames and releases the device. Called only after a
    * `start()` resolved, never while one is pending or after one rejected.

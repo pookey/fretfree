@@ -20,6 +20,8 @@ function deferred<T = void>() {
   return { promise, resolve, reject };
 }
 
+const noop = () => undefined;
+
 function domError(name: string, msg = name): Error {
   const err = new Error(msg);
   err.name = name;
@@ -31,7 +33,7 @@ function fakeBrowser() {
   const log: string[] = [];
   const contexts: FakeContext[] = [];
   const nodes: FakeNode[] = [];
-  const tracks: { stop: ReturnType<typeof vi.fn> }[] = [];
+  const tracks: { stop: ReturnType<typeof vi.fn>; onended: (() => void) | null }[] = [];
   const behaviour = {
     media: null as (() => Promise<MediaStream>) | null,
     addModule: null as (() => Promise<void>) | null,
@@ -43,6 +45,8 @@ function fakeBrowser() {
     readonly destination = { name: 'destination' };
     readonly options: unknown;
     readonly close = vi.fn(() => Promise.resolve());
+    state: AudioContextState | 'interrupted' = 'running';
+    onstatechange: (() => void) | null = null;
     readonly input = { connect: vi.fn(), disconnect: vi.fn() };
     readonly audioWorklet = {
       addModule: vi.fn((url: string) => {
@@ -93,7 +97,7 @@ function fakeBrowser() {
     log.push('getUserMedia');
     void constraints;
     if (behaviour.media) return behaviour.media();
-    const track = { stop: vi.fn() };
+    const track = { stop: vi.fn(), onended: null };
     tracks.push(track);
     return Promise.resolve({ id: `stream${tracks.length}`, getTracks: () => [track] } as never);
   });
@@ -160,7 +164,7 @@ describe('installPitchDetector', () => {
 describe('createWorkletPitchDriver', () => {
   it('builds a mono graph: mic → pitch worklet → destination', async () => {
     const browser = fakeBrowser();
-    await driverFor(browser).start(() => undefined);
+    await driverFor(browser).start(noop, noop);
     const [context] = browser.contexts;
     const [node] = browser.nodes;
     expect(context?.options).toEqual({ latencyHint: 'interactive' });
@@ -173,7 +177,7 @@ describe('createWorkletPitchDriver', () => {
 
   it('defaults to the bundled worklet', async () => {
     const browser = fakeBrowser();
-    await createWorkletPitchDriver({ globals: () => browser.globals }).start(() => undefined);
+    await createWorkletPitchDriver({ globals: () => browser.globals }).start(noop, noop);
     expect(browser.contexts[0]?.audioWorklet.addModule).toHaveBeenCalledWith(
       expect.stringContaining('pitch-processor'),
     );
@@ -183,7 +187,7 @@ describe('createWorkletPitchDriver', () => {
     const browser = fakeBrowser();
     const driver = driverFor(browser);
     const emit = vi.fn();
-    await driver.start(emit);
+    await driver.start(emit, noop);
     const node = browser.nodes[0]!;
     driver.stop();
     expect(browser.tracks[0]?.stop).toHaveBeenCalled();
@@ -196,10 +200,48 @@ describe('createWorkletPitchDriver', () => {
     driver.stop();
     expect(browser.contexts[0]?.close).toHaveBeenCalledTimes(1);
 
-    await driver.start(emit);
+    await driver.start(emit, noop);
     expect(browser.contexts).toHaveLength(2);
     browser.nodes[1]!.post({ frequency: 220, clarity: 0.95, time: 0.5 });
     expect(emit).toHaveBeenCalledWith({ frequency: 220, clarity: 0.95, at: 500 });
+  });
+
+  it.each([
+    ['the track ends', (b: ReturnType<typeof fakeBrowser>) => b.tracks[0]?.onended?.()],
+    [
+      'iOS interrupts the context',
+      (b: ReturnType<typeof fakeBrowser>) => {
+        const context = b.contexts[0]!;
+        context.state = 'interrupted';
+        context.onstatechange?.();
+      },
+    ],
+  ])('reports a lost input when %s, and stops listening once stopped', async (_, lose) => {
+    const browser = fakeBrowser();
+    const driver = driverFor(browser);
+    const fail = vi.fn();
+    await driver.start(noop, fail);
+    browser.contexts[0]!.onstatechange?.(); // still running: nothing lost
+    expect(fail).not.toHaveBeenCalled();
+    lose(browser);
+    expect(fail).toHaveBeenCalledWith(expect.objectContaining({ reason: 'lost' }));
+    driver.stop();
+    expect(browser.tracks[0]?.onended).toBeNull();
+    expect(browser.contexts[0]?.onstatechange).toBeNull();
+  });
+
+  it('turns a lost input into an error state, ready to restart', async () => {
+    const browser = fakeBrowser();
+    const source = createPitchSource(driverFor(browser));
+    await source.start();
+    browser.tracks[0]?.onended?.();
+    expect(source.state).toBe('error');
+    expect(source.error?.reason).toBe('lost');
+    expect(browser.tracks[0]?.stop).toHaveBeenCalled();
+    expect(browser.contexts[0]?.close).toHaveBeenCalled();
+    await source.start();
+    expect(source.state).toBe('running');
+    expect(browser.contexts).toHaveLength(2);
   });
 
   it('does nothing on stop before a start', () => {
@@ -217,7 +259,7 @@ describe('createWorkletPitchDriver', () => {
   ])('maps a getUserMedia %s to %s and closes the context', async (name, reason) => {
     const browser = fakeBrowser();
     browser.behaviour.media = () => Promise.reject(domError(name, `mic ${name}`));
-    await expect(driverFor(browser).start(() => undefined)).rejects.toMatchObject({
+    await expect(driverFor(browser).start(noop, noop)).rejects.toMatchObject({
       name: 'PitchSourceError',
       reason,
       message: `mic ${name}`,
@@ -231,7 +273,7 @@ describe('createWorkletPitchDriver', () => {
     browser.behaviour.media = () => {
       throw domError('SecurityError');
     };
-    await expect(driverFor(browser).start(() => undefined)).rejects.toMatchObject({
+    await expect(driverFor(browser).start(noop, noop)).rejects.toMatchObject({
       reason: 'denied',
     });
   });
@@ -245,13 +287,13 @@ describe('createWorkletPitchDriver', () => {
     const driver = createWorkletPitchDriver({
       globals: () => ({ ...browser.globals, ...missing }),
     });
-    await expect(driver.start(() => undefined)).rejects.toMatchObject({ reason: 'unsupported' });
+    await expect(driver.start(noop, noop)).rejects.toMatchObject({ reason: 'unsupported' });
     expect(browser.getUserMedia).not.toHaveBeenCalled();
     expect(browser.contexts).toHaveLength(0);
   });
 
   it('reports unsupported in a browser without the APIs (jsdom)', async () => {
-    await expect(createWorkletPitchDriver().start(() => undefined)).rejects.toMatchObject({
+    await expect(createWorkletPitchDriver().start(noop, noop)).rejects.toMatchObject({
       reason: 'unsupported',
     });
   });
@@ -259,7 +301,7 @@ describe('createWorkletPitchDriver', () => {
   it('fails, releasing the mic, when the worklet does not load', async () => {
     const browser = fakeBrowser();
     browser.behaviour.addModule = () => Promise.reject(new Error('worklet 404'));
-    await expect(driverFor(browser).start(() => undefined)).rejects.toMatchObject({
+    await expect(driverFor(browser).start(noop, noop)).rejects.toMatchObject({
       reason: 'failed',
       message: 'worklet 404',
     });
@@ -270,7 +312,7 @@ describe('createWorkletPitchDriver', () => {
   it('fails when the context will not resume', async () => {
     const browser = fakeBrowser();
     browser.behaviour.resume = () => Promise.reject('blocked');
-    await expect(driverFor(browser).start(() => undefined)).rejects.toMatchObject({
+    await expect(driverFor(browser).start(noop, noop)).rejects.toMatchObject({
       reason: 'failed',
       message: 'blocked',
     });
@@ -288,7 +330,7 @@ describe('createWorkletPitchDriver', () => {
       workletUrl: '/pitch.js',
       startTimeoutMs: 30,
     });
-    await expect(driver.start(() => undefined)).rejects.toMatchObject({
+    await expect(driver.start(noop, noop)).rejects.toMatchObject({
       reason: 'failed',
       message: msg,
     });
@@ -305,7 +347,7 @@ describe('createWorkletPitchDriver', () => {
       workletUrl: '/pitch.js',
       startTimeoutMs: 10,
     });
-    const started = driver.start(() => undefined);
+    const started = driver.start(noop, noop);
     await new Promise((r) => setTimeout(r, 40));
     media.resolve({ id: 'slow', getTracks: () => [{ stop: vi.fn() }] } as never);
     await expect(started).resolves.toBeUndefined();
@@ -316,7 +358,7 @@ describe('createWorkletPitchDriver', () => {
     browser.behaviour.construct = () => {
       throw new Error('too many contexts');
     };
-    await expect(driverFor(browser).start(() => undefined)).rejects.toMatchObject({
+    await expect(driverFor(browser).start(noop, noop)).rejects.toMatchObject({
       reason: 'failed',
       message: 'too many contexts',
     });
@@ -336,7 +378,7 @@ describe('createWorkletPitchDriver', () => {
         AudioWorkletNode: Throwing as unknown as typeof AudioWorkletNode,
       }),
     });
-    await expect(driver.start(() => undefined)).rejects.toMatchObject({
+    await expect(driver.start(noop, noop)).rejects.toMatchObject({
       reason: 'failed',
       message: 'no such processor',
     });
@@ -350,7 +392,7 @@ describe('createWorkletPitchDriver', () => {
     const source = createPitchSource(driverFor(browser));
     const started = source.start();
     source.stop();
-    const track = { stop: vi.fn() };
+    const track = { stop: vi.fn(), onended: null };
     media.resolve({ id: 'late', getTracks: () => [track] } as never);
     await started;
     expect(source.state).toBe('idle');

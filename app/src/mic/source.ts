@@ -68,9 +68,19 @@ export function createPitchSource(
       frameListeners.forEach((l) => l(frame));
       dispatch(tracker.push(frame));
     };
+    // The input went away while running: release it and report the loss.
+    const fail = (err: PitchSourceError) => {
+      if (gen !== generation || state !== 'running') return;
+      generation += 1;
+      driver.stop();
+      dispatch(tracker.flush());
+      tracker = createNoteTracker(options);
+      error = err;
+      setState('error');
+    };
     let started: Promise<void>;
     try {
-      started = driver.start(emit);
+      started = driver.start(emit, fail);
     } catch (err) {
       started = Promise.reject(err);
     }
@@ -155,6 +165,8 @@ export interface FakePitchSource extends PitchSource {
   readonly startCalls: number;
   /** Makes the next `start()` fail, e.g. with `denied`. */
   failNextStart(reason: PitchSourceErrorReason): void;
+  /** While running, loses the input (an unplugged mic): the source enters `error` with `lost`. */
+  loseInput(): void;
   /** Emits one raw frame at the current time, then advances the clock by one frame. */
   frame(frequency: number, clarity?: number): void;
   /** Sustains a note (MIDI number or name like `A2`) as a run of frames. */
@@ -171,10 +183,11 @@ export function createFakePitchSource(
   let startCalls = 0;
   let failure: PitchSourceErrorReason | null = null;
   let emit: ((frame: PitchFrame) => void) | null = null;
+  let lose: ((error: PitchSourceError) => void) | null = null;
 
   const source = createPitchSource(
     {
-      start(e) {
+      start(e, fail) {
         startCalls += 1;
         if (failure) {
           const reason = failure;
@@ -182,10 +195,12 @@ export function createFakePitchSource(
           return Promise.reject(new PitchSourceError(reason));
         }
         emit = e;
+        lose = fail;
         return Promise.resolve();
       },
       stop() {
         emit = null;
+        lose = null;
       },
     },
     options.tracker,
@@ -209,6 +224,7 @@ export function createFakePitchSource(
         failure = reason;
       },
     },
+    loseInput: { value: () => lose?.(new PitchSourceError('lost', 'The microphone went away')) },
     frame: { value: frame },
     play: {
       value: (note: number | string, opts: FakePlayOptions = {}) => {

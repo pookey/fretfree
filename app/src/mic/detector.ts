@@ -111,7 +111,7 @@ export function createWorkletPitchDriver(options: DetectorOptions = {}): PitchDr
   let graph: Graph | null = null;
 
   return {
-    start(emit: (frame: PitchFrame) => void) {
+    start(emit: (frame: PitchFrame) => void, fail: (error: PitchSourceError) => void) {
       const g = (options.globals ?? browserGlobals)();
       const { mediaDevices, AudioContext: Context, AudioWorkletNode: WorkletNode } = g;
       if (!mediaDevices?.getUserMedia || !Context || !WorkletNode) {
@@ -161,6 +161,18 @@ export function createWorkletPitchDriver(options: DetectorOptions = {}): PitchDr
           // The node outputs silence; connecting it keeps every browser pulling it.
           node.connect(context.destination);
           graph = { context, stream, input, node };
+          // Frames just stop when the input goes away, so watch for it: an
+          // unplugged mic or a call ends the track, and iOS interrupts or
+          // suspends the context when the page goes to the background.
+          const lost = (why: string) => {
+            if (graph?.context === context) fail(new PitchSourceError('lost', why));
+          };
+          for (const track of stream.getTracks()) {
+            track.onended = () => lost('The microphone was disconnected');
+          }
+          context.onstatechange = () => {
+            if (context.state !== 'running') lost(`Audio is ${context.state}`);
+          };
         } catch (err) {
           release(context, stream);
           throw err instanceof PitchSourceError
@@ -173,6 +185,8 @@ export function createWorkletPitchDriver(options: DetectorOptions = {}): PitchDr
       if (!graph) return;
       const { context, stream, input, node } = graph;
       graph = null;
+      context.onstatechange = null;
+      stream.getTracks().forEach((track) => (track.onended = null));
       node.port.onmessage = null;
       input.disconnect();
       node.disconnect();
