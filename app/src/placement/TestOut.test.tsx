@@ -147,9 +147,10 @@ describe('TestOut', () => {
       'Neck basics: known.',
     );
     expect(result).toHaveTextContent(/Gated is open/);
-    expect(
-      within(result).getByRole('link', { name: 'Practise The gated skill now' }),
-    ).toHaveAttribute('href', '/session?skill=T1.gated');
+    expect(within(result).getByRole('link', { name: 'Start a Gated session' })).toHaveAttribute(
+      'href',
+      '/session?skill=T1.gated',
+    );
     expect(onSaved).toHaveBeenCalledTimes(1);
     expect((await getSkillStates(db)).get(STRING6.id)).toMatchObject({ status: 'mastered' });
     // Probes are logged as placement reviews (rule 17).

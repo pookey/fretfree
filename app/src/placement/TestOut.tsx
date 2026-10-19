@@ -98,7 +98,7 @@ export function TestOut({
           )}
           {opened && first && (
             <Link to={practiseHref(first.id)} className={styles.primary}>
-              Practise {first.title} now
+              Start a {module.title} session
             </Link>
           )}
         </>
