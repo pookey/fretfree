@@ -1,0 +1,221 @@
+/* Circle of fifths (design §7 Explore). Shares the explorer's name and segmented control. */
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5) var(--space-6);
+  align-items: flex-start;
+}
+
+/* iPad: the circle beside the key's details; narrower windows stack them. */
+.figure {
+  flex: 2 1 22rem;
+  min-width: 0;
+  max-width: 32rem;
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.circle {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.wedge {
+  cursor: pointer;
+  outline: none;
+}
+
+.shape {
+  fill: var(--bg-raised);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.wedge[data-mode='minor'] .shape {
+  fill: var(--surface);
+}
+
+@media (hover: hover) {
+  .wedge:hover .shape {
+    fill: var(--bg-sunken);
+  }
+}
+
+/* The selected key is the only tab stop; its focus ring sits inside its outline. */
+.wedge:focus-visible .shape {
+  stroke: var(--text);
+  stroke-width: 3;
+  stroke-dasharray: 2 3;
+}
+
+.name,
+.numeral,
+.signature,
+.centreName {
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.name,
+.centreName {
+  fill: var(--text);
+  font-weight: 750;
+}
+
+.numeral {
+  fill: var(--text);
+  font-weight: 800;
+}
+
+.signature {
+  fill: var(--text-muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.outlines path {
+  fill: none;
+  pointer-events: none;
+}
+
+/* The key's chords: a dashed edge. The key itself: a solid, thicker one. */
+.family {
+  stroke: var(--tone);
+  stroke-width: 3;
+  stroke-dasharray: 7 5;
+}
+
+.tonic {
+  stroke: var(--root);
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+
+.centre circle {
+  fill: var(--bg-sunken);
+}
+
+.panel {
+  flex: 1 1 16rem;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+}
+
+.summary {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.signatureLine {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.neighbours {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.jump {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.jump:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+
+.dir {
+  color: var(--text-muted);
+}
+
+.subhead {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.chords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chords li {
+  display: grid;
+  justify-items: center;
+  min-width: 3.5rem;
+  padding: var(--space-1) var(--space-2);
+  border: 2px dashed var(--tone);
+  border-radius: var(--radius-s);
+  font-weight: 700;
+}
+
+/* The tonic chord: solid, like its outline on the circle. */
+.chords li:first-child {
+  border-style: solid;
+  border-color: var(--root);
+}
+
+.chords li[data-off-circle] {
+  border-style: solid;
+  border-color: var(--border);
+}
+
+.chordNumeral {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* Touch-only screens have no arrow keys to mention. */
+@media (hover: none) and (pointer: coarse) {
+  .keysHint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .shape {
+    transition: fill 0.15s;
+  }
+}
