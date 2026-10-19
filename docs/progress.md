@@ -2,6 +2,44 @@
 
 ## Current status
 
+**Third shift, overnight report (2026-10-19, 04:10). 69 work packages live. 10 shipped since the 23:40 report. Production at https://fretfree.app is healthy: smoke passed after every ship.**
+
+Shipped overnight:
+- **User feedback:**
+  - **M2-15:** retake the placement test from Settings. A retake uses the learner's refit FSRS weights and never lowers an existing card (deviation recorded below).
+  - **M2-16:** "Already know this? Test out" on a locked module. Weak existing cards are probed first and must be fluent; "Test out again" retries what's left (deviation recorded below).
+- **From the M2 QA:**
+  - **M2-17:** near-tie due reviews interleave across skills and drills.
+  - **M2-18:** drills can supply their own context panel; D4 shows octave shapes.
+  - **M2-19:** a Progress "Topics" panel; the tile is now "Items in rotation".
+  - **M2-20:** D5/D6 stack as one column on iPad portrait.
+  - **M1-38:** clearer Learn prerequisites (with list semantics for VoiceOver) and summary tiles.
+  - **M1-40:** D1/D2 stack from the top on iPad portrait.
+- **M1-39:** the dev unlock applies in Explore's "Quiz me"; LAN testing documented in the README.
+- **M3-04:** D8 "Find the chord tone in a shape", the first chord-lesson drill. Its tone skills are kept out of onboarding placement to fit the time budget.
+
+In flight: M2-21 (every drill's help panel on `contextPanel`; in the lane), M3-08 (CAGED visualiser), M3-06 (D10).
+
+**New work filed overnight:**
+- **M3-16 (high priority):** lazy-load Explore views. First-load JS is about 245 KB of the 250 KB budget. M3-09 now waits for it.
+- **M3-17:** chord tones in stages (root → 3rd → 5th → 7th), matching the original chord-lesson request.
+- **M2-22:** D5 at its widest scope on iPad mini.
+- **M1-41:** D39's neck clears the feedback bar on iPad mini.
+
+**Parallelism (301 samples, 23:40–04:10):** average 3.6 in flight, peak 5. The ceiling ran 1–4, held down by load from concurrent verifies.
+
+**Incidents:** no stop-the-line events and no usage-limit pauses. Two lane verify failures, neither caused by the WP being shipped:
+- **M2-19:** M2-03's D4 spec waited 5 s for a prompt under load. The spec now opens a session focused on the seeded item and waits for it to start.
+- **M2-16:** an M2-09 assertion expected one probe per *drill*, which random drill choice breaks about once in a thousand runs; it now asserts coverage per *topic*. Also a session-start race in M1-30's spec.
+
+The session-start race (a spec stepping the fake clock before the runner has started) also hit M1-24. It is now fixed once in the shared `focusSession` helper, which waits for "Preparing your session…" to clear.
+
+**Process fixes:**
+- **Branch base:** `spawn.sh` cut new branches from local `main`, which the lane temporarily fast-forwards to a WP's unshipped commits. Two branches inherited M2-16's old commits, including its backlog done-marker. The reviewer caught it, both were rebased, and branches now come from `origin/main`.
+- **Retake and test-out deviations:** recorded below under "Decisions and deviations".
+
+---
+
 **Third shift, second report (2026-10-18, 23:40). 59 work packages live. 10 shipped since the 20:15 report. Production at https://fretfree.app is healthy: smoke passed after every ship.**
 
 Shipped since 20:15:

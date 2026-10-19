@@ -748,7 +748,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ### M3-09 · Explore: chord finder
 - **Status:** todo
-- **Deps:** M1-01, M3-07
+- **Deps:** M1-01, M3-07, M3-16
 - **Owns:** `app/src/screens/explore/views/chord-finder.tsx`, `app/e2e/m3-09.spec.ts`
 - **Acceptance:**
   - Tap notes to name the chord (`Chord.detect`). Type a symbol to see voicings. The chords-db licence (MIT) is checked before adding it.
@@ -804,6 +804,46 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Any voicing that contains the required chord tones, within a playable span (≤4 frets, configurable in `engine/config/<area>.ts`), is accepted. Feedback names each tapped note's degree and flags missing tones.
   - The reverse direction of D36, so the same facts are practised both ways (rule 12).
   - Unit tests for voicing validation, plus an e2e test on the iPad projects.
+
+### M3-16 · Lazy-load the Explore views (first-load budget)
+- **Status:** todo
+- **Deps:** none
+- **Design:** §10 non-functional (first-load JS ≤ 250 KB gzip)
+- **Owns:** `app/src/screens/explore/registry.ts`, `app/src/screens/explore/ExploreScreen.tsx`, `app/src/screens/explore/ExploreScreen.test.tsx`, `app/e2e/m3-16.spec.ts`
+- **Acceptance:**
+  - From the M3-08 review: first-load JS is about 245.5 KB of the 250 KB budget, because `explore/registry.ts` globs every view with `eager: true`. Keep each view's metadata (`title`, `order`) available up front, but load each view's component with `React.lazy`/dynamic import on demand, with an accessible loading state. Explore views must not count towards first-load JS.
+  - `scripts/check-bundle.mjs` shows a measurable drop (record before/after in the report). Explore still works offline after the first load (precache covers the lazy chunks).
+  - E2E (`m3-16.spec.ts`): each Explore view opens and renders, online and offline after a first load.
+
+### M3-17 · Chord tones in stages: root, then 3rd, 5th and 7th
+- **Status:** todo
+- **Deps:** none
+- **Design:** §3.1, §3.4, research/02 rule 7, research/03 C5
+- **Owns:** `app/src/engine/skills/c5-chord-tones.ts`, `app/src/engine/skills/c5-chord-tones.test.ts`, `app/src/engine/config/placement.ts` (`skipSkills` entries only), `app/src/drills/d8-chord-tone/` (only if the item IDs it reads change), `app/e2e/m3-17.spec.ts`
+- **Acceptance:**
+  - User request (chord lessons, 2026-10-18): "find the root first, then the 3rd, 5th and 7th". M3-04's worker proposed it. Split `C5.tones-triads` into stages (root, then 3rd, then 5th) and `C5.tones-sevenths` into its 7th stage, each gated on mastery of the one before (soft unlock as the other C-skills do).
+  - Existing learners keep their D8 cards: map or migrate the old item IDs so no progress is lost (tested).
+  - Add the new skill IDs to `ENGINE_CONFIG.placement.skipSkills` so onboarding placement stays within budget.
+  - Unit tests for gating and migration; e2e: a fresh learner is first served root-finding items, and 3rd items unlock after the root stage is mastered.
+
+### M2-22 · D5 at its widest scope fits above the neck on iPad mini
+- **Status:** todo
+- **Deps:** M2-21
+- **Design:** §7 layout system, research/02 rule 9 (guide fading)
+- **Owns:** `app/src/drills/d5-interval-name/`, `app/e2e/helpers/wide-intervals.ts`, `app/e2e/m2-21.spec.ts`
+- **Acceptance:**
+  - From the M2-21 review. At 12 choices and guide level 3 on iPad mini landscape, the D5 panel is about 362px and the prompt column about 211px, against about 196px of room above a neck that clears the feedback bar. This predates M2-21.
+  - Starting design (worker's option A): at more than 4 choices, single-line legend rows (`M3 major 3rd · 4`, with "half steps" kept for screen readers), a panel of about 32rem, answer buttons in rows of 6, and drop the redundant level-3 "count half steps" tip at that scope while keeping the G–B tip. Check the tip removal against rule 9 and record it in the report. Keep ✓/✗ and the dashed or solid borders (shape as well as colour).
+  - Remove the `test.fixme` from "D5 at its widest scope still fits above the neck on iPad mini" (`app/e2e/m2-21.spec.ts`) and make it pass.
+
+### M1-41 · D39's neck clears the feedback bar on iPad mini
+- **Status:** todo
+- **Deps:** M2-21
+- **Design:** §7 layout system, §8 fretboard
+- **Owns:** `app/src/drills/d39-fret-landmarks/D39View.tsx`, `app/src/drills/d39-fret-landmarks/D39View.module.css`, `app/e2e/m2-21.spec.ts` (the D39 `clearsBar` flag only)
+- **Acceptance:**
+  - From the M2-21 review: D39's 0–12 neck on iPad mini landscape is 468px tall and ends under the pinned feedback bar (about 59px of page scroll).
+  - Size the neck so it clears the bar on every iPad project without scrolling, keeping cells ≥44pt. Flip `clearsBar: true` for D39 in `m2-21.spec.ts` and make it pass.
 
 ### M3-12 · M3 milestone QA
 - **Status:** todo
