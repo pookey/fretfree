@@ -58,10 +58,10 @@ describe('resolveView and viewReady', () => {
 
 describe('lazyParts', () => {
   it('fails, naming the file, for a part the drill’s views.ts lacks', async () => {
-    // D9 has no context panel of its own.
-    const parts = lazyParts<{ render: FC; contextPanel: FC }>('d9-build-caged');
+    // D1 has no context panel of its own.
+    const parts = lazyParts<{ render: FC; contextPanel: FC }>('d1-name-the-note');
     await expect(parts.contextPanel.preload()).rejects.toThrow(
-      'drills/d9-build-caged/views.ts exports no contextPanel',
+      'drills/d1-name-the-note/views.ts exports no contextPanel',
     );
   });
 

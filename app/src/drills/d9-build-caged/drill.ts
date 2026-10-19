@@ -40,6 +40,7 @@ const buildCaged: DrillType<D9Prompt, D9Answer> = {
   feedbackPositions: d9FeedbackPositions,
   conceptOf: d9ConceptOf,
   render: parts.render,
+  contextPanel: parts.contextPanel,
 };
 
 export default buildCaged;

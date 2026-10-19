@@ -192,7 +192,7 @@ export function SessionScreen() {
   const showContext = contextPanelShown(helpOpen, guideLevel);
   // A drill may bring its own panel contents (design §7: the key and its
   // chords, the chord diagram, the CAGED chain, the interval legend); the
-  // rest get the alphabet. Heavy parts load lazily (`context/parts.ts`).
+  // rest get the alphabet. Panels load with their drill's view (`drills/views.ts`).
   const Panel = current?.drill.contextPanel;
   const aside = showContext ? (
     <aside className={styles.context} aria-label="Context" data-testid="context-panel">
