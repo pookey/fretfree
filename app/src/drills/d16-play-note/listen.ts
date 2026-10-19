@@ -1,5 +1,5 @@
 import { ENGINE_CONFIG } from '../../engine/config';
-import type { NoteEnd, StableNote } from '../../mic';
+import type { NoteEnd, StableNote } from '../../mic/types';
 
 /**
  * Which heard notes may answer the prompt on screen (M5-01 and M5-02

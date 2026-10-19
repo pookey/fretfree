@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
-import {
-  getPitchSource,
-  type PitchSource,
-  type PitchSourceError,
-  type PitchSourceErrorReason,
-  type PitchSourceState,
-} from '../../mic';
+import { getPitchSource } from '../../mic/source';
+import type {
+  PitchSource,
+  PitchSourceError,
+  PitchSourceErrorReason,
+  PitchSourceState,
+} from '../../mic/types';
 import { midiToFretNote, noteAt, type FretRange, type Position } from '../../theory';
 import type { DrillFeedback, DrillRenderProps } from '../types';
 import { createD16Listener } from './listen';

@@ -1,6 +1,7 @@
 import { ENGINE_CONFIG } from '../../engine/config';
 import { parseFindItemId, parseOctaveItemId, type GuideLevel, type Item } from '../../engine/model';
-import { pitchMatches, type PitchMatchMode } from '../../mic';
+import { pitchMatches } from '../../mic/tracker';
+import type { PitchMatchMode } from '../../mic/types';
 import {
   allStrings,
   chromaOf,
