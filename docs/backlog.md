@@ -706,7 +706,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Skills run triads → 7ths → sus/add. Prerequisites: C3 and C4. The "7 vs maj7" misconception gets confusable pairing.
 
 ### M3-04 · D8 "Find the chord tone in a shape"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-03, M3-05
 - **Owns:** `app/src/drills/d8-chord-tone/**`, `app/e2e/m3-04.spec.ts`
 - **Acceptance:**
