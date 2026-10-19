@@ -1,0 +1,142 @@
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+  justify-content: space-between;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.prompt {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.prompt strong {
+  color: var(--tone);
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  max-width: 48rem;
+}
+
+.choice {
+  min-width: 4rem;
+  min-height: 3.5rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  font-size: 1.375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    transform 0.08s;
+}
+
+.choice:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .choice:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.choice:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.choice[data-state='correct'] {
+  background: var(--correct);
+  border-color: var(--correct);
+  color: #fff;
+  opacity: 1;
+}
+
+.choice[data-state='wrong'] {
+  background: var(--wrong);
+  border-color: var(--wrong);
+  color: #fff;
+  opacity: 1;
+}
+
+.choice[data-state='expected'] {
+  border-color: var(--correct);
+  border-style: dashed;
+  opacity: 1;
+}
+
+.neckArea {
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+/* iPad portrait: one column from the top (prompt, answers, neck, then help),
+   not the neck centred in a tall empty band with help pinned below. */
+.drill[data-size-class='regular'] {
+  justify-content: flex-start;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .choice {
+  min-width: 2.9rem;
+  min-height: 2.9rem;
+  font-size: 1.125rem;
+}
+
+/* Best-effort iPhone: keep the neck within short landscape viewports. Answers
+   are buttons here, so the neck may letterbox below the 44pt cell size. */
+.drill[data-size-class='compact'] .neckArea svg {
+  max-height: calc(100dvh - 12rem);
+}
+
+.hint {
+  margin: 0;
+  min-height: 1.5em;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* A phone on its side has no room for the hint above the letterboxed neck;
+   the session's feedback bar still says what was right. */
+@media (max-height: 499px) {
+  .drill[data-size-class='compact'] .hint {
+    display: none;
+  }
+}
