@@ -6,6 +6,12 @@ import {
   chordFormula,
   isChordKind,
   isIntervalName,
+  keyLabel,
+  nashvilleNumber,
+  parseKey,
+  parseNashville,
+  parseRoman,
+  romanNumeral,
   type CagedQuality,
   type CagedShapeName,
   type ChordDegree,
@@ -164,7 +170,8 @@ export type ItemRef =
   | { kind: 'chord-tone' | 'chord-tone-name'; degree: ChordDegree; chord: ChordKind }
   | { kind: 'chord-name'; shape: CagedShapeName; chord: ChordKind }
   | { kind: 'build-chord'; chord: ChordKind; string: number }
-  | { kind: CapoItemKind; shape: string };
+  | { kind: CapoItemKind; shape: string }
+  | { kind: NumeralItemKind; numeral: string; key: string };
 
 const INT = '(0|[1-9]\\d*)';
 const OFFSET = '([+-][1-9]\\d*)';
@@ -187,6 +194,7 @@ const CHORD_TONE_ITEM = /^(chord-tone|chord-tone-name):(b{0,2}\d|#\d)@([A-Za-z0-
 const CHORD_NAME_ITEM = /^chord-name:([CAGED])-shape@([A-Za-z0-9]+)$/;
 const BUILD_CHORD_ITEM = new RegExp(`^build-chord:([A-Za-z0-9]+)@s${INT}$`);
 const CAPO_ITEM = new RegExp(`^(capo-sound|capo-shape|capo-fret):${PC}(m?)$`);
+const NUMERAL_ITEM = /^(numeral|numeral-of|nashville):([^@\s]+)@key=([A-G][#b]?m?)$/;
 
 function count(n: number, what: string): number {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Invalid ${what}: ${n}`);
@@ -498,6 +506,50 @@ export function parseCapoItemId(id: string): { kind: CapoItemKind; shape: string
   return { kind: m[1] as CapoItemKind, shape: `${m[2] as string}${m[3] as string}` };
 }
 
+/**
+ * Numeral items (C8, design §3.1): `numeral:vi@key=D` names the chord a
+ * numeral is in a key (vi in D → Bm), `numeral-of:vi@key=D` the reverse
+ * (Bm in D → vi), and `nashville:6m@key=D` reads a Nashville number as a
+ * chord. The numeral is written as `theory/harmony` writes it (`vii°`,
+ * `bVII`, `6m`) and the key as its label (`D`, `Bb`, `Am`).
+ */
+export type NumeralItemKind = 'numeral' | 'numeral-of' | 'nashville';
+
+function canonicalNumeral(kind: NumeralItemKind, numeral: string): boolean {
+  if (kind === 'nashville') {
+    const n = parseNashville(numeral);
+    return n !== null && nashvilleNumber(n) === numeral;
+  }
+  const n = parseRoman(numeral);
+  return n !== null && romanNumeral(n) === numeral;
+}
+
+function canonicalKey(key: string): boolean {
+  try {
+    return keyLabel(parseKey(key)) === key;
+  } catch {
+    return false;
+  }
+}
+
+export function numeralItemId(kind: NumeralItemKind, numeral: string, key: string): string {
+  if (!canonicalNumeral(kind, numeral)) throw new RangeError(`Invalid ${kind}: ${numeral}`);
+  if (!canonicalKey(key)) throw new RangeError(`Invalid key: ${key}`);
+  return `${kind}:${numeral}@key=${key}`;
+}
+
+export function parseNumeralItemId(
+  id: string,
+): { kind: NumeralItemKind; numeral: string; key: string } | null {
+  const m = NUMERAL_ITEM.exec(id);
+  if (!m) return null;
+  const kind = m[1] as NumeralItemKind;
+  const numeral = m[2] as string;
+  const key = m[3] as string;
+  if (!canonicalNumeral(kind, numeral) || !canonicalKey(key)) return null;
+  return { kind, numeral, key };
+}
+
 export function itemId(ref: ItemRef): string {
   switch (ref.kind) {
     case 'note':
@@ -542,6 +594,10 @@ export function itemId(ref: ItemRef): string {
     case 'capo-shape':
     case 'capo-fret':
       return capoItemId(ref.kind, ref.shape);
+    case 'numeral':
+    case 'numeral-of':
+    case 'nashville':
+      return numeralItemId(ref.kind, ref.numeral, ref.key);
   }
 }
 
@@ -580,5 +636,7 @@ export function parseItemId(id: string): ItemRef | null {
   if (buildChord) return { kind: 'build-chord', ...buildChord };
   const capo = parseCapoItemId(id);
   if (capo) return capo;
+  const numeral = parseNumeralItemId(id);
+  if (numeral) return numeral;
   return null;
 }

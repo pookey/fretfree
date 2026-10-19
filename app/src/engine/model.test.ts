@@ -10,7 +10,9 @@ import {
   octavesItemId,
   parseFindItemId,
   degreeItemId,
+  numeralItemId,
   parseDegreeItemId,
+  parseNumeralItemId,
   parseIntervalItemId,
   parseSpellChordItemId,
   parseSpellKeyItemId,
@@ -145,5 +147,49 @@ describe('item IDs', () => {
     expect(() => spellChordItemId('m9' as 'm7', 'B')).toThrow(RangeError);
     expect(() => degreeItemId('degree', 8, 'C')).toThrow(RangeError);
     expect(() => degreeItemId('degree', 2.5, 'C')).toThrow(RangeError);
+  });
+});
+
+describe('numeral item IDs', () => {
+  it('formats and parses numerals, numerals-of and Nashville numbers in a key', () => {
+    expect(numeralItemId('numeral', 'vi', 'D')).toBe('numeral:vi@key=D');
+    expect(numeralItemId('numeral-of', 'vii°', 'Bb')).toBe('numeral-of:vii°@key=Bb');
+    expect(numeralItemId('nashville', '6m', 'F#')).toBe('nashville:6m@key=F#');
+    expect(numeralItemId('numeral', 'bVII', 'Am')).toBe('numeral:bVII@key=Am');
+    expect(parseNumeralItemId('nashville:7°@key=Eb')).toEqual({
+      kind: 'nashville',
+      numeral: '7°',
+      key: 'Eb',
+    });
+  });
+
+  it.each([
+    { kind: 'numeral', numeral: 'IV', key: 'C' },
+    { kind: 'numeral-of', numeral: 'ii°', key: 'Em' },
+    { kind: 'nashville', numeral: 'b7', key: 'Dm' },
+  ] as ItemRef[])('round-trips $kind refs', (ref) => {
+    const id = itemId(ref);
+    expect(parseItemId(id)).toEqual(ref);
+  });
+
+  it.each([
+    'numeral:viio@key=C',
+    'numeral:6m@key=C',
+    'numeral:vi@key=c',
+    'numeral:vi@key=Dmin',
+    'numeral:vi@D',
+    'numeral-of:I+X@key=C',
+    'nashville:vi@key=C',
+    'nashville:6-@key=C',
+    'nashville:6m@key=H',
+  ])('rejects non-canonical %j', (id) => {
+    expect(parseItemId(id)).toBeNull();
+  });
+
+  it('refuses to build IDs that would not parse', () => {
+    expect(() => numeralItemId('numeral', 'viio', 'C')).toThrow(RangeError);
+    expect(() => numeralItemId('nashville', 'vi', 'C')).toThrow(RangeError);
+    expect(() => numeralItemId('numeral', 'vi', 'D major')).toThrow(RangeError);
+    expect(() => numeralItemId('numeral', 'vi', 'Q')).toThrow(RangeError);
   });
 });
