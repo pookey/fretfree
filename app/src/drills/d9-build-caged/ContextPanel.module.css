@@ -35,9 +35,9 @@
   background: var(--surface);
 }
 
-/* Holds the mini-map's height while its chunk loads (its viewBox is 288 × 73). */
+/* Holds the mini-map's height while its chunk loads (its viewBox is 288 × 79). */
 .mapSlot {
-  aspect-ratio: 288 / 73;
+  aspect-ratio: 288 / 79;
 }
 
 .panel .caption {

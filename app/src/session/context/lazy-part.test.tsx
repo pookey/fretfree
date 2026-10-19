@@ -33,4 +33,21 @@ describe('lazyPart', () => {
     expect(screen.queryByText(/Hello/)).not.toBeInTheDocument();
     error.mockRestore();
   });
+
+  it('tries again when the panel next mounts it, once the network is back', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const load = vi
+      .fn<() => Promise<typeof Greeting>>()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue(Greeting);
+    const Part = lazyPart(load);
+    const first = render(<Part name="Ana" fallback={<p>Loading</p>} />);
+    await vi.waitFor(() => expect(screen.queryByText('Loading')).not.toBeInTheDocument());
+    expect(screen.queryByText(/Hello/)).not.toBeInTheDocument();
+    first.unmount();
+    render(<Part name="Ana" />);
+    expect(await screen.findByText('Hello Ana')).toBeInTheDocument();
+    expect(load).toHaveBeenCalledTimes(2);
+    error.mockRestore();
+  });
 });

@@ -20,7 +20,7 @@ export const MAP_CELL = 18;
 /** Gap between strings. */
 export const MAP_STRING_GAP = 7;
 /** Height of one row of shape bands. Neighbours share edge frets, so bands use two rows. */
-export const MAP_BAND_H = 13;
+export const MAP_BAND_H = 16;
 export const MAP_PAD = 4;
 
 export interface MapBand {

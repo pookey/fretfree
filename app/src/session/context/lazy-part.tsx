@@ -15,10 +15,16 @@ export interface LazyPartProps {
 export function lazyPart<P extends object>(
   load: () => Promise<ComponentType<P>>,
 ): FC<P & LazyPartProps> {
-  const Lazy = lazy(() => load().then((c) => ({ default: c })));
+  const make = () => lazy(() => load().then((c) => ({ default: c })));
+  // React.lazy keeps a failed import for good, so a failure swaps in a fresh
+  // one: the part tries again the next time the panel mounts it.
+  let Lazy = make();
+  const retry = () => {
+    Lazy = make();
+  };
   function Part({ fallback = null, ...props }: P & LazyPartProps) {
     return (
-      <PartBoundary>
+      <PartBoundary onFail={retry}>
         <Suspense fallback={fallback}>
           <Lazy {...(props as unknown as P)} />
         </Suspense>
@@ -32,11 +38,18 @@ export function lazyPart<P extends object>(
  * A part whose chunk failed to download (offline before the service worker
  * cached it) drops out. The panel is help, so the drill carries on without it.
  */
-class PartBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+class PartBoundary extends Component<
+  { onFail: () => void; children: ReactNode },
+  { failed: boolean }
+> {
   override state = { failed: false };
 
   static getDerivedStateFromError() {
     return { failed: true };
+  }
+
+  override componentDidCatch() {
+    this.props.onFail();
   }
 
   override render() {

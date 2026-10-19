@@ -28,7 +28,7 @@
 }
 
 .band text {
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
   text-anchor: middle;
   fill: var(--text-muted);

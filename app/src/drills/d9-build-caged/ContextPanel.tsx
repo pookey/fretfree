@@ -2,7 +2,7 @@ import type { GuideLevel } from '../../engine/model';
 import { LazyCagedChainMap } from '../../session/context/parts';
 import { CAGED_ORDER, STANDARD_TUNING } from '../../theory';
 import type { DrillContextPanelProps } from '../types';
-import { d9Display, type D9Answer, type D9Prompt } from './logic';
+import type { D9Answer, D9Prompt } from './logic';
 import styles from './ContextPanel.module.css';
 
 /**
@@ -49,10 +49,10 @@ export function CagedChainPanel({
             handedness={handedness}
             fallback={<div className={styles.mapSlot} />}
           />
-          <p className={styles.caption}>
-            The five shapes of {d9Display(prompt.chord)} up the neck
-            {tuning.id !== STANDARD_TUNING.id && ', in standard tuning'}.
-          </p>
+          {/* The map's accessible name lists the chain; the caption only flags the tuning. */}
+          {tuning.id !== STANDARD_TUNING.id && (
+            <p className={styles.caption}>Shown in standard tuning.</p>
+          )}
         </>
       ) : (
         level >= 3 && (

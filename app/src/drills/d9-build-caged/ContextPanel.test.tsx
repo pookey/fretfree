@@ -63,7 +63,8 @@ describe('<CagedChainPanel>', () => {
     expect(await screen.findByTestId('caged-chain-map')).toHaveAccessibleName(
       new RegExp(`^CAGED chain of ${p.chord}: .* The A shape is marked\\.$`),
     );
-    expect(screen.getByText(`The five shapes of ${p.chord} up the neck.`)).toBeInTheDocument();
+    // In standard tuning there is nothing to add under the map.
+    expect(screen.queryByText(/standard tuning/)).toBeNull();
   });
 
   it('keeps the mini-map back at level 1 even once answered (rule 9)', async () => {
@@ -82,7 +83,7 @@ describe('<CagedChainPanel>', () => {
   it('says the mini-map is in standard tuning when the neck is not', async () => {
     panel(prompt(), 3, { answered: true, tuning: DROP_D_TUNING });
     await screen.findByTestId('caged-chain-map');
-    expect(screen.getByText(/up the neck, in standard tuning\./)).toBeInTheDocument();
+    expect(screen.getByText('Shown in standard tuning.')).toBeInTheDocument();
   });
 
   it('marks the shape at the octave the prompt placed it, not the chain’s lowest', async () => {
