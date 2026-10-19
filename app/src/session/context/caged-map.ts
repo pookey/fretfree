@@ -1,5 +1,12 @@
 import type { Handedness } from '../../engine/model';
-import type { CagedShapeName, FretRange } from '../../theory';
+import type { CagedContent, ChainLink } from '../../screens/explore/views/caged';
+import {
+  cagedShape,
+  shapeSpan,
+  triadCore,
+  type CagedShapeName,
+  type FretRange,
+} from '../../theory';
 
 /**
  * Pure layout for the session's CAGED chain mini-map (design §7 session
@@ -93,4 +100,32 @@ export function cagedMapLayout(opts: {
 /** "frets 3–5", "fret 0". */
 export function fretsText(span: FretRange): string {
   return span.from === span.to ? `fret ${span.from}` : `frets ${span.from}–${span.to}`;
+}
+
+/**
+ * The chain with the current shape moved to the octave the learner met it in.
+ * `cagedContent` places each shape once, lowest on the neck, but a drill may
+ * place it 12 frets up (D9's E shape of E at frets 12–14). `rootFret` is the
+ * fret of the shape's root on its root string, as on the neck; in another
+ * tuning it may sit a fret or two off the standard-tuning chain, so the
+ * nearest octave is taken. The chain stays sorted lowest first.
+ */
+export function placeCurrent(
+  content: CagedContent,
+  current: CagedShapeName,
+  rootFret: number | undefined,
+): CagedContent {
+  const link = content.chain.find((l) => l.shape.shape === current);
+  if (!link || rootFret === undefined) return content;
+  const octaves = Math.round((rootFret - link.shape.rootFret) / 12);
+  if (octaves === 0) return content;
+  const shape = cagedShape(current, link.shape.root, {
+    quality: link.shape.quality,
+    minFret: link.span.from + 12 * octaves,
+  });
+  const moved: ChainLink = { shape, core: triadCore(shape), span: shapeSpan(shape) };
+  const chain = content.chain
+    .map((l) => (l === link ? moved : l))
+    .sort((a, b) => a.span.from - b.span.from);
+  return { ...content, chain };
 }

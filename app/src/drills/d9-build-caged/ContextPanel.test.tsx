@@ -84,4 +84,35 @@ describe('<CagedChainPanel>', () => {
     await screen.findByTestId('caged-chain-map');
     expect(screen.getByText(/up the neck, in standard tuning\./)).toBeInTheDocument();
   });
+
+  it('marks the shape at the octave the prompt placed it, not the chain’s lowest', async () => {
+    // Every root and placement the rng can pick, so the upper octaves turn up.
+    const values = [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 0.99];
+    const prompts = [
+      'caged:E-shape@major',
+      'caged:C-shape@major',
+      'caged-core:E-shape@minor',
+    ].flatMap((id) =>
+      values.flatMap((a) =>
+        values.map((b) => {
+          const seq = [a, b];
+          let i = 0;
+          return prompt(id, () => seq[i++ % 2]!);
+        }),
+      ),
+    );
+    const upper = prompts.filter((p) => p.anchor.fret >= 12);
+    expect(upper.length).toBeGreaterThan(0);
+    for (const p of [upper[0]!, upper.at(-1)!, prompts[0]!]) {
+      const { unmount } = panel(p, 3, { answered: true });
+      const map = await screen.findByTestId('caged-chain-map');
+      const frets = p.shapeNotes.map((n) => n.fret);
+      const from = Math.min(...frets);
+      const to = Math.max(...frets);
+      expect(map).toHaveAccessibleName(
+        new RegExp(`${p.shape} shape frets ${from}–${to}[,.].* The ${p.shape} shape is marked\\.$`),
+      );
+      unmount();
+    }
+  });
 });

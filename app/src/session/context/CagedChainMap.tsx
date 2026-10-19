@@ -8,7 +8,7 @@ import {
   type CagedQuality,
   type CagedShapeName,
 } from '../../theory';
-import { MAP_BAND_H, cagedMapLayout, fretsText } from './caged-map';
+import { MAP_BAND_H, cagedMapLayout, fretsText, placeCurrent } from './caged-map';
 import styles from './CagedChainMap.module.css';
 
 export interface CagedChainMapProps {
@@ -17,6 +17,11 @@ export interface CagedChainMapProps {
   quality: CagedQuality;
   /** The shape on the neck: its band is marked. */
   current: CagedShapeName;
+  /**
+   * The fret of the current shape's root on its root string, as on the neck.
+   * The map draws that shape there, at whichever octave the drill placed it.
+   */
+  currentRootFret?: number;
   accidentalPref?: AccidentalPref;
   handedness?: Handedness;
 }
@@ -66,12 +71,14 @@ export function CagedChainMap({
   root,
   quality,
   current,
+  currentRootFret,
   accidentalPref = 'sharp',
   handedness = 'right',
 }: CagedChainMapProps) {
   const content = useMemo(
-    () => cagedContent(chromaOf(root), quality, accidentalPref),
-    [root, quality, accidentalPref],
+    () =>
+      placeCurrent(cagedContent(chromaOf(root), quality, accidentalPref), current, currentRootFret),
+    [root, quality, accidentalPref, current, currentRootFret],
   );
   const range = chainRange(content);
   const markers = useMemo(() => chainMarkers(content, null, 'degrees'), [content]);

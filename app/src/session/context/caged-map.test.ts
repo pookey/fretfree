@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { cagedContent } from '../../screens/explore/views/caged';
 import {
   MAP_BAND_H,
   MAP_CELL,
@@ -6,6 +7,7 @@ import {
   MAP_STRING_GAP,
   cagedMapLayout,
   fretsText,
+  placeCurrent,
 } from './caged-map';
 
 // The C major chain, as the Explore visualiser builds it (lowest first).
@@ -73,5 +75,38 @@ describe('fretsText', () => {
   it('names one fret or a span', () => {
     expect(fretsText({ from: 3, to: 3 })).toBe('fret 3');
     expect(fretsText({ from: 3, to: 5 })).toBe('frets 3–5');
+  });
+});
+
+describe('placeCurrent', () => {
+  const E = cagedContent(4, 'major');
+  const spans = (c: typeof E) => c.chain.map((l) => [l.shape.shape, l.span.from, l.span.to]);
+
+  it('keeps the chain when the shape is where the chain puts it, or unknown', () => {
+    expect(placeCurrent(E, 'E', 0)).toBe(E);
+    expect(placeCurrent(E, 'E', undefined)).toBe(E);
+  });
+
+  it('moves the current shape up an octave, notes and core too, keeping the chain sorted', () => {
+    const before = E.chain.find((l) => l.shape.shape === 'E')!;
+    const moved = placeCurrent(E, 'E', 12);
+    const link = moved.chain.find((l) => l.shape.shape === 'E')!;
+    expect(link.span).toEqual({ from: before.span.from + 12, to: before.span.to + 12 });
+    expect(link.shape.rootFret).toBe(12);
+    expect(link.shape.notes.map((n) => n.fret)).toEqual(before.shape.notes.map((n) => n.fret + 12));
+    expect(link.core.notes.map((n) => n.fret)).toEqual(before.core.notes.map((n) => n.fret + 12));
+    const froms = moved.chain.map((l) => l.span.from);
+    expect(froms).toEqual([...froms].sort((a, b) => a - b));
+    expect(moved.chain.at(-1)!.shape.shape).toBe('E');
+    // The other shapes stay put.
+    expect(spans(moved).filter(([s]) => s !== 'E')).toEqual(spans(E).filter(([s]) => s !== 'E'));
+  });
+
+  it('takes the nearest octave when another tuning moves the root a fret or two', () => {
+    // Drop D: the E shape's root on string 6 sits two frets higher.
+    expect(placeCurrent(E, 'E', 14).chain.find((l) => l.shape.shape === 'E')!.shape.rootFret).toBe(
+      12,
+    );
+    expect(placeCurrent(E, 'E', 2)).toBe(E);
   });
 });

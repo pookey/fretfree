@@ -44,6 +44,7 @@ export function CagedChainPanel({
             root={prompt.root}
             quality={prompt.quality}
             current={prompt.shape}
+            currentRootFret={prompt.anchor.fret}
             accidentalPref={prompt.accidentalPref}
             handedness={handedness}
             fallback={<div className={styles.mapSlot} />}
