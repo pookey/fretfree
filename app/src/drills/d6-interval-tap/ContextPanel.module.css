@@ -1,0 +1,11 @@
+/* D6's context panel: the interval's size and the G–B rule. The session's
+   panel supplies the box and the heading colour. */
+.panel h2 {
+  margin-bottom: var(--space-2);
+}
+
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}

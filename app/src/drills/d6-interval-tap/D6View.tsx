@@ -10,7 +10,6 @@ import {
   d6IntervalName,
   d6IsLive,
   d6Question,
-  d6Semitones,
   d6WorkedExample,
   type D6Answer,
   type D6Prompt,
@@ -78,23 +77,6 @@ export function D6View({
   const level: GuideLevel = guided ? 3 : guideLevel;
   const question = d6Question(prompt);
 
-  // The session hands over its context panel only when it should be shown
-  // (help on, guide level > 0, not compact); D6 fills it with the interval.
-  const context = aside ? (
-    <aside className={styles.context} aria-label="Context" data-testid="context-panel">
-      <h2>{name.charAt(0).toUpperCase() + name.slice(1)}</h2>
-      <p>
-        {d6Semitones(prompt)} half steps: {d6Semitones(prompt)} frets along one string.
-      </p>
-      {level >= 2 && (
-        <p>
-          Shapes that cross the <strong>G and B</strong> strings move up 1 fret: that pair is a
-          major 3rd apart, where every other pair is a 4th.
-        </p>
-      )}
-    </aside>
-  ) : null;
-
   return (
     <div
       className={styles.drill}
@@ -120,7 +102,7 @@ export function D6View({
             {feedback ? d6Explain(prompt, feedback) : !guided && d6Hint(prompt)}
           </p>
         </div>
-        {sizeClass === 'regular-wide' && context}
+        {sizeClass === 'regular-wide' && aside}
       </div>
       <div
         className={styles.neckArea}
@@ -143,7 +125,7 @@ export function D6View({
         />
       </div>
       {/* iPad portrait: the context panel sits below the neck. */}
-      {sizeClass === 'regular' && context}
+      {sizeClass === 'regular' && aside}
     </div>
   );
 }

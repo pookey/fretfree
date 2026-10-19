@@ -1,4 +1,5 @@
 import type { DrillType } from '../types';
+import { IntervalTapContextPanel } from './ContextPanel';
 import { D6View } from './D6View';
 import {
   D6_ID,
@@ -28,6 +29,7 @@ const intervalTap: DrillType<D6Prompt, D6Answer> = {
   feedbackPositions: d6FeedbackPositions,
   conceptOf: d6ConceptOf,
   render: D6View,
+  contextPanel: IntervalTapContextPanel,
 };
 
 export default intervalTap;

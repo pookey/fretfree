@@ -37,7 +37,7 @@ function view(
       tuning={STANDARD_TUNING}
       feedback={over.feedback ?? null}
       onAnswer={onAnswer}
-      aside={over.aside ? <aside /> : undefined}
+      aside={over.aside ? <aside data-testid="context-panel" /> : undefined}
     />,
   );
   return { ...utils, onAnswer };
@@ -184,16 +184,13 @@ describe('<D6View>', () => {
     expect(range()).toEqual(['3', '7']);
   });
 
-  it('fills the context panel with the interval, fading with the guide level', () => {
-    const { unmount } = view(prompt('interval:m7@s6→s4'), { aside: true, guideLevel: 2 });
+  it('places the panel beside the prompt on iPad landscape, and not at all on compact', () => {
+    const { unmount } = view(prompt('interval:M3@s6→s5'), { aside: true });
     const panel = screen.getByTestId('context-panel');
-    expect(within(panel).getByRole('heading')).toHaveTextContent('Minor 7th');
-    expect(panel).toHaveTextContent('10 half steps: 10 frets along one string.');
-    expect(panel).toHaveTextContent('G and B');
+    expect(neck().compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     unmount();
-
-    view(prompt('interval:m7@s6→s4'), { aside: true, guideLevel: 1 });
-    expect(screen.getByTestId('context-panel')).not.toHaveTextContent('G and B');
+    view(prompt('interval:M3@s6→s5'), { aside: true, sizeClass: 'compact' });
+    expect(screen.queryByTestId('context-panel')).toBeNull();
   });
 
   it('places the panel below the neck in portrait and omits it without an aside', () => {

@@ -62,27 +62,6 @@
   cursor: default;
 }
 
-/* The context panel: the interval's size and the G–B rule, fading with guides. */
-.context {
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-l);
-  padding: var(--space-4);
-  align-self: start;
-}
-
-.context h2 {
-  margin: 0 0 var(--space-2);
-  font-size: 1rem;
-  color: var(--text-muted);
-}
-
-.context p {
-  margin: var(--space-2) 0 0;
-  font-size: 0.875rem;
-  line-height: 1.4;
-}
-
 /* iPad portrait (M2-20): one column from the top (prompt, answers, neck, then
    help), not the neck centred in a tall empty band with help pinned below. */
 .drill[data-size-class='regular'] {
@@ -90,7 +69,7 @@
 }
 
 /* Help spans the neck's width below it, so its rows spread out, not down. */
-.drill[data-size-class='regular'] > .context {
+.drill[data-size-class='regular'] > aside {
   align-self: stretch;
 }
 
