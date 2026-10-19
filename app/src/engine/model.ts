@@ -3,10 +3,12 @@ import type { FittedFsrsParams } from './refit';
 import {
   CAGED_ORDER,
   CAGED_QUALITIES,
+  chordFormula,
   isChordKind,
   isIntervalName,
   type CagedQuality,
   type CagedShapeName,
+  type ChordDegree,
   type ChordKind,
   type IntervalName,
   type Position,
@@ -158,7 +160,8 @@ export type ItemRef =
   | { kind: 'spell-key'; tonic: string }
   | { kind: 'spell-chord'; chord: ChordKind; root: string }
   | { kind: 'degree' | 'degree-of'; degree: number; tonic: string }
-  | { kind: 'caged' | 'caged-core'; shape: CagedShapeName; quality: CagedQuality };
+  | { kind: 'caged' | 'caged-core'; shape: CagedShapeName; quality: CagedQuality }
+  | { kind: 'chord-tone' | 'chord-tone-name'; degree: ChordDegree; chord: ChordKind };
 
 const INT = '(0|[1-9]\\d*)';
 const OFFSET = '([+-][1-9]\\d*)';
@@ -177,6 +180,7 @@ const SPELL_KEY_ITEM = new RegExp(`^spell-key:${PC}$`);
 const SPELL_CHORD_ITEM = new RegExp(`^spell-chord:([A-Za-z0-9]+)@${PC}$`);
 const DEGREE_ITEM = new RegExp(`^(degree|degree-of):([1-7])@${PC}$`);
 const CAGED_ITEM = /^(caged|caged-core):([CAGED])-shape@(major|minor|dominant7)$/;
+const CHORD_TONE_ITEM = /^(chord-tone|chord-tone-name):(b{0,2}\d|#\d)@([A-Za-z0-9]+)$/;
 
 function count(n: number, what: string): number {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Invalid ${what}: ${n}`);
@@ -395,6 +399,36 @@ export function parseCagedItemId(
   };
 }
 
+/**
+ * `chord-tone:b3@m7`: tap the ♭3 in a shape of a m7 chord (D8, degree →
+ * position). `chord-tone-name:b3@m7` is the reverse: which chord tone is the
+ * highlighted note? The root, shape and position vary per prompt, so one card
+ * holds the degree in every key and voicing (research/02 rule 12). The
+ * degree is a formula degree of the kind (`1` is the root).
+ */
+export function chordToneItemId(
+  kind: 'chord-tone' | 'chord-tone-name',
+  degree: ChordDegree,
+  chord: ChordKind,
+): string {
+  if (!isChordKind(chord)) throw new RangeError(`Invalid chord kind: ${String(chord)}`);
+  if (!chordFormula(chord).includes(degree)) {
+    throw new RangeError(`${chord} has no degree ${String(degree)}`);
+  }
+  return `${kind}:${degree}@${chord}`;
+}
+
+export function parseChordToneItemId(
+  id: string,
+): { kind: 'chord-tone' | 'chord-tone-name'; degree: ChordDegree; chord: ChordKind } | null {
+  const m = CHORD_TONE_ITEM.exec(id);
+  const chord = m?.[3] as string;
+  if (!m || !isChordKind(chord)) return null;
+  const degree = m[2] as ChordDegree;
+  if (!chordFormula(chord).includes(degree)) return null;
+  return { kind: m[1] as 'chord-tone' | 'chord-tone-name', degree, chord };
+}
+
 export function itemId(ref: ItemRef): string {
   switch (ref.kind) {
     case 'note':
@@ -428,6 +462,9 @@ export function itemId(ref: ItemRef): string {
     case 'caged':
     case 'caged-core':
       return cagedItemId(ref.kind, ref.shape, ref.quality);
+    case 'chord-tone':
+    case 'chord-tone-name':
+      return chordToneItemId(ref.kind, ref.degree, ref.chord);
   }
 }
 
@@ -458,5 +495,7 @@ export function parseItemId(id: string): ItemRef | null {
   if (degree) return degree;
   const caged = parseCagedItemId(id);
   if (caged) return caged;
+  const chordTone = parseChordToneItemId(id);
+  if (chordTone) return chordTone;
   return null;
 }
