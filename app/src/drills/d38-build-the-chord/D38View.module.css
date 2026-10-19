@@ -1,0 +1,206 @@
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+  justify-content: space-between;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.prompt {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.prompt strong {
+  color: var(--tone);
+}
+
+.explain {
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.explain p {
+  margin: 0;
+  min-height: 1.5em;
+}
+
+/* The voicing as a chord chart writes it: one slot per string, low first. */
+.readout {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: var(--space-2);
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 2.75rem;
+  padding: var(--space-1) var(--space-2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-s);
+  background: var(--bg-raised);
+  font-variant-numeric: tabular-nums;
+}
+
+.slotString {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.slotFret {
+  font-size: 1.125rem;
+  font-weight: 650;
+}
+
+.slotDegree {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.slot[data-root] {
+  border-color: var(--root);
+}
+
+/* After the check: a solid border for a chord tone, a dashed one for a note
+   the chord lacks, so the two differ by more than colour. */
+.slot[data-status='in'] .slotDegree {
+  color: var(--correct);
+}
+
+.slot[data-status='out'] {
+  border-color: var(--wrong);
+  border-style: dashed;
+}
+
+.slot[data-status='out'] .slotDegree {
+  color: var(--wrong);
+}
+
+.notice {
+  margin: 0;
+  min-height: 1.25em;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.check,
+.secondary {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-m);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.check {
+  border: 2px solid transparent;
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.secondary {
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+}
+
+.check:disabled,
+.secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .secondary:not(:disabled):hover {
+    border-color: var(--tone);
+  }
+}
+
+.neckArea {
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-2);
+  justify-content: flex-start;
+}
+
+/* One wrapped row so the neck keeps the height. */
+.drill[data-size-class='compact'] .top {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+}
+
+.drill[data-size-class='compact'] .explain {
+  flex-basis: 100%;
+  font-size: 0.875rem;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .notice {
+  display: none;
+}
+
+.drill[data-size-class='compact'] .slot {
+  min-width: 2rem;
+  padding: 0 var(--space-1);
+}
+
+.drill[data-size-class='compact'] .slotString {
+  display: none;
+}
+
+/* Best-effort iPhone: keep the zoomed neck within short landscape viewports. */
+.drill[data-size-class='compact'] .neckArea svg {
+  max-height: calc(100dvh - 9rem);
+}
+
+/* A phone on its side has no room for the feedback lines above the neck;
+   the session's feedback bar still says what was right. */
+@media (max-height: 499px) {
+  .drill[data-size-class='compact'] .explain {
+    display: none;
+  }
+}
