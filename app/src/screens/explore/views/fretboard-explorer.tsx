@@ -370,7 +370,7 @@ const LEGEND: Partial<Record<MarkerStyle, string>> = {
 };
 
 /** A legend swatch drawn in the marker's own shape, so it reads without colour. */
-function Swatch({ style }: { style: MarkerStyle }) {
+export function Swatch({ style }: { style: MarkerStyle }) {
   return (
     <svg className={css.swatch} data-style={style} viewBox="-12 -12 24 24" aria-hidden="true">
       {style === 'root' ? (
@@ -393,7 +393,7 @@ const useOverlay: () => StatusOverlay | null = import.meta.env.DEV ? useStatusOv
  * The learner's frontier skills, read from storage; empty until loaded. With
  * the developer switch on, it is the frontier sessions will serve.
  */
-function useFrontier(): ReadonlySet<string> {
+export function useFrontier(): ReadonlySet<string> {
   const [frontier, setFrontier] = useState<ReadonlySet<string>>(() => new Set());
   const overlay = useOverlay();
   useEffect(() => {
