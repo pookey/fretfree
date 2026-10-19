@@ -933,6 +933,18 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Deps:** M4-01, M4-02, M4-03, M4-04, M4-05, M4-06, M4-07, M4-08, M4-09, M4-10
 - **Owns:** `docs/progress.md`, `app/e2e/m4-11.spec.ts`
 
+### M4-12 · Tools section: nav entry, tool registry and index
+- **Status:** todo
+- **Deps:** none
+- **Design:** §Navigation, §Tools, §7
+- **Owns:** `app/src/routes/tools.route.tsx`, `app/src/screens/tools/ToolsScreen.tsx`, `app/src/screens/tools/ToolsScreen.module.css`, `app/src/screens/tools/registry.ts`, `app/src/screens/tools/*.test.ts*`, `app/e2e/m4-12.spec.ts`
+- **Acceptance:**
+  - User request (2026-10-19): a **Tools** section for practice utilities, starting with a tuner (M5-03) and a metronome (M8-20). It is a sixth nav section, ordered between Explore and Progress, in the iPad sidebar and the compact tab bar. Every tab stays ≥44pt at 375pt width.
+  - Tools are auto-registered, one folder per tool (`app/src/screens/tools/<tool>/tool.meta.ts` plus a lazily loaded view, following the M3-18 lazy pattern). Adding a tool means adding a folder. Routes are `/tools` (the index) and `/tools/<tool>`.
+  - The section stays out of the nav until at least one tool is registered, so this package can land first without showing an empty screen. Test it with a fake tool.
+  - The index is a regular-wide-first grid of tool cards (name, one-line purpose, icon), which degrades to a list on compact. There's no first-load JS cost beyond the route stub (`check-bundle` stays under budget).
+  - RTL tests for the registry and the index. E2E: with a test-only tool registered, the section appears in the nav and opens the tool.
+
 ---
 
 ## M5: Mic mode
@@ -952,10 +964,17 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Acceptance:**
   - Synthetic-signal tests for accuracy and octave errors. Permission is requested only when the learner enables mic mode.
 
-### M5-03 · Tuner screen
+### M5-03 · Tools: tuner
 - **Status:** todo
-- **Deps:** M5-02, M1-01
-- **Owns:** `app/src/routes/tuner.route.tsx`, `app/src/screens/tuner/**`, `app/e2e/m5-03.spec.ts`
+- **Deps:** M5-02, M4-12
+- **Design:** §Tools, §9
+- **Owns:** `app/src/screens/tools/tuner/**`, `app/e2e/m5-03.spec.ts`
+- **Acceptance:**
+  - A tool in the Tools section (user request, 2026-10-19). It shows a needle and cents readout (in tune within ±5 cents), the detected note, and the nearest string in standard tuning, using the M5-02 detector. The mic is requested only when the learner opens the tuner and taps to start. It explains the problem if permission is denied.
+  - Reference tones: tap a string (E A D G B E) to hear its pitch, so the tuner is useful without a mic.
+  - It doubles as the mic check (§9): a clear "mic is working" state the M5-04 onboarding can link to.
+  - Large iPad layout. Colour isn't the only in-tune signal (a shape or label changes too), and the needle respects `prefers-reduced-motion`.
+  - Unit tests for cents and string mapping. E2E with a fake pitch source.
 
 ### M5-04 · Mic onboarding and settings
 - **Status:** todo
@@ -1309,13 +1328,16 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
 - **Acceptance:**
   - Tap a note on the staff to see it on the neck, and vice versa. Staff above neck on iPad. Includes "Quiz me on this".
 
-### M8-20 · Explore: metronome
+### M8-20 · Tools: metronome
 - **Status:** todo
-- **Deps:** M8-01, M1-01
-- **After:** M6-10
-- **Owns:** `app/src/screens/explore/views/metronome.tsx`, `app/src/screens/explore/views/metronome.meta.ts`, `app/e2e/m8-20.spec.ts`
+- **Deps:** M8-01, M4-12
+- **Owns:** `app/src/screens/tools/metronome/**`, `app/e2e/m8-20.spec.ts`
 - **Acceptance:**
-  - Meter and accent presets (including odd groupings), tap tempo, and a large iPad layout. Uses the M8-01 engine with latency compensation.
+  - A tool in the Tools section (user request, 2026-10-19, which also lifts its old `After: M6-10` so it ships once M8-01 lands).
+  - Tempo 30–250 BPM with a slider and ± steps, tap tempo, meter and accent presets (including odd groupings), and a count-in. A large iPad layout with a visual beat indicator that respects `prefers-reduced-motion`.
+  - Uses the M8-01 engine with latency compensation. Don't build a separate click.
+  - The click keeps time across tab switches within the app. Leaving Tools stops it, unless the learner pins it on (decide in the WP and note it).
+  - Unit tests for tap-tempo maths. E2E: start, change tempo, stop.
 
 ### M8-21 · Promote Tracks R and T in onboarding and the frontier
 - **Status:** todo

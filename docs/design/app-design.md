@@ -329,7 +329,7 @@ Design every screen at regular-wide first, then make sure it degrades sensibly.
 
 ### Navigation
 
-There are 5 sections: **Today**, **Learn**, **Explore**, **Progress** and **Settings** (user decision, 2026-10-18: Settings was a Progress panel until then). About and Privacy are reached from Settings.
+There are 6 sections: **Today**, **Learn**, **Explore**, **Tools**, **Progress** and **Settings**. Settings became a section by user decision on 2026-10-18 (it was a Progress panel until then), and Tools was added at the user's request on 2026-10-19. About and Privacy are reached from Settings.
 
 - **iPad:** a sidebar, plus multi-pane layouts. For example, the Learn map sits on the left and the skill detail and worked example on the right.
 - **iPhone:** a bottom tab bar.
@@ -389,6 +389,14 @@ There are 5 sections: **Today**, **Learn**, **Explore**, **Progress** and **Sett
 - **Circle of fifths:** interactive.
 - Every Explore view has a **"Quiz me on this"** button that starts a focused session. This keeps the "recall, not re-reading" rule.
 
+### Tools (practice utilities, no grading)
+
+User request, 2026-10-19. Utilities a guitarist reaches for while practising, kept in one place. They aren't reference content to re-read, so they carry no "Quiz me" button, and nothing in them is graded or scheduled.
+
+- **Tuner:** mic pitch with a needle and cents readout and the nearest string in standard tuning. It also plays reference tones for each string, so it works without a mic. It doubles as the mic check (§9).
+- **Metronome:** the §12 timing engine's click, with tempo, tap tempo, meter and accent presets (including odd groupings), a count-in and latency compensation.
+- Each tool is its own lazy-loaded view (the M3-18 pattern), and the Tools screen lists the registered tools. The section stays out of the nav until at least one tool is registered.
+
 ### Progress
 
 - A **fretboard heatmap** of mastery per cell (colour = stability; dimmed = slow).
@@ -431,7 +439,7 @@ There are 5 sections: **Today**, **Learn**, **Explore**, **Progress** and **Sett
   - getUserMedia feeds an AudioWorklet running pitchy, which outputs {frequency, clarity}.
   - A note counts after it is stable for ≥80ms.
   - Octave-error tolerance follows the drill's rules.
-  - Includes a tuner screen, which doubles as a mic check.
+  - The Tools section's tuner doubles as a mic check.
   - Permission is requested only when the learner enables mic mode.
 
 ## 10. Non-functional requirements
@@ -491,6 +499,6 @@ The **Time signatures** track (T) is valuable for everyone. The **Reading** trac
 **Screens.**
 
 - iPad landscape: the staff above the neck, with both visible at once. This is the key iPad advantage for staff ↔ fretboard drills.
-- Explore gains a **Notation viewer**: tap a note on the staff to see it on the neck and vice versa. It also includes a **Metronome** (with meter and accent presets).
+- Explore gains a **Notation viewer**: tap a note on the staff to see it on the neck and vice versa. The **Metronome** (with meter and accent presets) lives in Tools.
 
 **Gamification hooks.** Achievements such as "Open-position reader", "5th-position reader", "Waltz, shuffle, march" (meter-by-ear) and "Steady pulse" (no click for 8 bars).
