@@ -205,6 +205,24 @@ test.describe('M4-04 D13 capo calculator', () => {
     await expect(page.getByTestId('feedback-wrong')).toBeHidden();
   });
 
+  test('the neck fits a phone in portrait, up to the capo at fret 7', async ({ page }, info) => {
+    test.skip(info.project.name === 'iphone-smoke', 'sets its own phone viewport');
+    await page.setViewportSize({ width: 375, height: 667 });
+    await freshStart(page);
+    await masterSkills(page, PREREQS);
+    await focusSession(page, 'C10.capo-g-c-d');
+
+    await expect(neck(page)).toBeVisible();
+    const box = (await neck(page).boundingBox())!;
+    const cells = neck(page).getByRole('listitem');
+    await expect(cells).toHaveCount(8);
+    const last = (await cells.last().boundingBox())!;
+    // Fret 7, the highest capo a prompt uses, sits inside the neck, not clipped.
+    expect(last.x + last.width).toBeLessThanOrEqual(box.x + box.width + 0.5);
+    expect(last.width).toBeGreaterThan(24);
+    await expectNoHorizontalOverflow(page);
+  });
+
   test('a hardware keyboard answers keys and frets', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);

@@ -133,3 +133,41 @@
   font-size: 0.75rem;
   font-weight: 600;
 }
+
+/* A phone in portrait (compact, under 744pt) can't give eight cells 44pt
+   each. Nothing on the neck is tapped, so the cells share the width and the
+   badges shrink, keeping the capo at fret 7 in view. */
+@media (max-width: 46.49rem) {
+  .cell,
+  .cell[data-fret='0'] {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .note {
+    min-width: 2rem;
+    min-height: 2rem;
+    font-size: 1rem;
+    border-width: 2px;
+  }
+
+  .note[data-role='step'] {
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+    font-size: 0.875rem;
+  }
+
+  .caption {
+    padding: 0 0.125rem;
+    font-size: 0.625rem;
+  }
+
+  .capo {
+    right: 0.125rem;
+    width: 0.5rem;
+  }
+
+  .neck[data-handedness='left'] .capo {
+    left: 0.125rem;
+  }
+}
