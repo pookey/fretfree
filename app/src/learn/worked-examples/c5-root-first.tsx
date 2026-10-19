@@ -93,10 +93,10 @@ const example: WorkedExample = {
   title: 'Find the root first',
   idea: 'The 3rd tells major from minor, but only counted from the root. Find the root first; it isn’t always the lowest note.',
   // One window for every shape, so where the neck starts says nothing about the root.
-  range: { from: 1, to: 9 },
+  range: { from: 1, to: 7 },
   steps: [
     rootFirstStep('E', 'A', 'major', { showRoot: true }),
-    rootFirstStep('E', 'B', 'minor'),
+    rootFirstStep('E', 'F#', 'minor'),
     rootFirstStep('C', 'D', 'major'),
   ],
 };

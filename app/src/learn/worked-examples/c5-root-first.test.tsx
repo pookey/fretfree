@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { useAppStore } from '../../app-store';
 import { playNotes } from '../../audio/audio';
-import { DEFAULT_SETTINGS, getSkill } from '../../engine';
+import { DEFAULT_SETTINGS, ENGINE_CONFIG, getSkill } from '../../engine';
 import { midiAt } from '../../theory';
 import example, { rootFirstStep } from './c5-root-first';
 import { exampleFor } from './index';
@@ -71,6 +71,10 @@ describe('c5-root-first', () => {
     expect(example.steps.map((s) => s.given.length)).toEqual([1, 0, 0]);
     const windows = example.steps.map((s) => stepRange(s, example.range));
     expect(new Set(windows.map((w) => `${w.from}-${w.to}`)).size).toBe(1);
+    // No wider than an unpinned window, so the whole shape is in view on iPad.
+    expect(windows[0]!.to - windows[0]!.from + 1).toBeLessThanOrEqual(
+      ENGINE_CONFIG.workedExamples.span,
+    );
     for (const step of example.steps) {
       for (const n of step.shape!) {
         expect(n.fret).toBeGreaterThanOrEqual(windows[0]!.from);
@@ -143,12 +147,12 @@ describe('<WorkedExample> with c5-root-first', () => {
     expect(screen.getByTestId('example-hint')).toHaveTextContent('in the E shape it’s on string 1');
     expect(screen.queryByTestId('marker-root')).toBeNull();
     expect(screen.getAllByTestId('marker-tone')).toHaveLength(3);
-    // Taking the bass D for the root lands on the 5th: the callout says why.
-    tap(2, 7);
+    // Taking the bass A for the root lands on the 5th: the callout says why.
+    tap(2, 2);
     expect(screen.getByTestId('example-trap')).toHaveTextContent(
       "the lowest note isn't always the root",
     );
-    expect(screen.getByTestId('example-wrong')).toHaveTextContent('so the chord is B minor');
+    expect(screen.getByTestId('example-wrong')).toHaveTextContent('so the chord is F# minor');
     expect(screen.getByTestId('marker-root')).toHaveTextContent('R');
     next();
 
