@@ -1,6 +1,6 @@
+import { lazyPart } from '../../session/context/lazy-part';
 import type { DrillType } from '../types';
 import { SKILLS } from '../../engine/skills';
-import { ChordTonePanel } from './ContextPanel';
 import { D8View } from './D8View';
 import {
   D8_ID,
@@ -30,7 +30,10 @@ const chordTone: DrillType<D8Prompt, D8Answer> = {
   feedbackPositions: d8FeedbackPositions,
   conceptOf: d8ConceptOf,
   render: D8View,
-  contextPanel: ChordTonePanel,
+  // Loaded on first use, outside first-load JS (session/context/lazy-part.tsx).
+  contextPanel: lazyPart(() =>
+    import('../../session/context/panels').then((m) => m.ChordTonePanel),
+  ),
 };
 
 export default chordTone;

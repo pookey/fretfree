@@ -1,4 +1,4 @@
-import { LazyDiatonicChords } from '../../session/context/parts';
+import { DiatonicChords } from '../../session/context/DiatonicChords';
 import type { DrillContextPanelProps } from '../types';
 import { d7Hint, type D7Answer, type D7Prompt } from './logic';
 import styles from './ContextPanel.module.css';
@@ -40,11 +40,7 @@ export function SpellingContextPanel({
         </p>
       )}
       {prompt.kind !== 'chord' && (level >= 2 || answered) && (
-        <LazyDiatonicChords
-          tonic={prompt.tonic}
-          reveal={answered}
-          fallback={<div className={styles.chordsSlot} />}
-        />
+        <DiatonicChords tonic={prompt.tonic} reveal={answered} />
       )}
     </div>
   );

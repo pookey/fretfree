@@ -7,7 +7,6 @@
   align-items: flex-start;
 }
 
-/* Sized before its chunk arrives, so the panel doesn't jump when it does. */
 .diagram {
   flex: 0 0 7.5rem;
   min-height: 7rem;

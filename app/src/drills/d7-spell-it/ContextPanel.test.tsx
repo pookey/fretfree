@@ -32,13 +32,23 @@ function panel(
   );
 }
 
-/** The chords' row, or the slot holding its place while its chunk loads. */
-const chords = (container: HTMLElement) =>
-  screen.queryByTestId('diatonic-chords') ?? container.querySelector('[class*="chordsSlot"]');
+const chords = () => screen.queryByTestId('diatonic-chords');
 
 describe('<SpellingContextPanel>', () => {
-  it('is the D7 plugin’s context panel', () => {
-    expect(spellIt.contextPanel).toBe(SpellingContextPanel);
+  it('is the D7 plugin’s context panel, loaded on first use', async () => {
+    const Panel = spellIt.contextPanel!;
+    render(
+      <Panel
+        prompt={prompt()}
+        guideLevel={2}
+        guided={false}
+        handedness="right"
+        tuning={STANDARD_TUNING}
+        feedback={null}
+      />,
+    );
+    expect(await screen.findByRole('heading', { name: 'Major scale' })).toBeInTheDocument();
+    expect(screen.getByTestId('diatonic-chords')).toBeInTheDocument();
   });
 
   it('shows the major-scale steps and the hint, without the half-step rule at level 1', () => {
@@ -63,8 +73,8 @@ describe('<SpellingContextPanel>', () => {
   });
 
   it('leaves the key’s chords out at level 1 until answered', () => {
-    const { container } = panel(prompt(), { guideLevel: 1 });
-    expect(chords(container)).toBeNull();
+    panel(prompt(), { guideLevel: 1 });
+    expect(chords()).toBeNull();
   });
 
   it('shows the numerals unnamed from level 2 while the key is being spelled', async () => {
@@ -88,7 +98,7 @@ describe('<SpellingContextPanel>', () => {
   });
 
   it('leaves the key’s chords out of a chord’s panel', () => {
-    const { container } = panel(prompt('spell-chord:m7@B'), { guideLevel: 3, answered: true });
-    expect(chords(container)).toBeNull();
+    panel(prompt('spell-chord:m7@B'), { guideLevel: 3, answered: true });
+    expect(chords()).toBeNull();
   });
 });

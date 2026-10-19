@@ -1,6 +1,6 @@
 import { SKILLS } from '../../engine/skills';
+import { lazyPart } from '../../session/context/lazy-part';
 import type { DrillType } from '../types';
-import { SpellingContextPanel } from './ContextPanel';
 import { D7View } from './D7View';
 import {
   D7_ID,
@@ -32,7 +32,10 @@ const spellIt: DrillType<D7Prompt, D7Answer> = {
   gradedResponseMs: d7GradedResponseMs,
   conceptOf: d7ConceptOf,
   render: D7View,
-  contextPanel: SpellingContextPanel,
+  // Loaded on first use, outside first-load JS (session/context/lazy-part.tsx).
+  contextPanel: lazyPart(() =>
+    import('../../session/context/panels').then((m) => m.SpellingContextPanel),
+  ),
 };
 
 export default spellIt;

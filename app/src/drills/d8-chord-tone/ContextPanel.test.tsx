@@ -35,13 +35,25 @@ function panel(
   );
 }
 
-/** The diagram arrives in its own chunk. */
 const diagram = () => screen.findByRole('img', { name: /^Chord diagram:/ });
 const dots = (svg: HTMLElement) => Array.from(svg.querySelectorAll('[data-testid="chord-dot"]'));
 
 describe('<ChordTonePanel> chord diagram (M3-11)', () => {
-  it('is the D8 plugin’s context panel', () => {
-    expect(chordTone.contextPanel).toBe(ChordTonePanel);
+  it('is the D8 plugin’s context panel, loaded on first use', async () => {
+    const Panel = chordTone.contextPanel!;
+    const p = prompt('chord-tone:b3@m7');
+    render(
+      <Panel
+        prompt={p}
+        guideLevel={2}
+        guided={false}
+        handedness="right"
+        tuning={STANDARD_TUNING}
+        feedback={null}
+      />,
+    );
+    expect(await screen.findByRole('heading', { name: `Chord tones of ${p.chord}` })).toBeVisible();
+    expect(await diagram()).toBeInTheDocument();
   });
 
   it('draws the shape on the neck as a chart, one dot per fretted note', async () => {

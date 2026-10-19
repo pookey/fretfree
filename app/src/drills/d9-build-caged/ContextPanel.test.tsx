@@ -32,8 +32,19 @@ function panel(
 const map = () => screen.queryByTestId('caged-chain-map');
 
 describe('<CagedChainPanel>', () => {
-  it('is the D9 plugin’s context panel', () => {
-    expect(buildCaged.contextPanel).toBe(CagedChainPanel);
+  it('is the D9 plugin’s context panel, loaded on first use', async () => {
+    const Panel = buildCaged.contextPanel!;
+    render(
+      <Panel
+        prompt={prompt()}
+        guideLevel={2}
+        guided={false}
+        handedness="right"
+        tuning={STANDARD_TUNING}
+        feedback={null}
+      />,
+    );
+    expect(await screen.findByRole('heading', { name: 'CAGED chain' })).toBeInTheDocument();
   });
 
   it('shows the chain order with the asked shape marked, and no positions, before an answer', async () => {

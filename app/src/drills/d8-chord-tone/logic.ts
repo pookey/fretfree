@@ -21,7 +21,6 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
-import type { ChordVoicing } from '../../components/chord-diagram/model';
 import type { SizeClass } from '../../shell/size-class';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { isD8Kind, placements, templatesFor, type VoicingTemplate } from './voicings';
@@ -361,35 +360,6 @@ export function d8DegreeStyle(degree: ChordDegree): 'root' | 'third' | 'fifth' |
 export function d8ShowsRoots(prompt: D8Prompt, guideLevel: GuideLevel, guided: boolean): boolean {
   if (prompt.degree === '1') return false;
   return guided || guideLevel >= ENGINE_CONFIG.chordTone.rootGuideLevel;
-}
-
-/**
- * The shape as a chord diagram for the context panel (design §7 "the current
- * chord diagram"). Before an answer it draws what the neck draws: plain dots,
- * with roots squared only where the neck squares them (`roots`). Once the
- * degree is no longer asked for (`reveal`), each dot takes its degree's
- * marker and label. A barre chord gets its barre at the shape's lowest fret.
- */
-export function d8DiagramVoicing(prompt: D8Prompt, reveal: boolean): ChordVoicing {
-  const notes = prompt.notes.map((n) => ({
-    string: n.string,
-    fret: n.fret,
-    style: reveal
-      ? d8DegreeStyle(n.degree)
-      : n.degree === '1'
-        ? ('root' as const)
-        : ('tone' as const),
-    label: d8DegreeLabel(n.degree),
-  }));
-  if (prompt.voicing !== 'barre') return { notes };
-  const under = prompt.notes.filter((n) => n.fret === prompt.span.from).map((n) => n.string);
-  if (under.length < 2 || prompt.span.from === 0) return { notes };
-  return {
-    notes,
-    barres: [
-      { fret: prompt.span.from, from: Math.min(...under), to: Math.max(...under), finger: 1 },
-    ],
-  };
 }
 
 // --- Windows ---------------------------------------------------------------

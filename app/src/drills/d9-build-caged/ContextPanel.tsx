@@ -1,5 +1,5 @@
 import type { GuideLevel } from '../../engine/model';
-import { LazyCagedChainMap } from '../../session/context/parts';
+import { CagedChainMap } from '../../session/context/CagedChainMap';
 import { CAGED_ORDER, STANDARD_TUNING } from '../../theory';
 import type { DrillContextPanelProps } from '../types';
 import type { D9Answer, D9Prompt } from './logic';
@@ -11,7 +11,7 @@ import styles from './ContextPanel.module.css';
  * where the shape sits on the neck is the answer (research/02 rule 4). Once
  * the shape is built, or in a worked example, the mini-map places it among
  * its neighbours from guide level 2 (rule 9: less at lower levels). The
- * mini-map reuses the Explore visualiser and loads on first use.
+ * mini-map reuses the Explore visualiser; the panel loads on first use (`drill.ts`).
  *
  * D10 asks which shape comes next, so the mini-map belongs to D9 only: a
  * drill's panel is its own, and D10 must not borrow this one.
@@ -40,14 +40,13 @@ export function CagedChainPanel({
       </ol>
       {showMap ? (
         <>
-          <LazyCagedChainMap
+          <CagedChainMap
             root={prompt.root}
             quality={prompt.quality}
             current={prompt.shape}
             currentRootFret={prompt.anchor.fret}
             accidentalPref={prompt.accidentalPref}
             handedness={handedness}
-            fallback={<div className={styles.mapSlot} />}
           />
           {/* The map's accessible name lists the chain; the caption only flags the tuning. */}
           {tuning.id !== STANDARD_TUNING.id && (

@@ -1,9 +1,9 @@
-import { LazyChordDiagram } from '../../session/context/parts';
+import { ChordDiagram } from '../../components/chord-diagram/ChordDiagram';
 import { chordFormula, chordToneOf, type ChordDegree } from '../../theory';
 import type { DrillContextPanelProps } from '../types';
+import { d8DiagramVoicing } from './diagram';
 import {
   d8DegreeLabel,
-  d8DiagramVoicing,
   d8DegreeSpoken,
   d8DegreeStyle,
   d8Display,
@@ -32,8 +32,8 @@ function DegreeIcon({ degree }: { degree: ChordDegree }) {
  * feedback. It fades with the guides (rule 9): from level 2 each degree's
  * note is named too. The asked degree is marked, and the diagram's dots
  * labelled by degree, only once the learner has answered, or in a worked
- * example, so the panel never answers a recall prompt (rule 4). The diagram
- * loads on first use, outside first-load JS.
+ * example, so the panel never answers a recall prompt (rule 4). The panel
+ * loads on first use, outside first-load JS (`drill.ts`).
  */
 export function ChordTonePanel({
   prompt,
@@ -48,7 +48,7 @@ export function ChordTonePanel({
   return (
     <div className={styles.panel} data-testid="chord-tone-panel">
       <div className={styles.diagram}>
-        <LazyChordDiagram
+        <ChordDiagram
           voicing={d8DiagramVoicing(prompt, showAnswer)}
           tuning={tuning}
           handedness={handedness}

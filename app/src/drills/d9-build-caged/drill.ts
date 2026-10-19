@@ -1,5 +1,5 @@
+import { lazyPart } from '../../session/context/lazy-part';
 import type { DrillType } from '../types';
-import { CagedChainPanel } from './ContextPanel';
 import { D9View } from './D9View';
 import {
   D9_ID,
@@ -37,7 +37,10 @@ const buildCaged: DrillType<D9Prompt, D9Answer> = {
   feedbackPositions: d9FeedbackPositions,
   conceptOf: d9ConceptOf,
   render: D9View,
-  contextPanel: CagedChainPanel,
+  // Loaded on first use, outside first-load JS (session/context/lazy-part.tsx).
+  contextPanel: lazyPart(() =>
+    import('../../session/context/panels').then((m) => m.CagedChainPanel),
+  ),
 };
 
 export default buildCaged;
