@@ -724,7 +724,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The whole neck is shown on iPad, with C vs A shape confusable pairing.
 
 ### M3-06 · D10 "Which shape, and which comes next?"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-05
 - **Owns:** `app/src/drills/d10-which-shape/**`, `app/e2e/m3-06.spec.ts`
 - **Acceptance:**
