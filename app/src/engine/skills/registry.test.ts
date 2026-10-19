@@ -51,6 +51,9 @@ describe('skill registry', () => {
       'C6.minor-cores',
       'C6.minor-shapes',
       'C6.dominant7-shapes',
+      'C10.capo-g-c-d',
+      'C10.capo-a-e',
+      'C10.capo-minor',
     ]);
     expect(getSkill('nope')).toBeUndefined();
   });

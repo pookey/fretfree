@@ -1,0 +1,24 @@
+/* D13's context panel: the capo rule and the chromatic scale. The session's
+   panel supplies the box and the heading colour. */
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.chromatic {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.chromatic li {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-s);
+  background: var(--bg-sunken);
+}
