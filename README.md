@@ -50,7 +50,7 @@ FretFree is designed for the iPad first, so try changes on one. Run the dev serv
 pnpm dev --host       # prints a Network URL, e.g. http://192.168.1.20:5173
 ```
 
-Open the Network URL in Safari on the iPad. Edits hot-reload there as they do on your computer. If nothing loads, allow incoming connections for Node in the macOS firewall. A LAN address over plain HTTP isn't a secure context, so offline mode and Add to Home Screen don't work this way. To test those, serve a production build over HTTPS (see [Host it anywhere](#host-it-anywhere)).
+Open the Network URL in Safari on the iPad. Edits hot-reload there as they do on your computer. If nothing loads, allow incoming connections for Node in the macOS firewall. A LAN address over plain HTTP isn't a secure context, so offline mode and the installed app's offline start don't work this way (Safari still offers Add to Home Screen). To test those, serve a production build over HTTPS (see [Host it anywhere](#host-it-anywhere)).
 
 Development builds add a **Developer** card to Settings with an **Unlock every skill** switch, so you can try any module without mastering its prerequisites first. A badge stays on screen while it's on. The switch is kept per device and never changes your progress: practice on the skills it unlocks isn't saved, and turning it off restores your real progress. Production builds don't include it.
 

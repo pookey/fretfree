@@ -226,6 +226,7 @@ The production screenshots also confirm the M1 QA fixes: inactive frets recede i
 
 ## Decisions and deviations (foundations)
 
+- **Test-out marks a skill mastered without spaced reviews (M2-16, 2026-10-19). This deviates from design §3.4's mastery definition (rule 7).** Mastery normally means 90% of items at stability ≥ 7 days with median RT on target. A test-out where every probe is fluent seeds the skill's items at 10 days and marks it mastered. It is stricter than onboarding placement (more probes, no slips), and any existing card below the stability threshold is probed too, so weak real reviews can't be overridden. Older cards keep their own FSRS schedule.
 - **Placement retake never lowers an existing card (M2-15, 2026-10-19). This deviates from research/02 rules 1 and 2.** A retaken placement probe on a card the learner already has is logged with its honest rating (Hard or Again when slow or missed, per rule 17), but it is not applied to the card's FSRS state. A good probe can still raise a card. Reason: the retake is optional, repeatable and off-schedule, so letting it demote cards would punish learners for checking themselves, and rule-driven scheduling still governs normal sessions. Revisit if retake results should feed the scheduler.
 - **Compact also means short.** Size classes are width-based as designed, but any window under 500pt tall counts as compact. Without this, an iPhone in landscape (852pt wide) would get the regular layout. It's still not device-based.
 - **iPhone landscape neck.** The neck is letterboxed to fit the short screen, so its cells fall below 44pt there. That's acceptable for best-effort phone support because D1 answers with buttons. M1-20 adds a wider compact window.
@@ -257,6 +258,8 @@ Rough edges found and fixed in the skill:
 The trust-folder prompt never appeared, because worktrees under the trusted repo inherit trust. `ensure-ready.sh` still handles it, accepting only for `.orchestrator/worktrees/*`.
 
 ## Questions for the user
+
+**Placement time budget (M2-16, 2026-10-19).** Onboarding placement now probes C4 (key spelling), so a perfect expert faces about 67 probes. At the assumed 3.5 s a probe, the 180 s budget reaches every C3 group and C4's sharp keys, but not the flat keys. Onboarding alone therefore won't open Chords; the new "Test out" on a locked module does. Options: (a) accept this (recommended, since test-out covers it), (b) raise the budget to about 4 minutes, or (c) trim tiers. Nothing is blocked; the default is (a).
 
 **M7 accounts and sync (filed 2026-10-18; unblocked 2026-10-18 evening):**
 1. ~~**New AWS services.**~~ **Answered (user, 2026-10-18 evening): "Approved: build the FretworkSync stack (Cognito, API/Lambda, DynamoDB)."** It sends through the existing FretworkEmail SES setup. Accounts stay optional (design §1 principle 8). M7 is unblocked.
