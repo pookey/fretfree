@@ -311,6 +311,14 @@ interface DrillType<P = unknown, A = unknown> {
 - **The 12th-fret repeat** (`repeat:+12@f3`, `repeat:-12@f15`): "Which fret has the same notes as fret 3, an octave higher?" Only the starting octave is drawn, with the starting fret's notes marked. The answers are the other octave's landmarks (every fret of it at level 1), never the starting fret itself. Feedback draws both frets side by side with their notes named, and plays both, so the octave is heard.
 - While a marker prompt is open, the neck shows inlays only: fret numbers would name the answer. A typed fret number answers too (`1` then `2` for 12, and `o` for the open strings). The confusion matrix keys every item by its answer fret (`fret:7`).
 
+**D38 items and grading:**
+
+- **One card per chord kind from one root string** (`build-chord:m7@s5`), the reverse of D36: the symbol and its root (a square) are given, and the learner taps one note per string above the root, then checks. Tapping a note again mutes its string; the strings below the root stay muted, so the root is the lowest note. The root and its fret vary per prompt (rule 12), and roots sit on strings 6, 5 and 4. Adaptive scope widens as D8's does: natural roots at their lowest fret, then any root, then either octave of the neck.
+- **Three stages mirror D36's.** `C5.build-triads`, `C5.build-sevenths` and `C5.build-sus`, gated on D8's chord-tone skills and on spelling the chords (rule 7). Placement leaves them out.
+- **Any playable voicing counts.** It must have every chord tone (a four-note chord may drop its perfect 5th) and no other note, its fretted notes must span at most 4 frets, and it must need at most 4 fingers (notes on the lowest fretted fret share a barre unless an open string rings between them). All are tunable in `engine/config/buildChord.ts`. Time is graded per string above the root.
+- **Feedback** draws every note by its degree, by shape and colour, with notes the chord lacks as diamonds; lists the missing tones; and rings the notes of a voicing that works, the closest to the learner's. A voicing that is exactly the confusable chord (A7 for Amaj7, Am for A) is keyed as D7 and D36 key it (`chord:7`/`chord:maj7`, `triad:maj`/`triad:min`), and the feedback names the deciding tone.
+- **Guides fade** (rule 9): placed notes are plain dots, named at guide level 3 and never labelled by degree before the check. The context panel shows the chord's formula from level 2 and its notes from level 3. The first rep is a worked example that marks one voicing's notes by degree.
+
 **Mic constraint:** pitch identifies the pitch, not the string. Mic drills therefore do one of three things:
 
 - accept any correct position,
