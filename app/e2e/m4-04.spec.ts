@@ -8,8 +8,8 @@ import { focusSession } from './helpers/focus';
 // climbs. Transposing the wrong way is explained and logged as the
 // `capo:up` / `capo:down` confusion.
 
-/** Rule 7: half steps and key names. */
-const PREREQS = ['F1.half-steps', 'C4.sharp-keys'];
+/** Rule 7: what Harmony (C8) builds on, keys and triads. */
+const PREREQS = ['C4.sharp-keys', 'C5.triads'];
 
 // An independent answer key (deliberately not imported from app code).
 const LETTERS: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };

@@ -34,14 +34,15 @@ describe('C10 skills', () => {
     for (const s of skills) {
       expect(s.topic).toBe('C10');
       expect(s.drillTypes).toEqual(['capo']);
-      expect(s.softUnlock).toBe(true);
     }
+    // The first stage waits for mastery (rule 7); the later ones only for practice.
+    expect(skills.map((s) => s.softUnlock)).toEqual([false, true, true]);
     const orders = skills.map((s) => s.order);
     expect(orders).toEqual([...orders].sort((a, b) => a - b));
   });
 
-  it('opens on half steps and key names, then on the first stage', () => {
-    expect(getSkill('C10.capo-g-c-d')!.prerequisites).toEqual(['F1.half-steps', 'C4.sharp-keys']);
+  it('opens after keys and triads, as Harmony does, then on the first stage', () => {
+    expect(getSkill('C10.capo-g-c-d')!.prerequisites).toEqual(['C4.sharp-keys', 'C5.triads']);
     expect(getSkill('C10.capo-a-e')!.prerequisites).toEqual(['C10.capo-g-c-d']);
     expect(getSkill('C10.capo-minor')!.prerequisites).toEqual(['C10.capo-g-c-d']);
   });

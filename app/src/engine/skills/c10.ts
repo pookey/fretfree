@@ -16,9 +16,10 @@ import { itemsOf, memo } from './helpers';
  * shape by shape, so the directions are mixed from the start (rule 6), and
  * D13 keys them `capo:up` and `capo:down` for the confusion matrix.
  *
- * The capo maths needs only half steps and key names, so the first stage
- * opens on F1's half steps and the sharp keys. Design §5 puts Progressions
- * after Harmony (C8); there are no C8 skills to gate on yet.
+ * Design §5 opens Progressions after Harmony (C8), which builds on keys and
+ * triads, and rule 7 gates progressions on chord construction. There are no
+ * C8 skills yet, so the first stage is gated on what Harmony needs: the sharp
+ * keys (key names) and triads, mastered. The later stages build on it alone.
  */
 
 const DRILLS = ['capo'];
@@ -32,6 +33,8 @@ interface Group {
   /** Open-shape keys (`OPEN_SHAPE_KEYS` labels) in the order they enter. */
   shapes: readonly string[];
   prerequisites: readonly string[];
+  /** Opens once the prerequisites are merely practising. */
+  softUnlock: boolean;
 }
 
 const GROUPS: readonly Group[] = [
@@ -40,19 +43,24 @@ const GROUPS: readonly Group[] = [
     title: 'Capo with G, C and D shapes',
     // The shapes most songs are played in under a capo.
     shapes: ['G', 'C', 'D'],
-    prerequisites: ['F1.half-steps', 'C4.sharp-keys'],
+    prerequisites: ['C4.sharp-keys', 'C5.triads'],
+    softUnlock: false,
   },
   {
     id: 'C10.capo-a-e',
     title: 'Capo with A and E shapes',
     shapes: ['A', 'E'],
     prerequisites: ['C10.capo-g-c-d'],
+    // Low-risk: the same maths on more shapes.
+    softUnlock: true,
   },
   {
     id: 'C10.capo-minor',
     title: 'Capo with Am, Em and Dm shapes',
     shapes: ['Am', 'Em', 'Dm'],
     prerequisites: ['C10.capo-g-c-d'],
+    // Low-risk: the same maths on more shapes.
+    softUnlock: true,
   },
 ];
 
@@ -67,8 +75,7 @@ export const skills: Skill[] = GROUPS.map((g, i) => ({
   order: 2000 + i * 10,
   title: g.title,
   prerequisites: g.prerequisites,
-  // Low-risk theory, like C4: open once the prerequisites are practising.
-  softUnlock: true,
+  softUnlock: g.softUnlock,
   drillTypes: DRILLS,
   items: memo(() => itemsOf(g.id, capoIds(g.shapes))),
 }));
