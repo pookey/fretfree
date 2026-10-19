@@ -95,6 +95,13 @@ describe('planProgression', () => {
       planProgression([G], { pattern: { ...STRUM_PATTERNS.quarters, cycle: 0 } }),
     ).toThrow(RangeError);
   });
+
+  it('rejects a stroke before the start of its cycle', () => {
+    const early = { strokes: [{ beat: -0.5, direction: 'up' as const }], cycle: 1 };
+    expect(() => planProgression([G], { pattern: early })).toThrow(RangeError);
+    const nan = { strokes: [{ beat: Number.NaN, direction: 'up' as const }], cycle: 1 };
+    expect(() => planProgression([G], { pattern: nan })).toThrow(RangeError);
+  });
 });
 
 describe('beatSeconds', () => {

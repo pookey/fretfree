@@ -96,6 +96,10 @@ export function planProgression(
     'beatsPerChord',
   );
   if (pattern.cycle !== null) positive(pattern.cycle, 'Pattern cycle');
+  for (const s of pattern.strokes) {
+    if (!Number.isFinite(s.beat) || s.beat < 0)
+      throw new RangeError('Stroke beats must be zero or more');
+  }
 
   const events: Omit<StrumEvent, 'length'>[] = [];
   const chordStarts: number[] = [];
