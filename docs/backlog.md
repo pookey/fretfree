@@ -847,6 +847,19 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - From the M2-21 review: D39's 0–12 neck on iPad mini landscape is 468px tall and ends under the pinned feedback bar (about 59px of page scroll).
   - Size the neck so it clears the bar on every iPad project without scrolling, keeping cells ≥44pt. Flip `clearsBar: true` for D39 in `m2-21.spec.ts` and make it pass.
 
+
+### M1-42 · [contract] Keep drill logic out of first-load JS
+- **Status:** todo
+- **Priority:** high (first-load JS is at about 240 of 250 KB, and every new drill adds 2–3 KB)
+- **Deps:** none
+- **Design:** §6, §10 (first-load budget)
+- **Owns:** `app/src/drills/registry.ts`, `app/src/drills/types.ts`, `app/src/drills/lazy-view.tsx`, `app/src/drills/registry.test.ts`, `app/src/drills/lazy-view.test.tsx`, `app/src/session/runner.ts` (only for awaiting drill logic), `app/e2e/m1-42.spec.ts`
+- **Acceptance:**
+  - Found by the PM, 2026-10-19: M3-18 made drill views lazy, but each `drill.ts` still imports its `logic.ts` (prompt building, grading, choices) statically, and the registry loads every `drill.ts` eagerly. First-load JS grew from 232 to about 240 KB in one day of drills.
+  - Split each plugin into eager metadata (id, skills, item kinds, scope levels, `requiresMic`, …) and lazily loaded logic, following the M3-18 pattern for views (`lazyParts`). The session planner and runner work from metadata, and await a drill's logic chunk (preloaded with its view) before its first prompt.
+  - Migrate every existing drill (D1–D13 and D36–D40, plus any landed by then). `drills/lazy-view.test.tsx` (or a sibling test) fails if a `drill.ts` statically imports its `logic.ts`, so new drills can't regress.
+  - `check-bundle` shows first-load JS down by at least the drills' logic, and the report gives before and after numbers. No change in behaviour: the full e2e suite passes unchanged.
+  - Coordinate through the PM with drills in flight: they rebase onto the new contract.
 ### M3-18 · Lazy-load drill views and the onboarding and placement routes
 - **Status:** done
 - **Deps:** M3-16
