@@ -288,6 +288,13 @@ interface DrillType<P = unknown, A = unknown> {
 - **Single shapes** (`octave:s6f5→s4`): a dot is shown and the learner taps its octave on one string, the octave nearest in fret. Tapping the fret the shape would land on with the G–B shift the other way round (unshifted across it, or shifted where there is none) is logged as a confusion between the two shapes, so they get interleaved.
 - **Every octave** (`octaves:G`, skill `C1.every-octave`): one G is shown, and the learner taps every other G in frets 0–12. This is its own item, one card per pitch class, so the multi-target round is scheduled by FSRS like any other fact. Each tap is marked at once. The round answers at the last G, at the first wrong tap, or on "Done". It is graded on completion time per target (the drill's `gradedResponseMs`), so the usual speed targets apply. The iPad runs it over the whole neck (frets 13–15 dimmed). Compact screens run it region by region (`neckRegions` windows of the session's compact fret count, so wider on a phone on its side), skipping regions with nothing to find and starting nearest the dot.
 
+**D8 items and grading:**
+
+- **One card per degree of one chord kind, both directions** (`chord-tone:b3@m7` taps the ♭3 in a m7 shape; `chord-tone-name:b3@m7` names a ringed ♭3). The shape (an open chord, an E- or A-shape barre, or a CAGED shape), the root and the neck position vary per prompt (rule 12). Adaptive scope widens from natural roots at the lowest position, to any root, to either octave of the neck.
+- **Root first** (user request, 2026-10-18): `C5.tones-triads` lists its roots, then 3rds, then 5ths, and new items enter in that order. `C5.tones-sevenths` follows, gated on spelling 7th chords: the 3rd and the 7th of 7, maj7 and m7.
+- **Confusions.** The name buttons always offer both 3rds, and both 7ths for a seventh chord. A degree is keyed by its interval from the root (`M3`, `m3`, `m7`, `M7`), so the interval seed pairs interleave 3/♭3 and ♭7/7 (rule 6). A tap off the shape is wrong, with no confusion.
+- **Guides.** The shape's outline and its root squares show from guide level 2, and note names at level 3. Root squares never show when the root is the tap target. Feedback labels every note with its degree, by marker shape and colour.
+
 **D39 items and grading:**
 
 - **Name the marker** (`marker:f7`): frets 0–12 are drawn with every fret but one dimmed, and the learner names the spotlit fret. Scope level 0 offers the five landmarks (3, 5, 7, 9, 12). Level 1 offers every fret from 1 to 12.
