@@ -917,7 +917,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Drag chords into slots and transpose. Pointer and keyboard drag both work on iPad. The rotation misconception gets pairing.
 
 ### M4-04 · C10 skills plus D13 "Capo calculator"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-01
 - **Owns:** `app/src/engine/skills/c10.ts`, `app/src/drills/d13-capo/**`, `app/e2e/m4-04.spec.ts`
 
