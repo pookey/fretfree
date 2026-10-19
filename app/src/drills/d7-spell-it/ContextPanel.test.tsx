@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import type { GuideLevel } from '../../engine/model';
 import { STANDARD_TUNING } from '../../theory';
 import { SpellingContextPanel } from './ContextPanel';
@@ -12,7 +12,10 @@ const prompt = (id = 'spell-key:F#') =>
     { tuning: STANDARD_TUNING, accidentalPref: 'sharp', scopeLevel: 0, rng: () => 0 },
   );
 
-function panel(p: D7Prompt, over: { guideLevel?: GuideLevel; guided?: boolean } = {}) {
+function panel(
+  p: D7Prompt,
+  over: { guideLevel?: GuideLevel; guided?: boolean; answered?: boolean } = {},
+) {
   return render(
     <SpellingContextPanel
       prompt={p}
@@ -20,10 +23,16 @@ function panel(p: D7Prompt, over: { guideLevel?: GuideLevel; guided?: boolean } 
       guided={over.guided ?? false}
       handedness="right"
       tuning={STANDARD_TUNING}
-      feedback={null}
+      feedback={
+        over.answered
+          ? { answer: { notes: [] }, result: { correct: false, expected: p.subject } }
+          : null
+      }
     />,
   );
 }
+
+const chords = () => screen.queryByTestId('diatonic-chords');
 
 describe('<SpellingContextPanel>', () => {
   it('is the D7 plugin’s context panel', () => {
@@ -49,5 +58,33 @@ describe('<SpellingContextPanel>', () => {
   it('shows full guides in the worked example', () => {
     const { container } = panel(prompt(), { guideLevel: 1, guided: true });
     expect(container).toHaveTextContent('B–C');
+  });
+
+  it('leaves the key’s chords out at level 1 until answered', () => {
+    panel(prompt(), { guideLevel: 1 });
+    expect(chords()).toBeNull();
+  });
+
+  it('shows the numerals unnamed from level 2 while the key is being spelled', () => {
+    panel(prompt(), { guideLevel: 2 });
+    const list = screen.getByRole('list', { name: 'Chords in a major key' });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(7);
+    // The chords' roots are the scale: naming them would answer the prompt.
+    expect(list).not.toHaveTextContent(/[A-G]/);
+  });
+
+  it('names the key’s chords once answered, at any level', () => {
+    panel(prompt(), { guideLevel: 1, answered: true });
+    expect(screen.getByRole('list', { name: 'Chords in F♯ major' })).toHaveTextContent('G♯m');
+  });
+
+  it('names them in the worked example, which shows the answer anyway', () => {
+    panel(prompt('degree:6@Eb'), { guideLevel: 0, guided: true });
+    expect(screen.getByRole('list', { name: 'Chords in E♭ major' })).toHaveTextContent('Cm');
+  });
+
+  it('leaves the key’s chords out of a chord’s panel', () => {
+    panel(prompt('spell-chord:m7@B'), { guideLevel: 3, answered: true });
+    expect(chords()).toBeNull();
   });
 });
