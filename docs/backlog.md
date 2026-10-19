@@ -1012,7 +1012,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Modes: any position, region-restricted, or pitch class only. E2E uses the fake pitch source.
 
 ### M5-06 · D17 "Play the interval, arpeggio or scale"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M5-01
 - **Owns:** `app/src/drills/d17-play-sequence/**`, `app/e2e/m5-06.spec.ts`
 
