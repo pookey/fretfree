@@ -224,6 +224,19 @@ describe('hearing the sequence', () => {
     expect(d17Replay(scale, run)).toEqual({ credited: run, wrong: null, status: 'done' });
   });
 
+  it('never credits the root heard again as an octave step', () => {
+    const octave: D17Prompt = {
+      ...third,
+      steps: [third.steps[0]!, { ...third.steps[1]!, midi: root + 12 }],
+    };
+    expect(d17Judge(octave, [root], root)).toBe('repeat');
+    expect(d17Judge(octave, [root], root + 12)).toBe('next');
+    const scale = prompt('spell-key:C');
+    const c = scale.steps[0]!.midi;
+    const toSeventh = [0, 2, 4, 5, 7, 9, 11].map((o) => c + o);
+    expect(d17Judge(scale, toSeventh, c)).toBe('repeat');
+  });
+
   it('replays a heard run to where it stands', () => {
     expect(d17Replay(third, [])).toEqual({ credited: [], wrong: null, status: 'listening' });
     expect(d17Replay(third, [root, root])).toEqual({

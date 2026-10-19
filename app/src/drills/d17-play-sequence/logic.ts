@@ -327,8 +327,10 @@ export function d17MakePrompt(item: Item, ctx: DrillContext): D17Prompt {
  * - `wrong`: anything else. The attempt ends.
  *
  * Rising sequences never repeat a pitch class back to back, so a held or
- * re-picked note is never mistaken for the next one. The scale's top tonic
- * is the root's pitch class, but it is checked as `next` first.
+ * re-picked note is never mistaken for the next one. A note heard at exactly
+ * a credited pitch is always `repeat`: a rising sequence never asks for one,
+ * so an octave step (the scale's top tonic) needs the octave, not the root
+ * again. Otherwise the scale's top tonic, the root's pitch class, is `next`.
  */
 export type D17Verdict = 'next' | 'repeat' | 'wrong';
 
@@ -339,6 +341,7 @@ export function d17Judge(prompt: D17Prompt, credited: readonly number[], midi: n
   if (credited.length >= steps.length) return 'repeat';
   const anchor = credited[0] as number;
   const step = steps[credited.length] as D17Step;
+  if (credited.includes(midi)) return 'repeat';
   if (pitchMatches(midi, anchor + (step.midi - root.midi), mode)) return 'next';
   if (credited.some((m) => pitchMatches(midi, m, mode))) return 'repeat';
   return 'wrong';
