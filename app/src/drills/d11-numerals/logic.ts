@@ -36,17 +36,23 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * answer: only knowing the key does (rule 1).
  *
  * - A chord answer's choices come in quality pairs, one root each: the
- *   answer with its twin (Bm beside B), a neighbouring degree, since
- *   counting off by one is the common slip, then other degrees of the key.
- *   Major vs minor is the confusion research/02 rule 6 names, and every root
- *   shows up twice. A diminished answer brings a diminished decoy on another
- *   root, so ° alone doesn't give it away.
+ *   answer with its twin (Bm beside B), and other roots of the key. Major vs
+ *   minor is the confusion research/02 rule 6 names, and every root shows up
+ *   twice. A diminished answer's roots all come as diminished and minor, so
+ *   ° alone doesn't give it away.
  * - A numeral answer's choices are the key's own numerals, one per degree.
  *   The chord on screen already shows its quality, so a twin (VI beside vi)
  *   would be thrown out by anyone who knows the pattern I ii iii IV V vi
- *   vii°. Instead the other numerals of the answer's quality come first,
- *   then the neighbour, so the pattern narrows a card to one in three at
- *   best. vii° is the only diminished numeral: naming it is the fact taught.
+ *   vii°. Instead all the numerals of the answer's quality are offered, and
+ *   the pattern narrows a card to one in three at best. vii° is the only
+ *   diminished numeral: naming it is the fact taught.
+ *
+ * Both rows hold two neighbouring degrees, since counting off by one is the
+ * common slip. The neighbour is never chosen beside the answer: then it
+ * would point at it. Which roots or numerals join the answer's is drawn the
+ * same way whichever of them the answer is, so nothing in the row's shape
+ * (what is offered twice, what sits next to what, where in the row) tells
+ * them apart. `logic.test.ts` plays those guesses over every card.
  *
  * A wrong degree is logged against the numeral it really is
  * (`numeral:<roman>`), so the session interleaves the pair.
@@ -172,51 +178,66 @@ export function d11Choices(
 ): string[] {
   const i = Math.max(D11_SCOPE.minLevel, Math.min(D11_SCOPE.maxLevel, Math.round(level)));
   const count = D11_CHOICES[i] as number;
-  const others = shuffle(
-    diatonicChords(key).filter((c) => c.degree !== target.degree),
-    rng,
-  );
+  const others = diatonicChords(key).filter((c) => c.degree !== target.degree);
   const picked =
     ask === 'chord'
-      ? chordPairs(target, others, count)
-      : numeralChoices(target, others, Math.min(count, MAX_NUMERAL_CHOICES));
+      ? chordPairs(target, others, count, rng)
+      : numeralChoices(target, others, Math.min(count, MAX_NUMERAL_CHOICES), rng);
   const rank = ask === 'chord' ? chordRank : numeralRank;
   return picked.sort((a, b) => rank(a) - rank(b));
 }
 
-/**
- * Chord answers: one quality pair per root, the answer's first, then a
- * neighbour's, then others'. A diminished answer's neighbour is offered as a
- * diminished pair too; for any other answer the neighbour is never the
- * diminished chord, so the answer's quality is always offered twice.
- */
-function chordPairs(target: DiatonicChord, others: DiatonicChord[], count: number): string[] {
-  const dim = target.quality === 'diminished';
-  const neighbour = others.find(
-    (c) => degreeGap(c.degree, target.degree) === 1 && (dim || c.quality !== 'diminished'),
-  ) as DiatonicChord;
-  return [
-    { chord: target, diminished: dim },
-    { chord: neighbour, diminished: dim },
-    ...others
-      .filter((c) => c !== neighbour)
-      .map((c) => ({ chord: c, diminished: c.quality === 'diminished' })),
-  ]
-    .slice(0, count / 2)
-    .flatMap(({ chord, diminished }) => pairOf(diminished).map((q) => valueOf(chord, 'chord', q)));
+/** Every way to choose `size` of `xs`. */
+function subsets<T>(xs: readonly T[], size: number): T[][] {
+  if (size === 0) return [[]];
+  return xs.flatMap((x, i) => subsets(xs.slice(i + 1), size - 1).map((rest) => [x, ...rest]));
+}
+
+function pick<T>(xs: readonly T[], rng: () => number): T {
+  return xs[Math.floor(rng() * xs.length)] as T;
+}
+
+function hasNeighbours(chords: readonly DiatonicChord[]): boolean {
+  return chords.some((a) => chords.some((b) => degreeGap(a.degree, b.degree) === 1));
 }
 
 /**
- * Numeral answers: the key's own numerals, the answer's quality first (ii,
- * iii and vi for a minor chord), then a neighbour, then the rest.
+ * Chord answers: `count / 2` roots, each offered both ways. Any set of
+ * roots that holds the answer's and two neighbours is as likely as any
+ * other, so the answer is as likely to be any one of them.
  */
-function numeralChoices(target: DiatonicChord, others: DiatonicChord[], count: number): string[] {
-  const same = others.filter((c) => c.quality === target.quality);
-  const neighbour = others.find(
-    (c) => degreeGap(c.degree, target.degree) === 1 && !same.includes(c),
+function chordPairs(
+  target: DiatonicChord,
+  others: DiatonicChord[],
+  count: number,
+  rng: () => number,
+): string[] {
+  const sets = subsets(others, count / 2 - 1).filter((s) => hasNeighbours([target, ...s]));
+  const qualities = pairOf(target.quality === 'diminished');
+  return [target, ...pick(sets, rng)].flatMap((c) => qualities.map((q) => valueOf(c, 'chord', q)));
+}
+
+/**
+ * Numeral answers: all the key's numerals of the answer's quality (ii, iii
+ * and vi for a minor chord), then a neighbour of a random one of them, then
+ * the rest at random. None of it depends on which of them is the answer.
+ */
+function numeralChoices(
+  target: DiatonicChord,
+  others: DiatonicChord[],
+  count: number,
+  rng: () => number,
+): string[] {
+  const same = [target, ...others.filter((c) => c.quality === target.quality)];
+  const rest = others.filter((c) => !same.includes(c));
+  const anchor = pick(same, rng);
+  const near = rest.filter((c) => degreeGap(c.degree, anchor.degree) === 1);
+  const neighbour = near.length > 0 ? pick(near, rng) : undefined;
+  const after = shuffle(
+    rest.filter((c) => c !== neighbour),
+    rng,
   );
-  const rest = others.filter((c) => !same.includes(c) && c !== neighbour);
-  return [target, ...same, ...(neighbour ? [neighbour] : []), ...rest]
+  return [...same, ...(neighbour ? [neighbour] : []), ...after]
     .slice(0, count)
     .map((c) => valueOf(c, 'numeral'));
 }

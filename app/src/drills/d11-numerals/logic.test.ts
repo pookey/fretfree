@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getSkill } from '../../engine/skills';
 import { STANDARD_TUNING } from '../../theory';
+import { seededRng } from '../../engine/gamification/quests/draw';
 import type { DrillContext } from '../types';
 import {
   D11_CHOICES,
@@ -44,14 +45,12 @@ import {
   parseRoman,
 } from '../../theory';
 
-/** A seeded LCG, so shuffles are deterministic. */
-function lcg(seed = 1): () => number {
-  let s = seed;
-  return () => {
-    s = (s * 1664525 + 1013904223) % 2 ** 32;
-    return s / 2 ** 32;
-  };
-}
+/**
+ * A seeded PRNG, so shuffles are deterministic. mulberry32, not an LCG: an
+ * LCG's first draw barely moves with small seeds, so every seed would make
+ * the same first pick.
+ */
+const lcg = (seed = 1): (() => number) => seededRng(seed);
 
 const ctx = (scopeLevel = 0, rng: () => number = lcg()): DrillContext => ({
   tuning: STANDARD_TUNING,
@@ -127,17 +126,18 @@ describe('d11MakePrompt', () => {
     expect(prompt('nashville:7°@key=F#').answer).toBe('E#dim');
   });
 
-  it('offers the answer, its quality twin and a neighbour at every level', () => {
+  it('offers the answer, its quality twin and two neighbouring roots at every level', () => {
+    const letters = 'CDEFGAB';
     for (let level = 0; level < D11_CHOICES.length; level++) {
       for (let seed = 1; seed < 20; seed++) {
         const p = prompt('numeral:vi@key=D', level, lcg(seed));
         expect(p.choices).toHaveLength(D11_CHOICES[level] as number);
         expect(p.choices).toContain('Bm');
         expect(p.choices).toContain('B');
-        // A neighbour pair: V (A) — never vii°, so minor isn't the odd one out.
-        expect(p.choices).toContain('A');
-        expect(p.choices).toContain('Am');
         expect(new Set(p.choices).size).toBe(p.choices.length);
+        // The off-by-one slip is always on offer, though not always beside the answer.
+        const roots = p.choices.map((c) => letters.indexOf(c.charAt(0)));
+        expect(roots.some((a) => roots.some((b) => [1, 6].includes(Math.abs(a - b))))).toBe(true);
       }
     }
   });
@@ -156,13 +156,17 @@ describe('d11MakePrompt', () => {
   });
 
   it('reads numeral choices from the key’s own numerals, its quality first', () => {
-    for (let seed = 1; seed < 10; seed++) {
+    const fillers = new Set<string>();
+    for (let seed = 1; seed < 40; seed++) {
       const p = prompt('numeral-of:vi@key=D', 0, lcg(seed));
-      // vi with the other minor numerals, then its non-minor neighbour.
-      expect(p.choices).toEqual(
-        p.choices.includes('V') ? ['ii', 'iii', 'V', 'vi'] : ['ii', 'iii', 'vi', 'vii°'],
-      );
+      // vi with the other minor numerals, then one more: next to any of them.
+      const filler = p.choices.filter((c) => !['ii', 'iii', 'vi'].includes(c));
+      expect(p.choices.filter((c) => !filler.includes(c))).toEqual(['ii', 'iii', 'vi']);
+      expect(filler).toHaveLength(1);
+      fillers.add(filler[0] as string);
     }
+    // Not only vi's neighbours V and vii°, or the odd one out would point at vi.
+    expect([...fillers].sort()).toEqual(['I', 'IV', 'V', 'vii°']);
     expect(prompt('numeral-of:IV@key=D', 1).choices).toHaveLength(6);
     expect(prompt('numeral-of:IV@key=D', 2).choices).toEqual([
       'I',
@@ -213,17 +217,22 @@ describe('d11Choices', () => {
   const MINORS = ['A', 'E', 'B', 'F#', 'C#', 'G#', 'D', 'G', 'C', 'F', 'Bb', 'Eb'];
   const keys = [...MAJORS.map((t) => majorKey(t)), ...MINORS.map((t) => minorKey(t))];
 
-  /** Every key × degree × level × seed, with its choices. */
-  function* cases(ask: 'chord' | 'numeral') {
+  /**
+   * Every key × degree × level × seed, with its choices. Each case draws
+   * from its own seed: the rows depend on the degrees, not the key, so keys
+   * sharing seeds would only repeat each other's draws.
+   */
+  function* cases(ask: 'chord' | 'numeral', seeds = 10) {
+    let n = 0;
     for (const key of keys) {
       for (let degree = 1; degree <= 7; degree++) {
         const target = diatonicChord(key, degree as 1);
         const answer = ask === 'chord' ? target.symbol : target.roman;
         for (let level = 0; level < D11_CHOICES.length; level++) {
-          for (let seed = 1; seed <= 10; seed++) {
-            const choices = d11Choices(key, target, ask, level, lcg(seed));
+          for (let seed = 1; seed <= seeds; seed++) {
+            const choices = d11Choices(key, target, ask, level, lcg((n += 1)));
             const label = `${keyName(key)} ${answer} ${ask} level ${level}`;
-            yield { key, target, answer, choices, label };
+            yield { key, target, answer, choices, label, level };
           }
         }
       }
@@ -270,6 +279,127 @@ describe('d11Choices', () => {
     // A learner using the pattern alone is right a third of the time, far below the band.
     expect(right / guesses).toBeLessThanOrEqual(1 / 3 + 1e-9);
   });
+
+  /**
+   * Guessing with no key knowledge. The cue states the answer's quality, so
+   * a learner may keep only the choices of that quality and guess among them:
+   * that is chance. They may also read the shape of the row: where each
+   * choice sits, what it sits next to, what is offered twice. Each feature
+   * below is one a review measured, or one like it. Keeping only the
+   * choices with any one value of a feature, or of all of them at once, must
+   * do no better than chance (rule 1), at every level and in either mode.
+   */
+  interface Seen {
+    value: string;
+    quality: string;
+    /** Degree for a numeral, root letter for a chord: what "next to" means. */
+    place: number;
+  }
+
+  const LETTERS = 'CDEFGAB';
+
+  function seen(ask: 'chord' | 'numeral', value: string): Seen {
+    if (ask === 'chord') {
+      const c = parseChordSymbol(value);
+      return { value, quality: c.quality, place: LETTERS.indexOf(c.root.charAt(0)) };
+    }
+    const n = parseRoman(value)!;
+    return { value, quality: n.quality, place: n.degree };
+  }
+
+  const gap = (a: number, b: number) => Math.min(Math.abs(a - b), 7 - Math.abs(a - b));
+
+  /** The numerals of any major or minor key, which a learner can know without the key. */
+  const PATTERN = {
+    major: diatonicChords(majorKey('C')).map((c) => c.roman),
+    minor: diatonicChords(minorKey('A')).map((c) => c.roman),
+  };
+
+  type Mode = keyof typeof PATTERN;
+  type Feature = (c: Seen, all: readonly Seen[], mode: Mode) => string;
+
+  const FEATURES: Record<string, Feature> = {
+    // Round 1: the answer was the only root (or degree) offered twice.
+    'choices on its place': (c, all) => String(all.filter((o) => o.place === c.place).length),
+    // Round 2: numerals outside the pattern I ii iii IV V vi vii° could be ruled out.
+    'in the pattern': (c, _, mode) => String(PATTERN[mode].includes(c.value)),
+    // Round 3: the one choice of another quality sat next to the answer.
+    'next to another quality': (c, all) =>
+      String(all.some((o) => gap(o.place, c.place) === 1 && o.quality !== c.quality)),
+    'places next to it': (c, all) =>
+      String(new Set(all.filter((o) => gap(o.place, c.place) === 1).map((o) => o.place)).size),
+    'place in the row': (c, all) => String(all.filter((o) => o.quality === c.quality).indexOf(c)),
+  };
+  const STRATEGIES: Record<string, Feature> = {
+    ...FEATURES,
+    'all of these': (c, all, mode) =>
+      Object.values(FEATURES)
+        .map((f) => f(c, all, mode))
+        .join(' '),
+  };
+
+  /** Chance may be beaten by sampling noise, not by more than this. */
+  const MARGIN = 0.03;
+  /** Enough draws per card that the noise stays well inside the margin. */
+  const SEEDS = 60;
+
+  const pct = (x: number) => `${(100 * x).toFixed(1)}%`;
+  const mean = (xs: readonly number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+
+  it.each(['chord', 'numeral'] as const)(
+    'gives no %s answer away to a guess from the row’s shape (rule 1)',
+    (ask) => {
+      interface Case {
+        answer: string;
+        quality: string;
+        all: Seen[];
+      }
+      const groups = new Map<string, { mode: Mode; cases: Case[] }>();
+      for (const { key, target, answer, choices, level } of cases(ask, SEEDS)) {
+        // vii° is the only diminished numeral; that is the fact being taught.
+        if (ask === 'numeral' && target.quality === 'diminished') continue;
+        const name = `${key.mode} level ${level}`;
+        const group = groups.get(name) ?? { mode: key.mode, cases: [] };
+        group.cases.push({
+          answer,
+          quality: target.quality,
+          all: choices.map((c) => seen(ask, c)),
+        });
+        groups.set(name, group);
+      }
+      expect(groups.size).toBe(2 * D11_CHOICES.length);
+      const beaten: string[] = [];
+      for (const [name, { mode, cases: all }] of groups) {
+        const ofQuality = ({ all: row, quality }: Case) => row.filter((c) => c.quality === quality);
+        const chance = mean(all.map((c) => 1 / ofQuality(c).length));
+        // The cue's quality alone (chance) stays far below the 80–90% band.
+        if (chance > 1 / 2 + 1e-9) {
+          beaten.push(`${name}: the cue’s quality alone scores ${pct(chance)}`);
+        }
+        for (const [strategy, feature] of Object.entries(STRATEGIES)) {
+          const values = new Set(
+            all.flatMap((c) => ofQuality(c).map((s) => feature(s, c.all, mode))),
+          );
+          for (const value of values) {
+            const score = mean(
+              all.map((c) => {
+                const same = ofQuality(c);
+                const kept = same.filter((s) => feature(s, c.all, mode) === value);
+                const from = kept.length > 0 ? kept : same;
+                return from.some((s) => s.value === c.answer) ? 1 / from.length : 0;
+              }),
+            );
+            if (score > chance + MARGIN) {
+              beaten.push(
+                `${name}: “${strategy}” = ${value} scores ${pct(score)} (chance ${pct(chance)})`,
+              );
+            }
+          }
+        }
+      }
+      expect(beaten).toEqual([]);
+    },
+  );
 });
 
 describe('d11Check', () => {
