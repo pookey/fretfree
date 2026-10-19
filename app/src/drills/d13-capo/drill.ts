@@ -1,22 +1,19 @@
 import { SKILLS } from '../../engine/skills';
-import { lazyParts } from '../lazy-view';
+import { lazyLogic, lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as logic from './logic';
+import type { D13Answer, D13Prompt } from './logic';
 import type * as views from './views';
-import {
-  D13_ID,
-  D13_SCOPE,
-  d13CanTest,
-  d13Check,
-  d13ConceptOf,
-  d13DescribeAnswer,
-  d13MakePrompt,
-  d13Sounds,
-  type D13Answer,
-  type D13Prompt,
-} from './logic';
+import { D13_ID, D13_SCOPE, d13CanTest, d13ConceptOf } from './meta';
 
-// Lazy: the views stay out of first-load JS (design §10).
-const parts = lazyParts<typeof views>('d13-capo');
+// Lazy: the logic and views stay out of first-load JS (design §10).
+const lazy = lazyLogic('d13-capo', (l: typeof logic) => ({
+  makePrompt: l.d13MakePrompt,
+  check: l.d13Check,
+  describeAnswer: l.d13DescribeAnswer,
+  sounds: l.d13Sounds,
+}));
+const parts = lazyParts<typeof views>('d13-capo', lazy);
 
 const capo: DrillType<D13Prompt, D13Answer> = {
   id: D13_ID,
@@ -26,11 +23,8 @@ const capo: DrillType<D13Prompt, D13Answer> = {
   inputModes: ['choice', 'keyboard'],
   scope: D13_SCOPE,
   canTest: d13CanTest,
-  makePrompt: d13MakePrompt,
-  check: d13Check,
-  describeAnswer: d13DescribeAnswer,
-  sounds: d13Sounds,
   conceptOf: d13ConceptOf,
+  logic: lazy,
   render: parts.render,
   contextPanel: parts.contextPanel,
 };

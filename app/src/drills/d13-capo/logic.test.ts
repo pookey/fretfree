@@ -217,9 +217,9 @@ describe('d13Check', () => {
     expect(d13Check(fret, '4').confusedWith).toBeUndefined();
   });
 
-  it('describes the answer as given', () => {
+  it('describes the answer as given', async () => {
     expect(d13DescribeAnswer('Bb')).toBe('Bb');
-    expect(drill.describeAnswer('3')).toBe('3');
+    expect((await drill.logic.preload()).describeAnswer('3')).toBe('3');
   });
 });
 

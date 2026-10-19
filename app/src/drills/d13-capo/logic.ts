@@ -1,13 +1,11 @@
 import { ENGINE_CONFIG } from '../../engine/config';
-import { parseCapoItemId, type GuideLevel, type Item } from '../../engine/model';
+import type { GuideLevel, Item } from '../../engine/model';
 import {
-  OPEN_SHAPE_KEYS,
   chromaOf,
   chromaToPc,
   keyLabel,
   keySignature,
   parseKey,
-  sameKey,
   semitonesUp,
   shapeKey,
   soundingKey,
@@ -15,6 +13,9 @@ import {
   type MusicalKey,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D13_SCOPE, d13Parse as parse, type D13Ask } from './meta';
+
+export { D13_ID, D13_SCOPE, d13CanTest, d13ConceptOf, type D13Ask } from './meta';
 
 /**
  * D13 "Capo calculator" (design §6 D13, C10). A song card names two of the
@@ -34,10 +35,6 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * two directions (rule 6).
  */
 
-export const D13_ID = 'capo';
-
-export type D13Ask = 'sound' | 'shape' | 'fret';
-
 export interface D13Prompt {
   itemId: string;
   ask: D13Ask;
@@ -56,37 +53,11 @@ export interface D13Prompt {
 /** A key label (`Bb`, `Cm`) or a capo fret (`3`), as on the buttons. */
 export type D13Answer = string;
 
-/**
- * Scope levels (research/02 rule 5): 0 keeps the capo to frets 1–4 and
- * offers four buttons, 1 reaches fret 7 with six, and 2 offers every key (or
- * frets 1–11). Values live in `engine/config/capo.ts`.
- */
-export const D13_SCOPE = { minLevel: 0, maxLevel: 2 };
-
-const ASK_OF = {
-  'capo-sound': 'sound',
-  'capo-shape': 'shape',
-  'capo-fret': 'fret',
-} as const satisfies Record<string, D13Ask>;
-
 /** The highest fret a fret answer offers: frets 1–11 reach every key. */
 const MAX_FRET_CHOICE = 11;
 
 function clampLevel(level: number): number {
   return Math.max(D13_SCOPE.minLevel, Math.min(D13_SCOPE.maxLevel, Math.floor(level)));
-}
-
-function parse(item: Item): { ask: D13Ask; shape: MusicalKey } | null {
-  const ref = parseCapoItemId(item.id);
-  if (!ref) return null;
-  const shape = parseKey(ref.shape);
-  // Only the open shapes beginners play under a capo (C A G E D, Am Em Dm).
-  if (!OPEN_SHAPE_KEYS.some((k) => sameKey(k, shape) && k.tonic === shape.tonic)) return null;
-  return { ask: ASK_OF[ref.kind], shape };
-}
-
-export function d13CanTest(item: Item): boolean {
-  return parse(item) !== null;
 }
 
 /** A key of the shape's mode, `semitones` from its tonic, spelled as the circle names it. */
@@ -176,12 +147,6 @@ export function d13MakePrompt(item: Item, ctx: DrillContext): D13Prompt {
 }
 
 /** `capo:up` counts up from the shapes (to the sound or the fret); `capo:down` from the song. */
-export function d13ConceptOf(item: Item): string | null {
-  const p = parse(item);
-  if (!p) return null;
-  return p.ask === 'shape' ? 'capo:down' : 'capo:up';
-}
-
 export function d13Check(prompt: D13Prompt, answer: D13Answer): DrillCheck {
   const expected = d13Answer(prompt);
   const concept = prompt.ask === 'shape' ? 'capo:down' : 'capo:up';
