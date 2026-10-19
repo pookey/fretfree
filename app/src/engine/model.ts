@@ -12,6 +12,7 @@ import {
   parseNashville,
   parseRoman,
   romanNumeral,
+  PROGRESSIONS,
   type CagedQuality,
   type CagedShapeName,
   type ChordDegree,
@@ -171,7 +172,8 @@ export type ItemRef =
   | { kind: 'chord-name'; shape: CagedShapeName; chord: ChordKind }
   | { kind: 'build-chord'; chord: ChordKind; string: number }
   | { kind: CapoItemKind; shape: string }
-  | { kind: NumeralItemKind; numeral: string; key: string };
+  | { kind: NumeralItemKind; numeral: string; key: string }
+  | { kind: 'progression'; progression: string; task: ProgressionTask };
 
 const INT = '(0|[1-9]\\d*)';
 const OFFSET = '([+-][1-9]\\d*)';
@@ -195,6 +197,7 @@ const CHORD_NAME_ITEM = /^chord-name:([CAGED])-shape@([A-Za-z0-9]+)$/;
 const BUILD_CHORD_ITEM = new RegExp(`^build-chord:([A-Za-z0-9]+)@s${INT}$`);
 const CAPO_ITEM = new RegExp(`^(capo-sound|capo-shape|capo-fret):${PC}(m?)$`);
 const NUMERAL_ITEM = /^(numeral|numeral-of|nashville):([^@\s]+)@key=([A-G][#b]?m?)$/;
+const PROGRESSION_ITEM = /^prog:([A-Za-z0-9-]+):(build|transpose)$/;
 
 function count(n: number, what: string): number {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Invalid ${what}: ${n}`);
@@ -550,6 +553,35 @@ export function parseNumeralItemId(
   return { kind, numeral, key };
 }
 
+/**
+ * `prog:I-V-vi-IV:build`: fill a progression's slots in a key (D12, numerals
+ * → chords). `prog:I-V-vi-IV:transpose` moves its chart to another key. The
+ * progression is a catalogue ID (`theory/harmony` PROGRESSIONS), and the
+ * keys vary per prompt, so one card holds the progression in every key
+ * (research/02 rule 12).
+ */
+export type ProgressionTask = 'build' | 'transpose';
+
+function isProgressionId(id: string): boolean {
+  return PROGRESSIONS.some((p) => p.id === id);
+}
+
+export function progressionItemId(progression: string, task: ProgressionTask): string {
+  if (!isProgressionId(progression)) throw new RangeError(`Unknown progression: ${progression}`);
+  if (task !== 'build' && task !== 'transpose') {
+    throw new RangeError(`Invalid progression task: ${String(task)}`);
+  }
+  return `prog:${progression}:${task}`;
+}
+
+export function parseProgressionItemId(
+  id: string,
+): { progression: string; task: ProgressionTask } | null {
+  const m = PROGRESSION_ITEM.exec(id);
+  if (!m || !isProgressionId(m[1] as string)) return null;
+  return { progression: m[1] as string, task: m[2] as ProgressionTask };
+}
+
 export function itemId(ref: ItemRef): string {
   switch (ref.kind) {
     case 'note':
@@ -598,6 +630,8 @@ export function itemId(ref: ItemRef): string {
     case 'numeral-of':
     case 'nashville':
       return numeralItemId(ref.kind, ref.numeral, ref.key);
+    case 'progression':
+      return progressionItemId(ref.progression, ref.task);
   }
 }
 
@@ -638,5 +672,7 @@ export function parseItemId(id: string): ItemRef | null {
   if (capo) return capo;
   const numeral = parseNumeralItemId(id);
   if (numeral) return numeral;
+  const progression = parseProgressionItemId(id);
+  if (progression) return { kind: 'progression', ...progression };
   return null;
 }
