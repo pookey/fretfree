@@ -6,7 +6,7 @@ import { skipInstallTip } from './helpers/install';
 // A learner who skipped it in onboarding opens it again from Settings, and
 // what they answer fluently unlocks or masters skills in Learn. A retake can't
 // set them back. The expert answers every probe kind this key knows and says
-// "Not sure" to the rest (e.g. C5's chord spelling).
+// "Not sure" to the rest (e.g. C4's key spelling).
 
 // An independent answer key (deliberately not imported from app code).
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
@@ -218,7 +218,8 @@ test.describe('M2-15 retake the placement test', () => {
     await openRetake(page);
     await expect(page.getByText(/^It checks .*Neck basics.*Intervals.*Chords/)).toBeVisible();
     const seen = await runTest(page, true);
-    // Every topic with skills and a drill is probed, C5's chord spelling included.
+    // Every topic with skills and a drill is probed, C4's key spelling included. This
+    // key says "Not sure" to it, so C5's chords (behind C4, M2-16) are skipped.
     for (const kind of [
       /^letter:/,
       /^step:/,
@@ -226,7 +227,7 @@ test.describe('M2-15 retake the placement test', () => {
       /^find:/,
       /^interval-name:/,
       /^interval:/,
-      /^spell-chord:/,
+      /^spell-key:/,
     ]) {
       expect(seen.some((id) => kind.test(id))).toBe(true);
     }
