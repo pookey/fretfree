@@ -27,6 +27,8 @@ import {
 import { savePlacement, type ProbeLog } from './save';
 import {
   entrySkills,
+  isWeakCard,
+  withWeakItems,
   moduleSkills,
   opensAfter,
   reportSentence,
@@ -235,19 +237,101 @@ describe('saving a test-out', () => {
     expect(await db.cards.get('spell-key:G')).toEqual(card);
   });
 
-  it('masters a passed skill even where older, shakier cards fail the stability share', async () => {
-    // A learner who practised a little: every sharp key has a fresh, unstable card.
-    const sharp = SKILLS.find((s) => s.id === 'C4.sharp-keys') as Skill;
-    const shaky = sharp
-      .items()
-      .map((i) => scheduler.review(scheduler.seedKnownCard(i, NOW, 1), Rating.Hard, NOW));
-    await db.cards.bulkPut(shaky);
-    const groups = testOutGroups(['C4.sharp-keys'], SKILLS, canServe);
-    const { summary, statuses } = await save(groups, () => 'fluent');
-    expect(summary.masteredSkills).toEqual(['C4.sharp-keys']);
-    expect(statuses.get('C4.sharp-keys')).toBe('mastered');
-    // Real history isn't overwritten by a guess: unprobed cards keep their schedule.
-    expect(summary.seeded).toBe(0);
+  describe('a learner with weak cards of their own (rule 7)', () => {
+    const sharp = () => SKILLS.find((s) => s.id === 'C4.sharp-keys') as Skill;
+    /** Three of the 8 sharp keys practised a little: real cards, far below mastery stability. */
+    async function practisedALittle(): Promise<string[]> {
+      const items = sharp().items().slice(0, 3);
+      await db.cards.bulkPut(
+        items.map((i) => scheduler.review(scheduler.seedKnownCard(i, NOW, 1), Rating.Hard, NOW)),
+      );
+      return items.map((i) => i.id);
+    }
+    const weakGroups = async () =>
+      withWeakItems(testOutGroups(['C4.sharp-keys'], SKILLS, canServe), await db.cards.toArray());
+
+    it('marks every weak card’s item as a probe, and only those', async () => {
+      const weak = await practisedALittle();
+      expect(isWeakCard((await db.cards.get(weak[0]!))!)).toBe(true);
+      const [group] = await weakGroups();
+      expect(group!.mustProbe).toEqual(weak);
+      // Strong cards don't need asking.
+      const strong = scheduler.seedKnownCard(sharp().items()[7]!, NOW, 30);
+      expect(withWeakItems([group!], [strong])[0]!.mustProbe).toEqual([]);
+    });
+
+    it('asks every weak item first, and each must be fluent', async () => {
+      const weak = await practisedALittle();
+      // 8 keys: the 4-probe sample starts with the 3 weak keys.
+      const state = startPlacement(
+        await weakGroups(),
+        lcg(),
+        ENGINE_CONFIG.placement.testOut.tiers,
+      );
+      expect(state.groups[0]).toMatchObject({ probes: 4, knownAt: 4 });
+      expect(
+        state.groups[0]!.items.slice(0, 3)
+          .map((i) => i.id)
+          .sort(),
+      ).toEqual([...weak].sort());
+      const { summary, logs, statuses } = await save(await weakGroups(), () => 'fluent');
+      expect(logs.map((l) => l.item.id)).toEqual(expect.arrayContaining(weak));
+      expect(statuses.get('C4.sharp-keys')).toBe('mastered');
+      expect(summary.masteredSkills).toEqual(['C4.sharp-keys']);
+      // Real history isn't overwritten by a guess: only the 5 keys without a card are seeded.
+      expect(summary.seeded).toBe(5);
+    });
+
+    it('extends the probes when more items are weak than the sample asks', async () => {
+      const items = sharp().items().slice(0, 6);
+      await db.cards.bulkPut(items.map((i) => scheduler.seedKnownCard(i, NOW, 2)));
+      const state = startPlacement(
+        await weakGroups(),
+        lcg(),
+        ENGINE_CONFIG.placement.testOut.tiers,
+      );
+      expect(state.groups[0]).toMatchObject({ probes: 6, knownAt: 6 });
+      // Placement's own tiers allow a slip in a sample; the extra probes allow none.
+      const loose = startPlacement(
+        [{ id: 'g', items: sharp().items(), prerequisites: [], mustProbe: ['spell-key:C'] }],
+        lcg(),
+        [{ upTo: 100, probes: 3, knownAt: 2 }],
+      );
+      expect(loose.groups[0]).toMatchObject({ probes: 3, knownAt: 2 });
+      expect(loose.groups[0]!.items[0]!.id).toBe('spell-key:C');
+      const { statuses } = await save(await weakGroups(), () => 'fluent');
+      expect(statuses.get('C4.sharp-keys')).toBe('mastered');
+    });
+
+    it('a slip on a weak item fails the skill', async () => {
+      await practisedALittle();
+      const { summary, statuses } = await save(await weakGroups(), (_g, asked) =>
+        asked === 0 ? 'slow' : 'fluent',
+      );
+      expect(summary.knownSkills).toEqual([]);
+      expect(statuses.get('C4.sharp-keys')).not.toBe('mastered');
+    });
+
+    it('four fluent probes can’t override weak real reviews they didn’t ask about', async () => {
+      // Without `withWeakItems`, the sample may miss the weak keys: saving won't master.
+      const weak = await practisedALittle();
+      const groups = testOutGroups(['C4.sharp-keys'], SKILLS, canServe);
+      const { state, logs } = play(groups, () => 'fluent');
+      const asked = new Set(logs.map((l) => l.item.id));
+      expect(weak.every((id) => asked.has(id))).toBe(false);
+      const summary = await savePlacement(db, {
+        state,
+        logs,
+        skills: SKILLS,
+        scheduler,
+        targets,
+        now: NOW,
+        masterKnown: true,
+      });
+      expect(summary.knownSkills).toEqual(['C4.sharp-keys']);
+      expect(summary.masteredSkills).toEqual([]);
+      expect((await getSkillStates(db)).get('C4.sharp-keys')?.status).toBe('practising');
+    });
   });
 
   it('a partly known module reads as partly known', () => {

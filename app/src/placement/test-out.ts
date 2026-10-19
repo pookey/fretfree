@@ -1,6 +1,7 @@
+import { ENGINE_CONFIG } from '../engine/config';
 import { moduleOfTopic, type Module } from '../engine/frontier';
 import { deriveStatus, isFrontier } from '../engine/mastery';
-import type { Item, Skill, SkillStatus } from '../engine/model';
+import type { CardRecord, Item, Skill, SkillStatus } from '../engine/model';
 import { skillGroups, type GroupInput } from './algorithm';
 import type { PlacementSummary } from './save';
 
@@ -57,6 +58,33 @@ export function testOutGroups(
   canServe: (item: Item) => boolean,
 ): GroupInput[] {
   return skillGroups(skills, canServe, (s) => skillIds.includes(s.id));
+}
+
+/** True for a card the learner has, still below the mastery stability. */
+export function isWeakCard(
+  card: CardRecord,
+  stabilityDays: number = ENGINE_CONFIG.mastery.stabilityDays,
+): boolean {
+  return card.fsrs.stability < stabilityDays;
+}
+
+/**
+ * The groups with every weak card's item made a probe (`mustProbe`). A
+ * test-out masters what it passes, so a few fluent probes mustn't vouch for
+ * items the learner's own reviews show are still shaky: each one is asked,
+ * and must be fluent too (rule 7). A fresh profile has no cards, so nothing
+ * changes for it.
+ */
+export function withWeakItems(
+  groups: readonly GroupInput[],
+  cards: readonly CardRecord[],
+  stabilityDays: number = ENGINE_CONFIG.mastery.stabilityDays,
+): GroupInput[] {
+  const weak = new Set(cards.filter((c) => isWeakCard(c, stabilityDays)).map((c) => c.itemId));
+  return groups.map((g) => ({
+    ...g,
+    mustProbe: g.items.filter((i) => weak.has(i.id)).map((i) => i.id),
+  }));
 }
 
 /**

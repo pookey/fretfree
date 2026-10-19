@@ -13,6 +13,7 @@ import type {
 import type { Scheduler } from '../engine/scheduler';
 import type { FretworkDB } from '../storage';
 import { knownItems, verdicts, type PlacementState } from './algorithm';
+import { isWeakCard } from './test-out';
 
 /**
  * Persists a finished placement test (design §3.4). Known items get a card
@@ -28,8 +29,10 @@ import { knownItems, verdicts, type PlacementState } from './algorithm';
  * skills after it unlock while a probe it missed stays on the frontier, to
  * be taught as a new item. A test-out (`masterKnown`) asks for every probe
  * fluent, so a skill it finds known is mastered once every item has a card,
- * even where older, shakier cards would fail the stability share: the test
- * is the evidence of mastery that unlocks hard prerequisites (rule 7).
+ * and every card that was below the mastery stability was itself probed
+ * fluently (`withWeakItems`). The test is then the evidence of mastery that
+ * unlocks hard prerequisites (rule 7); a shaky card it didn't ask about
+ * leaves the skill to the mastery rule.
  */
 
 /** Placement probes log `drillType` as this prefix plus the drill's ID. */
@@ -145,9 +148,17 @@ export async function savePlacement(
     // A missed probe has no card: mastered would take the skill off the
     // frontier, and the item would never be taught.
     const complete = group.items.every((it) => cards.has(it.id));
+    // Real reviews a sample didn't check outweigh it: every weak card must
+    // have been probed fluently for the test to stand in for mastery.
+    const fluent = new Set(mine.filter((l) => l.rating >= Rating.Good).map((l) => l.item.id));
+    const vouched = skill
+      .items()
+      .every(
+        (it) => !existing.has(it.id) || !isWeakCard(existing.get(it.id)!) || fluent.has(it.id),
+      );
     const mastered =
       complete &&
-      (masterKnown ||
+      ((masterKnown && vouched) ||
         isMastered({
           itemCount: skill.items().length,
           cards: skill.items().flatMap((it) => cards.get(it.id) ?? []),

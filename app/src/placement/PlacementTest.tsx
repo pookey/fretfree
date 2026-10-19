@@ -6,7 +6,7 @@ import { DRILLS } from '../drills/registry';
 import type { AnyDrillType, DrillFeedback } from '../drills/types';
 import { ENGINE_CONFIG } from '../engine/config';
 import { gradeAnswer, speedTargets } from '../engine/grading';
-import type { Item, Skill } from '../engine/model';
+import type { Skill } from '../engine/model';
 import { createScheduler, type Scheduler } from '../engine/scheduler';
 import { SKILLS } from '../engine/skills';
 import { createDrillPicker } from '../session/drill-picker';
@@ -20,11 +20,12 @@ import {
   probeOutcome,
   progress,
   startPlacement,
+  type GroupInput,
   type PlacementState,
   type Probe,
 } from './algorithm';
 import { savePlacement, type PlacementSummary, type ProbeLog } from './save';
-import { testOutGroups } from './test-out';
+import { testOutGroups, withWeakItems } from './test-out';
 import onboarding from '../onboarding/Onboarding.module.css';
 import styles from './PlacementTest.module.css';
 
@@ -185,23 +186,36 @@ export function PlacementTest({
     shownAt.current = now();
   };
 
-  const start = () => {
-    const canServe = (i: Item) => picker.canServe(i);
-    const groups = testOut
-      ? testOutGroups(testOut.skillIds, skills, canServe)
-      : placementGroups(skills, canServe);
+  const begin = (groups: readonly GroupInput[]) => {
     state.current = startPlacement(groups, rng, tiers);
     logs.current = [];
     startedAt.current = now();
     advance();
   };
 
+  const start = () => begin(placementGroups(skills, (i) => picker.canServe(i)));
+
   // A test-out was asked for by a tap on "Test out": no second start button.
+  // It also asks every item whose own card is still weak (`withWeakItems`).
   const autoStart = useRef(testOut !== undefined);
   useEffect(() => {
-    if (!autoStart.current) return;
+    if (!autoStart.current || !testOut) return;
     autoStart.current = false;
-    start();
+    const groups = testOutGroups(testOut.skillIds, skills, (i) => picker.canServe(i));
+    const ids = groups.flatMap((g) => g.items.map((i) => i.id));
+    db.cards.bulkGet(ids).then(
+      (cards) =>
+        begin(
+          withWeakItems(
+            groups,
+            cards.filter((c) => c !== undefined),
+          ),
+        ),
+      (e: unknown) => {
+        console.error('Test-out not started', e);
+        setPhase({ kind: 'failed' });
+      },
+    );
     // Once, on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

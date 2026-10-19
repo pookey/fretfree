@@ -42,6 +42,13 @@ export interface GroupInput {
   items: readonly Item[];
   /** Prerequisite group IDs; they must come earlier in the group list. */
   prerequisites: readonly string[];
+  /**
+   * Item IDs that must be probed. They are asked first, and the group asks
+   * at least as many probes as there are of them, each extra one needing to
+   * be fluent. A test-out uses it for items whose real reviews are still
+   * shaky, so a sample can't vouch for them.
+   */
+  mustProbe?: readonly string[];
 }
 
 export interface ProbeGroup extends GroupInput {
@@ -127,11 +134,19 @@ export function startPlacement(
     seen.add(g.id);
   }
   return {
-    groups: groups.map((g) => ({
-      ...g,
-      items: shuffled(g.items, rng),
-      ...probeTier(g.items.length, tiers),
-    })),
+    groups: groups.map((g) => {
+      const must = new Set(g.mustProbe ?? []);
+      const first = g.items.filter((i) => must.has(i.id));
+      const rest = g.items.filter((i) => !must.has(i.id));
+      const tier = probeTier(g.items.length, tiers);
+      const probes = Math.max(tier.probes, first.length);
+      return {
+        ...g,
+        items: [...shuffled(first, rng), ...shuffled(rest, rng)],
+        probes,
+        knownAt: Math.min(probes, tier.knownAt + probes - tier.probes),
+      };
+    }),
     answers: [],
   };
 }
