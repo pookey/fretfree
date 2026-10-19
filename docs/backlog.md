@@ -965,7 +965,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - A `PitchSource` interface ({frequency, clarity} stream, stable-note events ≥80ms, start/stop on a user gesture) and a fake source for tests.
 
 ### M5-02 · AudioWorklet pitch detector (pitchy)
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request, 2026-10-19: prioritise the path to the tuner)
 - **Deps:** M5-01
 - **Owns:** `app/src/mic/worklet/**`, `app/src/mic/detector.ts`, `app/src/mic/*.test.ts`
