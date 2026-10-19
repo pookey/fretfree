@@ -353,10 +353,12 @@ export function d8DegreeStyle(degree: ChordDegree): 'root' | 'third' | 'fifth' |
 
 /**
  * Root squares are a guide (design §3.5, levels 2–3). They never show when
- * the root is what the learner is asked to tap.
+ * the root is the answer, in either direction: with the other roots squared,
+ * an unsquared ringed root could be read off the octave pattern, or taken for
+ * "not the root".
  */
 export function d8ShowsRoots(prompt: D8Prompt, guideLevel: GuideLevel, guided: boolean): boolean {
-  if (prompt.mode === 'tap' && prompt.degree === '1') return false;
+  if (prompt.degree === '1') return false;
   return guided || guideLevel >= ENGINE_CONFIG.chordTone.rootGuideLevel;
 }
 

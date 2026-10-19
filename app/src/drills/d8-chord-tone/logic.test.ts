@@ -379,7 +379,7 @@ describe('D8 grading', () => {
 });
 
 describe('D8 guides and windows', () => {
-  it('shows root squares from guide level 2, never when the root is the tap target', () => {
+  it('shows root squares from guide level 2, never when the root is the answer', () => {
     const third = d8MakePrompt(item('chord-tone:3@major'), ctx(seq(0)));
     const root = d8MakePrompt(item('chord-tone:1@major'), ctx(seq(0)));
     const nameRoot = d8MakePrompt(item('chord-tone-name:1@major'), ctx(seq(0)));
@@ -387,7 +387,8 @@ describe('D8 guides and windows', () => {
     expect(d8ShowsRoots(third, 1, false)).toBe(false);
     expect(d8ShowsRoots(third, 0, true)).toBe(true);
     expect(d8ShowsRoots(root, 3, true)).toBe(false);
-    expect(d8ShowsRoots(nameRoot, 3, false)).toBe(true);
+    expect(d8ShowsRoots(nameRoot, 3, false)).toBe(false);
+    expect(d8ShowsRoots(nameRoot, 0, true)).toBe(false);
   });
 
   it('shows the whole neck on iPad landscape, and frames the shape elsewhere', () => {

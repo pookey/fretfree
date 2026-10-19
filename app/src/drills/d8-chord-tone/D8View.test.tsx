@@ -92,6 +92,14 @@ describe('<D8View> tap mode', () => {
     expect(screen.getByTestId('d8-explain')).not.toHaveTextContent('squares');
   });
 
+  it('never squares the other roots when the ringed note is a root', () => {
+    // A major, A shape: roots on strings 5 and 3; the first one is ringed.
+    view(prompt('chord-tone-name:1@major', seq(0.2, 0.75, 0)), { guideLevel: 3 });
+    expect(markers('target')).toEqual([{ string: 5, fret: 0, label: '' }]);
+    expect(markers('root')).toEqual([]);
+    expect(screen.getByTestId('d8-explain')).not.toHaveTextContent('squares');
+  });
+
   it('answers with the tapped cell', () => {
     const { onAnswer } = view(prompt('chord-tone:b3@m7'));
     tap({ string: 2, fret: 1 });
