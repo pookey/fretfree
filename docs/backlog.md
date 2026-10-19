@@ -660,6 +660,26 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The summary's "Learning 7 · Became stable 7" tiles can read as 14 items. Make clear that "Became stable" is a subset of today's items (e.g. "7 of them became stable"), keeping M1-35's learning/stable split.
   - RTL covers both.
 
+### M2-21 · Move every drill's help panel onto `contextPanel`
+- **Status:** todo
+- **Deps:** none
+- **Design:** §6 (drill plugin interface), §7 session context panel
+- **Owns:** `app/src/drills/d3-note-wheel/`, `app/src/drills/d5-interval-name/`, `app/src/drills/d6-interval-tap/`, `app/src/drills/d7-spell-it/`, `app/src/drills/d39-fret-landmarks/` (their view, panel and CSS files only), `app/e2e/m2-21.spec.ts`
+- **Acceptance:**
+  - From the M2-18 review: D3, D5, D6, D7 and D39 still build their own context `<aside>`, so the panel wrapper exists in six places. Move each to the optional `contextPanel` plugin field that M2-18 added, and delete the per-drill wrappers. Behaviour, guide fading and accessibility are unchanged.
+  - Every panel fits the space above the neck on iPad mini landscape (about 190px) with no overflow.
+  - E2E (`m2-21.spec.ts`, iPad projects): each of these drills shows its panel inside the session's context region, with no horizontal overflow. Existing drill specs stay green.
+
+### M1-40 · iPad portrait: D1-family layout, and an intervals seeding helper
+- **Status:** todo
+- **Deps:** none
+- **Design:** §7 layout system
+- **Owns:** `app/src/drills/d1-name-the-note/D1View.module.css`, `app/src/drills/d2-find-the-note/D2View.module.css`, `app/e2e/helpers/intervals.ts`, `app/e2e/m2-20.spec.ts`, `app/e2e/m1-40.spec.ts`
+- **Acceptance:**
+  - From the M2-20 review: D1 and the drills that copied D1's `.drill { justify-content: space-between }` probably leave a tall empty band on iPad portrait, as D5/D6 did. Confirm with a gap assertion; if it's there, apply M2-20's fix (`.drill[data-size-class='regular'] { justify-content: flex-start }`, and `> .context { align-self: stretch }` where help sits below the neck). Other size classes are unchanged, and neck cells stay ≥44pt.
+  - Give `seedIntervals` an optional `practising: [{ skillId, guideLevel }]` and export `THIRDS_SHAPES`, then make `m2-20.spec.ts` use them instead of its copied seeder.
+  - E2E (`m1-40.spec.ts`, ipad-portrait): the D1 and D2 prompt-to-neck gap is under the same bound m2-20 uses.
+
 ## M3: Chords and CAGED
 
 ### M3-01 · [contract] Scale, chord and CAGED theory v2
