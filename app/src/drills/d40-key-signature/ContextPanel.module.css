@@ -1,0 +1,7 @@
+/* D40's context panel: the rules and orders. The session's panel
+   supplies the box and the heading colour. */
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}

@@ -1,6 +1,9 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { Link } from 'react-router';
 import type { PlayOptions } from '../../../audio/audio';
 import { useAppStore } from '../../../app-store';
+import { SKILLS, type Skill } from '../../../engine';
+import { focusHref, type SessionFocus } from '../../../session/focus';
 import {
   CIRCLE_OF_FIFTHS,
   chromaOf,
@@ -18,6 +21,7 @@ import {
   type MusicalKey,
 } from '../../../theory';
 import styles from '../../screens.module.css';
+import { useFrontier } from './fretboard-explorer';
 import css from './fretboard-explorer.module.css';
 import own from './circle-of-fifths.module.css';
 
@@ -33,6 +37,9 @@ import own from './circle-of-fifths.module.css';
  * D♭/C♯; M4-01 `CircleEntry.enharmonic`). Both are shown, and the selected
  * key keeps the spelling it was reached by, so stepping round from F♯ gives
  * C♯ and from G♭ gives D♭.
+ *
+ * "Quiz me on this" opens a focused session on I3 (D40's key-signature
+ * cards), so the circle is recalled, not just re-read (research/02 rule 4).
  */
 
 /**
@@ -44,6 +51,32 @@ function playNotes(notes: readonly string[], opts: PlayOptions): Promise<void> {
 }
 
 const mod12 = (n: number) => ((n % 12) + 12) % 12;
+
+/**
+ * "Quiz me on this" (design §7): a focused session on the I3 skills the
+ * learner has open. Gating stays on (rule 7), so until any are on the
+ * `frontier` the quiz walks back through their prerequisites (C4's keys,
+ * then F1's steps) and offers the nearest open ones, as the CAGED view does.
+ * Skills are found by topic, so new I3 skills join without editing this view.
+ */
+export function circleQuizFocus(
+  frontier: ReadonlySet<string> = new Set(),
+  skills: readonly Skill[] = SKILLS,
+): Partial<SessionFocus> {
+  const byId = new Map(skills.map((s) => [s.id, s]));
+  const i3 = skills.filter((s) => s.topic === 'I3').map((s) => s.id);
+  let level = i3;
+  const seen = new Set(level);
+  while (level.length > 0) {
+    const open = level.filter((id) => frontier.has(id));
+    if (open.length > 0) return { skillIds: open };
+    level = [...new Set(level.flatMap((id) => byId.get(id)?.prerequisites ?? []))].filter(
+      (id) => byId.has(id) && !seen.has(id),
+    );
+    for (const id of level) seen.add(id);
+  }
+  return { skillIds: i3 };
+}
 
 const MODES: readonly KeyMode[] = ['major', 'minor'];
 
@@ -266,6 +299,8 @@ function wedgeLabel(position: number, mode: KeyMode, chord: FamilyChord | undefi
 export function View() {
   const settings = useAppStore((s) => s.settings);
   const [key, setKey] = useState<MusicalKey>({ tonic: 'C', mode: 'major' });
+  const frontier = useFrontier();
+  const quizHref = focusHref(circleQuizFocus(frontier));
   const refs = useRef(new Map<string, SVGGElement>());
   const focusSelected = useRef(false);
 
@@ -404,7 +439,7 @@ export function View() {
         </figcaption>
       </figure>
 
-      <KeyPanel detail={detail} onSelect={select} />
+      <KeyPanel detail={detail} onSelect={select} quizHref={quizHref} />
     </div>
   );
 }
@@ -412,9 +447,11 @@ export function View() {
 function KeyPanel({
   detail,
   onSelect,
+  quizHref,
 }: {
   detail: KeyDetail;
   onSelect: (key: MusicalKey) => void;
+  quizHref: string;
 }) {
   const { key, spellings, signature, relative, down, up, chords } = detail;
   const major = key.mode === 'major';
@@ -488,6 +525,9 @@ function KeyPanel({
         {offCircle &&
           ` ${pretty(offCircle.roman)} is diminished, so it has no place on the circle.`}
       </p>
+      <Link to={quizHref} className={`${styles.secondaryButton} ${own.quiz}`}>
+        Quiz me on this
+      </Link>
     </div>
   );
 }

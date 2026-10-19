@@ -219,3 +219,7 @@
     transition: fill 0.15s;
   }
 }
+
+.quiz {
+  justify-self: start;
+}

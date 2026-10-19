@@ -3,9 +3,11 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import * as audio from '../../../audio/audio';
 import { useAppStore } from '../../../app-store';
+import { SKILLS } from '../../../engine';
 import { CIRCLE_OF_FIFTHS, keySignature, majorKey, minorKey } from '../../../theory';
 import {
   View,
+  circleQuizFocus,
   circleSpellings,
   keyDetail,
   keyFamily,
@@ -21,6 +23,7 @@ import {
   wedgeId,
   wedgePath,
 } from './circle-of-fifths';
+import { frontierSkillIds } from './fretboard-explorer';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -164,6 +167,33 @@ describe('keyDetail', () => {
   });
 });
 
+describe('Quiz me on this', () => {
+  const I3 = ['I3.sharp-signatures', 'I3.flat-signatures', 'I3.dominants', 'I3.relative-minors'];
+
+  it('focuses the I3 skills the learner has open', () => {
+    expect(circleQuizFocus(new Set(SKILLS.map((s) => s.id)))).toEqual({ skillIds: I3 });
+    expect(circleQuizFocus(new Set(['I3.sharp-signatures', 'C4.sharp-keys']))).toEqual({
+      skillIds: ['I3.sharp-signatures'],
+    });
+  });
+
+  it('walks back to the nearest open steps while I3 is gated', () => {
+    // I3 opens after C4's sharp keys, which open after F1's steps.
+    expect(circleQuizFocus(new Set(['C4.sharp-keys', 'F1.alphabet']))).toEqual({
+      skillIds: ['C4.sharp-keys'],
+    });
+    const fresh = frontierSkillIds(SKILLS, new Map());
+    const ids = circleQuizFocus(fresh).skillIds ?? [];
+    expect(ids.length).toBeGreaterThan(0);
+    for (const id of ids) expect(fresh.has(id)).toBe(true);
+  });
+
+  it('falls back to every I3 skill when nothing on the way is open', () => {
+    expect(circleQuizFocus()).toEqual({ skillIds: I3 });
+    expect(circleQuizFocus(new Set(), [])).toEqual({ skillIds: [] });
+  });
+});
+
 function renderView() {
   return render(
     <MemoryRouter>
@@ -175,6 +205,12 @@ function renderView() {
 const wedge = (name: RegExp) => screen.getByRole('radio', { name });
 
 describe('<View>', () => {
+  it('links "Quiz me on this" to a focused session', async () => {
+    renderView();
+    const quiz = screen.getByRole('link', { name: 'Quiz me on this' });
+    expect(quiz.getAttribute('href')).toMatch(/^\/session\?skill=/);
+  });
+
   it('starts on C major with its chords marked', () => {
     renderView();
     const group = screen.getByRole('radiogroup', { name: 'Keys on the circle of fifths' });

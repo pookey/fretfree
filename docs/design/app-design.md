@@ -276,6 +276,7 @@ interface DrillType<P = unknown, A = unknown> {
 | D37 | Chord tones across the neck: tap every note (or every 3rd, 5th …) of a chord | tap (multi-target) | C5, I2 | M3 |
 | D38 | Build the chord: tap a playable voicing from a symbol and a root | tap | C5 | M3 |
 | D39 | Fret landmarks: name the spotlit marker, tap the named marker, and where a fret repeats an octave away | choice / tap / keyboard | F3 | M1 |
+| D40 | Key-signature cards: a key's sharps or flats, the key for a signature, the relative minor, the V | choice / keyboard | I3 | M4 |
 
 **D3 wording and input:**
 
@@ -334,6 +335,15 @@ interface DrillType<P = unknown, A = unknown> {
 - **Any playable voicing counts.** It must have every chord tone (a four-note chord may drop its perfect 5th) and no other note, its fretted notes must span at most 4 frets, and it must need at most 4 fingers (notes on the lowest fretted fret share a barre unless an open string rings between them). All are tunable in `engine/config/buildChord.ts`. Time is graded per note placed, with muted strings counting for all but one.
 - **Feedback** draws every note by its degree, by shape and colour, with notes the chord lacks as diamonds; lists the missing tones; and rings the notes of a voicing that works, the closest to the learner's. A voicing that is exactly the confusable chord (A7 for Amaj7, Am for A) is keyed as D7 and D36 key it (`chord:7`/`chord:maj7`, `triad:maj`/`triad:min`), and the feedback names the deciding tone.
 - **Guides fade** (rule 9): placed notes are plain dots, named at guide level 3 and never labelled by degree before the check. The context panel shows the chord's formula from level 2 and its notes from level 3. The first rep is a worked example that marks one voicing's notes by degree.
+
+**D40 items and grading:**
+
+- **Four kinds of card per major key** (C4's fifteen keys, each with a real signature): `key-signature:Eb` (how many sharps or flats, and which: 3♭, B♭ E♭ A♭), `signature-key:3b` (the reverse: which major key has 3 flats), `relative-minor:Eb` (C minor) and `dominant:Eb` (its V, B♭). One card per fact and direction (rules 1, 12). The tonic is kept as written, so F♯ and G♭ major are different cards. C♯ major has no V card, because G♯ major needs an F double sharp.
+- **Stages.** `I3.sharp-signatures` opens on C4's sharp keys and `I3.flat-signatures` on C4's flat keys. `I3.dominants` and `I3.relative-minors` follow once the flat signatures are under way. All are soft-unlocked, like C4. The circle of fifths in Explore quizzes them.
+- **The choices carry no clue** (M4-02's review). Signature cards offer every signature in a run of consecutive counts (0–7, wrapping), sharps and flats alike, or those signatures' keys. Because the run starts at a random place, the choice set alone makes every choice equally likely; this is tested exhaustively. 3♯ always meets 3♭ (rule 6). The relative minor and the V offer a random run of letters that contains the answer's, each letter in two spellings. Knowing only the letter (a 3rd down, a 5th up) leaves a coin toss on the accidental. The V's letters skip the key's own, so the key itself is never offered and its IV often is. Buttons are in a fixed order: signatures by count, keys alphabetically. Unit tests bound every structural strategy (button position, alphabetical neighbour of the asked key, letter steps other than the rule, naturals or accidentals only) to chance plus a few percent. Knowing a sharp key from a flat one, or matching the key's accidental, only halves the choices.
+- **Scope** widens the run from 2 to 3 to 4 counts or letters: 4, 6 or 8 buttons. A run that holds 0 has one fewer.
+- **Feedback** names the fact and its reason ("E♭ major has 3 flats: B♭ E♭ A♭. Flats always come in the order B E A D G C F.") and what a wrong choice is the answer to ("3 sharps is A major."; picking the IV for the V gets "the V is the other way round the circle"). It plays the key's tonic chord, then for the relative minor and the V the answer's chord, so the move is heard (rule 10). A wrong choice is keyed by the key whose fact it is, so `key-signature:Eb` answered 3♯ confuses `signature:Eb` with `signature:A`.
+- **Guides.** The context panel gives the kind's rule and the orders of sharps (F C G D A E B) and flats (B E A D G C F). From level 2, signature cards add the keys in circle order. The V's panel never lists the keys in order, since that would be its answer. The session hides the panel at level 0. The number row (1–8) answers.
 
 **Mic constraint:** pitch identifies the pitch, not the string. Mic drills therefore do one of three things:
 

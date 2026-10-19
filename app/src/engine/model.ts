@@ -176,7 +176,9 @@ export type ItemRef =
   | { kind: CapoItemKind; shape: string }
   | { kind: NumeralItemKind; numeral: string; key: string }
   | { kind: 'progression'; progression: string; task: ProgressionTask }
-  | { kind: 'chord-tones'; root: string; chord: ChordKind; degree: ChordDegree | null };
+  | { kind: 'chord-tones'; root: string; chord: ChordKind; degree: ChordDegree | null }
+  | { kind: 'key-signature' | 'relative-minor' | 'dominant'; tonic: string }
+  | { kind: 'signature-key'; alteration: number };
 
 const INT = '(0|[1-9]\\d*)';
 const OFFSET = '([+-][1-9]\\d*)';
@@ -202,6 +204,8 @@ const CAPO_ITEM = new RegExp(`^(capo-sound|capo-shape|capo-fret):${PC}(m?)$`);
 const NUMERAL_ITEM = /^(numeral|numeral-of|nashville):([^@\s]+)@key=([A-G][#b]?m?)$/;
 const PROGRESSION_ITEM = /^prog:([A-Za-z0-9-]+):(build|transpose)$/;
 const CHORD_TONES_ITEM = /^chord-tones:(?:(b{0,2}\d|#\d)@)?([A-G][#b]?[A-Za-z0-9]*)$/;
+const KEY_FACT_ITEM = new RegExp(`^(key-signature|relative-minor|dominant):${PC}$`);
+const SIGNATURE_KEY_ITEM = /^signature-key:(0|[1-7][#b])$/;
 
 function count(n: number, what: string): number {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Invalid ${what}: ${n}`);
@@ -623,6 +627,53 @@ export function parseChordTonesItemId(
   return { root: parsed.root, chord: parsed.kind, degree };
 }
 
+// Key facts (I3) keep the major tonic as written, as spelling items do: Gb
+// major has 6 flats and F# major 6 sharps, so they are different facts.
+
+/**
+ * `key-signature:Eb`: how many sharps or flats E♭ major has, and which (3:
+ * B♭ E♭ A♭). `relative-minor:Eb` is its relative minor (C minor) and
+ * `dominant:Eb` its V (B♭), all from the major key's tonic.
+ */
+export function keyFactItemId(
+  kind: 'key-signature' | 'relative-minor' | 'dominant',
+  tonic: string,
+): string {
+  return `${kind}:${pitchClass(tonic)}`;
+}
+
+export function parseKeyFactItemId(
+  id: string,
+): { kind: 'key-signature' | 'relative-minor' | 'dominant'; tonic: string } | null {
+  const m = KEY_FACT_ITEM.exec(id);
+  if (!m) return null;
+  return {
+    kind: m[1] as 'key-signature' | 'relative-minor' | 'dominant',
+    tonic: m[2] as string,
+  };
+}
+
+/**
+ * `signature-key:3b`: which major key has 3 flats (E♭)? Sharps are `#`, and
+ * no sharps or flats is `0`. The alteration counts sharps up, flats down.
+ */
+export function signatureKeyItemId(alteration: number): string {
+  if (!Number.isInteger(alteration) || alteration < -7 || alteration > 7) {
+    throw new RangeError(`Invalid key signature: ${alteration}`);
+  }
+  if (alteration === 0) return 'signature-key:0';
+  return `signature-key:${Math.abs(alteration)}${alteration > 0 ? '#' : 'b'}`;
+}
+
+export function parseSignatureKeyItemId(id: string): { alteration: number } | null {
+  const m = SIGNATURE_KEY_ITEM.exec(id);
+  if (!m) return null;
+  const sig = m[1] as string;
+  if (sig === '0') return { alteration: 0 };
+  const n = Number(sig.charAt(0));
+  return { alteration: sig.endsWith('#') ? n : -n };
+}
+
 export function itemId(ref: ItemRef): string {
   switch (ref.kind) {
     case 'note':
@@ -675,6 +726,12 @@ export function itemId(ref: ItemRef): string {
       return progressionItemId(ref.progression, ref.task);
     case 'chord-tones':
       return chordTonesItemId(ref.root, ref.chord, ref.degree);
+    case 'key-signature':
+    case 'relative-minor':
+    case 'dominant':
+      return keyFactItemId(ref.kind, ref.tonic);
+    case 'signature-key':
+      return signatureKeyItemId(ref.alteration);
   }
 }
 
@@ -719,5 +776,9 @@ export function parseItemId(id: string): ItemRef | null {
   if (progression) return { kind: 'progression', ...progression };
   const chordTones = parseChordTonesItemId(id);
   if (chordTones) return { kind: 'chord-tones', ...chordTones };
+  const keyFact = parseKeyFactItemId(id);
+  if (keyFact) return keyFact;
+  const signatureKey = parseSignatureKeyItemId(id);
+  if (signatureKey) return { kind: 'signature-key', ...signatureKey };
   return null;
 }

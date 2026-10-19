@@ -1,0 +1,182 @@
+/* D40: no neck, so the card sits in the upper band with the context panel beside it. */
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+  padding-top: var(--space-5);
+}
+
+.subject {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.prompt {
+  margin: 0;
+  max-width: 44rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  max-width: 44rem;
+}
+
+.choice {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-width: 4.5rem;
+  min-height: 4rem;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Signatures: a 7♯ list is long, so those buttons are wider. */
+.choices[data-signatures] .choice {
+  min-width: 7.5rem;
+}
+
+.main {
+  font-size: 1.5rem;
+  font-weight: 750;
+}
+
+.notes {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.choice:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .choice:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.choice:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+
+.choice:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.choice[data-state='correct'] {
+  background: var(--correct);
+  border-color: var(--correct);
+  color: #fff;
+  opacity: 1;
+}
+
+.choice[data-state='wrong'] {
+  background: var(--wrong);
+  border-color: var(--wrong);
+  color: #fff;
+  opacity: 1;
+}
+
+.choice[data-state='correct'] .notes,
+.choice[data-state='wrong'] .notes {
+  color: inherit;
+}
+
+/* The answer missed: a dashed edge, so it reads without colour. */
+.choice[data-state='expected'] {
+  border-color: var(--correct);
+  border-style: dashed;
+  opacity: 1;
+}
+
+.feedback {
+  max-width: 40rem;
+  text-align: center;
+}
+
+.feedback p {
+  margin: 0 0 var(--space-2);
+  font-size: 1.0625rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .choice {
+    transition:
+      background 0.12s,
+      transform 0.08s;
+  }
+}
+
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .top {
+  gap: var(--space-3);
+  padding-top: 0;
+}
+
+.drill[data-size-class='compact'] .subject {
+  font-size: 1.75rem;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .choice {
+  min-width: 3.25rem;
+  min-height: 3rem;
+}
+
+.drill[data-size-class='compact'] .choices[data-signatures] .choice {
+  min-width: 6.5rem;
+}
+
+.drill[data-size-class='compact'] .main {
+  font-size: 1.25rem;
+}

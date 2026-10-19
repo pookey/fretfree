@@ -4,6 +4,7 @@ import {
   findMarkerItemId,
   intervalItemId,
   itemId,
+  keyFactItemId,
   letterItemId,
   markerItemId,
   noteItemId,
@@ -14,6 +15,8 @@ import {
   parseDegreeItemId,
   parseNumeralItemId,
   parseIntervalItemId,
+  parseKeyFactItemId,
+  parseSignatureKeyItemId,
   parseSpellChordItemId,
   parseSpellKeyItemId,
   spellChordItemId,
@@ -26,6 +29,7 @@ import {
   parseRepeatItemId,
   parseStepItemId,
   repeatItemId,
+  signatureKeyItemId,
   stepItemId,
   type ItemRef,
 } from './model';
@@ -51,6 +55,12 @@ describe('item IDs', () => {
     expect(spellChordItemId('7', 'Gb')).toBe('spell-chord:7@Gb');
     expect(degreeItemId('degree', 6, 'Eb')).toBe('degree:6@Eb');
     expect(degreeItemId('degree-of', 7, 'F#')).toBe('degree-of:7@F#');
+    expect(keyFactItemId('key-signature', 'Eb')).toBe('key-signature:Eb');
+    expect(keyFactItemId('relative-minor', 'F#')).toBe('relative-minor:F#');
+    expect(keyFactItemId('dominant', 'C')).toBe('dominant:C');
+    expect(signatureKeyItemId(0)).toBe('signature-key:0');
+    expect(signatureKeyItemId(3)).toBe('signature-key:3#');
+    expect(signatureKeyItemId(-7)).toBe('signature-key:7b');
   });
 
   it('parses each kind', () => {
@@ -71,6 +81,9 @@ describe('item IDs', () => {
       degree: 3,
       tonic: 'Ab',
     });
+    expect(parseKeyFactItemId('dominant:Gb')).toEqual({ kind: 'dominant', tonic: 'Gb' });
+    expect(parseSignatureKeyItemId('signature-key:6b')).toEqual({ alteration: -6 });
+    expect(parseSignatureKeyItemId('signature-key:0')).toEqual({ alteration: 0 });
   });
 
   const refs: ItemRef[] = [
@@ -89,6 +102,12 @@ describe('item IDs', () => {
     { kind: 'spell-chord', chord: 'major', root: 'E' },
     { kind: 'degree', degree: 6, tonic: 'Eb' },
     { kind: 'degree-of', degree: 2, tonic: 'C#' },
+    { kind: 'key-signature', tonic: 'Cb' },
+    { kind: 'relative-minor', tonic: 'Eb' },
+    { kind: 'dominant', tonic: 'F#' },
+    { kind: 'signature-key', alteration: 4 },
+    { kind: 'signature-key', alteration: -2 },
+    { kind: 'signature-key', alteration: 0 },
   ];
 
   it.each(refs)('round-trips $kind refs', (ref) => {
@@ -129,6 +148,12 @@ describe('item IDs', () => {
     'degree:0@C',
     'degree:6@Eb major',
     'degree-of:C@Eb',
+    'key-signature:Eb major',
+    'dominant:eb',
+    'signature-key:3',
+    'signature-key:8#',
+    'signature-key:0#',
+    'signature-key:-3',
   ])('rejects non-canonical %j', (id) => {
     expect(parseItemId(id)).toBeNull();
   });
@@ -147,6 +172,9 @@ describe('item IDs', () => {
     expect(() => spellChordItemId('m9' as 'm7', 'B')).toThrow(RangeError);
     expect(() => degreeItemId('degree', 8, 'C')).toThrow(RangeError);
     expect(() => degreeItemId('degree', 2.5, 'C')).toThrow(RangeError);
+    expect(() => keyFactItemId('dominant', 'H')).toThrow(RangeError);
+    expect(() => signatureKeyItemId(8)).toThrow(RangeError);
+    expect(() => signatureKeyItemId(1.5)).toThrow(RangeError);
   });
 });
 
