@@ -1,0 +1,42 @@
+/* The pentatonic-box panel: the box chain as a small table, then a line or
+   two. It fits above the neck on an iPad mini in landscape. */
+.panel h2 {
+  margin: 0 0 var(--space-2);
+}
+
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.chain {
+  border-collapse: separate;
+  border-spacing: var(--space-1);
+  margin: 0 calc(-1 * var(--space-1));
+  font-weight: 700;
+}
+
+.chain th {
+  padding-right: var(--space-2);
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.chain td {
+  min-width: 1.75rem;
+  padding: 0.125rem var(--space-1);
+  text-align: center;
+  border: 2px solid transparent;
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+}
+
+/* The asked box: a border and full-strength text, not only a colour. */
+.chain td[aria-current='true'] {
+  border-color: var(--text);
+  color: var(--text);
+  background: var(--surface);
+}
