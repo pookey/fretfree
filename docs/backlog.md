@@ -8,6 +8,7 @@ Work packages (WPs) for M1–M6 and the future M8 (design §11, §12). The `fret
 - **Contracts first.** WPs marked **[contract]** land types, registries and interfaces that others build against. Run them first and merge them fast.
 - **Vertical slices in new files.** A drill is a new `app/src/drills/<id>/` folder (auto-registered). A skill topic is a new `app/src/engine/skills/<topic>.ts` (auto-registered). Screens, Today cards, Progress panels, Explore views and onboarding steps all become one-file-per-entry registries in M1-01.
 - **After** (optional) is a *soft* ordering. By default a WP waits for its After packages too, but when slots would otherwise be idle the planner may start it once its real **Deps** are done. M8 uses this to stay "future" without wasting capacity.
+- **Priority** (optional): `high` puts a ready WP ahead of everything else in the planner, contracts included. Use it for work the user asked to bring forward, and say why.
 - **Owns** lists the files and folders a WP may create or change. Two WPs whose Owns overlap must not run at the same time. Globs mean "this folder".
 - **Hotspots** are shared files that only one in-flight WP may touch at a time, whatever the Owns say:
   - `app/src/session/runner.ts`
@@ -935,6 +936,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ### M4-12 · Tools section: nav entry, tool registry and index
 - **Status:** todo
+- **Priority:** high (user request, 2026-10-19: prioritise the path to the tuner)
 - **Deps:** none
 - **Design:** §Navigation, §Tools, §7
 - **Owns:** `app/src/routes/tools.route.tsx`, `app/src/screens/tools/ToolsScreen.tsx`, `app/src/screens/tools/ToolsScreen.module.css`, `app/src/screens/tools/registry.ts`, `app/src/screens/tools/*.test.ts*`, `app/e2e/m4-12.spec.ts`
@@ -959,6 +961,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ### M5-02 · AudioWorklet pitch detector (pitchy)
 - **Status:** todo
+- **Priority:** high (user request, 2026-10-19: prioritise the path to the tuner)
 - **Deps:** M5-01
 - **Owns:** `app/src/mic/worklet/**`, `app/src/mic/detector.ts`, `app/src/mic/*.test.ts`
 - **Acceptance:**
@@ -966,6 +969,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ### M5-03 · Tools: tuner
 - **Status:** todo
+- **Priority:** high (user request, 2026-10-19: prioritise the path to the tuner)
 - **Deps:** M5-02, M4-12
 - **Design:** §Tools, §9
 - **Owns:** `app/src/screens/tools/tuner/**`, `app/e2e/m5-03.spec.ts`

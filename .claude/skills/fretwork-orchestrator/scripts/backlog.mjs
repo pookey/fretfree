@@ -39,13 +39,14 @@ export function parse(text) {
         after: [],
         owns: [],
         design: '',
+        priority: false,
       };
       wps.push(cur);
       return;
     }
     if (/^#{1,3} /.test(line)) cur = null;
     if (!cur) return;
-    const f = /^- \*\*(Status|Deps|After|Owns|Design):\*\* (.*)$/.exec(line);
+    const f = /^- \*\*(Status|Deps|After|Owns|Design|Priority):\*\* (.*)$/.exec(line);
     if (!f) return;
     const [, key, value] = f;
     if (key === 'Status') {
@@ -57,6 +58,8 @@ export function parse(text) {
       cur.after = value.match(/M\d+-\d+/g) ?? [];
     } else if (key === 'Owns') {
       cur.owns = [...value.matchAll(/`([^`]+)`/g)].map((m) => m[1]);
+    } else if (key === 'Priority') {
+      cur.priority = /^high\b/i.test(value.trim());
     } else cur.design = value.trim();
   });
   return wps;
@@ -109,10 +112,12 @@ function plan(wps, busyIds, slots) {
   const busy = wps.filter(
     (w) => busyIds.has(w.id) || w.status === 'in-progress' || w.status === 'review',
   );
-  // Contracts first, then file order (which is milestone order).
+  // `Priority: high` first (user-prioritised work), then contracts, then file
+  // order (which is milestone order).
   const byPriority = (a, b) => {
+    const p = Number(b.priority) - Number(a.priority);
     const c = Number(b.title.includes('[contract]')) - Number(a.title.includes('[contract]'));
-    return c || a.line - b.line;
+    return p || c || a.line - b.line;
   };
   const take = (list) => {
     for (const w of list.sort(byPriority)) {
