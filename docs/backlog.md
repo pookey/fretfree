@@ -817,7 +817,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m3-16.spec.ts`): each Explore view opens and renders, online and offline after a first load.
 
 ### M3-17 · Chord tones in stages: root, then 3rd, 5th and 7th
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §3.1, §3.4, research/02 rule 7, research/03 C5
 - **Owns:** `app/src/engine/skills/c5-chord-tones.ts`, `app/src/engine/skills/c5-chord-tones.test.ts`, `app/src/engine/config/placement.ts` (`skipSkills` entries only), `app/src/drills/d8-chord-tone/` (only if the item IDs it reads change), `app/e2e/m3-17.spec.ts`
