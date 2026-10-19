@@ -1,4 +1,4 @@
-import type { FretRange, Position } from '../../theory';
+import type { FretRange, Position, ShapeNote } from '../../theory';
 
 /**
  * A worked example (design §7 Learn, research/02 rule 8): a 30-second,
@@ -29,6 +29,12 @@ export interface ExampleStep {
   /** A short cue, shown at the faded stage only. */
   readonly hint: string;
   readonly trap?: ExampleTrap;
+  /**
+   * The chord shape the step is read from (C5, C6), drawn as context: plain
+   * and outlined until the step is answered, then by degree. It may hold the
+   * answer, when the task is to pick a note out of the shape.
+   */
+  readonly shape?: readonly ShapeNote[];
 }
 
 export interface WorkedExample {

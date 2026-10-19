@@ -100,7 +100,8 @@ describe('example content', () => {
     for (const e of WORKED_EXAMPLES) {
       for (const step of e.steps) {
         if (!step.trap) continue;
-        const root = step.given[0]!;
+        // A step read from a shape may leave its root for the learner to find.
+        const root = step.given[0] ?? step.shape!.find((n) => n.degree === 'R')!;
         const semis = ((semitonesBetween(root, step.trap.at) % 12) + 12) % 12 || 12;
         const letters = 'CDEFGAB';
         const steps = letters.indexOf(step.trap.name[0]!) - letters.indexOf(noteAt(root).pc[0]!);

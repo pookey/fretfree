@@ -1,10 +1,12 @@
-import type { FretMarker } from '../../components/fretboard/Fretboard';
+import type { FretMarker, MarkerStyle } from '../../components/fretboard/Fretboard';
 import { ENGINE_CONFIG, type GuideLevel } from '../../engine';
 import {
   MAX_FRET,
   STANDARD_TUNING,
+  midiAt,
   noteAt,
   type AccidentalPref,
+  type Degree,
   type FretRange,
   type Position,
   type Tuning,
@@ -81,13 +83,14 @@ export function isComplete(state: ExampleState): boolean {
  * The neck window for a step. It is anchored on the given note (the
  * stimulus) with a fixed span, so it never encodes where the answer is; an
  * example can pin one window for every step instead. Notes the span misses
- * (wide shapes) widen it, with a fret to spare.
+ * (wide shapes, and a step's chord shape) widen it, with a fret to spare.
  */
 export function stepRange(step: ExampleStep, pinned?: FretRange): FretRange {
   if (pinned) return pinned;
   const { lead, span } = ENGINE_CONFIG.workedExamples;
   const frets = [...step.given.map((p) => p.fret), step.answer.fret];
   if (step.trap) frets.push(step.trap.at.fret);
+  for (const n of step.shape ?? []) frets.push(n.fret);
   const anchor = step.given.length > 0 ? Math.min(...step.given.map((p) => p.fret)) : 0;
   let from = Math.min(Math.max(0, anchor - lead), Math.max(0, Math.min(...frets) - 1));
   let to = Math.max(from + span - 1, Math.max(...frets) + 1);
@@ -98,9 +101,32 @@ export function stepRange(step: ExampleStep, pinned?: FretRange): FretRange {
   return { from, to };
 }
 
-/** Pitch names to play when an answer is revealed: the given notes, then the answer. */
+/**
+ * Pitch names to play when an answer is revealed: the given notes, then the
+ * answer. A step read from a shape plays the whole chord, low to high.
+ */
 export function exampleSounds(step: ExampleStep, tuning: Tuning = STANDARD_TUNING): string[] {
-  return [...step.given, step.answer].map((p) => noteAt(p, tuning).name);
+  const notes = [...(step.shape ?? []), ...step.given, step.answer].filter(
+    (p, i, all) => all.findIndex((q) => same(p, q)) === i,
+  );
+  if (step.shape) notes.sort((a, b) => midiAt(a, tuning) - midiAt(b, tuning));
+  return notes.map((p) => noteAt(p, tuning).name);
+}
+
+/** Shape notes share a group, so the neck outlines them from guide level 2. */
+export const SHAPE_GROUP = 'example-shape';
+
+const DEGREE_STYLE: Readonly<Record<Degree, MarkerStyle>> = {
+  R: 'root',
+  '3': 'third',
+  b3: 'third',
+  '5': 'fifth',
+  b7: 'seventh',
+};
+
+/** A degree as the neck labels it: R, 3, ♭3, 5, ♭7. */
+export function degreeLabel(degree: Degree): string {
+  return degree.replace(/^b/, '♭');
 }
 
 /**
@@ -131,5 +157,25 @@ export function exampleMarkers(
     markers.push({ ...step.answer, style: 'target', label: pc(step.answer), forceLabel: true });
     if (step.trap) markers.push({ ...step.trap.at, style: 'ghost', label: step.trap.name });
   }
-  return markers;
+  // The shape fills the cells nothing else marks. Before the answer its notes
+  // are plain, so neither the root nor the asked degree stands out; after it,
+  // each shows its degree by marker shape, colour and label. Markers on its
+  // cells join its outline.
+  const shapeNotes = step.shape ?? [];
+  const shape = shapeNotes
+    .filter((n) => !markers.some((m) => same(m, n)))
+    .map((n): FretMarker =>
+      state.tapped
+        ? {
+            string: n.string,
+            fret: n.fret,
+            group: SHAPE_GROUP,
+            style: DEGREE_STYLE[n.degree],
+            label: degreeLabel(n.degree),
+            forceLabel: true,
+          }
+        : { string: n.string, fret: n.fret, group: SHAPE_GROUP, style: 'tone', label: pc(n) },
+    );
+  const onShape = (p: Position) => shapeNotes.some((n) => same(n, p));
+  return [...shape, ...markers.map((m) => (onShape(m) ? { ...m, group: SHAPE_GROUP } : m))];
 }
