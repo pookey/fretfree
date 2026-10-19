@@ -16,14 +16,19 @@ for review in "$ORCH/reports/$WP".review*.md; do
     # "- M3-11: …", and the drift reviewers produce: "- **M3-11**: …",
     # "- M3-11 (context panel): …", "- M3-09 / later views: …".
     /^- \**M[0-9]+-[0-9]+\**[^:]*:/ {
-      match($0, /M[0-9]+-[0-9]+/); target = substr($0, RSTART, RLENGTH)
+      # Every WP ID before the colon gets the note ("M3-13 and M3-14: ...").
+      head = $0; sub(/:.*/, "", head)
       rest = $0; sub(/^[^:]*: */, "", rest)
-      file = dir "/" target ".md"
-      print "- From the " wp " review:" (rest == "" ? "" : " " rest) >> file
+      n = 0
+      while (match(head, /M[0-9]+-[0-9]+/)) {
+        files[++n] = dir "/" substr(head, RSTART, RLENGTH) ".md"
+        head = substr(head, RSTART + RLENGTH)
+      }
+      for (i = 1; i <= n; i++) print "- From the " wp " review:" (rest == "" ? "" : " " rest) >> files[i]
       next
     }
-    /^[ \t]+/ && file != "" { print >> file; next }
-    { file = "" }
+    /^[ \t]+/ && n > 0 { for (i = 1; i <= n; i++) print >> files[i]; next }
+    { n = 0 }
   ' "$review"
 done
 for pane in $($STATE show | jq -r --arg wp "$WP" '.workers[$wp] | [.pane, .reviewer.pane] | map(select(. != null)) | .[]'); do
