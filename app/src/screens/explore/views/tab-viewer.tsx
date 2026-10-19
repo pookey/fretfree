@@ -7,10 +7,6 @@ import { noteAt } from '../../../theory';
 import { parseTab } from '../../../theory/tab';
 import styles from '../../screens.module.css';
 
-export const id = 'tab-viewer';
-export const title = 'Tab viewer';
-export const order = 90;
-
 // An A minor pentatonic lick in 5th position.
 const RIFF = parseTab(`
 e|-------------5-8-|

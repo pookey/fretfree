@@ -47,10 +47,6 @@ import {
 import styles from '../../screens.module.css';
 import css from './fretboard-explorer.module.css';
 
-export const id = 'fretboard-explorer';
-export const title = 'Fretboard explorer';
-export const order = 10;
-
 /**
  * Fretboard explorer v2 (design §7 Explore): pick a root and a key, scale or
  * chord, see it across the whole neck, and label it by note name, degree or
