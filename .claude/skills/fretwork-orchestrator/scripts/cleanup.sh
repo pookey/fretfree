@@ -13,9 +13,11 @@ for review in "$ORCH/reports/$WP".review*.md; do
     /^## Downstream notes/ { on = 1; next }
     /^## / { on = 0 }
     !on { next }
-    /^- M[0-9]+-[0-9]+:/ {
+    # "- M3-11: …", and the drift reviewers produce: "- **M3-11**: …",
+    # "- M3-11 (context panel): …", "- M3-09 / later views: …".
+    /^- \**M[0-9]+-[0-9]+\**[^:]*:/ {
       match($0, /M[0-9]+-[0-9]+/); target = substr($0, RSTART, RLENGTH)
-      rest = substr($0, RSTART + RLENGTH + 1); sub(/^ +/, "", rest)
+      rest = $0; sub(/^[^:]*: */, "", rest)
       file = dir "/" target ".md"
       print "- From the " wp " review:" (rest == "" ? "" : " " rest) >> file
       next
