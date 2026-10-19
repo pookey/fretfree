@@ -12,8 +12,10 @@
   align-items: flex-start;
 }
 
+/* The context panel is wider than usual, so the wheel and its notes sit side
+   by side and the full neck (with the low E string) fits below it. */
 .upper > aside {
-  flex: 0 0 var(--context-w);
+  flex: 0 0 26rem;
 }
 
 .top {
@@ -129,50 +131,4 @@
   .drill[data-size-class='compact'] .hint {
     display: none;
   }
-}
-
-/* The context panel, filled with the note wheel (design §6 D3). */
-.context {
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-l);
-  padding: var(--space-4);
-  align-self: start;
-}
-
-.context h2 {
-  margin: 0 0 var(--space-3);
-  font-size: 1rem;
-  color: var(--text-muted);
-}
-
-.context p {
-  margin: var(--space-2) 0 0;
-  font-size: 0.875rem;
-  line-height: 1.4;
-}
-
-.context {
-  display: grid;
-  grid-template-columns: 10rem 1fr;
-  column-gap: var(--space-4);
-  align-items: center;
-}
-
-.context h2 {
-  grid-column: 1 / -1;
-}
-
-.context svg {
-  grid-row: 2 / span 2;
-}
-
-/* Landscape: the wheel and its notes sit side by side, so the panel stays
-   short and the full neck (with the low E string) fits below it. */
-.upper > .context {
-  flex-basis: 26rem;
-}
-
-.context strong {
-  white-space: nowrap;
 }

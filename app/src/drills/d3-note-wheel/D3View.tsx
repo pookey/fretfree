@@ -4,7 +4,6 @@ import type { GuideLevel } from '../../engine/model';
 import { neckWindow } from '../../shell/size-class';
 import type { Position } from '../../theory';
 import type { DrillRenderProps } from '../types';
-import { NoteWheel } from './NoteWheel';
 import {
   d3AnswerPc,
   d3FeedbackPositions,
@@ -17,8 +16,9 @@ import {
 import styles from './D3View.module.css';
 
 /**
- * D3 view: the question and note buttons, the note wheel in the context
- * panel, and the step drawn on the low E string (design §6 D3, §7 session).
+ * D3 view: the question and note buttons, and the step drawn on the low E
+ * string (design §6 D3, §7 session). The note wheel is the drill's context
+ * panel (`ContextPanel.tsx`), placed here beside the prompt.
  * The neck is an answer surface too: tapping the note on any string answers,
  * since finding it on the neck is the skill (research/02, target context).
  */
@@ -97,32 +97,6 @@ export function D3View({
   // names and fret numbers (level ≥ 2) could spell it, so cap at inlays only.
   const neckLevel: GuideLevel = feedback || guided ? level : (Math.min(level, 1) as GuideLevel);
 
-  // The session hands over its context panel only when it should be shown
-  // (help on, guide level > 0); D3 fills it with the note wheel.
-  const context = aside ? (
-    <aside className={styles.context} aria-label="Context" data-testid="context-panel">
-      <h2>Note wheel</h2>
-      <NoteWheel
-        guideLevel={level}
-        pref={pref}
-        start={prompt.from}
-        {...(feedback
-          ? {
-              expected: prompt.expectedPc,
-              ...(feedback.result.correct || !given ? {} : { given }),
-            }
-          : {})}
-      />
-      {level >= 2 && (
-        <p>
-          No sharp between <strong>B–C</strong> and <strong>E–F</strong>: they are a half step
-          apart. Every other pair of neighbours in the musical alphabet is a whole step.
-        </p>
-      )}
-      {level >= 3 && <p>On one string, a half step is one fret and a whole step is two.</p>}
-    </aside>
-  ) : null;
-
   return (
     <div className={styles.drill} data-size-class={sizeClass}>
       <div className={styles.upper}>
@@ -166,7 +140,7 @@ export function D3View({
             })}
           </div>
         </div>
-        {sizeClass === 'regular-wide' && context}
+        {sizeClass === 'regular-wide' && aside}
       </div>
       <div className={styles.neckArea}>
         <Fretboard
@@ -181,7 +155,7 @@ export function D3View({
         />
       </div>
       {/* iPad portrait: the context panel sits below the neck; compact styles it as a sheet. */}
-      {sizeClass !== 'regular-wide' && context}
+      {sizeClass !== 'regular-wide' && aside}
     </div>
   );
 }

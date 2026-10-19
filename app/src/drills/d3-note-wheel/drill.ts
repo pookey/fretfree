@@ -1,4 +1,5 @@
 import type { DrillType } from '../types';
+import { NoteWheelContextPanel } from './ContextPanel';
 import { D3View } from './D3View';
 import {
   D3_ID,
@@ -28,6 +29,7 @@ const noteWheel: DrillType<D3Prompt, D3Answer> = {
   feedbackPositions: d3FeedbackPositions,
   conceptOf: d3ConceptOf,
   render: D3View,
+  contextPanel: NoteWheelContextPanel,
 };
 
 export default noteWheel;

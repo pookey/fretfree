@@ -34,7 +34,7 @@ function renderView(p: D3Prompt, opts: Opts = {}) {
       tuning={STANDARD_TUNING}
       feedback={opts.feedback ?? null}
       onAnswer={onAnswer}
-      aside={opts.withAside === false ? undefined : <aside />}
+      aside={opts.withAside === false ? undefined : <aside data-testid="context-panel" />}
     />,
   );
   return { onAnswer, ...utils };
@@ -109,9 +109,6 @@ describe('<D3View>', () => {
     expect(neckTexts()).toEqual(expect.arrayContaining(['E', 'F#', 'G']));
     expect(screen.getByRole('button', { name: 'F#' })).toHaveAttribute('data-state', 'expected');
     expect(screen.getByRole('button', { name: 'G' })).toHaveAttribute('data-state', 'wrong');
-    const wheel = screen.getByTestId('note-wheel');
-    expect(within(wheel).getByTestId('wheel-note-F#')).toHaveAttribute('data-role', 'expected');
-    expect(within(wheel).getByTestId('wheel-note-G')).toHaveAttribute('data-role', 'given');
   });
 
   it('answers by tapping the note on any string of the neck', () => {
@@ -155,8 +152,6 @@ describe('<D3View>', () => {
     expect(marker('correct', 3, 11)).toHaveTextContent('F#');
     expect(screen.getByRole('button', { name: 'G' })).toHaveAttribute('data-state', 'wrong');
     expect(screen.getByRole('button', { name: 'F#' })).toHaveAttribute('data-state', 'expected');
-    const wheel = screen.getByTestId('note-wheel');
-    expect(within(wheel).getByTestId('wheel-note-G')).toHaveAttribute('data-role', 'given');
   });
 
   it('marks a right tap as correct', () => {
@@ -168,59 +163,15 @@ describe('<D3View>', () => {
     expect(screen.getByRole('button', { name: 'F#' })).toHaveAttribute('data-state', 'correct');
   });
 
-  it('fills the context panel with the note wheel, highlighting B–C and E–F', () => {
-    renderView(prompt('step:+1@E'));
-    const panel = screen.getByTestId('context-panel');
-    expect(within(panel).getByTestId('half-step-B-C')).toBeInTheDocument();
-    expect(within(panel).getByTestId('half-step-E-F')).toBeInTheDocument();
-    expect(within(panel).getByTestId('wheel-note-E')).toHaveAttribute('data-role', 'start');
-    // The answer is not marked on the wheel before answering.
-    expect(within(panel).getByTestId('wheel-note-F')).not.toHaveAttribute('data-role');
-    expect(panel).toHaveTextContent(/No sharp between B–C and E–F/);
-    expect(panel).toHaveTextContent(/neighbours in the musical alphabet/);
-    expect(panel.textContent).not.toMatch(/letter/i);
-    expect(within(panel).getByRole('img').getAttribute('aria-label')).not.toMatch(/letter/i);
-  });
-
-  it('fades the context panel with the guide level', () => {
-    const p = prompt('step:+1@E');
-    const { rerender, onAnswer } = renderView(p, { guideLevel: 3 });
-    const at = (guideLevel: GuideLevel, aside: boolean) =>
-      rerender(
-        <D3View
-          prompt={p}
-          guideLevel={guideLevel}
-          guided={false}
-          handedness="right"
-          sizeClass="regular-wide"
-          tuning={STANDARD_TUNING}
-          feedback={null}
-          onAnswer={onAnswer}
-          aside={aside ? <aside /> : undefined}
-        />,
-      );
-    expect(screen.getByTestId('wheel-note-C#')).toHaveTextContent('C#');
-    expect(screen.getByText(/one fret/)).toBeInTheDocument();
-
-    at(2, true);
-    expect(screen.getByTestId('wheel-note-C#')).toHaveTextContent('');
-    expect(screen.getByTestId('half-step-E-F')).toHaveTextContent('½');
-    expect(screen.queryByText(/one fret/)).toBeNull();
-
-    at(1, true);
-    expect(screen.queryByTestId('wheel-note-C#')).toBeNull();
-    expect(screen.getByTestId('half-step-E-F')).toHaveTextContent('');
-    expect(screen.queryByText(/No sharp/)).toBeNull();
-
-    // Level 0 (or help hidden): the session passes no panel at all.
-    at(0, false);
-    expect(screen.queryByTestId('context-panel')).toBeNull();
-  });
-
-  it('spells the wheel with the flat preference', () => {
+  it('spells the choices with the flat preference', () => {
     renderView(prompt('step:+2@E', 'flat'));
-    expect(screen.getByTestId('wheel-note-Gb')).toHaveTextContent('Gb');
     expect(screen.getByRole('button', { name: 'Gb' })).toBeInTheDocument();
+  });
+
+  it('places the panel beside the prompt on iPad landscape', () => {
+    renderView(prompt('step:+2@E'));
+    const panel = screen.getByTestId('context-panel');
+    expect(neck().compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
   });
 
   it('places the panel below the neck in portrait and on compact (where it is a sheet)', () => {
