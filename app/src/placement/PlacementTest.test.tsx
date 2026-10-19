@@ -126,11 +126,16 @@ describe('PlacementTest', () => {
       render: lazyView(() => new Promise<typeof D1View>((r) => (arrive = () => r(D1View)))),
     };
     renderTest({ drills: [slow] });
-    fireEvent.click(screen.getByRole('button', { name: 'Start the test' }));
+    const start = screen.getByRole('button', { name: 'Start the test' });
+    fireEvent.click(start);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // Saying so, with Start disabled, rather than seeming to ignore the tap.
+    expect(screen.getByRole('status')).toHaveTextContent('Loading…');
+    expect(start).toBeDisabled();
     t = 10_000; // a slow download, which must not count against the answer
     arrive();
     expect(await screen.findByRole('dialog', { name: 'Placement test' })).toBeInTheDocument();
+    expect(screen.queryByText('Loading…')).not.toBeInTheDocument();
     await answerRight();
     await answerRight();
     choose(probeNote());

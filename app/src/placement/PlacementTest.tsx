@@ -117,6 +117,8 @@ export function PlacementTest({
   const headingId = useId();
   const [phase, setPhase] = useState<Phase>({ kind: 'ready' });
   const [share, setShare] = useState(0);
+  // Set while a probe waits for its drill view to download.
+  const [loadingView, setLoadingView] = useState(false);
   const state = useRef<PlacementState | null>(null);
   const logs = useRef<ProbeLog[]>([]);
   const startedAt = useRef(0);
@@ -205,9 +207,13 @@ export function PlacementTest({
     if (drillReady(drill)) return show();
     // The views haven't downloaded yet (a first launch before the precache
     // has them): wait, so the download stays out of the probe's response time.
+    setLoadingView(true);
     void preloadDrill(drill)
       .catch(() => undefined)
-      .then(() => state.current === s && show());
+      .then(() => {
+        setLoadingView(false);
+        if (state.current === s) show();
+      });
   };
 
   const begin = (groups: readonly GroupInput[]) => {
@@ -368,9 +374,19 @@ export function PlacementTest({
             know, and tap <strong>Not sure</strong> for anything you don’t. A lucky guess would only
             skip something worth practising.
           </p>
-          <button type="button" className={onboarding.primary} onClick={start}>
+          <button
+            type="button"
+            className={onboarding.primary}
+            onClick={start}
+            disabled={loadingView}
+          >
             Start the test
           </button>
+          {loadingView && (
+            <p role="status" className={onboarding.lead}>
+              Loading…
+            </p>
+          )}
         </>
       )}
       {phase.kind === 'saving' && <p className={onboarding.lead}>Saving what you know…</p>}
