@@ -635,7 +635,8 @@ export function d38Explain(prompt: D38Prompt, fb: DrillFeedback<D38Answer>): str
         `${d38Display(n.name)} on string ${n.string} is ${d38DegreeName(n.degree)}: not in ${chord}.`,
       );
     }
-    for (const n of v.belowRoot) {
+    // A note outside the chord already has its line.
+    for (const n of v.belowRoot.filter((b) => b.inChord)) {
       const open = n.fret === 0 ? 'Open ' : '';
       lines.push(
         `${open}${d38Display(n.name)} on string ${n.string} is below the root: the root must be the lowest note.`,

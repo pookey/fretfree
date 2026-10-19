@@ -333,6 +333,12 @@ describe('voicing validation', () => {
     expect(d38FeedbackPositions(b7, fb(b7, tab(b7, '7 0 7 8 x x'))).given).toEqual([
       { string: 5, fret: 0 },
     ]);
+    // A note both outside the chord and below the root gets one line, not two.
+    const am = at('minor', 'A', 5, 12);
+    const lines = d38Explain(am, fb(am, [{ string: 4, fret: 0 }]));
+    expect(lines.filter((l) => l.includes('on string 4'))).toEqual([
+      'D on string 4 is the 4th: not in Am.',
+    ]);
     // E7 from string 5, fret 7 with the open D.
     const e7 = at('7', 'E', 5, 7);
     expect(d38Verdict(e7, tab(e7, 'x 7 0 7 9 x')).belowRoot).toHaveLength(1);
