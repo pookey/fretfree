@@ -579,7 +579,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m2-15.spec.ts`, iPad projects; iPhone tagged `@smoke`): skip placement in onboarding, retake it from Settings, answer fluently, and see the probed skills unlocked or mastered in Learn.
 
 ### M2-16 · "Test out" of a locked module
-- **Status:** todo
+- **Status:** done
 - **Deps:** M2-09
 - **After:** M2-15, M1-34
 - **Design:** §3.4, research/02 rule 7
