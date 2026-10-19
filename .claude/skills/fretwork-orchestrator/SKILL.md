@@ -116,7 +116,7 @@ $O/integrate.sh <WP>
 - **Test load is gated, not the agent count.** Agents spend most of their time thinking, which uses no local CPU, so the ceiling follows memory and the slot queue, and tests wait for slots:
   - `pnpm e2e` goes through `scripts/e2e-slot.sh`: a machine-wide lock-dir semaphore with **2** Playwright slots by default (`E2E_SLOTS`), each with its own preview port.
   - The static half of `pnpm verify` (typecheck, lint, unit + coverage, build) goes through `scripts/cpu-slot.sh`: **2** slots by default (`CPU_SLOTS`).
-  - The integration lane (`FRETWORK_LANE=1`, set by `integrate.sh`) has its own reserved CPU and e2e slots, so shipping never waits behind worker checks. It also runs more test workers (6 versus 4).
+  - The integration lane (`FRETWORK_LANE=1`, set by `integrate.sh`) takes the next free slot ahead of workers (`scripts/slot-lib.sh`), but it gets no extra slot. A reserved third e2e slot made healthy lane tests time out (M1-41, 2026-10-19). It runs 5 Playwright and 6 Vitest workers, against 4 for a worktree check.
   - Vitest and Playwright are capped at 4 workers per run (`VITEST_MAX_WORKERS`, `PW_WORKERS`).
   - If waits dominate, keep the slot counts and let `health.sh` hold the ceiling. Don't raise the slots.
 - **One full verify per branch before the lane.** Workers run `pnpm verify:quick` (`scripts/verify-quick.sh`) for their report and for fix rounds (`--since` the fix brief): every static gate, plus their own e2e specs, or the full suite when the change reaches shared code or registers a new drill. Reviewers run targeted unit tests only. The full `pnpm verify` runs once in the preflight after APPROVE, and again in the lane.

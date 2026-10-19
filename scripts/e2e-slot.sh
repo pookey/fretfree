@@ -2,45 +2,14 @@
 # Machine-wide semaphore for Playwright runs, so parallel worktrees don't
 # starve RAM with browsers. Holds one of E2E_SLOTS (default 2) lock dirs while
 # running the command, and gives each slot its own preview port (E2E_PORT).
-# The integration lane (FRETWORK_LANE=1) has a reserved slot of its own (port
-# 4309), so shipping never waits behind worker runs.
+# The integration lane (FRETWORK_LANE=1) takes the next free slot ahead of
+# everyone else (scripts/slot-lib.sh).
 # Usage: e2e-slot.sh <command...>
 set -euo pipefail
-slots="${E2E_SLOTS:-2}"
-lock_root="${FRETWORK_LOCK_DIR:-${TMPDIR:-/tmp}/fretwork-locks}/e2e"
-mkdir -p "$lock_root"
-if [[ "${FRETWORK_LANE:-}" == 1 ]]; then names=(lane); else
-  names=()
-  for ((i = 0; i < slots; i++)); do names+=("slot-$i"); done
-fi
-port_of() { if [[ "$1" == lane ]]; then echo 4309; else echo $((4310 + ${1#slot-})); fi; }
+source "$(dirname "$0")/slot-lib.sh"
+acquire_slot e2e "${E2E_SLOTS:-2}"
+export E2E_PORT="${E2E_PORT:-$((4310 + SLOT_INDEX))}"
 
-acquired=""
-release() { [[ -n "$acquired" ]] && rm -rf "$acquired"; }
-trap release EXIT INT TERM
-
-waited=0
-while [[ -z "$acquired" ]]; do
-  for name in "${names[@]}"; do
-    dir="$lock_root/$name"
-    if mkdir "$dir" 2>/dev/null; then
-      echo $$ > "$dir/pid"
-      acquired="$dir"
-      export E2E_PORT="${E2E_PORT:-$(port_of "$name")}"
-      break
-    fi
-    # Reclaim slots whose owner died without cleaning up.
-    pid="$(cat "$dir/pid" 2>/dev/null || true)"
-    if [[ -n "$pid" ]] && ! kill -0 "$pid" 2>/dev/null; then rm -rf "$dir"; fi
-  done
-  if [[ -z "$acquired" ]]; then
-    ((waited % 30 == 0)) && echo "e2e-slot: waiting for a free Playwright slot (${#names[@]} in use)…" >&2
-    sleep 2
-    waited=$((waited + 2))
-  fi
-done
-
-echo "e2e-slot: acquired $(basename "$acquired") (port $E2E_PORT)" >&2
 
 # A killed Playwright run can leave its `vite preview` behind, reparented to
 # launchd and still holding this slot's port, so every later run on the slot

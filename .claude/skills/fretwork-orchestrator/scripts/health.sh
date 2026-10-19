@@ -16,7 +16,7 @@ cores="$(sysctl -n hw.ncpu)"
 max="${MAX_CEILING:-8}"
 locks="${FRETWORK_LOCK_DIR:-${TMPDIR:-/tmp}/fretwork-locks}"
 runs="$({ pgrep -f '^bash .*scripts/(cpu|e2e)-slot\.sh' || true; } | wc -l | tr -d ' ')"
-held="$({ ls -d "$locks"/cpu/* "$locks"/e2e/* 2>/dev/null || true; } | wc -l | tr -d ' ')"
+held="$({ ls -d "$locks"/cpu/slot-* "$locks"/e2e/slot-* 2>/dev/null || true; } | wc -l | tr -d ' ')"
 waiters=$((runs > held ? runs - held : 0))
 if [[ "$phase" == serial ]]; then suggested=2
 elif ((free < 15)); then suggested=$((current > 2 ? current - 2 : 1))
