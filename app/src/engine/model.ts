@@ -163,7 +163,8 @@ export type ItemRef =
   | { kind: 'caged' | 'caged-core'; shape: CagedShapeName; quality: CagedQuality }
   | { kind: 'chord-tone' | 'chord-tone-name'; degree: ChordDegree; chord: ChordKind }
   | { kind: 'chord-name'; shape: CagedShapeName; chord: ChordKind }
-  | { kind: 'build-chord'; chord: ChordKind; string: number };
+  | { kind: 'build-chord'; chord: ChordKind; string: number }
+  | { kind: CapoItemKind; shape: string };
 
 const INT = '(0|[1-9]\\d*)';
 const OFFSET = '([+-][1-9]\\d*)';
@@ -185,6 +186,7 @@ const CAGED_ITEM = /^(caged|caged-core):([CAGED])-shape@(major|minor|dominant7)$
 const CHORD_TONE_ITEM = /^(chord-tone|chord-tone-name):(b{0,2}\d|#\d)@([A-Za-z0-9]+)$/;
 const CHORD_NAME_ITEM = /^chord-name:([CAGED])-shape@([A-Za-z0-9]+)$/;
 const BUILD_CHORD_ITEM = new RegExp(`^build-chord:([A-Za-z0-9]+)@s${INT}$`);
+const CAPO_ITEM = new RegExp(`^(capo-sound|capo-shape|capo-fret):${PC}(m?)$`);
 
 function count(n: number, what: string): number {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Invalid ${what}: ${n}`);
@@ -474,6 +476,28 @@ export function parseBuildChordItemId(id: string): { chord: ChordKind; string: n
   return { chord, string };
 }
 
+export type CapoItemKind = 'capo-sound' | 'capo-shape' | 'capo-fret';
+
+/**
+ * Capo cards (C10, D13), keyed by the open-shape key the learner fingers
+ * (`G`, `Am`). `capo-sound:G`: G shapes with a capo on fret n, which key
+ * sounds? `capo-shape:G`: a song in that key with a capo on fret n, which
+ * shapes? `capo-fret:G`: a song in a key, played with G shapes, which fret?
+ * The capo fret varies per prompt, so one card holds the shape at every
+ * capo (research/02 rule 12), the grain of the CAGED cards.
+ */
+export function capoItemId(kind: CapoItemKind, shape: string): string {
+  const m = /^([A-G][#b]?)(m?)$/.exec(shape);
+  if (!m) throw new RangeError(`Invalid capo shape key: ${shape}`);
+  return `${kind}:${pitchClass(m[1] as string)}${m[2] as string}`;
+}
+
+export function parseCapoItemId(id: string): { kind: CapoItemKind; shape: string } | null {
+  const m = CAPO_ITEM.exec(id);
+  if (!m) return null;
+  return { kind: m[1] as CapoItemKind, shape: `${m[2] as string}${m[3] as string}` };
+}
+
 export function itemId(ref: ItemRef): string {
   switch (ref.kind) {
     case 'note':
@@ -514,6 +538,10 @@ export function itemId(ref: ItemRef): string {
       return chordNameItemId(ref.shape, ref.chord);
     case 'build-chord':
       return buildChordItemId(ref.chord, ref.string);
+    case 'capo-sound':
+    case 'capo-shape':
+    case 'capo-fret':
+      return capoItemId(ref.kind, ref.shape);
   }
 }
 
@@ -550,5 +578,7 @@ export function parseItemId(id: string): ItemRef | null {
   if (chordName) return { kind: 'chord-name', ...chordName };
   const buildChord = parseBuildChordItemId(id);
   if (buildChord) return { kind: 'build-chord', ...buildChord };
+  const capo = parseCapoItemId(id);
+  if (capo) return capo;
   return null;
 }
