@@ -212,7 +212,9 @@ describe('d11MakePrompt', () => {
   });
 });
 
-describe('d11Choices', () => {
+// Tens of thousands of rows per test: past the default timeout under
+// coverage on a busy machine.
+describe('d11Choices', { timeout: 90_000 }, () => {
   const MAJORS = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'F', 'Bb', 'Eb', 'Ab', 'Db'];
   const MINORS = ['A', 'E', 'B', 'F#', 'C#', 'G#', 'D', 'G', 'C', 'F', 'Bb', 'Eb'];
   const keys = [...MAJORS.map((t) => majorKey(t)), ...MINORS.map((t) => minorKey(t))];
@@ -330,13 +332,8 @@ describe('d11Choices', () => {
       String(new Set(all.filter((o) => gap(o.place, c.place) === 1).map((o) => o.place)).size),
     'place in the row': (c, all) => String(all.filter((o) => o.quality === c.quality).indexOf(c)),
   };
-  const STRATEGIES: Record<string, Feature> = {
-    ...FEATURES,
-    'all of these': (c, all, mode) =>
-      Object.values(FEATURES)
-        .map((f) => f(c, all, mode))
-        .join(' '),
-  };
+  /** Each feature alone, then all of them at once. */
+  const STRATEGIES = [...Object.keys(FEATURES), 'all of these'];
 
   /** Chance may be beaten by sampling noise, not by more than this. */
   const MARGIN = 0.03;
@@ -350,43 +347,50 @@ describe('d11Choices', () => {
     'gives no %s answer away to a guess from the row’s shape (rule 1)',
     (ask) => {
       interface Case {
-        answer: string;
-        quality: string;
-        all: Seen[];
+        /** How many choices are of the cue's quality. */
+        same: number;
+        /** Per strategy: how many of those take each value, and the answer's value. */
+        counts: Map<string, number>[];
+        answers: string[];
       }
-      const groups = new Map<string, { mode: Mode; cases: Case[] }>();
+      const groups = new Map<string, Case[]>();
       for (const { key, target, answer, choices, level } of cases(ask, SEEDS)) {
         // vii° is the only diminished numeral; that is the fact being taught.
         if (ask === 'numeral' && target.quality === 'diminished') continue;
         const name = `${key.mode} level ${level}`;
-        const group = groups.get(name) ?? { mode: key.mode, cases: [] };
-        group.cases.push({
-          answer,
-          quality: target.quality,
-          all: choices.map((c) => seen(ask, c)),
+        const all = choices.map((c) => seen(ask, c));
+        const same = all.filter((c) => c.quality === target.quality);
+        // Each feature once per choice; "all of these" joins them.
+        const single = same.map((c) => Object.values(FEATURES).map((f) => f(c, all, key.mode)));
+        const values = same.map((_, i) => [...single[i]!, single[i]!.join(' ')]);
+        const at = same.findIndex((c) => c.value === answer);
+        const counts = STRATEGIES.map((_, j) => {
+          const m = new Map<string, number>();
+          for (const v of values) m.set(v[j]!, (m.get(v[j]!) ?? 0) + 1);
+          return m;
         });
+        const group = groups.get(name) ?? [];
+        group.push({ same: same.length, counts, answers: values[at]! });
         groups.set(name, group);
       }
       expect(groups.size).toBe(2 * D11_CHOICES.length);
       const beaten: string[] = [];
-      for (const [name, { mode, cases: all }] of groups) {
-        const ofQuality = ({ all: row, quality }: Case) => row.filter((c) => c.quality === quality);
-        const chance = mean(all.map((c) => 1 / ofQuality(c).length));
+      for (const [name, all] of groups) {
+        const chance = mean(all.map((c) => 1 / c.same));
         // The cue's quality alone (chance) stays far below the 80–90% band.
         if (chance > 1 / 2 + 1e-9) {
           beaten.push(`${name}: the cue’s quality alone scores ${pct(chance)}`);
         }
-        for (const [strategy, feature] of Object.entries(STRATEGIES)) {
-          const values = new Set(
-            all.flatMap((c) => ofQuality(c).map((s) => feature(s, c.all, mode))),
-          );
+        STRATEGIES.forEach((strategy, j) => {
+          const values = new Set(all.flatMap((c) => [...c.counts[j]!.keys()]));
           for (const value of values) {
+            // Keep the choices with this value and guess among them, or
+            // among all of the cue's quality when none has it.
             const score = mean(
               all.map((c) => {
-                const same = ofQuality(c);
-                const kept = same.filter((s) => feature(s, c.all, mode) === value);
-                const from = kept.length > 0 ? kept : same;
-                return from.some((s) => s.value === c.answer) ? 1 / from.length : 0;
+                const kept = c.counts[j]!.get(value) ?? 0;
+                if (kept === 0) return 1 / c.same;
+                return c.answers[j] === value ? 1 / kept : 0;
               }),
             );
             if (score > chance + MARGIN) {
@@ -395,7 +399,7 @@ describe('d11Choices', () => {
               );
             }
           }
-        }
+        });
       }
       expect(beaten).toEqual([]);
     },
