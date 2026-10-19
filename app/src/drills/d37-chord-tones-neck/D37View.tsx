@@ -50,7 +50,11 @@ interface ViewState {
 
 const WIDE: FretRange = { from: 0, to: 15 };
 
-/** The markers of the CAGED shape share this group, so feedback outlines it (guide levels 2–3). */
+/**
+ * The markers of the CAGED shape share this group, so feedback outlines it
+ * (guide levels 2–3). Only on chord cards: there every note of the shape is
+ * marked, while a degree card's one or two notes wouldn't read as the shape.
+ */
 const GROUP = 'd37-shape';
 
 /**
@@ -139,7 +143,9 @@ export function D37View({
     setState({ ...view, review: Math.max(0, Math.min(last, roundIndex + by)) });
 
   const inShape = (p: Position) =>
-    feedback !== null && (prompt.shape?.notes.some((n) => samePosition(n, p)) ?? false);
+    feedback !== null &&
+    prompt.degree === null &&
+    (prompt.shape?.notes.some((n) => samePosition(n, p)) ?? false);
   const degreeMarker = (t: D37Target, style: FretMarker['style']): FretMarker => ({
     string: t.string,
     fret: t.fret,

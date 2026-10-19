@@ -163,7 +163,11 @@ describe('<D37View> a box: one CAGED shape’s span', () => {
     expect(onAnswer).toHaveBeenCalledTimes(1);
   });
 
-  it('outlines the shape in feedback', () => {
+  it('outlines the shape in feedback on a chord card, not on a degree card', () => {
+    const d = prompt('chord-tones:3@C', 0, 0.5);
+    const { unmount } = view(d, { feedback: fb(d, d.targets), guideLevel: 2 });
+    expect(screen.queryByTestId('shape-outline')).toBeNull();
+    unmount();
     const p = prompt('chord-tones:C', 0, 0.5);
     view(p, { feedback: fb(p, p.targets), guideLevel: 2 });
     expect(screen.getAllByTestId('shape-outline')).toHaveLength(1);
