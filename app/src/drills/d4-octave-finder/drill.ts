@@ -29,8 +29,8 @@ const octaveFinder: DrillType<D4Prompt, D4Answer> = {
   sounds: d4Sounds,
   feedbackPositions: d4FeedbackPositions,
   conceptOf: d4ConceptOf,
-  render: lazyView(() => import('./D4View').then((m) => m.D4View)),
-  contextPanel: lazyView(() => import('./ContextPanel').then((m) => m.OctaveContextPanel)),
+  render: lazyView(() => import('../views').then((m) => m.D4View)),
+  contextPanel: lazyView(() => import('../views').then((m) => m.OctaveContextPanel)),
 };
 
 export default octaveFinder;

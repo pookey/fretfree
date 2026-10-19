@@ -30,8 +30,8 @@ const spellIt: DrillType<D7Prompt, D7Answer> = {
   sounds: d7Sounds,
   gradedResponseMs: d7GradedResponseMs,
   conceptOf: d7ConceptOf,
-  render: lazyView(() => import('./D7View').then((m) => m.D7View)),
-  contextPanel: lazyView(() => import('./ContextPanel').then((m) => m.SpellingContextPanel)),
+  render: lazyView(() => import('../views').then((m) => m.D7View)),
+  contextPanel: lazyView(() => import('../views').then((m) => m.SpellingContextPanel)),
 };
 
 export default spellIt;

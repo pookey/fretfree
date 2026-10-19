@@ -8,7 +8,8 @@ import { seedDueItems } from './helpers/octaves';
 // drill switch never shows a loading state, and the service worker's precache
 // covers every chunk, so all of it still works offline.
 
-const VIEW_CHUNK = /\/assets\/(?:D\d+View|ContextPanel)-[^/]+\.js$/;
+// Every drill's view and context panel share one chunk (drills/views.ts).
+const VIEW_CHUNK = /\/assets\/views-[^/]+\.js$/;
 const RUN_ONCE_CHUNK = /\/assets\/(?:OnboardingScreen|RetakeScreen)-[^/]+\.js$/;
 const NATURALS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
@@ -103,8 +104,7 @@ test.describe('M3-18 lazy drill views and run-once routes', () => {
     }
     expect(new Set(seen)).toEqual(new Set(['note-wheel', 'name-the-note']));
     expect(await drillLoadingSeen(page)).toBe(0);
-    expect(chunks.some((u) => /\/D1View-/.test(u))).toBe(true);
-    expect(chunks.some((u) => /\/D3View-/.test(u))).toBe(true);
+    expect(chunks).toHaveLength(1);
   });
 
   test('a returning learner never downloads onboarding or placement', async ({ page }) => {

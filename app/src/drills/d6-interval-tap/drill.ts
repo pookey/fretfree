@@ -27,8 +27,8 @@ const intervalTap: DrillType<D6Prompt, D6Answer> = {
   sounds: d6Sounds,
   feedbackPositions: d6FeedbackPositions,
   conceptOf: d6ConceptOf,
-  render: lazyView(() => import('./D6View').then((m) => m.D6View)),
-  contextPanel: lazyView(() => import('./ContextPanel').then((m) => m.IntervalTapContextPanel)),
+  render: lazyView(() => import('../views').then((m) => m.D6View)),
+  contextPanel: lazyView(() => import('../views').then((m) => m.IntervalTapContextPanel)),
 };
 
 export default intervalTap;

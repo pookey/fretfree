@@ -27,8 +27,8 @@ const intervalName: DrillType<D5Prompt, D5Answer> = {
   sounds: d5Sounds,
   feedbackPositions: d5FeedbackPositions,
   conceptOf: d5ConceptOf,
-  render: lazyView(() => import('./D5View').then((m) => m.D5View)),
-  contextPanel: lazyView(() => import('./ContextPanel').then((m) => m.IntervalContextPanel)),
+  render: lazyView(() => import('../views').then((m) => m.D5View)),
+  contextPanel: lazyView(() => import('../views').then((m) => m.IntervalContextPanel)),
 };
 
 export default intervalName;

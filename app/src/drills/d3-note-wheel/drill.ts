@@ -27,8 +27,8 @@ const noteWheel: DrillType<D3Prompt, D3Answer> = {
   sounds: d3Sounds,
   feedbackPositions: d3FeedbackPositions,
   conceptOf: d3ConceptOf,
-  render: lazyView(() => import('./D3View').then((m) => m.D3View)),
-  contextPanel: lazyView(() => import('./ContextPanel').then((m) => m.NoteWheelContextPanel)),
+  render: lazyView(() => import('../views').then((m) => m.D3View)),
+  contextPanel: lazyView(() => import('../views').then((m) => m.NoteWheelContextPanel)),
 };
 
 export default noteWheel;

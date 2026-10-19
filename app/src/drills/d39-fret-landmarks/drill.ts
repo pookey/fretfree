@@ -27,8 +27,8 @@ const fretLandmarks: DrillType<D39Prompt, D39Answer> = {
   sounds: d39Sounds,
   feedbackPositions: d39FeedbackPositions,
   conceptOf: d39ConceptOf,
-  render: lazyView(() => import('./D39View').then((m) => m.D39View)),
-  contextPanel: lazyView(() => import('./ContextPanel').then((m) => m.LandmarksContextPanel)),
+  render: lazyView(() => import('../views').then((m) => m.D39View)),
+  contextPanel: lazyView(() => import('../views').then((m) => m.LandmarksContextPanel)),
 };
 
 export default fretLandmarks;

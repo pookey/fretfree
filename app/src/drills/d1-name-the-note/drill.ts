@@ -26,7 +26,7 @@ const nameTheNote: DrillType<D1Prompt, D1Answer> = {
   sounds: d1Sounds,
   feedbackPositions: d1FeedbackPositions,
   conceptOf: d1ConceptOf,
-  render: lazyView(() => import('./D1View').then((m) => m.D1View)),
+  render: lazyView(() => import('../views').then((m) => m.D1View)),
 };
 
 export default nameTheNote;

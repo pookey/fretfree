@@ -8,7 +8,7 @@ export type LazyView<P> = FC<P> & {
 
 /**
  * Wraps a drill's view (or context panel) so its code stays out of first-load
- * JS: `render: lazyView(() => import('./D1View').then((m) => m.D1View))`.
+ * JS: `render: lazyView(() => import('../views').then((m) => m.D1View))`.
  * Rendered before it has loaded, it suspends, so render it inside
  * `<Suspense>`. Once `preload()` has resolved it renders synchronously, so a
  * session that preloads the next drill never shows a fallback.

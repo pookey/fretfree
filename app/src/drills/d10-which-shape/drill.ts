@@ -27,7 +27,7 @@ const whichShape: DrillType<D10Prompt, D10Answer> = {
   sounds: d10Sounds,
   feedbackPositions: d10FeedbackPositions,
   conceptOf: d10ConceptOf,
-  render: lazyView(() => import('./D10View').then((m) => m.D10View)),
+  render: lazyView(() => import('../views').then((m) => m.D10View)),
 };
 
 export default whichShape;

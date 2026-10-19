@@ -35,7 +35,7 @@ const buildCaged: DrillType<D9Prompt, D9Answer> = {
   sounds: d9Sounds,
   feedbackPositions: d9FeedbackPositions,
   conceptOf: d9ConceptOf,
-  render: lazyView(() => import('./D9View').then((m) => m.D9View)),
+  render: lazyView(() => import('../views').then((m) => m.D9View)),
 };
 
 export default buildCaged;

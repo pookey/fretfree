@@ -28,8 +28,8 @@ const chordTone: DrillType<D8Prompt, D8Answer> = {
   sounds: d8Sounds,
   feedbackPositions: d8FeedbackPositions,
   conceptOf: d8ConceptOf,
-  render: lazyView(() => import('./D8View').then((m) => m.D8View)),
-  contextPanel: lazyView(() => import('./ContextPanel').then((m) => m.ChordTonePanel)),
+  render: lazyView(() => import('../views').then((m) => m.D8View)),
+  contextPanel: lazyView(() => import('../views').then((m) => m.ChordTonePanel)),
 };
 
 export default chordTone;

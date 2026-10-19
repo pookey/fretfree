@@ -27,7 +27,7 @@ const findTheNote: DrillType<D2Prompt, D2Answer> = {
   sounds: d2Sounds,
   feedbackPositions: d2FeedbackPositions,
   conceptOf: d2ConceptOf,
-  render: lazyView(() => import('./D2View').then((m) => m.D2View)),
+  render: lazyView(() => import('../views').then((m) => m.D2View)),
 };
 
 export default findTheNote;
