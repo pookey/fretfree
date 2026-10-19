@@ -17,6 +17,7 @@ import {
 import { ENGINE_CONFIG } from '../../engine/config';
 import { TUNINGS } from '../../theory';
 import { DeveloperTools } from './DeveloperTools';
+import { MicSettings } from './MicSettings';
 import styles from '../screens.module.css';
 import local from './settings.module.css';
 
@@ -295,6 +296,7 @@ export function SettingsGroups() {
       <PracticeSettings settings={settings} update={update} />
       <PlacementSettings />
       <SoundSettings settings={settings} update={update} />
+      <MicSettings />
       <ReadingSettings settings={settings} update={update} />
       <GuideSettings settings={settings} update={update} />
       {import.meta.env.DEV && (
