@@ -34,7 +34,14 @@ import {
   spokenRoman,
   type D11Prompt,
 } from './logic';
-import { majorKey, minorKey, diatonicChord, parseChordSymbol, parseRoman } from '../../theory';
+import {
+  diatonicChord,
+  keyName,
+  majorKey,
+  minorKey,
+  parseChordSymbol,
+  parseRoman,
+} from '../../theory';
 
 /** A seeded LCG, so shuffles are deterministic. */
 function lcg(seed = 1): () => number {
@@ -126,7 +133,9 @@ describe('d11MakePrompt', () => {
         expect(p.choices).toHaveLength(D11_CHOICES[level] as number);
         expect(p.choices).toContain('Bm');
         expect(p.choices).toContain('B');
-        expect(p.choices.some((c) => c === 'A' || c === 'C#dim')).toBe(true);
+        // A neighbour pair: V (A) — never vii°, so minor isn't the odd one out.
+        expect(p.choices).toContain('A');
+        expect(p.choices).toContain('Am');
         expect(new Set(p.choices).size).toBe(p.choices.length);
       }
     }
@@ -137,23 +146,44 @@ describe('d11MakePrompt', () => {
     expect(prompt('numeral:IV@key=G', 9).choices).toHaveLength(8);
   });
 
-  it('offers every chord of the key at the widest scope, in letter order', () => {
-    const p = prompt('numeral:vi@key=D', 2);
-    expect(p.choices).toEqual(['C#dim', 'D', 'Em', 'F#m', 'G', 'A', 'B', 'Bm']);
+  it('pairs each root both ways, in letter order', () => {
+    const p = prompt('numeral:IV@key=D', 0);
+    // G and its neighbour A or F#, each major and minor.
+    expect(p.choices).toEqual(
+      p.choices.includes('A') ? ['G', 'Gm', 'A', 'Am'] : ['F#', 'F#m', 'G', 'Gm'],
+    );
   });
 
-  it('reads numeral choices I to vii, with the case twin', () => {
-    const p = prompt('numeral-of:vi@key=D', 2);
-    expect(p.choices).toEqual(['I', 'ii', 'iii', 'IV', 'V', 'VI', 'vi', 'vii°']);
-    // vii°'s twin is the minor vii.
-    expect(prompt('numeral-of:vii°@key=C', 0).choices).toContain('vii');
-    expect(prompt('numeral:vii°@key=C', 0).choices).toContain('Bm');
+  it('reads numeral choices I to vii, in case pairs', () => {
+    const p = prompt('numeral-of:vi@key=D', 1);
+    expect(p.choices).toHaveLength(6);
+    expect(p.choices).toContain('vi');
+    expect(p.choices).toContain('VI');
+    expect(p.choices).toContain('V');
+    expect(p.choices).toContain('v');
+    const degrees = p.choices.map((c) => parseRoman(c)!.degree);
+    expect(degrees).toEqual([...degrees].sort((a, b) => a - b));
+  });
+
+  it('gives vii° a diminished decoy on its neighbour', () => {
+    for (let seed = 1; seed < 10; seed++) {
+      const c = prompt('numeral:vii°@key=C', 0, lcg(seed)).choices;
+      expect(c.filter((x) => x.endsWith('dim'))).toHaveLength(2);
+      expect(c).toContain('Bdim');
+      expect(c).toContain('Bm');
+      expect(c.includes('Adim') ? ['Am', 'Adim'] : ['Cm', 'Cdim']).toEqual(
+        c.filter((x) => !x.startsWith('B')),
+      );
+      const n = prompt('numeral-of:vii°@key=C', 0, lcg(seed)).choices;
+      expect(n.filter((x) => x.endsWith('°'))).toHaveLength(2);
+    }
   });
 
   it('numbers minor keys from the parallel major, never offering III, VI or VII', () => {
     const p = prompt('numeral-of:bIII@key=Am', 2);
     expect(p.answer).toBe('bIII');
-    expect(p.choices).toEqual(['i', 'ii°', 'bIII', 'biii', 'iv', 'v', 'bVI', 'bVII']);
+    expect(p.choices).toContain('bIII');
+    expect(p.choices).toContain('biii');
     for (let seed = 1; seed < 20; seed++) {
       for (const id of ['numeral-of:bVI@key=Em', 'numeral-of:bVII@key=Dm']) {
         const choices = prompt(id, 2, lcg(seed)).choices;
@@ -169,14 +199,49 @@ describe('d11MakePrompt', () => {
 });
 
 describe('d11Choices', () => {
-  it('keeps the neighbour of vii° round the scale (vi or I)', () => {
-    const key = majorKey('C');
-    const target = diatonicChord(key, 7);
-    for (let seed = 1; seed < 10; seed++) {
-      const c = d11Choices(key, target, 'chord', 0, lcg(seed));
-      expect(c).toContain('Bdim');
-      expect(c).toContain('Bm');
-      expect(c.some((x) => x === 'Am' || x === 'C')).toBe(true);
+  const MAJORS = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'F', 'Bb', 'Eb', 'Ab', 'Db'];
+  const MINORS = ['A', 'E', 'B', 'F#', 'C#', 'G#', 'D', 'G', 'C', 'F', 'Bb', 'Eb'];
+  const keys = [...MAJORS.map((t) => majorKey(t)), ...MINORS.map((t) => minorKey(t))];
+
+  /** A choice's root (chord) or degree (numeral), and its quality. */
+  function parts(value: string, ask: 'chord' | 'numeral') {
+    if (ask === 'chord') {
+      const c = parseChordSymbol(value);
+      return { root: c.root, quality: c.quality };
+    }
+    const n = parseRoman(value)!;
+    return { root: `${n.alteration}:${n.degree}`, quality: n.quality };
+  }
+
+  it('never gives the answer away by the choices’ shape (rule 1)', () => {
+    for (const key of keys) {
+      for (let degree = 1; degree <= 7; degree++) {
+        const target = diatonicChord(key, degree as 1);
+        for (const ask of ['chord', 'numeral'] as const) {
+          const answer = ask === 'chord' ? target.symbol : target.roman;
+          for (let level = 0; level < D11_CHOICES.length; level++) {
+            for (let seed = 1; seed <= 10; seed++) {
+              const choices = d11Choices(key, target, ask, level, lcg(seed));
+              const label = `${keyName(key)} ${answer} ${ask} level ${level}`;
+              expect(choices, label).toContain(answer);
+              expect(new Set(choices).size, label).toBe(choices.length);
+              const all = choices.map((c) => parts(c, ask));
+              const mine = parts(answer, ask);
+              // Every root (degree) appears exactly twice, the answer's included.
+              const counts = new Map<string, number>();
+              for (const c of all) counts.set(c.root, (counts.get(c.root) ?? 0) + 1);
+              expect(
+                [...counts.values()].every((n) => n === 2),
+                label,
+              ).toBe(true);
+              // The cue names the quality, so it must never single the answer out.
+              expect(all.filter((c) => c.quality === mine.quality).length, label).toBeGreaterThan(
+                1,
+              );
+            }
+          }
+        }
+      }
     }
   });
 });
@@ -195,7 +260,9 @@ describe('d11Check', () => {
       concept: 'numeral:vi',
       confusedWith: 'numeral:V',
     });
-    expect(d11Check(p, 'B').confusedWith).toBe('numeral:VI');
+    // A quality slip on the right degree names no card's concept, so it isn't logged.
+    expect(d11Check(p, 'B')).toEqual({ correct: false, expected: 'Bm', concept: 'numeral:vi' });
+    expect(d11Check(prompt('numeral-of:vii°@key=C'), 'vii').confusedWith).toBeUndefined();
     expect(d11Check(p, 'nonsense').confusedWith).toBeUndefined();
   });
 
@@ -259,7 +326,8 @@ describe('d11Explain', () => {
     ]);
     expect(d11Explain(prompt('nashville:5@key=E'), 'A')).toEqual([
       'B is the 5th note of E major, and that chord is major (a plain number): B.',
-      'A is IV in E major.',
+      // In the cue's notation: Nashville, not Roman.
+      'A is 4 in E major.',
     ]);
   });
 

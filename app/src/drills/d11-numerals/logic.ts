@@ -9,6 +9,7 @@ import {
   chordTones,
   diatonicChords,
   keyName,
+  nashvilleNumber,
   nashvilleToRoman,
   parseChordSymbol,
   parseKey,
@@ -31,12 +32,15 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * - `numeral-of:vi@key=D`: "Bm in D major?", answered with a numeral (vi);
  * - `nashville:6m@key=D`: "6m in D major?", answered with a chord (Bm).
  *
- * The choices always hold the answer's quality twin (B beside Bm, VI beside
- * vi): major vs minor is the confusion research/02 rule 6 names, and the
- * case of a numeral is its quality. The rest are the key's other chords,
- * one of them a neighbour, since counting a degree off by one is the other
- * common slip. A wrong answer is logged against the numeral it really is
- * (`numeral:<roman>`), so the session interleaves the pair.
+ * The choices come in quality pairs, one root (or degree) each: the answer
+ * with its twin (Bm beside B, vi beside VI), a neighbouring degree, since
+ * counting off by one is the common slip, then other degrees of the key.
+ * Major vs minor is the confusion research/02 rule 6 names, and every root
+ * shows up twice, so the choices' shape never points at the answer: only
+ * knowing the key does (rule 1). A diminished answer brings a diminished
+ * decoy on another root, so ° alone doesn't give it away. A wrong degree is
+ * logged against the numeral it really is (`numeral:<roman>`), so the
+ * session interleaves the pair.
  *
  * Minor keys (for I4) are read too. Their numerals count from the major
  * scale on the same tonic (i ii° ♭III iv v ♭VI ♭VII, `theory/harmony`), and
@@ -96,26 +100,14 @@ export function d11Ask(kind: NumeralItemKind): D11Ask {
   return kind === 'numeral-of' ? 'numeral' : 'chord';
 }
 
-const QUALITY_TWIN: Partial<Record<ChordQuality, ChordQuality>> = {
-  major: 'minor',
-  minor: 'major',
-  diminished: 'minor',
-};
-
 function numeralOfChord(c: DiatonicChord): Numeral {
   return parseRoman(c.roman) as Numeral;
 }
 
-/** The answer's quality twin: same root (same degree), the other quality. */
-function twin(target: DiatonicChord, ask: D11Ask): string {
-  const quality = QUALITY_TWIN[target.quality] ?? 'major';
+function valueOf(c: DiatonicChord, ask: D11Ask, quality: ChordQuality = c.quality): string {
   return ask === 'chord'
-    ? chordSymbol({ root: target.root, quality })
-    : romanNumeral({ ...numeralOfChord(target), quality });
-}
-
-function valueOf(c: DiatonicChord, ask: D11Ask): string {
-  return ask === 'chord' ? c.symbol : c.roman;
+    ? chordSymbol({ root: c.root, quality })
+    : romanNumeral({ ...numeralOfChord(c), quality });
 }
 
 /** Degrees apart round the scale: vii° and I are neighbours. */
@@ -149,9 +141,17 @@ function numeralRank(roman: string): number {
   return n.degree * 100 + (n.alteration + 2) * 10 + (QUALITY_RANK[n.quality] ?? 3);
 }
 
+/** The two qualities offered on one root: major and minor, or diminished and minor. */
+function pairOf(diminished: boolean): ChordQuality[] {
+  return diminished ? ['diminished', 'minor'] : ['major', 'minor'];
+}
+
 /**
- * The choices: the answer, its quality twin, a neighbouring chord of the key,
- * then other chords of the key at random, up to the level's count. Chords
+ * The choices, in quality pairs (see above): the answer's root, a
+ * neighbouring degree, then other degrees at random, one pair per root up to
+ * the level's count. A diminished answer's neighbour is offered as a
+ * diminished pair too; for any other answer the neighbour is never the
+ * diminished chord, so the answer's quality is always offered twice. Chords
  * read in letter order (C to B), not scale order, so a choice's place never
  * gives its degree away; numerals read I to vii.
  */
@@ -163,19 +163,25 @@ export function d11Choices(
   rng: () => number,
 ): string[] {
   const i = Math.max(D11_SCOPE.minLevel, Math.min(D11_SCOPE.maxLevel, Math.round(level)));
-  const count = D11_CHOICES[i] as number;
+  const pairs = (D11_CHOICES[i] as number) / 2;
+  const dim = target.quality === 'diminished';
   const others = shuffle(
     diatonicChords(key).filter((c) => c.degree !== target.degree),
     rng,
   );
-  const neighbour = others.find((c) => degreeGap(c.degree, target.degree) === 1);
-  const ordered = [
-    valueOf(target, ask),
-    twin(target, ask),
-    ...(neighbour ? [valueOf(neighbour, ask)] : []),
-    ...others.filter((c) => c !== neighbour).map((c) => valueOf(c, ask)),
-  ];
-  const picked = [...new Set(ordered)].slice(0, count);
+  const neighbour = others.find(
+    (c) => degreeGap(c.degree, target.degree) === 1 && (dim || c.quality !== 'diminished'),
+  ) as DiatonicChord;
+  const roots = [
+    { chord: target, diminished: dim },
+    { chord: neighbour, diminished: dim },
+    ...others
+      .filter((c) => c !== neighbour)
+      .map((c) => ({ chord: c, diminished: c.quality === 'diminished' })),
+  ].slice(0, pairs);
+  const picked = roots.flatMap(({ chord, diminished }) =>
+    pairOf(diminished).map((q) => valueOf(chord, ask, q)),
+  );
   const rank = ask === 'chord' ? chordRank : numeralRank;
   return picked.sort((a, b) => rank(a) - rank(b));
 }
@@ -425,12 +431,20 @@ export function d11Check(prompt: D11Prompt, answer: D11Answer): DrillCheck {
   const own = concept(prompt.target.roman);
   if (answer === prompt.answer) return { correct: true, expected, concept: own };
   const given = d11NumeralOf(prompt, answer);
+  // A quality slip on the right degree (VI for vi) names no chord of the key,
+  // so no card shares its concept: only a wrong degree is a confusion to pair.
+  const slip = given !== null && sameDegree(parseRoman(given) as Numeral, prompt.target);
   return {
     correct: false,
     expected,
     concept: own,
-    ...(given && given !== prompt.target.roman ? { confusedWith: concept(given) } : {}),
+    ...(given && !slip ? { confusedWith: concept(given) } : {}),
   };
+}
+
+function sameDegree(n: Numeral, c: DiatonicChord): boolean {
+  const t = numeralOfChord(c);
+  return n.degree === t.degree && n.alteration === t.alteration;
 }
 
 /** Why the answer is what it is, after a wrong one. */
@@ -454,11 +468,16 @@ export function d11Explain(prompt: D11Prompt, answer: D11Answer): string[] {
   if (given !== null && givenNumeral !== null) {
     lines.push(
       prompt.ask === 'chord'
-        ? `${shown} is ${prettyNumeral(givenNumeral)} in ${prettyKey(prompt.key)}.`
+        ? `${shown} is ${prettyNumeral(asCue(prompt, givenNumeral))} in ${prettyKey(prompt.key)}.`
         : `${shown} is ${prettyChord(given)} in ${prettyKey(prompt.key)}.`,
     );
   }
   return lines;
+}
+
+/** A Roman numeral in the cue's notation: Nashville for a Nashville card. */
+function asCue(prompt: D11Prompt, roman: string): string {
+  return prompt.kind === 'nashville' ? nashvilleNumber(parseRoman(roman) as Numeral) : roman;
 }
 
 /** The chord tones from octave 3 up, for playback: Bm → B3 D4 F#4. */
