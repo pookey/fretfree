@@ -5,7 +5,7 @@ import { freshStart } from './helpers';
 // there at once, each view's chunk downloads when it opens, and the service
 // worker's precache covers those chunks so Explore works offline.
 
-const VIEW_CHUNK = /\/assets\/(?:fretboard-explorer|tab-viewer)-[^/]+\.js$/;
+const VIEW_CHUNK = /\/assets\/(?:fretboard-explorer|caged|tab-viewer)-[^/]+\.js$/;
 
 const swState = (page: Page) =>
   page.evaluate(async () => {
@@ -21,7 +21,7 @@ async function openEveryView(page: Page): Promise<void> {
   const list = page.getByRole('navigation', { name: 'Explore views' });
   const titles = await list.getByRole('link').allTextContents();
   expect(titles.slice(0, 1)).toEqual(['Fretboard explorer']);
-  expect(titles).toContain('Tab viewer');
+  expect(titles).toEqual(expect.arrayContaining(['CAGED visualiser', 'Tab viewer']));
   for (const title of titles) {
     await list.getByRole('link', { name: title, exact: true }).click();
     const region = page.getByRole('region', { name: title });
@@ -55,6 +55,7 @@ test.describe('M3-16 lazy Explore views', () => {
     await openEveryView(page);
     expect(chunks.some((u) => u.includes('/fretboard-explorer-'))).toBe(true);
     expect(chunks.some((u) => u.includes('/tab-viewer-'))).toBe(true);
+    expect(chunks.some((u) => u.includes('/caged-'))).toBe(true);
   });
 
   test('every view opens offline after a first load', async ({ page, context }) => {
