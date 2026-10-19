@@ -37,6 +37,7 @@
   border: 2px solid var(--root);
   border-radius: var(--radius-m);
   font-weight: 750;
+  white-space: nowrap;
 }
 
 .cue {
@@ -246,7 +247,7 @@
 @media (min-width: 40rem) {
   .drill[data-size-class='compact'] .top {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(12rem, 2fr) minmax(0, 3fr);
     align-items: start;
     column-gap: var(--space-5);
   }
@@ -256,7 +257,7 @@
   }
 
   .drill[data-size-class='compact'] .choices {
-    width: auto;
+    grid-template-columns: repeat(4, minmax(2.75rem, 1fr));
   }
 }
 
