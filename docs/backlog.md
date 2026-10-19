@@ -747,7 +747,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Pick a chord to see an animated chain of the 5 shapes, with triad cores highlighted. Respects reduced motion. Includes "Quiz me on this".
 
 ### M3-09 · Explore: chord finder
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-01, M3-07, M3-16
 - **Owns:** `app/src/screens/explore/views/chord-finder.tsx`, `app/src/screens/explore/views/chord-finder.meta.ts`, `app/e2e/m3-09.spec.ts`
 - **Acceptance:**
