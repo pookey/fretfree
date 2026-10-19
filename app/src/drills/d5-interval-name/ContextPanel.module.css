@@ -1,9 +1,14 @@
-/* D5's context panel: the interval legend. The session's panel supplies the
-   box and the heading colour. */
+/* D5's context panel: the interval legend, kept short enough (about 190px on
+   an iPad mini in landscape) for the full neck to fit below it. The session's
+   panel supplies the box and the heading colour. */
+.panel h2 {
+  margin-bottom: var(--space-2);
+}
+
 .panel p {
   margin: var(--space-2) 0 0;
-  font-size: 0.875rem;
-  line-height: 1.4;
+  font-size: 0.8125rem;
+  line-height: 1.35;
 }
 
 .legend {
@@ -20,9 +25,10 @@
   grid-template-columns: 3rem 1fr;
   align-items: baseline;
   column-gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
+  padding: 0.125rem var(--space-2);
   border-left: 3px solid transparent;
   font-size: 0.875rem;
+  line-height: 1.25;
 }
 
 /* The abbreviation spans both lines; the name and count stack beside it, so
