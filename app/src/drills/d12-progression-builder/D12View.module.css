@@ -1,0 +1,399 @@
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.subject {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.prompt {
+  margin: 0;
+  max-width: 44rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.9375rem;
+}
+
+/* The chart to transpose: read-only chords in the source key. */
+.source {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.source figcaption {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.chart,
+.slots {
+  --columns: 4;
+
+  display: grid;
+  grid-template-columns: repeat(var(--columns), auto);
+  justify-content: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chart {
+  gap: var(--space-2) var(--space-4);
+}
+
+.chart li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.chartChord {
+  min-width: 4.5rem;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  font-size: 1.375rem;
+  font-weight: 750;
+  text-align: center;
+}
+
+/* The slots: one per chord, or a bar of the blues, four to a row. */
+.slots {
+  gap: var(--space-3);
+}
+
+.slotItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 6rem;
+  height: 4.5rem;
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.75rem;
+  font-weight: 750;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.slot[data-state='empty'] {
+  border-style: dashed;
+}
+
+.slot[data-state='current'] {
+  border-style: dashed;
+  border-color: var(--tone);
+  border-width: 3px;
+}
+
+/* Where a drag will land: solid and thick, so it differs from "selected" by shape. */
+.slot[data-state='target'] {
+  border-style: solid;
+  border-color: var(--tone);
+  border-width: 4px;
+  background: var(--surface);
+}
+
+.slot:disabled {
+  cursor: default;
+}
+
+.ghost {
+  color: var(--text-muted);
+  opacity: 0.6;
+  font-weight: 500;
+}
+
+/* Feedback differs by mark and border style, not colour alone. */
+.slot[data-verdict='correct'] {
+  border-color: var(--correct);
+}
+
+.slot[data-verdict='wrong'] {
+  border-color: var(--wrong);
+  border-style: dashed;
+  border-width: 3px;
+}
+
+.mark {
+  position: absolute;
+  top: 0.125rem;
+  right: 0.375rem;
+  font-size: 1rem;
+}
+
+.slot[data-verdict='correct'] .mark {
+  color: var(--correct);
+}
+
+.slot[data-verdict='wrong'] .mark {
+  color: var(--wrong);
+}
+
+.expected {
+  color: var(--correct);
+  font-weight: 750;
+}
+
+.expected::before {
+  content: '→ ';
+}
+
+.numeral {
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.explanation {
+  max-width: 44rem;
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-6);
+  border-left: 3px solid var(--wrong);
+  background: var(--bg-raised);
+  border-radius: var(--radius-s);
+  line-height: 1.45;
+}
+
+.explanation li + li {
+  margin-top: var(--space-2);
+}
+
+/* The palette and its actions. */
+.answer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.palette,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.palette {
+  max-width: 48rem;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 5rem;
+  min-height: 3.75rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.5rem;
+  font-weight: 750;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    background 0.12s,
+    transform 0.08s;
+}
+
+.tile:active {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .tile:hover,
+  .slot:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.tile[data-grabbed='true'] {
+  border-color: var(--tone);
+  border-width: 4px;
+  transform: translateY(-0.25rem);
+}
+
+.tileNumeral {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.dragGhost {
+  position: fixed;
+  z-index: 10;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-m);
+  border: 3px solid var(--tone);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: 750;
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.35);
+}
+
+.primary,
+.secondary {
+  min-height: 3rem;
+  min-width: 7rem;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-m);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary {
+  border: none;
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.secondary {
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile:active,
+  .tile[data-grabbed='true'] {
+    transform: none;
+  }
+}
+
+/* iPad portrait and narrow Split View: slightly smaller slots. */
+.drill[data-size-class='regular'] .slot {
+  width: 5.5rem;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .top,
+.drill[data-size-class='compact'] .answer {
+  gap: var(--space-2);
+}
+
+.drill[data-size-class='compact'] .subject {
+  font-size: 1.25rem;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 0.9375rem;
+}
+
+.drill[data-size-class='compact'] .hint {
+  display: none;
+}
+
+.drill[data-size-class='compact'] .slots {
+  gap: var(--space-2);
+  width: 100%;
+  grid-template-columns: repeat(var(--columns), minmax(0, 4.5rem));
+}
+
+/* Four slots share a row on the narrowest phones; each stays a 44pt target. */
+.drill[data-size-class='compact'] .slot {
+  width: 100%;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.125rem;
+  border-radius: var(--radius-s);
+}
+
+.drill[data-size-class='compact'] .chartChord {
+  min-width: 3rem;
+  font-size: 1rem;
+  padding: var(--space-1) var(--space-2);
+}
+
+.drill[data-size-class='compact'] .mark {
+  top: -0.125rem;
+  right: 0.125rem;
+  font-size: 0.75rem;
+}
+
+.drill[data-size-class='compact'] .numeral {
+  font-size: 0.75rem;
+}
+
+.drill[data-size-class='compact'] .tile {
+  min-width: 3.5rem;
+  min-height: 2.75rem;
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .primary,
+.drill[data-size-class='compact'] .secondary {
+  min-height: 2.75rem;
+}
+
+.drill[data-size-class='compact'] .explanation {
+  font-size: 0.875rem;
+  padding-left: var(--space-5);
+}

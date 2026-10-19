@@ -1,0 +1,35 @@
+/* D12's context panel. The session's panel supplies the box and the heading colour. */
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+/* The key's chords as one row of seven, numeral over name. */
+.chords {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.chords li {
+  display: flex;
+  flex-direction: column;
+  padding: 0.125rem 0;
+  border-radius: var(--radius-s);
+  background: var(--surface);
+}
+
+.roman {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.symbol {
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
