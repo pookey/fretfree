@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, F1_SKILLS, freshStart, masterSkills } from './helpers';
 import { focusSession } from './helpers/focus';
 import { KNOWN_THIRDS_NAMES, SKILLS_BEFORE_C3, seedIntervals } from './helpers/intervals';
+import { reachWideD5, seedWideD5 } from './helpers/wide-intervals';
 
 // M2-21: D3, D5, D6, D7 and D39 bring their help through the plugin's
 // `contextPanel`, so the session draws the one panel wrapper for every drill.
@@ -26,6 +27,12 @@ interface Case {
   heading: RegExp;
   /** The drill has a neck the panel must sit above in landscape. */
   neck: boolean;
+  /**
+   * The neck also ends above the pinned feedback bar in landscape. D39's
+   * 0–12 neck is taller than the space whatever the panel (a neck-sizing
+   * follow-up), so it is left out.
+   */
+  clearsBar: boolean;
 }
 
 const CASES: Case[] = [
@@ -37,6 +44,7 @@ const CASES: Case[] = [
     },
     heading: /^Note wheel$/,
     neck: true,
+    clearsBar: true,
   },
   {
     drill: 'D5 interval name',
@@ -54,6 +62,7 @@ const CASES: Case[] = [
     },
     heading: /^Intervals$/,
     neck: true,
+    clearsBar: true,
   },
   {
     drill: 'D6 interval tap',
@@ -64,6 +73,7 @@ const CASES: Case[] = [
     },
     heading: /^(Minor|Major) 3rd$/,
     neck: true,
+    clearsBar: true,
   },
   {
     drill: 'D7 spell it',
@@ -74,6 +84,7 @@ const CASES: Case[] = [
     },
     heading: /^Major scale$/,
     neck: false,
+    clearsBar: false,
   },
   {
     drill: 'D39 fret landmarks',
@@ -83,6 +94,7 @@ const CASES: Case[] = [
     },
     heading: /^Fret markers$/,
     neck: true,
+    clearsBar: false,
   },
 ];
 
@@ -142,6 +154,10 @@ test.describe('M2-21 drill help on the session context panel', () => {
         const neckBox = (await neck(page).boundingBox())!;
         expect(box.y + box.height).toBeLessThanOrEqual(neckBox.y + 1);
         await expect(neck(page)).toBeInViewport({ ratio: 1 });
+        if (c.clearsBar) {
+          const bar = (await page.getByTestId('feedback-bar').boundingBox())!;
+          expect(neckBox.y + neckBox.height).toBeLessThanOrEqual(bar.y + 1);
+        }
       }
 
       // Hiding help removes it; showing it brings the drill's panel back.
@@ -151,6 +167,29 @@ test.describe('M2-21 drill help on the session context panel', () => {
       await expect(panel(page).getByRole('heading', { name: c.heading })).toBeVisible();
     });
   }
+
+  // D5 at its widest scope (all 12 intervals) with the full level-3 legend.
+  // Measured on iPad mini landscape: the panel is 362px and the prompt column
+  // with two rows of buttons 211px, against about 196px above the neck. Making
+  // it fit means dropping or moving level-3 tips and reshaping the legend, a
+  // design call left to the orchestrator; until then this documents the target.
+  test.fixme('D5 at its widest scope still fits above the neck on iPad mini', async ({
+    page,
+  }, info) => {
+    test.skip(info.project.name !== 'ipad-mini-landscape', 'iPad mini landscape budget');
+    test.setTimeout(240_000);
+    await freshStart(page);
+    await seedWideD5(page);
+    await reachWideD5(page);
+
+    const box = (await panel(page).boundingBox())!;
+    const neckBox = (await neck(page).boundingBox())!;
+    const bar = (await page.getByTestId('feedback-bar').boundingBox())!;
+    expect(box.height).toBeLessThanOrEqual(MINI_PANEL_MAX);
+    await expectNoOverflow(panel(page));
+    expect(box.y + box.height).toBeLessThanOrEqual(neckBox.y + 1);
+    expect(neckBox.y + neckBox.height).toBeLessThanOrEqual(bar.y + 1);
+  });
 
   test('on a phone, help opens the note wheel as a sheet @smoke', async ({ page }, info) => {
     test.skip(info.project.name !== 'iphone-smoke', 'phone flow');
