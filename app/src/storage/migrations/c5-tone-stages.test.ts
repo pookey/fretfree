@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import Dexie from 'dexie';
 import { Rating } from 'ts-fsrs';
 import { getSkill } from '../../engine/skills';
-import type { SkillStateRecord } from '../../engine/model';
+import type { CardRecord, SkillStateRecord } from '../../engine/model';
 import { FretworkDB, SCHEMA_VERSIONS } from '../db';
 import { exportData, importData } from '../export-import';
 import type { SyncClock } from '../sync/tracking';
@@ -26,7 +26,7 @@ const OLD_ITEMS = (['1', '3', '5'] as const).flatMap((d) =>
 const card = (itemId: string, skillId = OLD_SKILL) => ({
   itemId,
   skillId,
-  fsrs: { due: new Date('2026-10-20T09:00:00Z'), stability: 9, state: 2 },
+  fsrs: { due: new Date('2026-10-20T09:00:00Z'), stability: 9, state: 2 } as CardRecord['fsrs'],
   createdAt: new Date('2026-10-01T09:00:00Z'),
   lastReviewedAt: new Date('2026-10-18T09:00:00Z'),
 });

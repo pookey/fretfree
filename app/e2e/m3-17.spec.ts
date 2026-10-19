@@ -38,11 +38,17 @@ async function answeredSkills(page: Page): Promise<string[]> {
  */
 async function answer(page: Page): Promise<void> {
   if ((await drill(page).getAttribute('data-mode')) === 'tap') {
-    const target = page.getByTestId('marker-target');
+    // The target marker pulses, so tap the cell under it.
+    const target = page.getByTestId('marker-target').first();
+    const cells = page.locator('svg[data-fret-from] [data-cell]');
     const cell =
       (await target.count()) > 0
-        ? target.first()
-        : page.locator('svg[data-fret-from] [data-cell]').first();
+        ? cells.and(
+            page.locator(
+              `[data-cell="s${await target.getAttribute('data-string')}f${await target.getAttribute('data-fret')}"]`,
+            ),
+          )
+        : cells.first();
     await cell.click();
   } else {
     await drill(page).getByRole('button', { name: 'root', exact: true }).click();
@@ -102,7 +108,7 @@ test.describe('M3-17 chord tones in stages', () => {
 
     await focusSession(page, STAGES);
     // The first prompt is the root, as a worked example.
-    await expect(promptText(page)).toContainText(/the root of/i);
+    await expect(promptText(page)).toContainText(/the roots? of/i);
     await expect(page.getByTestId('marker-target').first()).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
