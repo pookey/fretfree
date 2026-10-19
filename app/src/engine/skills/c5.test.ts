@@ -33,7 +33,7 @@ describe('C5 skills', () => {
     ]);
     for (const s of skills) {
       expect(s.topic).toBe('C5');
-      expect(s.drillTypes).toEqual(['spell-it']);
+      expect(s.drillTypes).toEqual(['spell-it', 'play-sequence']);
     }
     const orders = skills.map((s) => s.order);
     expect(orders).toEqual([...orders].sort((a, b) => a - b));

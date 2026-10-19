@@ -25,7 +25,7 @@ describe('C4 skills', () => {
     ]);
     for (const s of skills) {
       expect(s.topic).toBe('C4');
-      expect(s.drillTypes).toEqual(['spell-it']);
+      expect(s.drillTypes).toEqual(['spell-it', 'play-sequence']);
       expect(s.softUnlock).toBe(true);
     }
     const orders = skills.map((s) => s.order);

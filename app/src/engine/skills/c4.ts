@@ -18,7 +18,8 @@ import { itemsOf, memo } from './helpers';
  * so no prompt needs a double sharp or flat.
  */
 
-const DRILLS = ['spell-it'];
+// D17 (play-sequence) plays the scale on a real guitar, in mic mode only.
+const DRILLS = ['spell-it', 'play-sequence'];
 
 /** Sharp keys in circle order, C first (no sharps). */
 export const C4_SHARP_KEYS: readonly string[] = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#'];

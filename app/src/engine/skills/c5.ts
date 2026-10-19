@@ -20,7 +20,8 @@ import { itemsOf, memo } from './helpers';
  * and of the keys it's spelled from (C4), so no C5 skill soft-unlocks.
  */
 
-const DRILLS = ['spell-it'];
+// D17 (play-sequence) plays the arpeggio on a real guitar, in mic mode only.
+const DRILLS = ['spell-it', 'play-sequence'];
 
 /** Roots for chords with a major 3rd (or none): the flat spellings charts use, bar F#. */
 const MAJOR_ROOTS: readonly string[] = [

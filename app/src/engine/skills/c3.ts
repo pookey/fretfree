@@ -19,7 +19,8 @@ const MAX_STRING_SPAN = 2;
 /** Largest fret distance between root and upper note that still fits under the hand. */
 const MAX_STRETCH = 4;
 
-const DRILLS = ['interval-name', 'interval-tap'];
+// D17 (play-sequence) plays the tap direction on a real guitar, in mic mode only.
+const DRILLS = ['interval-name', 'interval-tap', 'play-sequence'];
 
 interface Group {
   id: string;

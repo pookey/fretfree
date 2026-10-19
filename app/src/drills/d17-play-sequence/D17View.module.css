@@ -1,0 +1,211 @@
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+  justify-content: space-between;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.prompt {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.explain {
+  margin: 0;
+  min-height: 1.5em;
+  max-width: 48rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* One slot per note to play: it fills as the mic hears it. */
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.5rem;
+  min-height: 3.5rem;
+  padding: var(--space-1) var(--space-2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--bg-raised);
+  font-weight: 700;
+}
+
+.mark {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* Heard and wrong differ by mark (✓ / ✗) and border style, not colour alone. */
+.slot[data-state='heard'] {
+  border-color: var(--correct);
+}
+
+.slot[data-state='heard'] .mark {
+  color: var(--correct);
+}
+
+.slot[data-state='wrong'] {
+  border-color: var(--wrong);
+  border-style: dashed;
+}
+
+.slot[data-state='wrong'] .mark {
+  color: var(--wrong);
+}
+
+.slot[data-state='expected'] {
+  border-style: dashed;
+}
+
+.mic {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.note,
+.status,
+.problem {
+  margin: 0;
+  max-width: 36rem;
+  text-align: center;
+}
+
+.note {
+  flex-basis: 100%;
+  order: 1;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 3rem;
+  font-weight: 700;
+}
+
+.problem {
+  flex-basis: 100%;
+  color: var(--text);
+}
+
+/* The mic is live: a pulsing dot, still under reduced motion. */
+.dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: var(--correct);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}
+
+.primary,
+.secondary {
+  min-height: 3rem;
+  min-width: 7rem;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-m);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary {
+  border: none;
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.secondary {
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+}
+
+.neckArea {
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+/* iPad portrait (M2-20): one column from the top, help spanning the neck below. */
+.drill[data-size-class='regular'] {
+  justify-content: flex-start;
+}
+
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-3);
+  justify-content: flex-start;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .slot {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+
+.drill[data-size-class='compact'] .primary,
+.drill[data-size-class='compact'] .secondary {
+  min-height: 2.75rem;
+}
+
+/* Best-effort iPhone: keep the zoomed neck within short landscape viewports. */
+.drill[data-size-class='compact'] .neckArea svg {
+  max-height: calc(100dvh - 9rem);
+}
