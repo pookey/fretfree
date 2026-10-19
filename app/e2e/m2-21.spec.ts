@@ -27,11 +27,7 @@ interface Case {
   heading: RegExp;
   /** The drill has a neck the panel must sit above in landscape. */
   neck: boolean;
-  /**
-   * The neck also ends above the pinned feedback bar in landscape. D39's
-   * 0–12 neck is taller than the space whatever the panel (a neck-sizing
-   * follow-up), so it is left out.
-   */
+  /** The neck also ends above the pinned feedback bar in landscape. */
   clearsBar: boolean;
 }
 
@@ -94,7 +90,7 @@ const CASES: Case[] = [
     },
     heading: /^Fret markers$/,
     neck: true,
-    clearsBar: false,
+    clearsBar: true,
   },
 ];
 
