@@ -25,7 +25,7 @@ test.describe('M3-10 worked examples for C4–C6', () => {
   test('find the root first, then read the 3rd for major or minor', async ({ page }) => {
     await openExample(page, 'chords', 'C5.tones-triads');
     await expect(page.getByTestId('example-prompt')).toHaveText(
-      'Major or minor? Find the root, then tap its 3rd.',
+      'Find the root, then tap its 3rd. Its distance from the root decides major or minor.',
     );
 
     // Worked: the root is squared, the 3rd highlighted, the shape outlined.
@@ -44,26 +44,25 @@ test.describe('M3-10 worked examples for C4–C6', () => {
     await tap(page, 3, 6);
     await next(page);
 
-    // Faded: the shape and a hint, but no root square to give the root away.
+    // Faded: another shape and inversion, a hint, but no root square to give the root away.
     await expect(stage(page)).toHaveAttribute('data-stage', 'faded');
-    await expect(page.getByTestId('example-hint')).toContainText('Root first');
+    await expect(page.getByTestId('example-hint')).toContainText('in the A shape');
     await expect(neck(page).getByTestId('marker-root')).toHaveCount(0);
     await expect(neck(page).getByTestId('marker-tone')).toHaveCount(3);
-
-    // Take the bass note for the root and land on the 5th: the callout says why.
-    await tap(page, 2, 2);
-    await expect(page.getByTestId('example-trap')).toContainText(
-      "the lowest note isn't always the root",
-    );
-    await expect(page.getByTestId('example-wrong')).toContainText('so the chord is F# minor');
+    await tap(page, 2, 6);
+    await expect(page.getByTestId('example-correct')).toContainText('so the chord is D minor');
     await expect(neck(page).getByTestId('marker-root')).toHaveText('R');
     await next(page);
 
-    // Independent: no guides beyond the inlays.
+    // Independent: no guides beyond the inlays. Take the bass note for the
+    // root and land on the 5th: the callout says why.
     await expect(neck(page)).toHaveAttribute('data-guide-level', '1');
     await expect(neck(page).getByTestId('shape-outline')).toHaveCount(0);
-    await tap(page, 1, 2);
-    await expect(page.getByTestId('example-correct')).toContainText('so the chord is D major');
+    await tap(page, 2, 3);
+    await expect(page.getByTestId('example-trap')).toContainText(
+      "the lowest note isn't always the root",
+    );
+    await expect(page.getByTestId('example-wrong')).toContainText('so the chord is G major');
     await expect(page.getByTestId('example-done')).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
@@ -117,8 +116,8 @@ test.describe('M3-10 worked examples for C4–C6', () => {
     await tap(page, 3, 6);
     await next(page);
     await expect(stage(page)).toHaveAttribute('data-stage', 'faded');
-    await tap(page, 3, 2);
-    await expect(page.getByTestId('example-correct')).toContainText('so the chord is F# minor');
+    await tap(page, 2, 6);
+    await expect(page.getByTestId('example-correct')).toContainText('so the chord is D minor');
     await expectNoHorizontalOverflow(page);
   });
 });

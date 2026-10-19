@@ -38,8 +38,10 @@ function toneName(root: string, quality: TriadQuality, degree: Degree, at: Posit
 }
 
 /**
- * "Major or minor?" read off the triad core of a CAGED shape: find the root,
- * then the 3rd above it decides (D8, D36). The core is the step's shape and
+ * Major or minor, read off the triad core of a CAGED shape: find the root,
+ * then the 3rd above it decides (D8, D36). The prompt poses no question the
+ * tap can't answer (rule 4): the learner taps the 3rd, and the reveal names
+ * the quality. The core is the step's shape and
  * its 3rd the answer. When the lowest note isn't the root, the trap is the
  * note a 3rd above that bass note: the one a learner who takes the bass for
  * the root would tap. `showRoot` marks the root, for the worked stage.
@@ -58,7 +60,7 @@ export function rootFirstStep(
   const at = (p: Position): Position => ({ string: p.string, fret: p.fret });
   const name = (n: Position & { degree: Degree }) => toneName(root, quality, n.degree, n);
   const step: ExampleStep = {
-    prompt: 'Major or minor? Find the root, then tap its 3rd.',
+    prompt: 'Find the root, then tap its 3rd. Its distance from the root decides major or minor.',
     given: opts.showRoot ? [at(r)] : [],
     answer: at(third),
     explain:
@@ -84,8 +86,10 @@ export function rootFirstStep(
 
 /**
  * C5 (and D36's "what chord is this?"): read a chord's quality from its 3rd,
- * which means finding its root first. The shapes are CAGED triad cores where
- * the lowest note is often not the root.
+ * which means finding its root first. The shapes are CAGED triad cores, and
+ * each stage changes shape, key and inversion (rule 12): the 3rd in the bass,
+ * then the root, then the 3rd again, where the learner meets the bass-as-root
+ * trap unaided.
  */
 const example: WorkedExample = {
   id: 'c5-root-first',
@@ -96,8 +100,8 @@ const example: WorkedExample = {
   range: { from: 1, to: 7 },
   steps: [
     rootFirstStep('E', 'A', 'major', { showRoot: true }),
-    rootFirstStep('E', 'F#', 'minor'),
-    rootFirstStep('C', 'D', 'major'),
+    rootFirstStep('A', 'D', 'minor'),
+    rootFirstStep('E', 'G', 'major'),
   ],
 };
 

@@ -26,7 +26,9 @@ describe('rootFirstStep', () => {
   it('reads a major chord from its root and 3rd, trapping the bass taken for the root', () => {
     // E-shape core of A major on strings 3–1: C# (3rd) in the bass, then E, then A.
     const step = rootFirstStep('E', 'A', 'major', { showRoot: true });
-    expect(step.prompt).toBe('Major or minor? Find the root, then tap its 3rd.');
+    expect(step.prompt).toBe(
+      'Find the root, then tap its 3rd. Its distance from the root decides major or minor.',
+    );
     expect(step.given).toEqual([{ string: 1, fret: 5 }]);
     expect(step.answer).toEqual({ string: 3, fret: 6 });
     expect(step.shape?.map((n) => n.degree)).toEqual(['3', '5', 'R']);
@@ -87,6 +89,8 @@ describe('c5-root-first', () => {
     }
     // Major and minor both appear, so the learner can't guess the quality.
     expect(example.steps.map((s) => /major/.test(s.explain))).toEqual([true, false, true]);
+    // The faded stage reads another inversion than the worked one (rule 12).
+    expect(example.steps.map((s) => s.shape![0]!.degree)).toEqual(['3', 'R', '3']);
   });
 
   it('keeps the shape plain until the answer, then labels it by degree', () => {
@@ -103,13 +107,13 @@ describe('c5-root-first', () => {
     expect(
       after.filter((m) => m.style !== 'correct').map((m) => [m.style, m.label, m.group]),
     ).toEqual([
-      ['fifth', '5', SHAPE_GROUP],
       ['root', 'R', SHAPE_GROUP],
+      ['fifth', '5', SHAPE_GROUP],
     ]);
 
     // A tap on the trap marks it wrong, not as a shape note.
-    const trap = example.steps[1].trap!.at;
-    const wrong = exampleMarkers(example, at(1, trap));
+    const trap = example.steps[2].trap!.at;
+    const wrong = exampleMarkers(example, at(2, trap));
     expect(wrong.filter((m) => m.string === trap.string && m.fret === trap.fret)).toEqual([
       expect.objectContaining({ style: 'wrong' }),
     ]);
@@ -143,24 +147,24 @@ describe('<WorkedExample> with c5-root-first', () => {
     expect(playNotes).toHaveBeenCalledWith(['C#4', 'E4', 'A4'], { muted: false, volume: 0.8 });
     next();
 
-    // Faded: the shape, outlined, with no root square to give it away.
-    expect(screen.getByTestId('example-hint')).toHaveTextContent('in the E shape it’s on string 1');
+    // Faded: another shape and inversion, outlined, with no root square to give it away.
+    expect(screen.getByTestId('example-hint')).toHaveTextContent('in the A shape it’s on string 3');
     expect(screen.queryByTestId('marker-root')).toBeNull();
     expect(screen.getAllByTestId('marker-tone')).toHaveLength(3);
-    // Taking the bass A for the root lands on the 5th: the callout says why.
-    tap(2, 2);
-    expect(screen.getByTestId('example-trap')).toHaveTextContent(
-      "the lowest note isn't always the root",
-    );
-    expect(screen.getByTestId('example-wrong')).toHaveTextContent('so the chord is F# minor');
+    tap(2, 6);
+    expect(screen.getByTestId('example-correct')).toHaveTextContent('so the chord is D minor');
     expect(screen.getByTestId('marker-root')).toHaveTextContent('R');
     next();
 
-    // Independent: no guides beyond the inlays.
+    // Independent: no guides beyond the inlays. Taking the bass B for the
+    // root lands on the 5th: the callout says why.
     expect(neck()).toHaveAttribute('data-guide-level', '1');
     expect(screen.queryAllByTestId('shape-outline')).toHaveLength(0);
-    tap(1, 2);
-    expect(screen.getByTestId('example-correct')).toHaveTextContent('so the chord is D major');
+    tap(2, 3);
+    expect(screen.getByTestId('example-trap')).toHaveTextContent(
+      "the lowest note isn't always the root",
+    );
+    expect(screen.getByTestId('example-wrong')).toHaveTextContent('so the chord is G major');
     expect(screen.getByTestId('example-done')).toBeInTheDocument();
   });
 });
