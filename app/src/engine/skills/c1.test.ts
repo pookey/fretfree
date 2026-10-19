@@ -70,7 +70,7 @@ describe('C1 skills', () => {
       expect(getSkill(s.id)).toBe(s);
       expect(s.topic).toBe('C1');
       expect(s.softUnlock).toBe(true);
-      expect(s.drillTypes).toEqual(['octave-finder']);
+      expect(s.drillTypes).toEqual(['octave-finder', 'play-the-note']);
     }
     expect(getSkill('C1.octaves')!.prerequisites).toEqual([
       'F2.string6-naturals',

@@ -10,7 +10,8 @@ import { FRETS_0_12, itemsOf, memo } from './helpers';
  * and C2.
  */
 
-const DRILLS = ['octave-finder'];
+// D16 (play-the-note) plays the octave on a real guitar, in mic mode only.
+const DRILLS = ['octave-finder', 'play-the-note'];
 
 /** An ordered string pair: the octave of a note on `from` is found on `to`. */
 type Pair = readonly [from: number, to: number];

@@ -16,7 +16,7 @@ export const skills: Skill[] = [
     title: 'Every note on every string',
     prerequisites: ['F2.string6-naturals', 'F2.string5-naturals'],
     softUnlock: true,
-    drillTypes: ['name-the-note', 'find-the-note'],
+    drillTypes: ['name-the-note', 'find-the-note', 'play-the-note'],
     items: memo(() => {
       const f2 = new Set(f2Skills.flatMap((s) => s.items().map((i) => i.id)));
       const strings = allStrings();

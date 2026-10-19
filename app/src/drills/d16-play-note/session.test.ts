@@ -4,12 +4,13 @@ import { FretworkDB } from '../../storage';
 import { SessionRunner } from '../../session/runner';
 import { midiToFretNote } from '../../theory';
 import { DRILLS } from '../registry';
+import type { D2Prompt } from '../d2-find-the-note/logic';
 import { D16_ID, type D16Prompt } from './logic';
 
 /**
  * D16 through the real session runner (plan → prompt → grade → FSRS →
- * persist). No shipped skill serves D16 until the mic gate lands (M5-06), so
- * a test skill borrows F2's string-6 items.
+ * persist). A test skill borrows F2's string-6 find items, so D16 serves
+ * every prompt.
  */
 
 const f2 = SKILLS.find((s) => s.id === 'F2.string6-naturals') as Skill;
@@ -34,17 +35,38 @@ afterEach(async () => {
   await db.delete();
 });
 
-function start() {
+function start(skills: Skill[] = [playSkill], micEnabled = true, maxItems = 4) {
   return SessionRunner.start({
     db,
     scheduler: createScheduler({ enableFuzz: false }),
-    settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 500 },
-    skills: [playSkill],
+    settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 500, micEnabled },
+    skills,
     drills: DRILLS,
     now: () => clock,
     rng: () => 0,
-    maxItems: 4,
+    maxItems,
   });
+}
+
+/** F2's own drills on its string-6 find items, as the shipped skill wires them. */
+const f2Finds: Skill = { ...f2, items: () => finds.slice(0, 4) };
+
+/** The drills a whole session serves, answering every prompt right. */
+async function drillsServed(micEnabled: boolean): Promise<string[]> {
+  const r = await start([f2Finds], micEnabled, 16);
+  const ids: string[] = [];
+  while (!r.isOver) {
+    const { drill, prompt } = r.currentPrompt()!;
+    ids.push(drill.id);
+    if (drill.id === D16_ID) {
+      const midi = (prompt as D16Prompt).midis[0]!;
+      await r.answer({ midi, name: midiToFretNote(midi).name, cents: 0 }, 2000);
+    } else {
+      await r.answer((prompt as D2Prompt).targets[0], 900);
+    }
+    r.next();
+  }
+  return ids;
 }
 
 describe('D16 in a session', () => {
@@ -71,5 +93,27 @@ describe('D16 in a session', () => {
     expect(res.result).toMatchObject({ correct: false, expected: p.pc });
     expect(res.result.confusedWith).toBe(midiToFretNote(wrong).pc);
     expect(res.sounds.given).toEqual([midiToFretNote(wrong).name]);
+  });
+
+  it('is wired into the note and octave skills, and needs the mic', () => {
+    const d16 = DRILLS.find((d) => d.id === D16_ID)!;
+    expect(d16.requiresMic).toBe(true);
+    expect(d16.skills).toEqual([
+      'F2.string6-naturals',
+      'F2.string5-naturals',
+      'C1.octaves',
+      'C1.octaves-gb-shift',
+      'C1.double-octaves',
+      'C2.all-notes',
+    ]);
+  });
+
+  it('is never served without mic mode, and is served with it', async () => {
+    const without = await drillsServed(false);
+    expect(without).toContain('find-the-note');
+    expect(without).not.toContain(D16_ID);
+    await db.delete();
+    db = new FretworkDB(`d16-session-${n++}`);
+    expect(await drillsServed(true)).toContain(D16_ID);
   });
 });

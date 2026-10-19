@@ -1,3 +1,4 @@
+import { SKILLS } from '../../engine/skills';
 import { lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
 import type * as views from './views';
@@ -22,14 +23,11 @@ const parts = lazyParts<typeof views>('d16-play-note');
 const playTheNote: DrillType<D16Prompt, D16Answer> = {
   id: D16_ID,
   title: 'Play the note',
-  // TODO(M5-06): once the plugin type has M5-06's mic flag, which the picker
-  // honours with `settings.micEnabled`, set it here and name D16's skills:
-  // 'F2.string6-naturals', 'F2.string5-naturals', 'C2.all-notes',
-  // 'C1.octaves' and 'C1.octaves-gb-shift' (each listing 'play-the-note' in
-  // its drillTypes). Until then no skill serves D16, so learners without a
-  // mic never meet it.
-  skills: [],
+  // Every skill that names this drill (F2 and C2 notes, C1 octave shapes).
+  skills: SKILLS.filter((s) => s.drillTypes.includes(D16_ID)).map((s) => s.id),
   inputModes: ['mic'],
+  // Served only in mic mode (design §9): the picker skips it otherwise.
+  requiresMic: true,
   scope: D16_SCOPE,
   canTest: d16CanTest,
   makePrompt: d16MakePrompt,
