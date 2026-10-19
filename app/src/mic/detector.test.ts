@@ -277,6 +277,40 @@ describe('createWorkletPitchDriver', () => {
     expect(browser.tracks[0]?.stop).toHaveBeenCalled();
   });
 
+  it.each([
+    ['resume', 'Starting audio timed out after 30ms'],
+    ['addModule', 'Loading the pitch worklet timed out after 30ms'],
+  ] as const)('fails, releasing the mic, when %s never settles', async (step, msg) => {
+    const browser = fakeBrowser();
+    browser.behaviour[step] = () => new Promise<void>(() => undefined);
+    const driver = createWorkletPitchDriver({
+      globals: () => browser.globals,
+      workletUrl: '/pitch.js',
+      startTimeoutMs: 30,
+    });
+    await expect(driver.start(() => undefined)).rejects.toMatchObject({
+      reason: 'failed',
+      message: msg,
+    });
+    expect(browser.tracks[0]?.stop).toHaveBeenCalled();
+    expect(browser.contexts[0]?.close).toHaveBeenCalled();
+  });
+
+  it('gives the learner all the time they need to answer the prompt', async () => {
+    const browser = fakeBrowser();
+    const media = deferred<MediaStream>();
+    browser.behaviour.media = () => media.promise;
+    const driver = createWorkletPitchDriver({
+      globals: () => browser.globals,
+      workletUrl: '/pitch.js',
+      startTimeoutMs: 10,
+    });
+    const started = driver.start(() => undefined);
+    await new Promise((r) => setTimeout(r, 40));
+    media.resolve({ id: 'slow', getTracks: () => [{ stop: vi.fn() }] } as never);
+    await expect(started).resolves.toBeUndefined();
+  });
+
   it('fails when the AudioContext cannot be built', async () => {
     const browser = fakeBrowser();
     browser.behaviour.construct = () => {

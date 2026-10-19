@@ -36,3 +36,13 @@ export const DETECTOR_CONFIG = {
 export const DETECTOR_TRACKER = {
   dropoutMs: 100,
 } as const satisfies Partial<NoteTrackerOptions>;
+
+/** Main-thread driver settings. */
+export const DETECTOR_DRIVER = {
+  /**
+   * Once the learner has granted the mic, how long loading the worklet and
+   * resuming the context may take before start fails. iOS can leave
+   * `resume()` pending forever when the gesture is lost or audio is busy.
+   */
+  startTimeoutMs: 5000,
+} as const;

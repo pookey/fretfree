@@ -7,7 +7,7 @@
  * app calls only when the learner enables mic mode.
  */
 import workletUrl from './worklet/pitch-processor.ts?worker&url';
-import { DETECTOR_TRACKER } from './worklet/config';
+import { DETECTOR_DRIVER, DETECTOR_TRACKER } from './worklet/config';
 import { PITCH_PROCESSOR, type PitchMessage } from './worklet/protocol';
 import { createPitchSource, setPitchSourceFactory } from './source';
 import { PitchSourceError, type PitchDriver, type PitchFrame } from './types';
@@ -24,6 +24,8 @@ export interface DetectorOptions {
   globals?: () => DetectorGlobals;
   /** The worklet module; default the bundled `pitch-processor`. */
   workletUrl?: string;
+  /** Default `DETECTOR_DRIVER.startTimeoutMs`. */
+  startTimeoutMs?: number;
 }
 
 /**
@@ -81,6 +83,15 @@ function settle(promise: Promise<unknown>): Promise<unknown> {
   );
 }
 
+/** Resolves to `settled`'s result, or to a timeout error after `ms`. */
+function within(settled: Promise<unknown>, ms: number, what: string): Promise<unknown> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<unknown>((resolve) => {
+    timer = setTimeout(() => resolve(new Error(`${what} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([settled, timeout]).finally(() => clearTimeout(timer));
+}
+
 interface Graph {
   context: AudioContext;
   stream: MediaStream;
@@ -96,6 +107,7 @@ function release(context: AudioContext, stream: MediaStream | null): void {
 
 export function createWorkletPitchDriver(options: DetectorOptions = {}): PitchDriver {
   const url = options.workletUrl ?? workletUrl;
+  const timeoutMs = options.startTimeoutMs ?? DETECTOR_DRIVER.startTimeoutMs;
   let graph: Graph | null = null;
 
   return {
@@ -127,9 +139,10 @@ export function createWorkletPitchDriver(options: DetectorOptions = {}): PitchDr
           stream = await media.catch((err: unknown) => {
             throw mediaError(err);
           });
-          const loadError = await loaded;
+          // The clock starts after the prompt: the learner may take a while to answer it.
+          const loadError = await within(loaded, timeoutMs, 'Loading the pitch worklet');
           if (loadError) throw new PitchSourceError('failed', message(loadError));
-          const resumeError = await resumed;
+          const resumeError = await within(resumed, timeoutMs, 'Starting audio');
           if (resumeError) throw new PitchSourceError('failed', message(resumeError));
 
           const input = context.createMediaStreamSource(stream);
