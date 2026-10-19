@@ -3,6 +3,7 @@ import { Rating } from 'ts-fsrs';
 import { SKILLS } from '../engine/skills';
 import type { Item, Skill } from '../engine/model';
 import { DRILLS } from '../drills/registry';
+import { ENGINE_CONFIG } from '../engine/config';
 import { createDrillPicker } from '../session/drill-picker';
 import {
   answerProbe,
@@ -221,17 +222,23 @@ describe('placementGroups', () => {
     expect(all.find((g) => g.id === 'C3.fourths-fifths')!.prerequisites).toEqual(['C3.thirds']);
   });
 
-  it('fits about 3 minutes of probes for an expert who knows everything', () => {
+  it('fits about 3 minutes of probes for a fast expert, and the budget stops a slower one', () => {
     const picker = createDrillPicker(SKILLS, DRILLS);
-    const s = run(
-      startPlacement(
-        placementGroups(SKILLS, (i) => picker.canServe(i)),
-        lcg(),
-      ),
-      () => 'fluent',
-    );
-    // At ~3.5 s a probe (answer plus feedback), the whole test stays within the budget.
-    expect(s.answers.length * 3500).toBeLessThanOrEqual(180_000);
+    const groups = placementGroups(SKILLS, (i) => picker.canServe(i));
+    const all = run(startPlacement(groups, lcg()), () => 'fluent');
+    // At ~2.5 s a probe (answer plus feedback), an expert answers everything in the budget.
+    expect(all.answers.length * 2500).toBeLessThanOrEqual(ENGINE_CONFIG.placement.budgetMs);
+
+    // At ~3.5 s a probe the budget ends it first: it still reaches intervals and keys,
+    // and a locked module's test-out covers whatever it didn't (M2-16).
+    let s = startPlacement(groups, lcg());
+    for (let p = nextProbe(s, 0); p; p = nextProbe(s, s.answers.length * 3500)) {
+      s = answerProbe(s, p, 'fluent');
+    }
+    expect(s.answers.length * 3500).toBeLessThan(ENGINE_CONFIG.placement.budgetMs + 3500);
+    const v = verdicts(s);
+    for (const id of ['C3.thirds', 'C3.fourths-fifths', 'C3.seconds', 'C4.sharp-keys'])
+      expect(v.get(id)).toBe('known');
   });
 });
 

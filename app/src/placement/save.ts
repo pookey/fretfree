@@ -26,7 +26,10 @@ import { knownItems, verdicts, type PlacementState } from './algorithm';
  * as a placement log. A known skill is marked mastered when every probed
  * item has a card and the mastery rule holds, or practising otherwise, so the
  * skills after it unlock while a probe it missed stays on the frontier, to
- * be taught as a new item.
+ * be taught as a new item. A test-out (`masterKnown`) asks for every probe
+ * fluent, so a skill it finds known is mastered once every item has a card,
+ * even where older, shakier cards would fail the stability share: the test
+ * is the evidence of mastery that unlocks hard prerequisites (rule 7).
  */
 
 /** Placement probes log `drillType` as this prefix plus the drill's ID. */
@@ -49,8 +52,12 @@ export interface ProbeLog {
 }
 
 export interface PlacementSummary {
+  /** Probed skill IDs, in curriculum order. */
+  probedSkills: string[];
   /** Known skill IDs, in curriculum order. */
   knownSkills: string[];
+  /** The known skills now mastered, in curriculum order. */
+  masteredSkills: string[];
   /** Cards seeded as known. */
   seeded: number;
 }
@@ -101,9 +108,11 @@ export async function savePlacement(
     scheduler: Scheduler;
     targets: SpeedTargets;
     now: Date;
+    /** A test-out: a known skill whose items all have cards is mastered. */
+    masterKnown?: boolean;
   },
 ): Promise<PlacementSummary> {
-  const { state, logs, scheduler, targets, now } = input;
+  const { state, logs, scheduler, targets, now, masterKnown = false } = input;
   const groupItems = state.groups.flatMap((g) => g.items);
   const existing = new Map(
     (await db.cards.bulkGet(groupItems.map((i) => i.id)))
@@ -138,12 +147,13 @@ export async function savePlacement(
     const complete = group.items.every((it) => cards.has(it.id));
     const mastered =
       complete &&
-      isMastered({
-        itemCount: skill.items().length,
-        cards: skill.items().flatMap((it) => cards.get(it.id) ?? []),
-        recentResponseMs: mine.filter((l) => l.correct).map((l) => l.responseMs),
-        targets,
-      });
+      (masterKnown ||
+        isMastered({
+          itemCount: skill.items().length,
+          cards: skill.items().flatMap((it) => cards.get(it.id) ?? []),
+          recentResponseMs: mine.filter((l) => l.correct).map((l) => l.responseMs),
+          targets,
+        }));
     const accuracy = mine.length === 0 ? 1 : mine.filter((l) => l.correct).length / mine.length;
     return [knownSkillState(skillId, states[i], mastered, accuracy)];
   });
@@ -165,5 +175,10 @@ export async function savePlacement(
     await db.reviewLogs.bulkAdd(reviewLogs);
     await db.skillStates.bulkPut(nextStates);
   });
-  return { knownSkills, seeded: seeded.length };
+  return {
+    probedSkills: state.groups.map((g) => g.id),
+    knownSkills,
+    masteredSkills: nextStates.filter((st) => st.status === 'mastered').map((st) => st.skillId),
+    seeded: seeded.length,
+  };
 }

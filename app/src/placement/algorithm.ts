@@ -88,22 +88,31 @@ export function probeTier(
 }
 
 /**
- * The groups to probe: skills of the configured topics, in the order given
- * (the registry's curriculum order), keeping only items a drill can serve.
- * Skills with nothing to probe are left out, and so are prerequisites
- * outside the probed set.
+ * The groups to probe: the skills `include` picks, in the order given (the
+ * registry's curriculum order), keeping only items a drill can serve. Skills
+ * with nothing to probe are left out, and so are prerequisites outside the
+ * probed set.
  */
+export function skillGroups(
+  skills: readonly Skill[],
+  canServe: (item: Item) => boolean,
+  include: (skill: Skill) => boolean,
+): GroupInput[] {
+  const groups = skills
+    .filter(include)
+    .map((s) => ({ id: s.id, items: s.items().filter(canServe), prerequisites: s.prerequisites }))
+    .filter((g) => g.items.length > 0);
+  const ids = new Set(groups.map((g) => g.id));
+  return groups.map((g) => ({ ...g, prerequisites: g.prerequisites.filter((p) => ids.has(p)) }));
+}
+
+/** The placement test's groups: every skill of the configured topics. */
 export function placementGroups(
   skills: readonly Skill[],
   canServe: (item: Item) => boolean,
   topics: readonly string[] = ENGINE_CONFIG.placement.topics,
 ): GroupInput[] {
-  const groups = skills
-    .filter((s) => topics.includes(s.topic))
-    .map((s) => ({ id: s.id, items: s.items().filter(canServe), prerequisites: s.prerequisites }))
-    .filter((g) => g.items.length > 0);
-  const ids = new Set(groups.map((g) => g.id));
-  return groups.map((g) => ({ ...g, prerequisites: g.prerequisites.filter((p) => ids.has(p)) }));
+  return skillGroups(skills, canServe, (s) => topics.includes(s.topic));
 }
 
 export function startPlacement(

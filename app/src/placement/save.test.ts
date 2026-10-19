@@ -73,7 +73,12 @@ describe('savePlacement', () => {
       targets,
       now: NOW,
     });
-    expect(summary).toEqual({ knownSkills: [string6.id], seeded: string6.items().length });
+    expect(summary).toEqual({
+      probedSkills: [string6.id, string5.id],
+      knownSkills: [string6.id],
+      masteredSkills: [string6.id],
+      seeded: string6.items().length,
+    });
 
     const cards = await db.cards.toArray();
     expect(cards.map((c) => c.itemId).sort()).toEqual(
@@ -132,7 +137,12 @@ describe('savePlacement', () => {
         targets,
         now: NOW,
       });
-      expect(summary).toEqual({ knownSkills: [string6.id], seeded: 14 });
+      expect(summary).toEqual({
+        probedSkills: [string6.id, string5.id],
+        knownSkills: [string6.id],
+        masteredSkills: [],
+        seeded: 14,
+      });
       const missed = logs.filter((l) => l.item.skillId === string6.id)[1]!.item.id;
       expect(await db.cards.get(missed)).toBeUndefined();
       expect((await getSkillStates(db)).get(string6.id)).toMatchObject({
@@ -200,7 +210,7 @@ describe('savePlacement', () => {
       targets,
       now: NOW,
     });
-    expect(summary).toEqual({ knownSkills: [], seeded: 0 });
+    expect(summary).toMatchObject({ knownSkills: [], masteredSkills: [], seeded: 0 });
     expect(await db.cards.count()).toBe(0);
   });
 });
