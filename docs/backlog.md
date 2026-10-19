@@ -860,6 +860,19 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Migrate every existing drill (D1–D13 and D36–D40, plus any landed by then). `drills/lazy-view.test.tsx` (or a sibling test) fails if a `drill.ts` statically imports its `logic.ts`, so new drills can't regress.
   - `check-bundle` shows first-load JS down by at least the drills' logic, and the report gives before and after numbers. No change in behaviour: the full e2e suite passes unchanged.
   - Coordinate through the PM with drills in flight: they rebase onto the new contract.
+
+### M1-43 · [contract] One file per item kind, so drills stop colliding in engine/model.ts
+- **Status:** todo
+- **Priority:** high (every drill package now conflicts with every other in engine/model.ts, and each conflict costs a rebase plus a full verify)
+- **Deps:** none
+- **Design:** §6, CLAUDE.md "add things by adding files"
+- **Owns:** `app/src/engine/model.ts`, `app/src/engine/model.test.ts`, `app/src/engine/items/**`, `app/src/engine/skills/registry.test.ts`, `app/src/engine/config/placement.ts`, `app/e2e/m1-43.spec.ts` (only if needed)
+- **Acceptance:**
+  - Found by the PM, 2026-10-19: each new drill appends its item kind in the same five places in `engine/model.ts` (the `ItemRef` union, a regex, `itemId`, `parseItemId`, and a case). M3-14, M3-15, M4-02, M4-03 and M4-04 all hit rebase conflicts there within hours, and so did `skills/registry.test.ts` (a hand-ordered list) and `config/placement.ts` (`skipSkills`).
+  - Item kinds register by file: `engine/items/<kind>.ts` exports the kind's id/parse pair (and type), and `model.ts` auto-collects them (an `import.meta.glob` registry, as for skills and drills) while keeping the `ItemRef` type and the `itemId`/`parseItemId` API. Migrate every existing kind. Stored item IDs don't change (a round-trip test over all kinds).
+  - Make the other two append points file-local: the skills-order test derives its expectations from the skill files instead of a hand-kept list, and placement skips come from a field on each skill rather than a central `skipSkills` array. Behaviour doesn't change.
+  - Document in CLAUDE.md "Conventions": a new item kind means a new file in `engine/items/`.
+  - Coordinate through the PM: drills in flight rebase onto it once (their kinds move into files), and after that they stop colliding.
 ### M3-18 · Lazy-load drill views and the onboarding and placement routes
 - **Status:** done
 - **Deps:** M3-16
