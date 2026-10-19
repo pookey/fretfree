@@ -30,6 +30,7 @@ const MIC_PROBLEM: Record<PitchSourceErrorReason, string> = {
   unsupported: "This browser can't listen to your guitar. Try Safari on iPad, or Chrome.",
   'no-device': 'No microphone was found. Connect one, then try again.',
   failed: "The mic didn't start. Try again.",
+  lost: 'The mic stopped: it was unplugged, another app took it, or FretFree went to the background. Try again.',
 };
 
 /**
