@@ -344,9 +344,16 @@ export function D12View({
     feedback && !feedback.result.correct && answer ? d12Explain(prompt, answer) : [];
   const named = guided || guides.sourceNumerals || Boolean(feedback);
   const target = grab?.target ?? drag?.over ?? null;
+  // A 12-bar chart: smaller slots, and the source chart in two rows of six.
+  const long = slots.length > 4;
 
   return (
-    <div className={styles.drill} data-size-class={sizeClass} data-testid="d12-drill">
+    <div
+      className={styles.drill}
+      data-size-class={sizeClass}
+      data-long={long ? 'true' : undefined}
+      data-testid="d12-drill"
+    >
       <div className={styles.upper}>
         <div className={styles.top}>
           <p className={styles.subject} data-testid="d12-subject">
@@ -362,7 +369,10 @@ export function D12View({
           {prompt.from && (
             <figure className={styles.source} data-testid="d12-source">
               <figcaption>In {prompt.from.keyName}</figcaption>
-              <ol className={styles.chart} style={{ '--columns': columns } as CSSProperties}>
+              <ol
+                className={styles.chart}
+                style={{ '--columns': long ? 6 : columns } as CSSProperties}
+              >
                 {prompt.from.chords.map((c, i) => (
                   <li key={i}>
                     <span className={styles.chartChord}>{pretty(c)}</span>
@@ -427,14 +437,15 @@ export function D12View({
                       </span>
                     )}
                   </button>
-                  {verdict === 'wrong' && (
-                    <span className={styles.expected} data-testid="d12-expected">
-                      {pretty(prompt.expected[i] as string)}
-                    </span>
-                  )}
+                  {/* The numeral first, so the row lines up when corrections show below. */}
                   {showNumeral && (
                     <span className={styles.numeral} aria-hidden="true">
                       {numeral}
+                    </span>
+                  )}
+                  {verdict === 'wrong' && (
+                    <span className={styles.expected} data-testid="d12-expected">
+                      {pretty(prompt.expected[i] as string)}
                     </span>
                   )}
                 </li>
