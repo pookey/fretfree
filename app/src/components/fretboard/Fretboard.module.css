@@ -67,6 +67,15 @@
   pointer-events: none;
 }
 
+/* A shape's outline (guide levels 2–3): a dashed box on the wood, in a neck token. */
+.outline {
+  fill: none;
+  stroke: var(--inlay);
+  stroke-width: 2.5;
+  stroke-dasharray: 8 5;
+  pointer-events: none;
+}
+
 .marker text {
   font-size: 17px;
   font-weight: 700;

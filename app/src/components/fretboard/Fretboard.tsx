@@ -12,7 +12,14 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
-import { NUT_W, STRING_GAP, computeGeometry, minScale } from './geometry';
+import {
+  NUT_W,
+  STRING_GAP,
+  computeGeometry,
+  minScale,
+  type Cell,
+  type NeckGeometry,
+} from './geometry';
 import styles from './Fretboard.module.css';
 
 export type MarkerStyle =
@@ -73,6 +80,9 @@ export interface FretboardProps {
  *
  * A `target` marker is a recall prompt: guide levels never label it, and no
  * string name gives its note away (retrieval practice, research/02).
+ *
+ * Markers that share a `group` are a shape: from guide level 2 a dashed
+ * outline boxes the frets and strings it spans (design §3.5).
  */
 export function Fretboard({
   tuning = STANDARD_TUNING,
@@ -136,6 +146,7 @@ export function Fretboard({
       : styles.stringName;
   const neckLeft = Math.min(...g.cells.map((c) => c.x));
   const neckRight = Math.max(...g.cells.map((c) => c.x + c.w));
+  const outlines = guideLevel >= 2 ? shapeOutlines(markers, g) : [];
 
   return (
     <svg
@@ -252,6 +263,20 @@ export function Fretboard({
             </text>
           ))}
 
+      {outlines.map((o) => (
+        <rect
+          key={`outline-${o.group}`}
+          className={styles.outline}
+          x={o.x}
+          y={o.y}
+          width={o.width}
+          height={o.height}
+          rx={12}
+          data-testid="shape-outline"
+          data-group={o.group}
+        />
+      ))}
+
       {markers.map((m) => {
         const cell = g.cell(m.fret);
         if (!cell) return null;
@@ -325,6 +350,36 @@ export function Fretboard({
       )}
     </svg>
   );
+}
+
+interface Outline {
+  group: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** A box round each marker group's visible cells, inset so neighbouring cells stay clear. */
+function shapeOutlines(markers: readonly FretMarker[], g: NeckGeometry): Outline[] {
+  const groups = new Map<string, FretMarker[]>();
+  for (const m of markers) {
+    if (m.group && g.cell(m.fret)) groups.set(m.group, [...(groups.get(m.group) ?? []), m]);
+  }
+  const inset = 3;
+  return [...groups].map(([group, ms]) => {
+    const cells = ms.map((m) => g.cell(m.fret) as Cell);
+    const ys = ms.map((m) => g.stringY(m.string));
+    const x = Math.min(...cells.map((c) => c.x)) + inset;
+    const y = Math.min(...ys) - STRING_GAP / 2 + inset;
+    return {
+      group,
+      x,
+      y,
+      width: Math.max(...cells.map((c) => c.x + c.w)) - inset - x,
+      height: Math.max(...ys) + STRING_GAP / 2 - inset - y,
+    };
+  });
 }
 
 /** An upward triangle around a marker centre, wide enough at mid-height for a label. */

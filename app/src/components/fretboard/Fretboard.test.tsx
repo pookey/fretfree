@@ -184,6 +184,29 @@ describe('<Fretboard>', () => {
     for (const name of names) expect(name).toHaveClass(styles.stringNameDimmed!);
   });
 
+  it('outlines each marker group from guide level 2, round its visible cells', () => {
+    const shape = [
+      { string: 5, fret: 3, style: 'root', group: 'a' },
+      { string: 4, fret: 2, style: 'tone', group: 'a' },
+      { string: 2, fret: 1, style: 'tone', group: 'a' },
+      { string: 1, fret: 9, style: 'tone', group: 'b' },
+      { string: 3, fret: 5, style: 'tone' },
+    ] as const;
+    const { rerender } = render(
+      <Fretboard fretRange={{ from: 0, to: 7 }} guideLevel={2} markers={shape} />,
+    );
+    // Group b lies off this window, and the ungrouped marker has no outline.
+    const outline = screen.getByTestId('shape-outline');
+    expect(outline).toHaveAttribute('data-group', 'a');
+    const height = Number(outline.getAttribute('height'));
+    const width = Number(outline.getAttribute('width'));
+    // Strings 2–5: four 56-unit rows, inset 3 units each side.
+    expect(height).toBe(4 * 56 - 6);
+    expect(width).toBeGreaterThan(0);
+    rerender(<Fretboard fretRange={{ from: 0, to: 7 }} guideLevel={1} markers={shape} />);
+    expect(screen.queryByTestId('shape-outline')).toBeNull();
+  });
+
   it('exposes handedness and window for layout tests', () => {
     const { container } = render(<Fretboard fretRange={{ from: 3, to: 7 }} handedness="left" />);
     const svg = container.querySelector('svg')!;
