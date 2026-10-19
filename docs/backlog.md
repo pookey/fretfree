@@ -762,7 +762,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - A "find the root first" example: locate the root in a shape, then read the 3rd to tell major from minor (supports D8 and D36).
 
 ### M3-11 · Session context-panel registry
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-07
 - **Design:** §7 session context panel
 - **Owns:** `app/src/session/SessionScreen.tsx` (hotspot), `app/src/drills/d7-spell-it/ContextPanel*`, `app/src/drills/d8-chord-tone/ContextPanel*`, `app/src/drills/d9-build-caged/ContextPanel*`, `app/e2e/m3-11.spec.ts`
