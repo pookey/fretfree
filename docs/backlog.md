@@ -828,7 +828,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Unit tests for gating and migration; e2e: a fresh learner is first served root-finding items, and 3rd items unlock after the root stage is mastered.
 
 ### M2-22 · D5 at its widest scope fits above the neck on iPad mini
-- **Status:** todo
+- **Status:** done
 - **Deps:** M2-21
 - **Design:** §7 layout system, research/02 rule 9 (guide fading)
 - **Owns:** `app/src/drills/d5-interval-name/`, `app/e2e/helpers/wide-intervals.ts`, `app/e2e/m2-21.spec.ts`
