@@ -27,11 +27,12 @@ export function SpellingContextPanel({
           <strong>{prompt.subject}</strong> = {prompt.slots.map((s) => s.label).join(' ')}
         </p>
       ) : (
+        // One paragraph with the hint, so the key's chords fit above an iPad mini's neck.
         <p>
-          Steps from the tonic: <strong>W W H W W W H</strong>
+          Steps from the tonic: <strong>W W H W W W H</strong>. {d7Hint(prompt)}
         </p>
       )}
-      <p>{d7Hint(prompt)}</p>
+      {prompt.kind === 'chord' && <p>{d7Hint(prompt)}</p>}
       {level >= 2 && (
         <p>
           No sharp between <strong>B–C</strong> and <strong>E–F</strong>: they are a half step

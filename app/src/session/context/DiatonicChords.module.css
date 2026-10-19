@@ -13,18 +13,17 @@
 .chords li {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
-  padding: var(--space-1) 0;
+  padding: 0.125rem 0;
   border-radius: var(--radius-s);
   background: var(--surface);
 }
 
 .roman {
-  font-size: 0.8125rem;
+  font-size: 0.6875rem;
   color: var(--text-muted);
 }
 
 .symbol {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
 }
