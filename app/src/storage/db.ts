@@ -13,7 +13,6 @@ import type {
   GamificationEventRecord,
   GamificationRecord,
 } from './gamification-model';
-import { upgradeC5ToneStages } from './migrations/c5-tone-stages';
 import {
   OUTBOX,
   SYNC_BOOKKEEPING_TABLES,
@@ -83,9 +82,12 @@ export const SCHEMA_VERSIONS: readonly {
   },
   {
     // M3-17: D8's chord tones in stages; old rows move to their stage's skill.
+    // Loaded on demand (it runs once per device), so it stays out of first-load
+    // JS; `waitFor` keeps the upgrade transaction open while it loads.
     version: 3,
     stores: {},
-    upgrade: upgradeC5ToneStages,
+    upgrade: (tx) =>
+      Dexie.waitFor(import('./migrations/c5-tone-stages')).then((m) => m.upgradeC5ToneStages(tx)),
   },
 ];
 

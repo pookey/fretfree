@@ -291,7 +291,7 @@ interface DrillType<P = unknown, A = unknown> {
 **D8 items and grading:**
 
 - **One card per degree of one chord kind, both directions** (`chord-tone:b3@m7` taps the ♭3 in a m7 shape; `chord-tone-name:b3@m7` names a ringed ♭3). The shape (an open chord, an E- or A-shape barre, or a CAGED shape), the root and the neck position vary per prompt (rule 12). Adaptive scope widens from natural roots at the lowest position, to any root, to either octave of the neck.
-- **Root first** (user request, 2026-10-18): `C5.tones-triads` lists its roots, then 3rds, then 5ths, and new items enter in that order. `C5.tones-sevenths` follows, gated on spelling 7th chords: the 3rd and the 7th of 7, maj7 and m7.
+- **Root first, in stages** (user request, 2026-10-18; M3-17): `C5.tones-roots`, then `C5.tones-thirds` (3 and ♭3), then `C5.tones-fifths`, each opening once the one before is mastered (rule 7). `C5.tones-sevenths` follows the 5ths, also gated on spelling 7th chords: the 3rd and the 7th of 7, maj7 and m7. The stages were one skill, `C5.tones-triads`, until schema v3 moved its rows onto them.
 - **Confusions.** The name buttons always offer both 3rds, and both 7ths for a seventh chord. A degree is keyed by its interval from the root (`M3`, `m3`, `m7`, `M7`), so the interval seed pairs interleave 3/♭3 and ♭7/7 (rule 6). A tap off the shape is wrong, with no confusion.
 - **Guides.** The shape's outline and its root squares show from guide level 2, and note names at level 3. Root squares never show when the root is the answer, in either direction. Feedback labels every note with its degree, by marker shape and colour.
 

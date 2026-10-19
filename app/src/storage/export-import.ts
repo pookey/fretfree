@@ -1,5 +1,4 @@
 import { SCHEMA_VERSION, TABLE_NAMES, type FretworkDB } from './db';
-import { restageTables } from './migrations/c5-tone-stages';
 import { decodeDates, encodeDates, withLegacyUids } from './sync/model';
 
 /** Design §3.6: JSON export/import of all local data. */
@@ -64,7 +63,10 @@ export function parseExport(json: string): ExportFile {
  */
 export async function importData(db: FretworkDB, file: ExportFile): Promise<void> {
   // v3 staged D8's chord tones (M3-17).
-  const tables = file.schemaVersion < 3 ? restageTables(file.tables) : file.tables;
+  const tables =
+    file.schemaVersion < 3
+      ? (await import('./migrations/c5-tone-stages')).restageTables(file.tables)
+      : file.tables;
   await db.transaction('rw', db.tables, async () => {
     for (const name of TABLE_NAMES) {
       const table = db.table(name);

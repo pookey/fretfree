@@ -1,5 +1,5 @@
 import type { Transaction } from 'dexie';
-import type { CardRecord, ReviewLogRecord, SkillStateRecord } from '../../engine/model';
+import type { SkillStateRecord } from '../../engine/model';
 
 /**
  * M3-17 split D8's `C5.tones-triads` into stages: the root, then the 3rd,
@@ -11,19 +11,13 @@ import type { CardRecord, ReviewLogRecord, SkillStateRecord } from '../../engine
 
 export const OLD_SKILL = 'C5.tones-triads';
 
-const STAGE_BY_DEGREE: Readonly<Record<string, string>> = {
-  '1': 'C5.tones-roots',
-  '3': 'C5.tones-thirds',
-  b3: 'C5.tones-thirds',
-  '5': 'C5.tones-fifths',
-};
-
 export const STAGES = ['C5.tones-roots', 'C5.tones-thirds', 'C5.tones-fifths'] as const;
 
 /** The stage that owns an old `C5.tones-triads` item, or undefined if it isn't one. */
 export function stageOf(itemId: string): string | undefined {
-  const degree = /^chord-tone(?:-name)?:([^@]+)@(?:major|minor)$/.exec(itemId)?.[1];
-  return degree === undefined ? undefined : STAGE_BY_DEGREE[degree];
+  // Degrees 1, 3 or ♭3, and 5 are stages 0, 1 and 2.
+  const n = /^chord-tone(?:-name)?:b?([135])@(?:major|minor)$/.exec(itemId)?.[1];
+  return n && STAGES[(Number(n) - 1) / 2];
 }
 
 interface Owned {
@@ -33,9 +27,8 @@ interface Owned {
 
 /** The row on its stage, or the row itself if it doesn't name the old skill. */
 export function restage<T extends Owned>(row: T): T {
-  if (row.skillId !== OLD_SKILL) return row;
-  const skillId = stageOf(row.itemId);
-  return skillId === undefined ? row : { ...row, skillId };
+  const skillId = row.skillId === OLD_SKILL && stageOf(row.itemId);
+  return skillId ? { ...row, skillId } : row;
 }
 
 /**
@@ -48,13 +41,11 @@ export function stageStates(
   old: SkillStateRecord,
   stagesWithCards: ReadonlySet<string>,
 ): SkillStateRecord[] {
-  const carried =
+  return STAGES.filter((s, i) =>
     old.status === 'mastered'
-      ? STAGES
-      : old.status === 'practising'
-        ? STAGES.filter((s) => s === STAGES[0] || stagesWithCards.has(s))
-        : [STAGES[0]];
-  return carried.map((skillId) => ({ ...old, skillId }));
+      ? true
+      : i === 0 || (old.status === 'practising' && stagesWithCards.has(s)),
+  ).map((skillId) => ({ ...old, skillId }));
 }
 
 /** Rows as plain objects, as both the Dexie upgrade and an export file hold them. */
@@ -64,40 +55,41 @@ export interface StagedTables {
   skillStates?: unknown[];
 }
 
-/** Restage an export file's tables (an import of a file older than the split). */
+/**
+ * Restage the tables: an export file's (an import from before the split), or
+ * the upgrade's. Rows it leaves alone keep their identity.
+ */
 export function restageTables<T extends StagedTables>(tables: T): T {
-  const cards = (tables.cards as CardRecord[] | undefined)?.map(restage);
+  const out: T = { ...tables };
+  const cards = (tables.cards as Owned[] | undefined)?.map(restage);
+  if (cards) out.cards = cards;
+  if (tables.reviewLogs) out.reviewLogs = (tables.reviewLogs as Owned[]).map(restage);
   const states = tables.skillStates as SkillStateRecord[] | undefined;
   const old = states?.find((s) => s.skillId === OLD_SKILL);
-  const out: T = { ...tables };
-  if (cards) out.cards = cards;
-  if (tables.reviewLogs) out.reviewLogs = (tables.reviewLogs as ReviewLogRecord[]).map(restage);
   if (states && old) {
     const have = new Set(states.map((s) => s.skillId));
-    const added = stageStates(old, new Set(cards?.map((c) => c.skillId))).filter(
-      (s) => !have.has(s.skillId),
-    );
-    out.skillStates = [...states.filter((s) => s !== old), ...added];
+    out.skillStates = [
+      ...states.filter((s) => s !== old),
+      ...stageStates(old, new Set(cards?.map((c) => c.skillId))).filter(
+        (s) => !have.has(s.skillId),
+      ),
+    ];
   }
   return out;
 }
 
-/** The schema v3 upgrade: restage the rows in place. */
+/** The schema v3 upgrade: restage the old skill's rows in place. */
 export async function upgradeC5ToneStages(tx: Transaction): Promise<void> {
-  for (const name of ['cards', 'reviewLogs'] as const) {
-    await tx
-      .table(name)
-      .where('skillId')
-      .equals(OLD_SKILL)
-      .modify((row: Owned) => {
-        row.skillId = restage(row).skillId;
-      });
-  }
-  const states = tx.table<SkillStateRecord, string>('skillStates');
-  const old = await states.get(OLD_SKILL);
-  if (!old) return;
-  const cards = (await tx.table('cards').toArray()) as CardRecord[];
-  const added = stageStates(old, new Set(cards.map((c) => c.skillId)));
-  for (const s of added) if (!(await states.get(s.skillId))) await states.put(s);
+  const old = (name: string) => tx.table(name).where('skillId').equals(OLD_SKILL).toArray();
+  const states = tx.table('skillStates');
+  const before = (await states.toArray()) as unknown[];
+  const t = restageTables({
+    cards: await old('cards'),
+    reviewLogs: await old('reviewLogs'),
+    skillStates: before,
+  });
+  await tx.table('cards').bulkPut(t.cards);
+  await tx.table('reviewLogs').bulkPut(t.reviewLogs);
+  await states.bulkPut(t.skillStates.filter((s) => !before.includes(s)));
   await states.delete(OLD_SKILL);
 }
