@@ -1,0 +1,100 @@
+/* The mic step (design §4, §9): enable, prove the mic hears the guitar, or
+   say plainly why it can't. */
+.step {
+  display: grid;
+  gap: var(--space-4);
+  font-size: 1.0625rem;
+}
+
+.status:empty {
+  display: none;
+}
+
+.status,
+.problem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 3.5rem;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-l);
+  border: 2px solid var(--border);
+  background: var(--surface);
+}
+
+.status[data-heard] {
+  border-color: var(--correct);
+}
+
+/* A shape as well as a colour: the tick says "working" without the green. */
+.ok {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 2px solid var(--correct);
+  color: var(--text);
+  font-weight: 800;
+}
+
+.pulse {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--tone);
+  animation: pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+  }
+}
+
+.problem {
+  display: grid;
+  gap: var(--space-1);
+  border-color: var(--wrong);
+}
+
+.later {
+  min-height: 3.5rem;
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-l);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.later:disabled,
+.step button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .later:hover:not(:disabled) {
+    border-color: var(--text-muted);
+  }
+}
+
+.note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
