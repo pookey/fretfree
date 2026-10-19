@@ -22,6 +22,8 @@ describe('route registry', () => {
       ['/progress', 'shell'],
       ['/session', 'fullscreen'],
       ['/settings', 'shell'],
+      ['/tools', 'shell'],
+      ['/tools/:tool', 'shell'],
     ]);
   });
 

@@ -1,0 +1,84 @@
+/* Tool cards: a grid at regular widths (design §7, iPad first), a list on compact. */
+.tools {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+
+.tools[data-layout='list'] {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  height: 100%;
+  min-height: var(--tap);
+  padding: var(--space-5);
+  border-radius: var(--radius-l);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.tools[data-layout='list'] .card {
+  flex-direction: row;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-m);
+}
+
+@media (hover: hover) {
+  .card:hover {
+    border-color: var(--accent);
+  }
+}
+
+.icon {
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.tools[data-layout='list'] .icon {
+  flex: none;
+  width: 2.5rem;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.text {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.purpose,
+.muted {
+  color: var(--text-muted);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.view {
+  margin-top: var(--space-4);
+}
