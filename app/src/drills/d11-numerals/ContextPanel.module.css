@@ -1,0 +1,26 @@
+/* D11's context panel: the method, the key's chord pattern and its scale.
+   The session's panel supplies the box and the heading colour. */
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+/* The pattern as one row of seven, so it stays short beside the prompt. */
+.pattern {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.pattern li {
+  padding: 0.125rem 0;
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}

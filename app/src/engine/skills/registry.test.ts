@@ -46,6 +46,8 @@ describe('skill registry', () => {
       'C5.build-triads',
       'C5.build-sevenths',
       'C5.build-sus',
+      'C8.numerals-major',
+      'C8.nashville',
       'C6.triad-cores',
       'C6.major-shapes',
       'C6.minor-cores',
