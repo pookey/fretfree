@@ -1,0 +1,11 @@
+/* D39's context panel: the landmark facts. The session's panel supplies the
+   box and the heading colour. */
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.panel strong {
+  white-space: nowrap;
+}

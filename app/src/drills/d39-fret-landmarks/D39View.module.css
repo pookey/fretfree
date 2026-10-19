@@ -131,28 +131,3 @@
     display: none;
   }
 }
-
-/* The context panel, filled with the landmark facts (design §6 D39). */
-.context {
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-l);
-  padding: var(--space-4);
-  align-self: start;
-}
-
-.context h2 {
-  margin: 0 0 var(--space-3);
-  font-size: 1rem;
-  color: var(--text-muted);
-}
-
-.context p {
-  margin: var(--space-2) 0 0;
-  font-size: 0.875rem;
-  line-height: 1.4;
-}
-
-.context strong {
-  white-space: nowrap;
-}

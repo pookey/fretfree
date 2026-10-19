@@ -1,4 +1,5 @@
 import type { DrillType } from '../types';
+import { LandmarksContextPanel } from './ContextPanel';
 import { D39View } from './D39View';
 import {
   D39_ID,
@@ -28,6 +29,7 @@ const fretLandmarks: DrillType<D39Prompt, D39Answer> = {
   feedbackPositions: d39FeedbackPositions,
   conceptOf: d39ConceptOf,
   render: D39View,
+  contextPanel: LandmarksContextPanel,
 };
 
 export default fretLandmarks;

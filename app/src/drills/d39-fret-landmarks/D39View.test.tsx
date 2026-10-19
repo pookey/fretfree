@@ -38,7 +38,7 @@ function renderView(p: D39Prompt, opts: Opts = {}) {
       tuning={STANDARD_TUNING}
       feedback={opts.feedback ?? null}
       onAnswer={onAnswer}
-      aside={opts.withAside === false ? undefined : <aside />}
+      aside={opts.withAside === false ? undefined : <aside data-testid="context-panel" />}
     />,
   );
   return { onAnswer, ...utils };
@@ -217,11 +217,10 @@ describe('<D39View>', () => {
     expect(screen.getAllByText(/the open strings/).length).toBeGreaterThan(0);
   });
 
-  it('fills the context panel with the landmarks, fading the repeat rule', () => {
-    renderView(prompt('marker:f3'), { guideLevel: 1 });
+  it('places the context panel beside the prompt on iPad landscape', () => {
+    renderView(prompt('marker:f3'));
     const panel = screen.getByTestId('context-panel');
-    expect(panel).toHaveTextContent('Single dots at 3, 5, 7 and 9');
-    expect(panel).not.toHaveTextContent(/pattern starts again/);
+    expect(neck().compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
   });
 
   it('places the context panel below the neck off regular-wide, and omits it when hidden', () => {

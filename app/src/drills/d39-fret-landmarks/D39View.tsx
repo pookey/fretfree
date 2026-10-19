@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
-import type { GuideLevel } from '../../engine/model';
 import { noteAt, type Position } from '../../theory';
 import type { DrillRenderProps } from '../types';
 import {
@@ -109,7 +108,6 @@ export function D39View({
     onAnswer(pos.fret);
   };
 
-  const level: GuideLevel = guided ? 3 : guideLevel;
   const neckLevel = d39NeckGuideLevel(prompt, guideLevel, {
     guided,
     answered: Boolean(feedback),
@@ -180,21 +178,6 @@ export function D39View({
   }
 
   const question = d39Question(prompt);
-  const context = aside ? (
-    <aside className={styles.context} aria-label="Context" data-testid="context-panel">
-      <h2>Fret markers</h2>
-      <p>
-        Single dots at <strong>3, 5, 7 and 9</strong>. A double dot at <strong>12</strong>.
-      </p>
-      {level >= 2 && (
-        <p>
-          At the 12th fret every string sounds its open note an octave up, and the pattern starts
-          again: each fret repeats 12 frets higher.
-        </p>
-      )}
-    </aside>
-  ) : null;
-
   const neckLabel =
     mode === 'find-marker'
       ? 'Fretboard. Tap a fret, or move along the frets with the arrow keys.'
@@ -261,7 +244,7 @@ export function D39View({
             </div>
           )}
         </div>
-        {sizeClass === 'regular-wide' && context}
+        {sizeClass === 'regular-wide' && aside}
       </div>
       <div
         ref={neckRef}
@@ -285,7 +268,7 @@ export function D39View({
         />
       </div>
       {/* iPad portrait: the context panel sits below the neck; compact styles it as a sheet. */}
-      {sizeClass !== 'regular-wide' && context}
+      {sizeClass !== 'regular-wide' && aside}
     </div>
   );
 }
