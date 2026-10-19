@@ -14,7 +14,10 @@ if [[ "$ROLE" == worker ]]; then
     if git -C "$MAIN" show-ref -q --verify "refs/heads/$branch"; then
       git -C "$MAIN" worktree add -q "$wt" "$branch"
     else
-      git -C "$MAIN" worktree add -q -b "$branch" "$wt" main
+      # Branch from origin/main, never local main: the lane fast-forwards local
+      # main to a WP's unshipped commits during integration and resets it on failure.
+      git -C "$MAIN" fetch -q origin main
+      git -C "$MAIN" worktree add -q -b "$branch" "$wt" origin/main
     fi
   fi
   (cd "$wt" && pnpm install --frozen-lockfile --prefer-offline >"$ORCH/logs/$WP-install.log" 2>&1) ||
