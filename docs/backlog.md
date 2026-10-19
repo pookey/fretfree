@@ -56,7 +56,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Routes are discovered from `app/src/routes/*.route.tsx` via `import.meta.glob`. Each file exports `{ path, element, nav?: { label, icon, order }, layout: 'shell' | 'fullscreen' }`. Today, Learn, Explore, Progress and Session move to route files. The sidebar and tab bar read nav entries from the registry.
   - Today composes cards from `app/src/screens/today/cards/*.tsx`. Each card exports `{ id, order, Card }`. The hero and stats become cards.
   - Progress composes panels from `app/src/screens/progress/panels/*.tsx`. Stats, settings and data export become panels.
-  - Explore lists views from `app/src/screens/explore/views/*.tsx` (`{ id, title, order, View }`). The current fretboard explorer becomes the first view.
+  - Explore lists views from `app/src/screens/explore/views/*.tsx` (`{ id, title, order, View }`). The current fretboard explorer becomes the first view. *(Since M3-16, each view is two files: `views/<id>.meta.ts` exports `id`, `title`, `order`, and `views/<id>.tsx` exports only a lazily loaded `View`.)*
   - `app/src/onboarding/steps/*.tsx` registry contract (`{ id, order, title, Step, skippable: true }`). An empty registry is fine; M1-06 fills it.
   - Unit tests cover registry ordering. The existing e2e suite passes unchanged, and `m1-01.spec.ts` checks that nav is generated from the registry.
 
@@ -749,7 +749,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ### M3-09 · Explore: chord finder
 - **Status:** todo
 - **Deps:** M1-01, M3-07, M3-16
-- **Owns:** `app/src/screens/explore/views/chord-finder.tsx`, `app/e2e/m3-09.spec.ts`
+- **Owns:** `app/src/screens/explore/views/chord-finder.tsx`, `app/src/screens/explore/views/chord-finder.meta.ts`, `app/e2e/m3-09.spec.ts`
 - **Acceptance:**
   - Tap notes to name the chord (`Chord.detect`). Type a symbol to see voicings. The chords-db licence (MIT) is checked before adding it.
 
@@ -896,7 +896,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ### M4-05 · I3 skills plus interactive circle of fifths
 - **Status:** todo
 - **Deps:** M4-01, M1-01
-- **Owns:** `app/src/engine/skills/i3.ts`, `app/src/screens/explore/views/circle-of-fifths.tsx`, `app/e2e/m4-05.spec.ts`
+- **Owns:** `app/src/engine/skills/i3.ts`, `app/src/screens/explore/views/circle-of-fifths.tsx`, `app/src/screens/explore/views/circle-of-fifths.meta.ts`, `app/e2e/m4-05.spec.ts`
 
 ### M4-06 · Audio engine v2
 - **Status:** todo
@@ -920,7 +920,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ### M4-09 · Explore: progression player
 - **Status:** todo
 - **Deps:** M4-01, M4-06, M1-01
-- **Owns:** `app/src/screens/explore/views/progression-player.tsx`, `app/e2e/m4-09.spec.ts`
+- **Owns:** `app/src/screens/explore/views/progression-player.tsx`, `app/src/screens/explore/views/progression-player.meta.ts`, `app/e2e/m4-09.spec.ts`
 
 ### M4-10 · "Ear only" quick drill and "start with sound" path
 - **Status:** todo
@@ -1304,7 +1304,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
 - **Status:** todo
 - **Deps:** M8-02, M8-03, M1-01
 - **After:** M6-10
-- **Owns:** `app/src/screens/explore/views/notation-viewer.tsx`, `app/e2e/m8-19.spec.ts`
+- **Owns:** `app/src/screens/explore/views/notation-viewer.tsx`, `app/src/screens/explore/views/notation-viewer.meta.ts`, `app/e2e/m8-19.spec.ts`
 - **Acceptance:**
   - Tap a note on the staff to see it on the neck, and vice versa. Staff above neck on iPad. Includes "Quiz me on this".
 
@@ -1312,7 +1312,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
 - **Status:** todo
 - **Deps:** M8-01, M1-01
 - **After:** M6-10
-- **Owns:** `app/src/screens/explore/views/metronome.tsx`, `app/e2e/m8-20.spec.ts`
+- **Owns:** `app/src/screens/explore/views/metronome.tsx`, `app/src/screens/explore/views/metronome.meta.ts`, `app/e2e/m8-20.spec.ts`
 - **Acceptance:**
   - Meter and accent presets (including odd groupings), tap tempo, and a large iPad layout. Uses the M8-01 engine with latency compensation.
 
