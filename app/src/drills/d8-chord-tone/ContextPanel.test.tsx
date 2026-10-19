@@ -52,9 +52,15 @@ describe('<ChordTonePanel> chord diagram (M3-11)', () => {
         feedback={null}
       />,
     );
-    expect(await screen.findByRole('heading', { name: `Chord tones of ${p.chord}` })).toBeVisible();
+    // The first lazy load transforms every drill's views: seconds on a busy machine.
+    const heading = await screen.findByRole(
+      'heading',
+      { name: `Chord tones of ${p.chord}` },
+      { timeout: 30_000 },
+    );
+    expect(heading).toBeVisible();
     expect(await diagram()).toBeInTheDocument();
-  });
+  }, 40_000);
 
   it('draws the shape on the neck as a chart, one dot per fretted note', async () => {
     const p = prompt('chord-tone:b3@m7');
