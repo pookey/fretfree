@@ -7,6 +7,8 @@ const SECTIONS = [
   { label: 'Today', href: '/' },
   { label: 'Learn', href: '/learn' },
   { label: 'Explore', href: '/explore' },
+  // Joined the nav with its first tool, the tuner (M5-03).
+  { label: 'Tools', href: '/tools' },
   { label: 'Progress', href: '/progress' },
   { label: 'Settings', href: '/settings' },
 ];
