@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { getSkill, type Skill, type SkillStatus } from '../../engine';
 import { SkillDetail } from './SkillDetail';
@@ -88,12 +88,46 @@ describe('<SkillDetail>', () => {
     expect(screen.queryByRole('link', { name: 'Practise this now' })).toBeNull();
   });
 
-  it('names what a locked skill waits for', () => {
-    renderSkill('C2.all-notes', 'locked');
+  it('names what a locked skill waits for, one prerequisite per line (M1-38)', () => {
+    renderSkill('C3.thirds', 'locked');
+    expect(
+      screen.getByText("Preview only. It joins your sessions once you're practising:"),
+    ).toBeInTheDocument();
+    const needs = screen.getByRole('list', { name: 'Prerequisites' });
+    // Titles with their own "and" stay apart instead of running together.
+    expect(
+      within(needs)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['Half steps: sharps and flats', 'Whole steps', 'Octave shapes']);
+  });
+
+  it('names a single prerequisite inline, practising or mastered', () => {
+    const { unmount } = renderSkill('C3.fourths-fifths', 'locked');
     expect(
       screen.getByText(
-        /once you're practising Natural notes on string 6 and Natural notes on string 5/,
+        "Preview only. It joins your sessions once you're practising Interval shapes: 3rds.",
       ),
     ).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Prerequisites' })).toBeNull();
+    unmount();
+    const hard = { ...getSkill('C3.fourths-fifths')!, softUnlock: false };
+    render(
+      <MemoryRouter>
+        <ul>
+          <SkillDetail view={view(hard, 'locked', true)} />
+        </ul>
+      </MemoryRouter>,
+    );
+    expect(
+      screen.getByText(
+        "Preview only. It joins your sessions once you've mastered Interval shapes: 3rds.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('lists no prerequisites outside the locked state', () => {
+    renderSkill('C3.thirds', 'unlocked');
+    expect(screen.queryByRole('list', { name: 'Prerequisites' })).toBeNull();
   });
 });

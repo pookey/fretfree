@@ -9,16 +9,27 @@ import { SKILL_STATUS_LABEL, skillRingState, type SkillView } from './map-model'
 import styles from './Learn.module.css';
 import local from './SkillDetail.module.css';
 
-/** What a skill's status means for sessions (soft unlocking, design §3.4). */
-function statusCopy(view: SkillView): string {
+/**
+ * What a skill's status means for sessions (soft unlocking, design §3.4), and
+ * for a locked skill the prerequisites it waits for. Titles can hold their own
+ * "and", so two or more are listed one per line rather than joined (M1-38).
+ */
+function statusCopy(view: SkillView): { text: string; needs: string[] } {
   if (!view.practisable)
-    return "Coming soon. Its drill isn't built yet, so it can't join your sessions.";
-  if (view.status === 'mastered') return 'Mastered. Reviews keep it fresh.';
-  if (isFrontier(view.status)) return 'Its new items join your daily sessions.';
-  const needs = view.skill.prerequisites.map((id) => getSkill(id)?.title ?? id).join(' and ');
-  return view.skill.softUnlock
-    ? `Preview only. It joins your sessions once you're practising ${needs}.`
-    : `Preview only. It joins your sessions once you've mastered ${needs}.`;
+    return {
+      text: "Coming soon. Its drill isn't built yet, so it can't join your sessions.",
+      needs: [],
+    };
+  if (view.status === 'mastered') return { text: 'Mastered. Reviews keep it fresh.', needs: [] };
+  if (isFrontier(view.status))
+    return { text: 'Its new items join your daily sessions.', needs: [] };
+  const titles = view.skill.prerequisites.map((id) => getSkill(id)?.title ?? id);
+  if (titles.length === 0) return { text: 'Preview only.', needs: [] };
+  const when = view.skill.softUnlock ? "once you're practising" : "once you've mastered";
+  const text = `Preview only. It joins your sessions ${when}`;
+  return titles.length === 1
+    ? { text: `${text} ${titles[0]}.`, needs: [] }
+    : { text: `${text}:`, needs: titles };
 }
 
 /**
@@ -35,6 +46,7 @@ export function SkillDetail({ view }: { view: SkillView }) {
   const exampleId = useId();
   // A skill no built drill can test would open an empty session.
   const canPractise = isFrontier(view.status) && view.practisable;
+  const { text, needs } = statusCopy(view);
   return (
     <li
       className={`${styles.skill} ${local.skill}`}
@@ -55,7 +67,14 @@ export function SkillDetail({ view }: { view: SkillView }) {
             {view.learningCount} learning · {view.stableCount} stable of {view.itemCount}
           </span>
         </p>
-        <p className={styles.skillCopy}>{statusCopy(view)}</p>
+        <p className={styles.skillCopy}>{text}</p>
+        {needs.length > 0 && (
+          <ul className={`${styles.skillCopy} ${local.needs}`} aria-label="Prerequisites">
+            {needs.map((title) => (
+              <li key={title}>{title}</li>
+            ))}
+          </ul>
+        )}
         {(example || canPractise) && (
           <div className={local.actions}>
             {example && (

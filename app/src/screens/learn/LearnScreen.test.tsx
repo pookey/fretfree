@@ -63,7 +63,7 @@ describe('<LearnScreen>', () => {
     expect(within(detail).getByTestId('module-state')).toHaveTextContent('Locked: preview');
     expect(within(detail).getByTestId('preview-note')).toBeInTheDocument();
     expect(within(detail).getByTestId('skill-C2.all-notes')).toHaveTextContent(
-      /Preview only.*practising Natural notes on string 6 and Natural notes on string 5/,
+      /Preview only.*practising:Natural notes on string 6Natural notes on string 5/,
     );
     expect(within(detail).getByRole('complementary', { name: 'Watch out for' })).toBeVisible();
   });

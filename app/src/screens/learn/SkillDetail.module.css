@@ -53,3 +53,9 @@
   flex: 1 0 100%;
   min-width: 0;
 }
+
+/* A locked skill's prerequisites, one per line: titles can hold their own "and". */
+.needs {
+  margin-top: var(--space-1);
+  padding-left: 1.25rem;
+}
