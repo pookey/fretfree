@@ -369,10 +369,10 @@ describe('words', () => {
       'You played B D F♯ A.',
     );
     expect(d17Explain(p, fb(p, { played: [b, b + 4] }))).toBe(
-      'That was D♯. After B comes D. It goes B D F♯ A.',
+      'You played D♯. After B comes D. It goes B D F♯ A.',
     );
     expect(d17Explain(p, fb(p, { played: [b + 2] }))).toBe(
-      'That was C♯. Start on the root, B. It goes B D F♯ A.',
+      'You played C♯. Start on the root, B. It goes B D F♯ A.',
     );
     expect(d17Explain(p, fb(p, { played: [b], gaveUp: true }))).toBe(
       "It goes B D F♯ A. Play it along once you've heard it.",

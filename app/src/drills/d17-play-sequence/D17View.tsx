@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import type { GuideLevel } from '../../engine/model';
 import type { PitchSourceErrorReason } from '../../mic/types';
-import type { FretRange } from '../../theory';
+import { midiToFretNote, type FretRange } from '../../theory';
 import type { DrillRenderProps } from '../types';
 import { useMic, useNotes } from './listen';
 import {
@@ -173,24 +173,33 @@ export function D17View({
               const wrongHere = result?.status === 'wrong' && i === result.credited.length;
               const state =
                 got !== undefined ? 'heard' : wrongHere ? 'wrong' : feedback ? 'expected' : 'open';
+              // The wrong slot names the note played; the explanation names the one wanted.
+              const played =
+                wrongHere && result.wrong !== null
+                  ? pretty(midiToFretNote(result.wrong, prompt.accidentalPref).pc)
+                  : '';
               const name =
-                got !== undefined || feedback
-                  ? pretty(s.note)
-                  : listening && i === shown.length
-                    ? '…'
-                    : '';
+                state === 'wrong'
+                  ? played
+                  : got !== undefined || feedback
+                    ? pretty(s.note)
+                    : listening && i === shown.length
+                      ? '…'
+                      : '';
+              const said =
+                state === 'heard'
+                  ? `heard ${pretty(s.note)}`
+                  : state === 'wrong'
+                    ? `heard ${played}, wanted ${pretty(s.note)}`
+                    : feedback
+                      ? pretty(s.note)
+                      : 'not yet';
               return (
                 <li
                   key={i}
                   className={styles.slot}
                   data-state={state}
-                  aria-label={`Note ${i + 1} of ${prompt.steps.length}: ${
-                    state === 'heard'
-                      ? `heard ${pretty(s.note)}`
-                      : feedback
-                        ? pretty(s.note)
-                        : 'not yet'
-                  }`}
+                  aria-label={`Note ${i + 1} of ${prompt.steps.length}: ${said}`}
                 >
                   <span aria-hidden="true" className={styles.mark}>
                     {state === 'heard' ? '✓' : state === 'wrong' ? '✗' : i + 1}

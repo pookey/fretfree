@@ -215,14 +215,15 @@ describe('D17View', () => {
     const a = p.steps[0]!.midi;
     view(p, { feedback: fb(p, { played: [a, a + 4] }) });
     expect(screen.getByTestId('d17-explain')).toHaveTextContent(
-      'That was C♯. After A comes C. It goes A C E.',
+      'You played C♯. After A comes C. It goes A C E.',
     );
     expect(slots().map((s) => s.getAttribute('data-state'))).toEqual([
       'heard',
       'wrong',
       'expected',
     ]);
-    expect(slots().map((s) => s.textContent)).toEqual(['✓A', '✗C', '3E']);
+    expect(slots().map((s) => s.textContent)).toEqual(['✓A', '✗C♯', '3E']);
+    expect(slots()[1]).toHaveAttribute('aria-label', 'Note 2 of 3: heard C♯, wanted C');
     expect(markers('root')).toHaveLength(1);
     expect(markers('correct')).toHaveLength(2);
   });

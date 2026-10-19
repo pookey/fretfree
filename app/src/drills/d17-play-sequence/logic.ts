@@ -519,7 +519,7 @@ export function d17Explain(prompt: D17Prompt, fb: DrillFeedback<D17Answer>): str
   const heard = pretty(midiToFretNote(wrong, prompt.accidentalPref).pc);
   const want = noteName(prompt, credited.length);
   if (credited.length === 0)
-    return `That was ${heard}. Start on the root, ${want}. It goes ${expected}.`;
+    return `You played ${heard}. Start on the root, ${want}. It goes ${expected}.`;
   const after = noteName(prompt, credited.length - 1);
-  return `That was ${heard}. After ${after} comes ${want}. It goes ${expected}.`;
+  return `You played ${heard}. After ${after} comes ${want}. It goes ${expected}.`;
 }
