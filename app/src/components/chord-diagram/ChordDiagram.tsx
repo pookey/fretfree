@@ -22,6 +22,9 @@ import {
 } from './model';
 import styles from './ChordDiagram.module.css';
 
+/** The size of a degree marker above the nut, smaller than a fretted dot to fit the head. */
+const OPEN_R = 11;
+
 /** What a dot says: its finger number, its `label` (degree or note), or nothing. */
 export type DotText = 'finger' | 'label' | 'none';
 
@@ -239,19 +242,37 @@ export function ChordDiagram({
 
         {open.map((n) => {
           const cx = g.stringX(n.string);
-          const root = styleOf(n) === 'root';
+          const cy = g.headY;
+          const style = styleOf(n);
+          const text = textOf(n);
+          // A 3rd, 5th or 7th takes its degree's filled marker, as a fretted dot does.
+          const degree = style === 'third' || style === 'fifth' || style === 'seventh';
+          const className = degree
+            ? `${styles.openDegree} ${styles[style]}`
+            : style === 'root'
+              ? styles.openRoot
+              : styles.open;
           return (
             <g
               key={`o${n.string}`}
-              className={root ? styles.openRoot : styles.open}
+              className={className}
               data-testid="chord-open"
               data-string={n.string}
-              data-style={root ? 'root' : 'tone'}
+              data-style={degree || style === 'root' ? style : 'tone'}
             >
-              {root ? (
-                <rect x={cx - 9} y={g.headY - 9} width={18} height={18} rx={4} />
+              {style === 'root' ? (
+                <rect x={cx - 9} y={cy - 9} width={18} height={18} rx={4} />
+              ) : style === 'fifth' ? (
+                <polygon points={trianglePoints(cx, cy, OPEN_R)} />
+              ) : style === 'seventh' ? (
+                <polygon points={hexagonPoints(cx, cy, OPEN_R)} />
               ) : (
-                <circle cx={cx} cy={g.headY} r={9} />
+                <circle cx={cx} cy={cy} r={degree ? OPEN_R : 9} />
+              )}
+              {text && (
+                <text x={cx} y={style === 'fifth' ? cy + 2 : cy} dy="0.35em">
+                  {text}
+                </text>
               )}
             </g>
           );

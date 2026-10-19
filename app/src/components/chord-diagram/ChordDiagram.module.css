@@ -109,6 +109,30 @@
   stroke-width: 3;
 }
 
+.open text,
+.openRoot text,
+.openDegree text {
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.open text,
+.openRoot text {
+  fill: var(--text);
+}
+
+.openDegree text {
+  fill: #10141a;
+}
+
+/* Above the nut the page, not the wood, is behind a degree marker: outline it. */
+.openDegree circle,
+.openDegree polygon {
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
 .muted line {
   stroke: var(--text-muted);
   stroke-width: 2.5;

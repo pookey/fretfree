@@ -210,7 +210,32 @@ describe('<D36View> feedback', () => {
     const dots = [...chart.querySelectorAll('[data-testid="chord-dot"]')];
     expect(dots.map((d) => d.getAttribute('data-style'))).toEqual(['root', 'third', 'root']);
     expect(dots.map((d) => d.textContent)).toEqual(['R', '3', 'R']);
+    // The open strings too: the open G is the 5th and the open E the 3rd.
+    const opens = [...chart.querySelectorAll('[data-testid="chord-open"]')];
+    expect(opens.map((d) => d.getAttribute('data-style'))).toEqual(['fifth', 'third']);
+    expect(opens.map((d) => d.textContent)).toEqual(['5', '3']);
     expect(screen.getByTestId('d36-explain')).toHaveTextContent('Yes: C. The 3rd is E');
+  });
+
+  it('labels every dot of every chart with its degree once answered', () => {
+    for (const id of [
+      'chord-name:E-shape@minor',
+      'chord-name:A-shape@sus2',
+      'chord-name:D-shape@m7b5',
+      'chord-name:G-shape@7',
+    ]) {
+      for (const root of [0.01, 0.3, 0.75]) {
+        const p = prompt(id, DIAGRAM, root);
+        const { unmount } = view(p, { feedback: fb(p, { root: 'C', kind: 'maj7' }) });
+        const chart = screen.getByRole('img', { name: /diagram:/ });
+        const dots = [
+          ...chart.querySelectorAll('[data-testid="chord-dot"], [data-testid="chord-open"]'),
+        ];
+        expect(dots, id).toHaveLength(p.notes.length);
+        for (const d of dots) expect(d.textContent, `${id} ${p.root}`).toMatch(/^(R|♭?[2-7])$/);
+        unmount();
+      }
+    }
   });
 
   it('draws a barre chord’s barre on the chart', () => {

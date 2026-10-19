@@ -9,7 +9,13 @@ import { focusSession } from './helpers/focus';
 // minor chord major is logged as that confusion.
 
 /** Rule 7: finding the tones in a shape, and what that needs. */
-const PREREQS = ['F2.string6-naturals', 'F2.string5-naturals', 'C5.triads', 'C5.tones-triads'];
+const PREREQS = [
+  'F2.string6-naturals',
+  'F2.string5-naturals',
+  'C5.triads',
+  'C5.tones-roots',
+  'C5.tones-thirds',
+];
 
 interface Cell {
   string: number;
@@ -222,6 +228,53 @@ test.describe('M3-13 D36 names the chord from its dots', () => {
 
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByTestId('feedback-wrong')).toBeHidden();
+  });
+
+  test('an open chord on the chart labels every string, open ones too', async ({ page }, info) => {
+    test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
+    // Every draw at 0.3: a natural root of E, drawn as a chart, so the
+    // E-shape cards are the open E and Em chords.
+    await page.addInitScript(() => {
+      Math.random = () => 0.3;
+    });
+    await freshStart(page);
+    await masterSkills(page, PREREQS);
+    await focusSession(page, 'C5.name-triads');
+
+    let task: Task | null = null;
+    for (let i = 0; i < 8; i++) {
+      const t = await readTask(page);
+      if (!t.guided) {
+        task = t;
+        break;
+      }
+      await solve(page);
+    }
+    expect(task).toMatchObject({ display: 'diagram', root: 'E' });
+    // E 022100 or Em 022000: the low and high E strings and the B string ring open.
+    const opens = chart(page).getByTestId('chord-open');
+    await expect(opens).toHaveCount(task!.quality === 'major' ? 3 : 4);
+    await expectAnswerHidden(page, task!);
+    await expect(opens.first()).toHaveText('');
+
+    await answer(page, 'E', task!.quality === 'major' ? 'minor' : 'major');
+    await expect(page.getByTestId('feedback-wrong')).toBeVisible();
+    // Every dot is labelled with its degree, by shape as well as colour.
+    const dots = chart(page).locator('[data-testid="chord-dot"], [data-testid="chord-open"]');
+    await expect(dots).toHaveCount(6);
+    for (const d of await dots.all()) await expect(d).toHaveText(/^(R|♭?3|5)$/);
+    await expect(opens.first()).toHaveAttribute('data-style', 'root');
+    await expect(opens.first()).toHaveText('R');
+    await expect(chart(page).locator('[data-testid="chord-open"][data-style="fifth"]')).toHaveText(
+      '5',
+    );
+    if (task!.quality === 'minor') {
+      // Em's open G string is the ♭3 that made it minor.
+      await expect(
+        chart(page).locator('[data-testid="chord-open"][data-style="third"]'),
+      ).toHaveText('♭3');
+    }
+    await expect(page.getByTestId('d36-explain')).toContainText(`a ${task!.quality} 3rd above E`);
   });
 
   test('7th chords bring in 7 and maj7 side by side', async ({ page }, info) => {

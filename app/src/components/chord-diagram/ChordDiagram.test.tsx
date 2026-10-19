@@ -96,6 +96,35 @@ describe('<ChordDiagram>', () => {
     expect(opens[1]!.querySelector('circle')).not.toBeNull();
   });
 
+  it('draws open strings by degree, labelled, when the voicing styles them (M3-13)', () => {
+    // C x32010 by degree: the open G is its 5th and the open high E its 3rd.
+    render(<ChordDiagram voicing={voicingFromShape(cagedShape('C', 'C'))} dotText="label" />);
+    const opens = screen.getAllByTestId('chord-open');
+    expect(attr(opens, 'data-string')).toEqual(['3', '1']);
+    expect(attr(opens, 'data-style')).toEqual(['fifth', 'third']);
+    expect(opens[0]!.querySelector('polygon')).not.toBeNull();
+    expect(opens[1]!.querySelector('circle')).not.toBeNull();
+    expect(opens.map((o) => o.textContent)).toEqual(['5', '3']);
+  });
+
+  it('keeps plain rings and squares on unstyled open strings, with no text by default', () => {
+    render(<ChordDiagram voicing={parseVoicing('022000', { root: 'E' })} />);
+    const opens = screen.getAllByTestId('chord-open');
+    expect(attr(opens, 'data-style')).toEqual(['root', 'tone', 'tone', 'root']);
+    expect(opens.map((o) => o.textContent)).toEqual(['', '', '', '']);
+  });
+
+  it('labels open roots and tones when the diagram shows labels', () => {
+    const voicing = {
+      notes: [
+        { string: 5, fret: 0, style: 'root' as const, label: 'R' },
+        { string: 2, fret: 0, style: 'tone' as const, label: '2' },
+      ],
+    };
+    render(<ChordDiagram voicing={voicing} dotText="label" />);
+    expect(screen.getAllByTestId('chord-open').map((o) => o.textContent)).toEqual(['R', '2']);
+  });
+
   it('hides roots when the root is the answer', () => {
     render(<ChordDiagram voicing={C} highlightRoots={false} />);
     expect(attr(screen.getAllByTestId('chord-dot'), 'data-style')).toEqual([
