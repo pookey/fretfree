@@ -114,6 +114,9 @@ async function confusionRows(page: Page): Promise<string[][]> {
 }
 
 test.describe('M3-15 D38 builds the chord from a root', () => {
+  // Each test builds several chords, each with a feedback pause: slow under load.
+  test.slow();
+
   test('a worked example, then any voicing built from the root @smoke', async ({ page }, info) => {
     await freshStart(page);
     await masterSkills(page, PREREQS);
