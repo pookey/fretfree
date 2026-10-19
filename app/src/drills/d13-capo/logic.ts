@@ -269,23 +269,35 @@ export function d13Ladder(prompt: Pick<D13Prompt, 'shape' | 'capo' | 'sounding'>
   }));
 }
 
-/** `G → A♭ → A → B♭`. */
-export function d13LadderText(prompt: Pick<D13Prompt, 'shape' | 'capo' | 'sounding'>): string {
-  return d13Ladder(prompt)
-    .map((r) => d13Pretty(r.note))
-    .join(' → ');
+/** `G → A♭ → A → B♭`, or down from the song's key: `B♭ → A → A♭ → G`. */
+export function d13LadderText(
+  prompt: Pick<D13Prompt, 'shape' | 'capo' | 'sounding'>,
+  direction: 'up' | 'down' = 'up',
+): string {
+  const notes = d13Ladder(prompt).map((r) => d13Pretty(r.note));
+  return (direction === 'up' ? notes : notes.reverse()).join(' → ');
 }
 
 function halfSteps(n: number): string {
   return `${n} half step${n === 1 ? '' : 's'}`;
 }
 
-/** The worked example (rule 8) and the feedback summary: the whole sum. */
+/**
+ * The worked example (rule 8) and the feedback summary: the whole sum,
+ * counted the way the question goes.
+ */
 export function d13WorkedExample(prompt: D13Prompt): string {
   const shapes = d13ShapeName(prompt.shape);
-  const ladder = d13LadderText(prompt);
-  const sounds = d13KeyName(prompt.sounding);
-  return `A capo on fret ${prompt.capo} raises ${shapes} ${halfSteps(prompt.capo)}: ${ladder}. They sound in ${sounds}.`;
+  const song = d13KeyName(prompt.sounding);
+  const steps = halfSteps(prompt.capo);
+  switch (prompt.ask) {
+    case 'sound':
+      return `A capo on fret ${prompt.capo} raises ${shapes} ${steps}: ${d13LadderText(prompt)}. They sound in ${song}.`;
+    case 'shape':
+      return `For a song in ${song} with a capo on fret ${prompt.capo}, count down ${steps}: ${d13LadderText(prompt, 'down')}. Play ${shapes}.`;
+    case 'fret':
+      return `From ${shapes} up to ${song} is ${steps}: ${d13LadderText(prompt)}. Put the capo on fret ${prompt.capo}.`;
+  }
 }
 
 /** Why a wrong answer is wrong, naming the misconception when it is one. */

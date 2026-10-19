@@ -85,7 +85,8 @@ export function D13View({
               d13Question(prompt)
             )}
           </p>
-          {feedback && (
+          {/* A worked example already shows the sum in the question. */}
+          {feedback && !guided && (
             <p className={styles.summary} data-testid="d13-summary">
               {d13WorkedExample(prompt)}
             </p>

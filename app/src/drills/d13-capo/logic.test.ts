@@ -260,6 +260,12 @@ describe('wording', () => {
       'A capo on fret 3 raises G shapes 3 half steps: G → A♭ → A → B♭. They sound in B♭ major.',
     );
     expect(d13WorkedExample(at('capo-sound:C', 1))).toContain('1 half step:');
+    expect(d13WorkedExample(at('capo-shape:G', 3))).toBe(
+      'For a song in B♭ major with a capo on fret 3, count down 3 half steps: B♭ → A → A♭ → G. Play G shapes.',
+    );
+    expect(d13WorkedExample(at('capo-fret:G', 3))).toBe(
+      'From G shapes up to B♭ major is 3 half steps: G → A♭ → A → B♭. Put the capo on fret 3.',
+    );
   });
 
   it('explains the wrong way, the ignored capo and other slips', () => {

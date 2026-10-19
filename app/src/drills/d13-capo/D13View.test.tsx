@@ -122,10 +122,16 @@ describe('<D13View>', () => {
   it('shows the worked example on a guided rep', () => {
     view(prompt('capo-shape:G'), { guided: true, guideLevel: 0 });
     expect(screen.getByTestId('d13-prompt')).toHaveTextContent(
-      'They sound in B♭ major. Tap G to continue.',
+      'count down 3 half steps: B♭ → A → A♭ → G. Play G shapes. Tap G to continue.',
     );
     expect(cell(0)).toHaveAccessibleName('Open strings, G shapes');
     expect(cell(2)).toHaveTextContent('2');
+  });
+
+  it('shows the sum once when a worked example is answered', () => {
+    const p = prompt('capo-shape:G');
+    view(p, { guided: true, feedback: fb(p, 'G') });
+    expect(screen.queryByTestId('d13-summary')).toBeNull();
   });
 
   it('drops the hint at guide level 0', () => {
