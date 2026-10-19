@@ -130,6 +130,12 @@ export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryP
             <div>
               <dt>Became stable</dt>
               <dd data-testid="summary-stable">{c.progress.becameStable}</dd>
+              {/* A subset of the learning tile, not more items on top (M1-38). */}
+              {c.progress.learning > 0 && (
+                <dd className={styles.statDetail} data-testid="summary-stable-of">
+                  of the {c.progress.learning} learning
+                </dd>
+              )}
               <dd className={styles.statDetail}>
                 {/* Already-stable items reviewed today, so a 0 here isn't read as none. */}
                 {c.progress.stable > c.progress.becameStable && (

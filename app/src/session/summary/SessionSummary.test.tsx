@@ -149,6 +149,7 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
     expect(screen.getByTestId('summary-learning')).toHaveTextContent('14');
     expect(screen.getByTestId('summary-stable')).toHaveTextContent('0');
     expect(screen.getByTestId('summary-improved')).toHaveTextContent('14');
+    expect(screen.getByTestId('summary-stable-of')).toHaveTextContent('of the 14 learning');
     expect(screen.queryByTestId('summary-stable-total')).toBeNull();
     expect(screen.getByTestId('summary-progress')).toHaveTextContent(
       "14 items learning. They become stable as you recall them over the next few days; today's items come back Tuesday.",
@@ -189,6 +190,7 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
     });
     expect(screen.getByTestId('summary-learning')).toHaveTextContent('8');
     expect(screen.getByTestId('summary-stable')).toHaveTextContent('0');
+    expect(screen.getByTestId('summary-stable-of')).toHaveTextContent('of the 8 learning');
     // The tile's 0 sits next to how many are stable in all.
     expect(screen.getByTestId('summary-stable-total')).toHaveTextContent('8');
     expect(screen.getByTestId('summary-stable-total').parentElement).toHaveTextContent(
@@ -199,12 +201,34 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
     );
   });
 
+  // M1-38: "Learning 7 · Became stable 7" read as 14 items.
+  it('frames the stable tile as a subset of the learning one', () => {
+    show({
+      progress: {
+        learning: 7,
+        stable: 7,
+        becameStable: 7,
+        nextReview: { date: '2026-10-19', inDays: 1 },
+      },
+    });
+    const stable = screen.getByText('Became stable').parentElement!;
+    expect(stable).toContainElement(screen.getByTestId('summary-stable'));
+    expect(screen.getByTestId('summary-stable')).toHaveTextContent('7');
+    expect(within(stable).getByTestId('summary-stable-of')).toHaveTextContent(
+      /^of the 7 learning$/,
+    );
+    expect(stable).toHaveTextContent(/^Became stable7of the 7 learning\d+ stronger$/);
+    expect(screen.getByTestId('summary-learning')).toHaveTextContent('7');
+  });
+
   it('leaves the line out when nothing was answered', () => {
     show({
       answered: 0,
       accuracy: 0,
       progress: { learning: 0, stable: 0, becameStable: 0, nextReview: null },
     });
+    // No "of the 0 learning" under an empty tile.
+    expect(screen.queryByTestId('summary-stable-of')).toBeNull();
     expect(screen.queryByTestId('summary-progress')).toBeNull();
     expect(screen.getByTestId('summary-spacing')).toBeVisible();
   });
