@@ -1,0 +1,70 @@
+/* D37's context panel: the chord's formula as a legend of the neck's
+   degree markers. The session's panel supplies the box. */
+.panel {
+  min-width: 0;
+}
+
+.panel h2 {
+  margin: 0 0 var(--space-2);
+}
+
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.tones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+}
+
+.tone {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 2px solid transparent;
+  border-radius: var(--radius-s);
+}
+
+/* The asked degree, once answered: a border, not only a colour. */
+.tone[aria-current='true'] {
+  border-color: var(--correct);
+  background: var(--surface);
+}
+
+.tone strong {
+  font-size: 1rem;
+}
+
+.note {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
+
+.root rect {
+  fill: var(--root);
+}
+
+.third circle {
+  fill: var(--tone);
+}
+
+.fifth polygon {
+  fill: var(--chord-fifth);
+}
+
+.seventh polygon {
+  fill: var(--chord-seventh);
+}

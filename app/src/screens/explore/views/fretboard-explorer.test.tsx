@@ -22,6 +22,14 @@ const DEV_UNLOCK_KEY = 'fretwork.dev.unlockAll';
 /** Every registered skill open, as for a learner who has unlocked them all. */
 const ALL_OPEN: ReadonlySet<string> = new Set(SKILLS.map((s) => s.id));
 
+/** Every skill open but D37's, which a chord's quiz would open first. */
+const OPEN_BUT_D37: ReadonlySet<string> = new Set(
+  SKILLS.filter((s) => !s.drillTypes.includes(CHORD_TONES_DRILL)).map((s) => s.id),
+);
+
+/** D37's cards for C7 (M3-14), which a C7 quiz opens once they are open. */
+const D37_C7 = { itemIds: ['chord-tones:C7', 'chord-tones:b7@C7'] };
+
 /** A fresh learner: nothing stored, so only the first skills are on the frontier. */
 const FRESH = frontierSkillIds(SKILLS, new Map());
 
@@ -163,7 +171,7 @@ describe('quizFocus', () => {
   });
 
   it('quizzes the interval shapes a pick shows for degrees and intervals', () => {
-    const chord = quizFocus(explorerContent(0, 'chord:7'), 'intervals', ALL_OPEN).skillIds;
+    const chord = quizFocus(explorerContent(0, 'chord:7'), 'intervals', OPEN_BUT_D37).skillIds;
     expect(chord).toEqual(C3_SHOWN_BY_C7);
     const scale = quizFocus(explorerContent(0, 'scale:major'), 'degrees', ALL_OPEN).skillIds;
     expect(scale).toEqual(expect.arrayContaining(['C3.seconds', 'C3.sixths', 'C3.thirds']));
@@ -204,8 +212,8 @@ describe('quizFocus', () => {
       ['chord-tones:C7', 'chord-tones:3@Db7', 'chord-tones:C#7', 'chord-tones:Cmaj7'],
       [CHORD_TONES_DRILL],
     );
-    const skills = [...SKILLS, d37];
-    const open = new Set([...ALL_OPEN, 'C5.tones']);
+    const skills = [...SKILLS.filter((s) => OPEN_BUT_D37.has(s.id)), d37];
+    const open = new Set([...OPEN_BUT_D37, 'C5.tones']);
     expect(quizFocus(explorerContent(1, 'chord:7'), 'names', open, skills)).toEqual({
       itemIds: ['chord-tones:3@Db7', 'chord-tones:C#7'],
     });
@@ -220,6 +228,16 @@ describe('quizFocus', () => {
     // A locked D37 isn't offered: the quiz falls through.
     expect(quizFocus(explorerContent(1, 'chord:7'), 'names', FRESH, skills)).toEqual({
       skillIds: noteSkillIds(SKILLS),
+    });
+  });
+
+  it('opens the real D37 cards for a chord (M3-14)', () => {
+    expect(quizFocus(explorerContent(0, 'chord:major'), 'names', ALL_OPEN)).toEqual({
+      itemIds: ['chord-tones:C', 'chord-tones:3@C'],
+    });
+    expect(quizFocus(explorerContent(0, 'chord:7'), 'intervals', ALL_OPEN)).toEqual(D37_C7);
+    expect(quizFocus(explorerContent(10, 'chord:minor'), 'degrees', ALL_OPEN)).toEqual({
+      itemIds: ['chord-tones:Bbm', 'chord-tones:b3@Bbm'],
     });
   });
 });
@@ -241,9 +259,8 @@ describe('frontierSkillIds', () => {
     const unlocked = frontierSkillIds(SKILLS, new Map(), { unlockAll: true });
     expect(FRESH.has('C3.sevenths')).toBe(false);
     expect(unlocked.has('C3.sevenths')).toBe(true);
-    expect(quizFocus(explorerContent(0, 'chord:7'), 'intervals', unlocked)).toEqual({
-      skillIds: C3_SHOWN_BY_C7,
-    });
+    // D37 is open too, so a C7 quiz opens its C7 cards.
+    expect(quizFocus(explorerContent(0, 'chord:7'), 'intervals', unlocked)).toEqual(D37_C7);
     // Mastered skills stay mastered under the overlay (rule 11).
     const mastered = new Map<string, SkillStatus>([['C1.octaves', 'mastered']]);
     expect(frontierSkillIds(SKILLS, mastered, { unlockAll: true }).has('C1.octaves')).toBe(false);
@@ -387,9 +404,8 @@ describe('<View>', () => {
   it('quizzes locked skills with the developer switch on', async () => {
     localStorage.setItem(DEV_UNLOCK_KEY, '1');
     quizC7Intervals();
-    await waitFor(() =>
-      expect(quiz()).toHaveAttribute('href', focusHref({ skillIds: C3_SHOWN_BY_C7 })),
-    );
+    // Every skill is open, D37 among them, so a chord opens its D37 cards.
+    await waitFor(() => expect(quiz()).toHaveAttribute('href', focusHref(D37_C7)));
   });
 
   it('still refuses locked skills with the developer switch off', async () => {
