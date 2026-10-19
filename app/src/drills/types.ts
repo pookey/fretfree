@@ -76,6 +76,11 @@ export interface DrillType<P = unknown, A = unknown> {
   /** Skill IDs this drill can test. */
   skills: readonly string[];
   inputModes: readonly InputMode[];
+  /**
+   * The drill is answered by playing a real guitar into the mic (design §6,
+   * §9), so it is served only once the learner has enabled mic mode.
+   */
+  requiresMic?: boolean;
   scope: { minLevel: number; maxLevel: number };
   canTest(item: Item): boolean;
   /** Pure: builds the prompt for an item. */

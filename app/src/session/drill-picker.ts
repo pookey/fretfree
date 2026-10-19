@@ -7,7 +7,8 @@ import { chromaOf, midiAt, stringCount, type Tuning } from '../theory';
  * by any drill its skill lists that can test it, in the skill's preference
  * order. When several can, the picker moves away from the drill that served
  * the item last, so a fact is met in more than one context (research/02
- * rule 12).
+ * rule 12). A drill that needs the mic is a candidate only while mic mode
+ * is on (design §9), so a learner without one never meets it.
  */
 
 export interface DrillPicker {
@@ -18,15 +19,22 @@ export interface DrillPicker {
   pick(item: Item, last?: string): AnyDrillType | undefined;
 }
 
+export interface DrillPickerOptions {
+  /** `settings.micEnabled`: serve drills that need the mic. Off by default. */
+  micEnabled?: boolean;
+}
+
 export function createDrillPicker(
   skills: readonly Skill[],
   drills: readonly AnyDrillType[],
+  options: DrillPickerOptions = {},
 ): DrillPicker {
   const byId = new Map(skills.map((s) => [s.id, s]));
+  const usable = options.micEnabled ? drills : drills.filter((d) => !d.requiresMic);
   const candidates = (item: Item) => {
     const skill = byId.get(item.skillId);
     if (!skill) return [];
-    return skill.drillTypes.flatMap((id) => drills.filter((d) => d.id === id && d.canTest(item)));
+    return skill.drillTypes.flatMap((id) => usable.filter((d) => d.id === id && d.canTest(item)));
   };
   return {
     candidates,

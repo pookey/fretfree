@@ -48,6 +48,32 @@ describe('createDrillPicker', () => {
     const single = createDrillPicker([skill(['name-the-note'])], [d1, echo]);
     expect(single.pick(note, 'name-the-note')?.id).toBe('name-the-note');
   });
+
+  describe('a drill that needs the mic', () => {
+    const mic: AnyDrillType = { ...d1, id: 'mic-echo', requiresMic: true };
+    const skills = [skill(['name-the-note', 'mic-echo'])];
+
+    it('is never served without mic mode, even after the other drill served it', () => {
+      for (const picker of [
+        createDrillPicker(skills, [d1, mic]),
+        createDrillPicker(skills, [d1, mic], { micEnabled: false }),
+      ]) {
+        expect(picker.candidates(note).map((d) => d.id)).toEqual(['name-the-note']);
+        expect(picker.pick(note, 'name-the-note')?.id).toBe('name-the-note');
+      }
+      // An item only the mic drill can test is not servable at all.
+      const micOnly = createDrillPicker([skill(['mic-echo'])], [mic]);
+      expect(micOnly.canServe(note)).toBe(false);
+      expect(micOnly.pick(note)).toBeUndefined();
+    });
+
+    it('joins the rotation once mic mode is on', () => {
+      const picker = createDrillPicker(skills, [d1, mic], { micEnabled: true });
+      expect(picker.candidates(note).map((d) => d.id)).toEqual(['name-the-note', 'mic-echo']);
+      expect(picker.pick(note)?.id).toBe('name-the-note');
+      expect(picker.pick(note, 'name-the-note')?.id).toBe('mic-echo');
+    });
+  });
 });
 
 describe('factOf', () => {

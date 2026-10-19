@@ -240,7 +240,9 @@ export class SessionRunner {
       [...states.values()].map((s) => [s.skillId, s.status]),
     );
     // Skills may list items whose drill isn't built yet; plan only what a drill can test.
-    const picker = createDrillPicker(deps.skills, deps.drills);
+    const picker = createDrillPicker(deps.skills, deps.drills, {
+      micEnabled: deps.settings.micEnabled,
+    });
     const inFocus = focusFilter(deps.focus);
     const serves = (item: Item) => inFocus(item) && picker.canServe(item);
     const frontierSkills = new Set<string>();
