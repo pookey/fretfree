@@ -773,7 +773,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The panel content follows guide fading and is hidden at level 0.
 
 ### M3-13 · D36 "What chord is this?"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-03, M3-04, M3-05, M3-18
 - **Design:** §6 D36, research/03 C5 ("name the chord from its dots")
 - **Owns:** `app/src/drills/d36-name-the-chord/**`, `app/src/engine/skills/c5-name.ts`, `app/e2e/m3-13.spec.ts`
