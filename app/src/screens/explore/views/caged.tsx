@@ -28,10 +28,6 @@ import { EXPLORER_RANGE, Swatch, explorerContent, useFrontier } from './fretboar
 import css from './fretboard-explorer.module.css';
 import own from './caged.module.css';
 
-export const id = 'caged';
-export const title = 'CAGED visualiser';
-export const order = 20;
-
 /**
  * CAGED visualiser (design §7 Explore): pick a chord and watch its five
  * shapes chain up the neck, each with its triad core highlighted (research/03:
