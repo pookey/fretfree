@@ -168,14 +168,10 @@ test.describe('M2-21 drill help on the session context panel', () => {
     });
   }
 
-  // D5 at its widest scope (all 12 intervals) with the full level-3 legend.
-  // Measured on iPad mini landscape: the panel is 362px and the prompt column
-  // with two rows of buttons 211px, against about 196px above the neck. Making
-  // it fit means dropping or moving level-3 tips and reshaping the legend, a
-  // design call left to the orchestrator; until then this documents the target.
-  test.fixme('D5 at its widest scope still fits above the neck on iPad mini', async ({
-    page,
-  }, info) => {
+  // D5 at its widest scope (all 12 intervals) with the full level-3 legend:
+  // one-line legend rows and answers in rows of six keep both columns within
+  // the room above the neck (M2-22).
+  test('D5 at its widest scope still fits above the neck on iPad mini', async ({ page }, info) => {
     test.skip(info.project.name !== 'ipad-mini-landscape', 'iPad mini landscape budget');
     test.setTimeout(240_000);
     await freshStart(page);

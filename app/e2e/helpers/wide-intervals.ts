@@ -103,7 +103,7 @@ const choices = (page: Page) =>
     .getByRole('button');
 
 /** The interval the two dots make, read off the neck. */
-async function correctAnswer(page: Page): Promise<string> {
+export async function d5CorrectAnswer(page: Page): Promise<string> {
   const prompt = (await drill(page).locator('#drill-prompt').innerText()).trim();
   const guided = /Tap (\S+) to continue/.exec(prompt);
   if (guided) return guided[1]!;
@@ -119,7 +119,7 @@ async function correctAnswer(page: Page): Promise<string> {
 
 /** Answer the D5 prompt on screen, rightly or wrongly, and move on. */
 export async function answerD5(page: Page, right: boolean): Promise<void> {
-  const answer = await correctAnswer(page);
+  const answer = await d5CorrectAnswer(page);
   const names = await choices(page).allInnerTexts();
   const name = right ? answer : (names.map((n) => n.trim()).find((n) => n !== answer) as string);
   await choices(page)
@@ -148,16 +148,28 @@ export async function legendLevel(page: Page): Promise<number | null> {
 }
 
 /**
+ * Answer until a prompt has every interval on its buttons and `ready` holds:
+ * right answers widen the scope, and once it is widest, pairs of wrong ones
+ * restore guides faded on the way.
+ */
+export async function answerToWideD5(
+  page: Page,
+  ready: () => Promise<boolean>,
+  limit = 60,
+): Promise<void> {
+  for (let i = 0; i < limit; i++) {
+    const count = await d5ChoiceCount(page);
+    if (count === NAMES.length - 1 && (await ready())) return;
+    await answerD5(page, count < NAMES.length - 1);
+  }
+  throw new Error(`No ready widest-scope prompt within ${limit} answers`);
+}
+
+/**
  * Start a C3 session and answer until a prompt has every interval on its
- * buttons and the full level-3 legend: right answers widen the scope, and
- * once it is widest, pairs of wrong ones restore guides faded on the way.
+ * buttons and the full level-3 legend.
  */
 export async function reachWideD5(page: Page, limit = 60): Promise<void> {
   await focusSession(page, C3_SKILLS);
-  for (let i = 0; i < limit; i++) {
-    const count = await d5ChoiceCount(page);
-    if (count === NAMES.length - 1 && (await legendLevel(page)) === 3) return;
-    await answerD5(page, count < NAMES.length - 1);
-  }
-  throw new Error(`No widest-scope prompt at guide level 3 within ${limit} answers`);
+  await answerToWideD5(page, async () => (await legendLevel(page)) === 3, limit);
 }
