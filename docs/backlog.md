@@ -754,7 +754,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Tap notes to name the chord (`Chord.detect`). Type a symbol to see voicings. The chords-db licence (MIT) is checked before adding it.
 
 ### M3-10 · Worked examples for C4–C6
-- **Status:** todo
+- **Status:** done
 - **Deps:** M2-07, M3-01
 - **Owns:** `app/src/learn/worked-examples/c4-*.tsx`, `app/src/learn/worked-examples/c5-*.tsx`, `app/src/learn/worked-examples/c6-*.tsx`
 - **Acceptance:**
