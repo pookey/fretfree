@@ -632,7 +632,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m2-19.spec.ts`): after seeded C1 and C3 reviews, the topic panel lists Octaves and Intervals with non-zero counts.
 
 ### M2-20 · iPad portrait: D5/D6 layout polish
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §7 layout system
 - **Owns:** `app/src/drills/d5-interval-name/D5View.module.css`, `app/src/drills/d6-interval-tap/D6View.module.css`, `app/e2e/m2-20.spec.ts`
