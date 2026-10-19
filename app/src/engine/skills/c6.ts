@@ -18,6 +18,8 @@ import { itemsOf, memo } from './helpers';
  */
 
 const DRILLS = ['build-caged'];
+/** Whole shapes are also named by choice (D10); a triad core alone doesn't name its shape. */
+const SHAPE_DRILLS = [...DRILLS, 'which-shape'];
 
 interface Group {
   id: string;
@@ -82,7 +84,7 @@ export const skills: Skill[] = GROUPS.map((g, i) => ({
   title: g.title,
   prerequisites: g.prerequisites,
   softUnlock: g.softUnlock,
-  drillTypes: DRILLS,
+  drillTypes: g.kind === 'caged' ? SHAPE_DRILLS : DRILLS,
   items: memo(() =>
     itemsOf(
       g.id,

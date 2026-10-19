@@ -50,7 +50,9 @@ describe('C6 skills', () => {
     ]);
     for (const s of skills) {
       expect(s.topic).toBe('C6');
-      expect(s.drillTypes).toEqual(['build-caged']);
+      expect(s.drillTypes).toEqual(
+        s.id.endsWith('-cores') ? ['build-caged'] : ['build-caged', 'which-shape'],
+      );
     }
     const orders = skills.map((s) => s.order);
     expect(orders).toEqual([...orders].sort((a, b) => a - b));
