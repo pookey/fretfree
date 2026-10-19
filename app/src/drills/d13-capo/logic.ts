@@ -314,7 +314,7 @@ export function d13Explain(prompt: D13Prompt, answer: D13Answer): string {
       case 'shape':
         return `${given} is ${halfSteps(prompt.capo)} above ${songTonic}. The capo raises the shapes to the song's key, so the shapes sit below it: count down.`;
       case 'fret':
-        return `Capo ${answer} counts down from ${songTonic} to ${shapeTonic}. Count up from the shapes to the song: ${shapeTonic} to ${songTonic} is ${halfSteps(prompt.capo)}.`;
+        return `Capo ${answer} counts up from ${songTonic} to ${shapeTonic}, from the song to the shapes. Count up from the shapes to the song: ${shapeTonic} to ${songTonic} is ${halfSteps(prompt.capo)}.`;
     }
   }
   if (answer === d13CapoIgnored(prompt)) {

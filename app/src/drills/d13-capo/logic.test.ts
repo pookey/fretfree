@@ -289,7 +289,7 @@ describe('wording', () => {
 
     const fret = at('capo-fret:G', 3);
     expect(d13Explain(fret, '9')).toBe(
-      'Capo 9 counts down from B♭ to G. Count up from the shapes to the song: G to B♭ is 3 half steps.',
+      'Capo 9 counts up from B♭ to G, from the song to the shapes. Count up from the shapes to the song: G to B♭ is 3 half steps.',
     );
     expect(d13Explain(fret, '2')).toBe('A capo on fret 2 makes G shapes sound in A major.');
     expect(d13CapoIgnored(fret)).toBeNull();
