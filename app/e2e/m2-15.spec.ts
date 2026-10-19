@@ -219,17 +219,19 @@ test.describe('M2-15 retake the placement test', () => {
     await expect(page.getByText(/^It checks .*Neck basics.*Intervals.*Chords/)).toBeVisible();
     const seen = await runTest(page, true);
     // Every topic with skills and a drill is probed, C4's key spelling included. This
-    // key says "Not sure" to it, so C5's chords (behind C4, M2-16) are skipped.
-    for (const kind of [
-      /^letter:/,
-      /^step:/,
-      /^note@/,
-      /^find:/,
-      /^interval-name:/,
-      /^interval:/,
-      /^spell-key:/,
-    ]) {
-      expect(seen.some((id) => kind.test(id))).toBe(true);
+    // key says "Not sure" to it, so C5's chords (behind C4, M2-16) are skipped. Which
+    // drill asks a sampled item is chance (D1 or D2, D5 or D6), so check each topic.
+    for (const [topic, kind] of [
+      ['F1 letters', /^letter:/],
+      ['F1 steps', /^step:/],
+      ['F2 and C2 notes', /^(note@|find:)/],
+      ['C3 intervals', /^interval(-name)?:/],
+      ['C4 keys', /^spell-key:/],
+    ] as const) {
+      expect(
+        seen.some((id) => kind.test(id)),
+        topic,
+      ).toBe(true);
     }
     await expect(result(page)).toHaveText(/You already know these/);
     await page.getByRole('link', { name: 'See your skills in Learn' }).click();

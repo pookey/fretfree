@@ -179,16 +179,20 @@ test.describe('M2-09 placement test', () => {
     }
     await page.clock.resume();
 
-    // It probed every topic, a few items per skill, not every item.
-    for (const kind of [
-      /^letter:/,
-      /^step:/,
-      /^note@/,
-      /^find:/,
-      /^interval-name:/,
-      /^interval:/,
-    ]) {
-      expect(seen.some((id) => kind.test(id))).toBe(true);
+    // It probed every topic, a few items per skill, not every item. Which drill
+    // asks a sampled item is chance (a note is named in D1 or found in D2, an
+    // interval named in D5 or tapped in D6), so check each topic, not each drill.
+    for (const [topic, kind] of [
+      ['F1 letters', /^letter:/],
+      ['F1 steps', /^step:/],
+      ['F2 and C2 notes', /^(note@|find:)/],
+      ['C3 intervals', /^interval(-name)?:/],
+      ['C4 keys', /^spell-key:/],
+    ] as const) {
+      expect(
+        seen.some((id) => kind.test(id)),
+        topic,
+      ).toBe(true);
     }
 
     await expect(result).toHaveText(/You already know these/);
