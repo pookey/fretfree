@@ -1,4 +1,4 @@
-import { resolveView } from './lazy-view';
+import { resolveView, viewReady } from './lazy-view';
 import type { AnyDrillType } from './types';
 
 /**
@@ -7,9 +7,9 @@ import type { AnyDrillType } from './types';
  * work packages add drills without editing a shared file.
  *
  * The plugins are eager: the session planner needs their logic and metadata.
- * Their views are not: each `drill.ts` wraps its `render` and `contextPanel`
- * in `lazyView`, so a view's code downloads only when a session needs it
- * (design §10 first-load budget).
+ * Their views are not: each `drill.ts` takes its `render` and `contextPanel`
+ * from `lazyParts`, so the views download, in one chunk, only when a session
+ * needs them (design §10 first-load budget).
  */
 const modules = import.meta.glob<{ default: AnyDrillType }>('./*/drill.ts', { eager: true });
 
@@ -29,4 +29,9 @@ export async function preloadDrill(drill: AnyDrillType): Promise<void> {
     resolveView(drill.render),
     drill.contextPanel ? resolveView(drill.contextPanel) : undefined,
   ]);
+}
+
+/** Whether a drill's view and context panel render without suspending. */
+export function drillReady(drill: AnyDrillType): boolean {
+  return viewReady(drill.render) && (!drill.contextPanel || viewReady(drill.contextPanel));
 }

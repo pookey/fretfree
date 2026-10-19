@@ -1,5 +1,6 @@
-import { lazyView } from '../lazy-view';
+import { lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as views from './views';
 import {
   D3_ID,
   D3_SCOPE,
@@ -14,6 +15,9 @@ import {
   type D3Prompt,
 } from './logic';
 
+// Lazy: the views stay out of first-load JS (design §10).
+const parts = lazyParts<typeof views>('d3-note-wheel');
+
 const noteWheel: DrillType<D3Prompt, D3Answer> = {
   id: D3_ID,
   title: 'Note-wheel steps',
@@ -27,8 +31,8 @@ const noteWheel: DrillType<D3Prompt, D3Answer> = {
   sounds: d3Sounds,
   feedbackPositions: d3FeedbackPositions,
   conceptOf: d3ConceptOf,
-  render: lazyView(() => import('../views').then((m) => m.D3View)),
-  contextPanel: lazyView(() => import('../views').then((m) => m.NoteWheelContextPanel)),
+  render: parts.render,
+  contextPanel: parts.contextPanel,
 };
 
 export default noteWheel;

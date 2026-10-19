@@ -1,5 +1,6 @@
-import { lazyView } from '../lazy-view';
+import { lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as views from './views';
 import {
   D9_ID,
   D9_SCOPE,
@@ -14,6 +15,9 @@ import {
   type D9Answer,
   type D9Prompt,
 } from './logic';
+
+// Lazy: the views stay out of first-load JS (design §10).
+const parts = lazyParts<typeof views>('d9-build-caged');
 
 const buildCaged: DrillType<D9Prompt, D9Answer> = {
   id: D9_ID,
@@ -35,7 +39,7 @@ const buildCaged: DrillType<D9Prompt, D9Answer> = {
   sounds: d9Sounds,
   feedbackPositions: d9FeedbackPositions,
   conceptOf: d9ConceptOf,
-  render: lazyView(() => import('../views').then((m) => m.D9View)),
+  render: parts.render,
 };
 
 export default buildCaged;

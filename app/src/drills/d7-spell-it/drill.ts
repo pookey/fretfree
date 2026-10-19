@@ -1,6 +1,7 @@
 import { SKILLS } from '../../engine/skills';
-import { lazyView } from '../lazy-view';
+import { lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as views from './views';
 import {
   D7_ID,
   D7_SCOPE,
@@ -14,6 +15,9 @@ import {
   type D7Answer,
   type D7Prompt,
 } from './logic';
+
+// Lazy: the views stay out of first-load JS (design §10).
+const parts = lazyParts<typeof views>('d7-spell-it');
 
 const spellIt: DrillType<D7Prompt, D7Answer> = {
   id: D7_ID,
@@ -30,8 +34,8 @@ const spellIt: DrillType<D7Prompt, D7Answer> = {
   sounds: d7Sounds,
   gradedResponseMs: d7GradedResponseMs,
   conceptOf: d7ConceptOf,
-  render: lazyView(() => import('../views').then((m) => m.D7View)),
-  contextPanel: lazyView(() => import('../views').then((m) => m.SpellingContextPanel)),
+  render: parts.render,
+  contextPanel: parts.contextPanel,
 };
 
 export default spellIt;

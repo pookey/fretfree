@@ -1,5 +1,6 @@
-import { lazyView } from '../lazy-view';
+import { lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as views from './views';
 import {
   D5_ID,
   D5_SCOPE,
@@ -14,6 +15,9 @@ import {
   type D5Prompt,
 } from './logic';
 
+// Lazy: the views stay out of first-load JS (design §10).
+const parts = lazyParts<typeof views>('d5-interval-name');
+
 const intervalName: DrillType<D5Prompt, D5Answer> = {
   id: D5_ID,
   title: 'Name the interval from two dots',
@@ -27,8 +31,8 @@ const intervalName: DrillType<D5Prompt, D5Answer> = {
   sounds: d5Sounds,
   feedbackPositions: d5FeedbackPositions,
   conceptOf: d5ConceptOf,
-  render: lazyView(() => import('../views').then((m) => m.D5View)),
-  contextPanel: lazyView(() => import('../views').then((m) => m.IntervalContextPanel)),
+  render: parts.render,
+  contextPanel: parts.contextPanel,
 };
 
 export default intervalName;

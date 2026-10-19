@@ -1,5 +1,6 @@
-import { lazyView } from '../lazy-view';
+import { lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as views from './views';
 import {
   D39_ID,
   D39_SCOPE,
@@ -14,6 +15,9 @@ import {
   type D39Prompt,
 } from './logic';
 
+// Lazy: the views stay out of first-load JS (design §10).
+const parts = lazyParts<typeof views>('d39-fret-landmarks');
+
 const fretLandmarks: DrillType<D39Prompt, D39Answer> = {
   id: D39_ID,
   title: 'Fret landmarks',
@@ -27,8 +31,8 @@ const fretLandmarks: DrillType<D39Prompt, D39Answer> = {
   sounds: d39Sounds,
   feedbackPositions: d39FeedbackPositions,
   conceptOf: d39ConceptOf,
-  render: lazyView(() => import('../views').then((m) => m.D39View)),
-  contextPanel: lazyView(() => import('../views').then((m) => m.LandmarksContextPanel)),
+  render: parts.render,
+  contextPanel: parts.contextPanel,
 };
 
 export default fretLandmarks;

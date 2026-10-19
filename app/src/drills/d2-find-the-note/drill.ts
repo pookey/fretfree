@@ -1,5 +1,6 @@
-import { lazyView } from '../lazy-view';
+import { lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as views from './views';
 import {
   D2_ID,
   D2_SCOPE,
@@ -14,6 +15,9 @@ import {
   type D2Prompt,
 } from './logic';
 
+// Lazy: the views stay out of first-load JS (design §10).
+const parts = lazyParts<typeof views>('d2-find-the-note');
+
 const findTheNote: DrillType<D2Prompt, D2Answer> = {
   id: D2_ID,
   title: 'Find the note',
@@ -27,7 +31,7 @@ const findTheNote: DrillType<D2Prompt, D2Answer> = {
   sounds: d2Sounds,
   feedbackPositions: d2FeedbackPositions,
   conceptOf: d2ConceptOf,
-  render: lazyView(() => import('../views').then((m) => m.D2View)),
+  render: parts.render,
 };
 
 export default findTheNote;

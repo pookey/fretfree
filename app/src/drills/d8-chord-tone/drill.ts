@@ -1,5 +1,6 @@
-import { lazyView } from '../lazy-view';
+import { lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as views from './views';
 import { SKILLS } from '../../engine/skills';
 import {
   D8_ID,
@@ -15,6 +16,9 @@ import {
   type D8Prompt,
 } from './logic';
 
+// Lazy: the views stay out of first-load JS (design §10).
+const parts = lazyParts<typeof views>('d8-chord-tone');
+
 const chordTone: DrillType<D8Prompt, D8Answer> = {
   id: D8_ID,
   title: 'Find the chord tone in a shape',
@@ -28,8 +32,8 @@ const chordTone: DrillType<D8Prompt, D8Answer> = {
   sounds: d8Sounds,
   feedbackPositions: d8FeedbackPositions,
   conceptOf: d8ConceptOf,
-  render: lazyView(() => import('../views').then((m) => m.D8View)),
-  contextPanel: lazyView(() => import('../views').then((m) => m.ChordTonePanel)),
+  render: parts.render,
+  contextPanel: parts.contextPanel,
 };
 
 export default chordTone;

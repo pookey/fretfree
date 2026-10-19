@@ -1,5 +1,6 @@
-import { lazyView } from '../lazy-view';
+import { lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as views from './views';
 import {
   D10_ID,
   D10_SCOPE,
@@ -14,6 +15,9 @@ import {
   type D10Prompt,
 } from './logic';
 
+// Lazy: the views stay out of first-load JS (design §10).
+const parts = lazyParts<typeof views>('d10-which-shape');
+
 const whichShape: DrillType<D10Prompt, D10Answer> = {
   id: D10_ID,
   title: 'Which shape, and which comes next?',
@@ -27,7 +31,7 @@ const whichShape: DrillType<D10Prompt, D10Answer> = {
   sounds: d10Sounds,
   feedbackPositions: d10FeedbackPositions,
   conceptOf: d10ConceptOf,
-  render: lazyView(() => import('../views').then((m) => m.D10View)),
+  render: parts.render,
 };
 
 export default whichShape;

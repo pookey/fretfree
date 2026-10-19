@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Suspense, type FC } from 'react';
 import { render, screen } from '@testing-library/react';
-import { lazyView, resolveView } from './lazy-view';
-import { DRILLS, preloadDrill } from './registry';
+import { lazyParts, lazyView, resolveView, viewReady } from './lazy-view';
+import { DRILLS, drillReady, preloadDrill } from './registry';
+import type { AnyDrillType } from './types';
+import { viewsOf } from './views';
 
 const Hello: FC<{ name: string }> = ({ name }) => <p>Hello {name}</p>;
 
@@ -40,22 +42,57 @@ describe('lazyView', () => {
   });
 });
 
-describe('resolveView', () => {
-  it('returns an eager component as it is', async () => {
+describe('resolveView and viewReady', () => {
+  it('pass an eager component through', async () => {
     expect(await resolveView(Hello)).toBe(Hello);
+    expect(viewReady(Hello)).toBe(true);
+  });
+
+  it('report a lazy one ready once it has loaded', async () => {
+    const View = lazyView(() => Promise.resolve(Hello));
+    expect(viewReady(View)).toBe(false);
+    await View.preload();
+    expect(viewReady(View)).toBe(true);
   });
 });
 
+describe('lazyParts', () => {
+  it('fails, naming the file, for a part the drill’s views.ts lacks', async () => {
+    // D9 has no context panel of its own.
+    const parts = lazyParts<{ render: FC; contextPanel: FC }>('d9-build-caged');
+    await expect(parts.contextPanel.preload()).rejects.toThrow(
+      'drills/d9-build-caged/views.ts exports no contextPanel',
+    );
+  });
+
+  it('fails for a folder with no views.ts', async () => {
+    await expect(lazyParts('d0-missing').render.preload()).rejects.toThrow(
+      'drills/d0-missing/views.ts is missing',
+    );
+  });
+});
+
+// Design §10: the plugins are eager, their views are not. Every drill takes
+// its parts from its own views.ts through lazyParts; one that imports its
+// view directly would put it back in first-load JS.
+const plugins = import.meta.glob<{ default: AnyDrillType }>('./*/drill.ts', { eager: true });
+const FOLDERS = Object.entries(plugins).map(
+  ([file, m]) => [file.split('/')[1]!, m.default] as const,
+);
+
 describe('drill views', () => {
-  // Design §10: the plugins are eager, their views are not. A drill.ts that
-  // imports its view directly puts it back in first-load JS.
-  it.each(DRILLS.map((d) => [d.id, d] as const))(
-    '%s loads its view and context panel on demand',
-    async (_, drill) => {
-      expect(drill.render).toHaveProperty('preload');
-      if (drill.contextPanel) expect(drill.contextPanel).toHaveProperty('preload');
-      await preloadDrill(drill);
-      expect(typeof (await resolveView(drill.render))).toBe('function');
-    },
-  );
+  it('cover every registered drill', () => {
+    expect(FOLDERS.map(([, d]) => d.id).sort()).toEqual(DRILLS.map((d) => d.id).sort());
+  });
+
+  it.each(FOLDERS)('%s loads its parts from its views.ts, on demand', async (folder, drill) => {
+    const views = viewsOf(folder);
+    expect(drillReady(drill)).toBe(false);
+    expect(await resolveView(drill.render)).toBe(views.render);
+    // A panel exists exactly when views.ts exports one.
+    expect(drill.contextPanel === undefined).toBe(views.contextPanel === undefined);
+    if (drill.contextPanel) expect(await resolveView(drill.contextPanel)).toBe(views.contextPanel);
+    await preloadDrill(drill);
+    expect(drillReady(drill)).toBe(true);
+  });
 });

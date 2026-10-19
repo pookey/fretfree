@@ -1,5 +1,6 @@
-import { lazyView } from '../lazy-view';
+import { lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as views from './views';
 import {
   D6_ID,
   D6_SCOPE,
@@ -14,6 +15,9 @@ import {
   type D6Prompt,
 } from './logic';
 
+// Lazy: the views stay out of first-load JS (design §10).
+const parts = lazyParts<typeof views>('d6-interval-tap');
+
 const intervalTap: DrillType<D6Prompt, D6Answer> = {
   id: D6_ID,
   title: 'Tap the interval',
@@ -27,8 +31,8 @@ const intervalTap: DrillType<D6Prompt, D6Answer> = {
   sounds: d6Sounds,
   feedbackPositions: d6FeedbackPositions,
   conceptOf: d6ConceptOf,
-  render: lazyView(() => import('../views').then((m) => m.D6View)),
-  contextPanel: lazyView(() => import('../views').then((m) => m.IntervalTapContextPanel)),
+  render: parts.render,
+  contextPanel: parts.contextPanel,
 };
 
 export default intervalTap;
