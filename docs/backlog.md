@@ -839,7 +839,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Remove the `test.fixme` from "D5 at its widest scope still fits above the neck on iPad mini" (`app/e2e/m2-21.spec.ts`) and make it pass.
 
 ### M1-41 · D39's neck clears the feedback bar on iPad mini
-- **Status:** todo
+- **Status:** done
 - **Deps:** M2-21
 - **Design:** §7 layout system, §8 fretboard
 - **Owns:** `app/src/drills/d39-fret-landmarks/D39View.tsx`, `app/src/drills/d39-fret-landmarks/D39View.module.css`, `app/e2e/m2-21.spec.ts` (the D39 `clearsBar` flag only)
