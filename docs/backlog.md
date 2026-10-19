@@ -651,7 +651,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - README: document trying the app on an iPad against the dev server (`pnpm dev --host`, the LAN URL, the dev-only unlock switch in Settings), next to the existing preview instructions.
 
 ### M1-38 · Copy polish: Learn prerequisites and summary tiles
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §7 Learn, §7 session summary
 - **Owns:** `app/src/screens/learn/SkillDetail.tsx`, `app/src/screens/learn/SkillDetail.test.tsx`, `app/src/session/summary/SessionSummary.tsx`, `app/src/session/summary/SessionSummary.test.tsx`
