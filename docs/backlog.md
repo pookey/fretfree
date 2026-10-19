@@ -935,7 +935,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `docs/progress.md`, `app/e2e/m4-11.spec.ts`
 
 ### M4-12 · Tools section: nav entry, tool registry and index
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request, 2026-10-19: prioritise the path to the tuner)
 - **Deps:** none
 - **Design:** §Navigation, §Tools, §7
