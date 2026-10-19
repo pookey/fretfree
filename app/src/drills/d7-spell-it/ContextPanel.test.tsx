@@ -32,7 +32,9 @@ function panel(
   );
 }
 
-const chords = () => screen.queryByTestId('diatonic-chords');
+/** The chords' row, or the slot holding its place while its chunk loads. */
+const chords = (container: HTMLElement) =>
+  screen.queryByTestId('diatonic-chords') ?? container.querySelector('[class*="chordsSlot"]');
 
 describe('<SpellingContextPanel>', () => {
   it('is the D7 plugin’s context panel', () => {
@@ -61,30 +63,32 @@ describe('<SpellingContextPanel>', () => {
   });
 
   it('leaves the key’s chords out at level 1 until answered', () => {
-    panel(prompt(), { guideLevel: 1 });
-    expect(chords()).toBeNull();
+    const { container } = panel(prompt(), { guideLevel: 1 });
+    expect(chords(container)).toBeNull();
   });
 
-  it('shows the numerals unnamed from level 2 while the key is being spelled', () => {
+  it('shows the numerals unnamed from level 2 while the key is being spelled', async () => {
     panel(prompt(), { guideLevel: 2 });
-    const list = screen.getByRole('list', { name: 'Chords in a major key' });
+    const list = await screen.findByRole('list', { name: 'Chords in a major key' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(7);
     // The chords' roots are the scale: naming them would answer the prompt.
     expect(list).not.toHaveTextContent(/[A-G]/);
   });
 
-  it('names the key’s chords once answered, at any level', () => {
+  it('names the key’s chords once answered, at any level', async () => {
     panel(prompt(), { guideLevel: 1, answered: true });
-    expect(screen.getByRole('list', { name: 'Chords in F♯ major' })).toHaveTextContent('G♯m');
+    expect(await screen.findByRole('list', { name: 'Chords in F♯ major' })).toHaveTextContent(
+      'G♯m',
+    );
   });
 
-  it('names them in the worked example, which shows the answer anyway', () => {
+  it('names them in the worked example, which shows the answer anyway', async () => {
     panel(prompt('degree:6@Eb'), { guideLevel: 0, guided: true });
-    expect(screen.getByRole('list', { name: 'Chords in E♭ major' })).toHaveTextContent('Cm');
+    expect(await screen.findByRole('list', { name: 'Chords in E♭ major' })).toHaveTextContent('Cm');
   });
 
   it('leaves the key’s chords out of a chord’s panel', () => {
-    panel(prompt('spell-chord:m7@B'), { guideLevel: 3, answered: true });
-    expect(chords()).toBeNull();
+    const { container } = panel(prompt('spell-chord:m7@B'), { guideLevel: 3, answered: true });
+    expect(chords(container)).toBeNull();
   });
 });
