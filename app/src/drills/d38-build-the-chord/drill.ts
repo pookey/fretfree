@@ -1,24 +1,21 @@
-import { lazyParts } from '../lazy-view';
+import { lazyLogic, lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as logic from './logic';
+import type { D38Answer, D38Prompt } from './logic';
 import type * as views from './views';
 import { SKILLS } from '../../engine/skills';
-import {
-  D38_ID,
-  D38_SCOPE,
-  d38CanTest,
-  d38Check,
-  d38ConceptOf,
-  d38DescribeAnswer,
-  d38FeedbackPositions,
-  d38GradedResponseMs,
-  d38MakePrompt,
-  d38Sounds,
-  type D38Answer,
-  type D38Prompt,
-} from './logic';
+import { D38_ID, D38_SCOPE, d38CanTest, d38ConceptOf } from './meta';
 
-// Lazy: the views stay out of first-load JS (design §10).
-const parts = lazyParts<typeof views>('d38-build-the-chord');
+// Lazy: the logic and views stay out of first-load JS (design §10).
+const lazy = lazyLogic('d38-build-the-chord', (l: typeof logic) => ({
+  makePrompt: l.d38MakePrompt,
+  check: l.d38Check,
+  describeAnswer: l.d38DescribeAnswer,
+  gradedResponseMs: l.d38GradedResponseMs,
+  sounds: l.d38Sounds,
+  feedbackPositions: l.d38FeedbackPositions,
+}));
+const parts = lazyParts<typeof views>('d38-build-the-chord', lazy);
 
 const buildTheChord: DrillType<D38Prompt, D38Answer> = {
   id: D38_ID,
@@ -27,13 +24,8 @@ const buildTheChord: DrillType<D38Prompt, D38Answer> = {
   inputModes: ['tap'],
   scope: D38_SCOPE,
   canTest: d38CanTest,
-  makePrompt: d38MakePrompt,
-  check: d38Check,
-  describeAnswer: d38DescribeAnswer,
-  gradedResponseMs: d38GradedResponseMs,
-  sounds: d38Sounds,
-  feedbackPositions: d38FeedbackPositions,
   conceptOf: d38ConceptOf,
+  logic: lazy,
   render: parts.render,
   contextPanel: parts.contextPanel,
 };

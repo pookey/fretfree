@@ -308,6 +308,12 @@ export class SessionRunner {
       return plan;
     };
 
+    // Prompts and grading load on demand, all drills' in one chunk: fetch it
+    // before the first prompt. A failed download (offline before the precache)
+    // leaves prompts unbuilt, and the drill's view, which needs the same
+    // chunk, shows its load-failed message instead (`lazyParts`).
+    await Promise.all(deps.drills.map((d) => d.logic.preload())).catch(() => undefined);
+
     const logId = await startSessionLog(deps.db, now);
     return new SessionRunner(deps, planner, picker, cards, states, logId, lastDrill, sandbox);
   }
@@ -372,15 +378,17 @@ export class SessionRunner {
     if (this.current && this.current.index === this.index) return this.current;
     const entry = this.queue[this.index] as SessionEntry;
     const drill = this.drillFor(entry);
-    const prompt = drill.makePrompt(
-      { id: entry.itemId, skillId: entry.skillId },
-      {
-        tuning: getTuning(this.deps.settings.tuning),
-        accidentalPref: this.deps.settings.accidentalPref,
-        scopeLevel: this.scope(drill).level,
-        rng: this.deps.rng ?? Math.random,
-      },
-    );
+    const prompt = drill.logic.ready()
+      ? drill.logic.get().makePrompt(
+          { id: entry.itemId, skillId: entry.skillId },
+          {
+            tuning: getTuning(this.deps.settings.tuning),
+            accidentalPref: this.deps.settings.accidentalPref,
+            scopeLevel: this.scope(drill).level,
+            rng: this.deps.rng ?? Math.random,
+          },
+        )
+      : undefined;
     const skillLevel = this.skillStates.get(entry.skillId)?.guideLevel ?? DEFAULT_GUIDE;
     // The skill's level is live: `SessionGuides` fades and restores it per answer.
     // New-block reps fade from the worked example's full guides down to it.
@@ -398,9 +406,10 @@ export class SessionRunner {
     const cur = this.current?.index === this.index ? this.current : this.currentPrompt();
     if (!cur) throw new Error('No active prompt');
     const { entry, drill, prompt } = cur;
-    const responseMs = drill.gradedResponseMs?.(prompt, answer, elapsedMs) ?? elapsedMs;
+    const logic = drill.logic.get();
+    const responseMs = logic.gradedResponseMs?.(prompt, answer, elapsedMs) ?? elapsedMs;
     const now = this.now();
-    const result = drill.check(prompt, answer);
+    const result = logic.check(prompt, answer);
     const rating = gradeAnswer(
       { correct: result.correct, responseMs, hintUsed: entry.guided },
       this.targets,
@@ -446,7 +455,7 @@ export class SessionRunner {
                 responseMs: Math.round(responseMs),
                 rating,
                 hintUsed: entry.guided,
-                answerGiven: drill.describeAnswer(answer),
+                answerGiven: logic.describeAnswer(answer),
                 at: now,
               },
               ...(result.confusedWith
@@ -515,7 +524,7 @@ export class SessionRunner {
     return {
       result,
       rating,
-      sounds: drill.sounds(prompt, { answer, result }),
+      sounds: logic.sounds(prompt, { answer, result }),
       xp: progress.xp,
       goalReached: progress.goalReached,
     };

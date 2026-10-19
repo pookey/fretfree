@@ -1,4 +1,4 @@
-import { parseIntervalItemId, type GuideLevel, type Item } from '../../engine/model';
+import type { GuideLevel, Item } from '../../engine/model';
 import {
   SHAPE_INTERVALS,
   crossesGBShift,
@@ -14,6 +14,9 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D5_SCOPE, d5Parse as parse } from './meta';
+
+export { D5_ID, D5_SCOPE, d5CanTest, d5ConceptOf } from './meta';
 
 /**
  * D5 "Name the interval from two dots" (design §6 D5). Tests the C3
@@ -23,8 +26,6 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * positions (research/02 rule 12). Answering plays both notes, low then high,
  * so the interval is heard as well as seen and named (rule 10).
  */
-
-export const D5_ID = 'interval-name';
 
 export interface D5Prompt {
   itemId: string;
@@ -48,28 +49,11 @@ export interface D5Prompt {
 /** The answer: an interval name from a button or key. */
 export type D5Answer = IntervalName;
 
-/**
- * Scope levels (research/02 rule 5, distractors): the answer among its nearest
- * neighbours by size, which are the easiest to confuse (a fret apart, rule 6),
- * then a wider window, then every interval from m2 to P8.
- */
-export const D5_SCOPE = { minLevel: 0, maxLevel: 2 };
-
 /** Answer buttons per scope level. */
 export const D5_CHOICE_COUNTS: readonly number[] = [4, 7, SHAPE_INTERVALS.length];
 
 /** Both dots sit on frets 1–12: fretted, and inside every size class's neck window. */
 export const D5_FRETS = { from: 1, to: 12 };
-
-export function d5CanTest(item: Item): boolean {
-  return parseIntervalItemId(item.id)?.kind === 'interval-name';
-}
-
-function parse(item: Item): { interval: IntervalName; from: number; to: number } {
-  const ref = parseIntervalItemId(item.id);
-  if (ref?.kind !== 'interval-name') throw new Error(`D5 cannot test item ${item.id}`);
-  return ref;
-}
 
 /** A uniform pick of `0 … n-1`, safe against an rng that returns 1. */
 function pick(n: number, rng: () => number): number {
@@ -171,10 +155,6 @@ export function d5FeedbackPositions(
   if (fb.result.correct) return { expected, given: [] };
   const given = d5GivenPosition(prompt, fb.answer, tuning);
   return { expected, given: given ? [given] : [] };
-}
-
-export function d5ConceptOf(item: Item): string | null {
-  return d5CanTest(item) ? parse(item).interval : null;
 }
 
 /** Stored as `answerGiven`. */

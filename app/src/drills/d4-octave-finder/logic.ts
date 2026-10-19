@@ -12,7 +12,6 @@ import {
   inRange,
   midiAt,
   noteAt,
-  octaveOnString,
   positionsOfPitchClass,
   samePosition,
   stringCount,
@@ -22,6 +21,17 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D4_SCOPES, d4ShapeLabel, d4SingleShape as singleShape, type D4Scope } from './meta';
+
+export {
+  D4_ID,
+  D4_SCOPE,
+  D4_SCOPES,
+  d4CanTest,
+  d4ConceptOf,
+  d4ShapeLabel,
+  type D4Scope,
+} from './meta';
 
 /**
  * D4 "Octave finder" (design §6), the pure half of the drill. It tests two
@@ -39,21 +49,6 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * every-octave items the round ends at the last target, at the first wrong
  * tap, or when the learner says they are done.
  */
-
-export const D4_ID = 'octave-finder';
-
-/**
- * Adaptive scope for single items (design §3.3 step 4, research/02 rule 5):
- *
- * - `string` (0): only the octave's string is live; the others are dimmed.
- * - `neck` (1): every string is live, so the learner also picks the string.
- *
- * Every-octave items always use every string in frets 0–12.
- */
-export type D4Scope = 'string' | 'neck';
-
-export const D4_SCOPES: readonly D4Scope[] = ['string', 'neck'];
-export const D4_SCOPE = { minLevel: 0, maxLevel: D4_SCOPES.length - 1 };
 
 /** Frets 0–12: the C1 region; above 12 the neck repeats (dimmed, not hidden). */
 export const D4_REGION: FretRange = { from: 0, to: 12 };
@@ -111,21 +106,6 @@ export function d4ScopeFor(level: number): D4Scope {
   return D4_SCOPES[i] as D4Scope;
 }
 
-export function d4CanTest(item: Item): boolean {
-  return parseOctaveItemId(item.id) !== null || parseOctavesItemId(item.id) !== null;
-}
-
-function plural(n: number, word: string): string {
-  return `${n} ${word}${n === 1 ? '' : 's'}`;
-}
-
-/** "2 strings up, 3 frets higher": up is toward string 1, higher toward the body. */
-export function d4ShapeLabel(from: number, to: number, offset: number): string {
-  const strings = `${plural(Math.abs(from - to), 'string')} ${to < from ? 'up' : 'down'}`;
-  if (offset === 0) return `${strings}, same fret`;
-  return `${strings}, ${plural(Math.abs(offset), 'fret')} ${offset > 0 ? 'higher' : 'lower'}`;
-}
-
 /**
  * The offset of the same string move with the G–B shift the other way round.
  * Moving up across the shift adds a fret (+3 for +2, −2 for −3), so the
@@ -136,19 +116,6 @@ export function d4OtherOffset(from: number, to: number, offset: number, tuning: 
   const up = to < from ? 1 : -1;
   const crosses = crossesGBShift(from, to, tuning);
   return offset + (crosses ? -up : up);
-}
-
-interface SingleShape {
-  target: Position;
-  offset: number;
-  shape: string;
-}
-
-function singleShape(from: Position, string: number, tuning: Tuning): SingleShape | null {
-  const target = octaveOnString(from, string, tuning);
-  if (!target) return null;
-  const offset = target.fret - from.fret;
-  return { target, offset, shape: d4ShapeLabel(from.string, string, offset) };
 }
 
 function spell(pos: Position, tuning: Tuning, pref: AccidentalPref): string {
@@ -342,20 +309,6 @@ function explainEvery(prompt: D4EveryPrompt, fb: DrillFeedback<D4Answer>): strin
 /** One line of feedback naming the shape, or what was missed. */
 export function d4Explain(prompt: D4Prompt, fb: DrillFeedback<D4Answer>): string {
   return prompt.mode === 'single' ? explainSingle(prompt, fb) : explainEvery(prompt, fb);
-}
-
-export function d4ConceptOf(
-  item: Item,
-  ctx: Pick<DrillContext, 'tuning' | 'accidentalPref'>,
-): string | null {
-  const single = parseOctaveItemId(item.id);
-  if (single) {
-    const n = stringCount(ctx.tuning);
-    if (single.from.string > n || single.string > n) return null;
-    return singleShape(single.from, single.string, ctx.tuning)?.shape ?? null;
-  }
-  const every = parseOctavesItemId(item.id);
-  return every ? chromaToPc(chromaOf(every.pc), ctx.accidentalPref) : null;
 }
 
 /**

@@ -26,6 +26,9 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D10_LEVELS, type D10Level } from './meta';
+
+export { D10_ID, D10_LEVELS, D10_SCOPE, d10CanTest, d10ConceptOf, type D10Level } from './meta';
 
 /**
  * D10 "Which shape, and which comes next?" (design §6), the pure half of the
@@ -52,30 +55,9 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * its pitch and moves along its string, as in D9.
  */
 
-export const D10_ID = 'which-shape';
-
 export type D10Ask = 'name' | 'next' | 'previous';
 
 export const D10_ASKS: readonly D10Ask[] = ['name', 'next', 'previous'];
-
-/**
- * Adaptive scope (design §3.3 step 4, research/02 rule 5): the roots a prompt
- * may use and how many shapes to choose from. Three choices always include
- * the likeliest mix-up: the shape sharing the root string, or the neighbour
- * the other way along the chain.
- */
-export interface D10Level {
-  roots: 'naturals' | 'all';
-  choices: number;
-}
-
-export const D10_LEVELS: readonly D10Level[] = [
-  { roots: 'naturals', choices: 3 },
-  { roots: 'naturals', choices: 5 },
-  { roots: 'all', choices: 5 },
-];
-
-export const D10_SCOPE = { minLevel: 0, maxLevel: D10_LEVELS.length - 1 };
 
 /** Shapes sit within frets 0–15, the whole neck the iPad shows. */
 export const D10_REGION: FretRange = { from: 0, to: 15 };
@@ -132,10 +114,6 @@ export type D10Answer = CagedShapeName;
 export function d10LevelFor(level: number): D10Level {
   const i = Math.max(0, Math.min(D10_LEVELS.length - 1, Math.round(level)));
   return D10_LEVELS[i] as D10Level;
-}
-
-export function d10CanTest(item: Item): boolean {
-  return parseCagedItemId(item.id)?.kind === 'caged';
 }
 
 /** Display form: `F#` → `F♯`, `b3` → `♭3`. */
@@ -349,11 +327,6 @@ export function d10FeedbackPositions(
     expected: prompt.answer.notes.map((n) => ({ string: n.string, fret: n.fret })),
     given: [],
   };
-}
-
-export function d10ConceptOf(item: Item): string | null {
-  const ref = parseCagedItemId(item.id);
-  return ref?.kind === 'caged' ? `caged:${ref.shape}` : null;
 }
 
 /** Hardware keyboard (design §7): the shape's letter picks it. */

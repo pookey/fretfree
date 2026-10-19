@@ -1,21 +1,19 @@
-import { lazyParts } from '../lazy-view';
+import { lazyLogic, lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as logic from './logic';
+import type { D1Answer, D1Prompt } from './logic';
 import type * as views from './views';
-import {
-  D1_ID,
-  D1_SCOPE,
-  d1CanTest,
-  d1Check,
-  d1ConceptOf,
-  d1FeedbackPositions,
-  d1MakePrompt,
-  d1Sounds,
-  type D1Answer,
-  type D1Prompt,
-} from './logic';
+import { D1_ID, D1_SCOPE, d1CanTest, d1ConceptOf } from './meta';
 
-// Lazy: the views stay out of first-load JS (design §10).
-const parts = lazyParts<typeof views>('d1-name-the-note');
+// Lazy: the logic and views stay out of first-load JS (design §10).
+const lazy = lazyLogic('d1-name-the-note', (l: typeof logic) => ({
+  makePrompt: l.d1MakePrompt,
+  check: l.d1Check,
+  describeAnswer: (a: D1Answer) => a,
+  sounds: l.d1Sounds,
+  feedbackPositions: l.d1FeedbackPositions,
+}));
+const parts = lazyParts<typeof views>('d1-name-the-note', lazy);
 
 const nameTheNote: DrillType<D1Prompt, D1Answer> = {
   id: D1_ID,
@@ -24,12 +22,8 @@ const nameTheNote: DrillType<D1Prompt, D1Answer> = {
   inputModes: ['choice', 'keyboard'],
   scope: D1_SCOPE,
   canTest: d1CanTest,
-  makePrompt: d1MakePrompt,
-  check: d1Check,
-  describeAnswer: (a) => a,
-  sounds: d1Sounds,
-  feedbackPositions: d1FeedbackPositions,
   conceptOf: d1ConceptOf,
+  logic: lazy,
   render: parts.render,
 };
 

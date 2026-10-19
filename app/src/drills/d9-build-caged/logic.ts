@@ -24,6 +24,9 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D9_SCOPES, type D9Scope } from './meta';
+
+export { D9_ID, D9_SCOPE, D9_SCOPES, d9CanTest, d9ConceptOf, type D9Scope } from './meta';
 
 /**
  * D9 "Build the CAGED shape at a root" (design §6), the pure half of the
@@ -45,18 +48,6 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * Templates are standard tuning. In another tuning each note keeps its pitch
  * and moves along its string, so drop D adds two frets on string 6.
  */
-
-export const D9_ID = 'build-caged';
-
-/**
- * Adaptive scope (design §3.3 step 4, research/02 rule 5): the roots a prompt
- * may use. `naturals` (0) roots on natural notes only; `all` (1) on any of
- * the 12 pitch classes, so the shape lands at every position.
- */
-export type D9Scope = 'naturals' | 'all';
-
-export const D9_SCOPES: readonly D9Scope[] = ['naturals', 'all'];
-export const D9_SCOPE = { minLevel: 0, maxLevel: D9_SCOPES.length - 1 };
 
 /**
  * Shapes sit within frets 0–15, the whole neck the iPad shows, so every shape
@@ -117,10 +108,6 @@ export type D9Answer = readonly Position[];
 export function d9ScopeFor(level: number): D9Scope {
   const i = Math.max(0, Math.min(D9_SCOPES.length - 1, Math.round(level)));
   return D9_SCOPES[i] as D9Scope;
-}
-
-export function d9CanTest(item: Item): boolean {
-  return parseCagedItemId(item.id) !== null;
 }
 
 /** Display form: `F#` → `F♯`, `b3` → `♭3`. */
@@ -334,11 +321,6 @@ export function d9FeedbackPositions(
   fb: DrillFeedback<D9Answer>,
 ): { expected: Position[]; given: Position[] } {
   return { expected: prompt.targets, given: d9WrongTaps(prompt, fb.answer) };
-}
-
-export function d9ConceptOf(item: Item): string | null {
-  const ref = parseCagedItemId(item.id);
-  return ref ? `caged:${ref.shape}` : null;
 }
 
 /** "strings 3–1". */

@@ -1,23 +1,20 @@
 import { SKILLS } from '../../engine/skills';
-import { lazyParts } from '../lazy-view';
+import { lazyLogic, lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as logic from './logic';
+import type { D7Answer, D7Prompt } from './logic';
 import type * as views from './views';
-import {
-  D7_ID,
-  D7_SCOPE,
-  d7CanTest,
-  d7Check,
-  d7ConceptOf,
-  d7DescribeAnswer,
-  d7GradedResponseMs,
-  d7MakePrompt,
-  d7Sounds,
-  type D7Answer,
-  type D7Prompt,
-} from './logic';
+import { D7_ID, D7_SCOPE, d7CanTest, d7ConceptOf } from './meta';
 
-// Lazy: the views stay out of first-load JS (design §10).
-const parts = lazyParts<typeof views>('d7-spell-it');
+// Lazy: the logic and views stay out of first-load JS (design §10).
+const lazy = lazyLogic('d7-spell-it', (l: typeof logic) => ({
+  makePrompt: l.d7MakePrompt,
+  check: l.d7Check,
+  describeAnswer: l.d7DescribeAnswer,
+  sounds: l.d7Sounds,
+  gradedResponseMs: l.d7GradedResponseMs,
+}));
+const parts = lazyParts<typeof views>('d7-spell-it', lazy);
 
 const spellIt: DrillType<D7Prompt, D7Answer> = {
   id: D7_ID,
@@ -28,12 +25,8 @@ const spellIt: DrillType<D7Prompt, D7Answer> = {
   inputModes: ['choice', 'keyboard'],
   scope: D7_SCOPE,
   canTest: d7CanTest,
-  makePrompt: d7MakePrompt,
-  check: d7Check,
-  describeAnswer: d7DescribeAnswer,
-  sounds: d7Sounds,
-  gradedResponseMs: d7GradedResponseMs,
   conceptOf: d7ConceptOf,
+  logic: lazy,
   render: parts.render,
   contextPanel: parts.contextPanel,
 };

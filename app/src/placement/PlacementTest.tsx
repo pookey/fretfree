@@ -194,13 +194,17 @@ export function PlacementTest({
     if (!probe) return void finish();
     const drill = picker.pick(probe.item);
     if (!drill) throw new Error(`No drill can test ${probe.item.id}`);
-    const prompt = drill.makePrompt(probe.item, {
-      tuning,
-      accidentalPref: settings.accidentalPref,
-      scopeLevel: drill.scope.minLevel,
-      rng,
-    });
     const show = () => {
+      // The drill's logic loads with its views; without it, the view shows
+      // the drill's load-failed message in place of a prompt.
+      const prompt = drill.logic.ready()
+        ? drill.logic.get().makePrompt(probe.item, {
+            tuning,
+            accidentalPref: settings.accidentalPref,
+            scopeLevel: drill.scope.minLevel,
+            rng,
+          })
+        : undefined;
       setPhase({ kind: 'probe', shown: { probe, drill, prompt } });
       shownAt.current = now();
     };
@@ -255,8 +259,9 @@ export function PlacementTest({
     const { shown } = phase;
     const { drill, prompt, probe } = shown;
     const elapsed = now() - shownAt.current;
-    const check = drill.check(prompt, answer);
-    const responseMs = drill.gradedResponseMs?.(prompt, answer, elapsed) ?? elapsed;
+    const logic = drill.logic.get();
+    const check = logic.check(prompt, answer);
+    const responseMs = logic.gradedResponseMs?.(prompt, answer, elapsed) ?? elapsed;
     const rating = gradeAnswer({ correct: check.correct, responseMs }, targets);
     logs.current.push({
       item: probe.item,
@@ -264,12 +269,12 @@ export function PlacementTest({
       correct: check.correct,
       responseMs,
       rating,
-      answerGiven: drill.describeAnswer(answer),
+      answerGiven: logic.describeAnswer(answer),
       at: clock(),
     });
     state.current = answerProbe(state.current, probe, probeOutcome(rating));
     const feedback = { answer, result: check };
-    const sounds = drill.sounds(prompt, feedback);
+    const sounds = logic.sounds(prompt, feedback);
     void playNotes([...sounds.expected, ...(sounds.given ?? [])], {
       muted: !settings.soundOn,
       volume: settings.volume,

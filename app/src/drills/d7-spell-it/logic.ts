@@ -16,10 +16,12 @@ import {
   isPracticalSpelling,
   majorScale,
   spellChord,
-  type ChordKind,
   type SpellingVerdict,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D7_SCOPE } from './meta';
+
+export { D7_ID, D7_SCOPE, d7CanTest, d7ConceptOf } from './meta';
 
 /**
  * D7 "Spell it" (design §6 D7): ordered-choice spelling of major keys (C4)
@@ -33,8 +35,6 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * is graded wrong like any other, so FSRS sees "Again"; its verdict only
  * picks the explanation ("right pitch, wrong letter").
  */
-
-export const D7_ID = 'spell-it';
 
 export type D7Kind = 'key' | 'chord' | 'degree' | 'degree-of';
 
@@ -68,13 +68,6 @@ export interface D7Prompt {
 
 /** The answer: the blanks in order, or the degree picked. */
 export type D7Answer = { notes: string[] } | { degree: number };
-
-/**
- * Scope levels (research/02 rule 5, distractors): 0 offers the answer notes
- * and their enharmonic twins (the confusion the drill is about); 1 offers
- * every letter with ♭, ♮ and ♯.
- */
-export const D7_SCOPE = { minLevel: 0, maxLevel: 1 };
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 /** Letter order from C, for octaves and counting letters. */
@@ -174,10 +167,6 @@ function parse(item: Item): Omit<D7Prompt, 'itemId' | 'choices' | 'degreeChoices
     };
   }
   return null;
-}
-
-export function d7CanTest(item: Item): boolean {
-  return parse(item) !== null;
 }
 
 /** The notes the learner must enter, in order. */
@@ -420,21 +409,6 @@ export function d7Sounds(prompt: D7Prompt, fb: DrillFeedback<D7Answer>): DrillSo
   const given = fb.answer.notes.filter(isNote);
   if (given.length === 0) return { expected };
   return { expected, given: withOctaves([prompt.tonic, ...given]) };
-}
-
-export function d7ConceptOf(item: Item): string | null {
-  const key = parseSpellKeyItemId(item.id);
-  if (key) return `key:${key.tonic}`;
-  const chord = parseSpellChordItemId(item.id);
-  if (chord) return chordConcept(chord.chord);
-  return null;
-}
-
-/** Major and minor triads use the seed pair `triad:maj` / `triad:min` (engine/confusions). */
-function chordConcept(kind: ChordKind): string {
-  if (kind === 'major') return 'triad:maj';
-  if (kind === 'minor') return 'triad:min';
-  return `chord:${kind}`;
 }
 
 /** Stored as `answerGiven`. */

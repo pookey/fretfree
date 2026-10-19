@@ -1,23 +1,20 @@
-import { lazyParts } from '../lazy-view';
+import { lazyLogic, lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as logic from './logic';
+import type { D9Answer, D9Prompt } from './logic';
 import type * as views from './views';
-import {
-  D9_ID,
-  D9_SCOPE,
-  d9CanTest,
-  d9Check,
-  d9ConceptOf,
-  d9DescribeAnswer,
-  d9FeedbackPositions,
-  d9GradedResponseMs,
-  d9MakePrompt,
-  d9Sounds,
-  type D9Answer,
-  type D9Prompt,
-} from './logic';
+import { D9_ID, D9_SCOPE, d9CanTest, d9ConceptOf } from './meta';
 
-// Lazy: the views stay out of first-load JS (design §10).
-const parts = lazyParts<typeof views>('d9-build-caged');
+// Lazy: the logic and views stay out of first-load JS (design §10).
+const lazy = lazyLogic('d9-build-caged', (l: typeof logic) => ({
+  makePrompt: l.d9MakePrompt,
+  check: l.d9Check,
+  describeAnswer: l.d9DescribeAnswer,
+  gradedResponseMs: l.d9GradedResponseMs,
+  sounds: l.d9Sounds,
+  feedbackPositions: l.d9FeedbackPositions,
+}));
+const parts = lazyParts<typeof views>('d9-build-caged', lazy);
 
 const buildCaged: DrillType<D9Prompt, D9Answer> = {
   id: D9_ID,
@@ -32,13 +29,8 @@ const buildCaged: DrillType<D9Prompt, D9Answer> = {
   inputModes: ['tap'],
   scope: D9_SCOPE,
   canTest: d9CanTest,
-  makePrompt: d9MakePrompt,
-  check: d9Check,
-  describeAnswer: d9DescribeAnswer,
-  gradedResponseMs: d9GradedResponseMs,
-  sounds: d9Sounds,
-  feedbackPositions: d9FeedbackPositions,
   conceptOf: d9ConceptOf,
+  logic: lazy,
   render: parts.render,
   contextPanel: parts.contextPanel,
 };

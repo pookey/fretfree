@@ -25,6 +25,17 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D38_SCOPES, d38CanTest, d38Concept, type D38Scope } from './meta';
+
+export {
+  D38_ID,
+  D38_SCOPE,
+  D38_SCOPES,
+  d38CanTest,
+  d38Concept,
+  d38ConceptOf,
+  type D38Scope,
+} from './meta';
 
 /**
  * D38 "Build the chord" (design §6), the pure half of the drill: the reverse
@@ -45,19 +56,6 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * The voicing is found from pitches, not templates, so it works in any
  * tuning with the root's string.
  */
-
-export const D38_ID = 'build-the-chord';
-
-/**
- * Adaptive scope (design §3.3 step 4, research/02 rule 5): `naturals` (0)
- * roots on natural notes at their lowest fret, which brings in the open
- * chords; `all-roots` (1) on any of the 12 pitch classes; `anywhere` (2) at
- * either octave of the neck as well.
- */
-export type D38Scope = 'naturals' | 'all-roots' | 'anywhere';
-
-export const D38_SCOPES: readonly D38Scope[] = ['naturals', 'all-roots', 'anywhere'];
-export const D38_SCOPE = { minLevel: 0, maxLevel: D38_SCOPES.length - 1 };
 
 /** The neck the iPad shows. Voicings stay within it. */
 export const D38_REGION: FretRange = { from: 0, to: 15 };
@@ -127,11 +125,6 @@ export type D38Answer = readonly Position[];
 export function d38ScopeFor(level: number): D38Scope {
   const i = Math.max(0, Math.min(D38_SCOPES.length - 1, Math.round(level)));
   return D38_SCOPES[i] as D38Scope;
-}
-
-export function d38CanTest(item: Item): boolean {
-  const ref = parseBuildChordItemId(item.id);
-  return ref !== null && ref.string >= 2;
 }
 
 /** Marker label: `R`, `♭3`, `♯5`. */
@@ -494,18 +487,6 @@ export function d38Tap(prompt: D38Prompt, taps: D38Answer, pos: Position): Posit
 }
 
 // --- Grading ---------------------------------------------------------------
-
-/** The confusion-matrix key of a quality: D7's and D36's, so the seed pairs apply. */
-export function d38Concept(kind: ChordKind): string {
-  if (kind === 'major') return 'triad:maj';
-  if (kind === 'minor') return 'triad:min';
-  return `chord:${kind}`;
-}
-
-export function d38ConceptOf(item: Item): string | null {
-  const ref = parseBuildChordItemId(item.id);
-  return ref ? d38Concept(ref.chord) : null;
-}
 
 /** The kinds confused with this one (engine/confusions' chord pairs). */
 function partners(kind: ChordKind): ChordKind[] {

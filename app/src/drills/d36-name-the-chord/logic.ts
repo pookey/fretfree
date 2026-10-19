@@ -22,9 +22,21 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
-import { VOICED_KINDS, placements, templatesFor } from '../../theory/voicings';
+import { placements, templatesFor } from '../../theory/voicings';
 import type { SizeClass } from '../../shell/size-class';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D36_QUALITIES, D36_SCOPES, d36CanTest, d36Concept, type D36Scope } from './meta';
+
+export {
+  D36_ID,
+  D36_QUALITIES,
+  D36_SCOPE,
+  D36_SCOPES,
+  d36CanTest,
+  d36Concept,
+  d36ConceptOf,
+  type D36Scope,
+} from './meta';
 
 /**
  * D36 "What chord is this?" (design §6), the pure half of the drill. A
@@ -39,33 +51,8 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * (`triad:maj`, `chord:7` …), so the seed pairs interleave them (rule 6).
  */
 
-export const D36_ID = 'name-the-chord';
-
-/**
- * Adaptive scope (design §3.3 step 4, research/02 rule 5), as D8's:
- * `naturals` (0) roots voicings on natural notes at their lowest position,
- * which brings in the open chords; `all-roots` (1) on any of the 12 pitch
- * classes; `anywhere` (2) at either octave of the neck as well.
- */
-export type D36Scope = 'naturals' | 'all-roots' | 'anywhere';
-
-export const D36_SCOPES: readonly D36Scope[] = ['naturals', 'all-roots', 'anywhere'];
-export const D36_SCOPE = { minLevel: 0, maxLevel: D36_SCOPES.length - 1 };
-
 /** The neck the iPad shows: every voicing fits at every root within it. */
 export const D36_REGION: FretRange = { from: 0, to: 15 };
-
-/** The quality buttons, in this order: the number row picks them by position. */
-export const D36_QUALITIES: readonly ChordKind[] = [
-  'major',
-  'minor',
-  '7',
-  'maj7',
-  'm7',
-  'm7b5',
-  'sus2',
-  'sus4',
-];
 
 export interface ChordNote extends Position {
   readonly degree: ChordDegree;
@@ -117,16 +104,6 @@ export interface D36Answer {
 export function d36ScopeFor(level: number): D36Scope {
   const i = Math.max(0, Math.min(D36_SCOPES.length - 1, Math.round(level)));
   return D36_SCOPES[i] as D36Scope;
-}
-
-export function d36CanTest(item: Item): boolean {
-  const ref = parseChordNameItemId(item.id);
-  return (
-    ref !== null &&
-    VOICED_KINDS.includes(ref.chord) &&
-    D36_QUALITIES.includes(ref.chord) &&
-    templatesFor(ref.chord).some((t) => t.shape === ref.shape)
-  );
 }
 
 /** Display form of a note or chord: `F#m7b5` → `F♯m7♭5`, `Bb` → `B♭`. */
@@ -228,18 +205,6 @@ export function d36MakePrompt(item: Item, ctx: DrillContext): D36Prompt {
 }
 
 // --- Grading ---------------------------------------------------------------
-
-/** The confusion-matrix key of a quality: D7's, so the seed pairs apply. */
-export function d36Concept(kind: ChordKind): string {
-  if (kind === 'major') return 'triad:maj';
-  if (kind === 'minor') return 'triad:min';
-  return `chord:${kind}`;
-}
-
-export function d36ConceptOf(item: Item): string | null {
-  const ref = parseChordNameItemId(item.id);
-  return ref ? d36Concept(ref.chord) : null;
-}
 
 /** The root and the quality the voicing was drawn as. */
 export function d36Exact(prompt: D36Prompt, answer: D36Answer): boolean {

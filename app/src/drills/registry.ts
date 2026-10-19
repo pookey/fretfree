@@ -6,10 +6,12 @@ import type { AnyDrillType } from './types';
  * default-exports a DrillType and is registered automatically, so parallel
  * work packages add drills without editing a shared file.
  *
- * The plugins are eager: the session planner needs their logic and metadata.
- * Their views are not: each `drill.ts` takes its `render` and `contextPanel`
- * from `lazyParts`, so the views download, in one chunk, only when a session
- * needs them (design §10 first-load budget).
+ * The plugins are eager, but only as metadata: the session planner needs
+ * each drill's skills, scope, `canTest` and `conceptOf`, from its `meta.ts`.
+ * Their logic and views are not: each `drill.ts` takes its `logic` from
+ * `lazyLogic` and its `render` and `contextPanel` from `lazyParts`, so they
+ * download only when a session or placement test needs them (design §10
+ * first-load budget). `preloadDrill` fetches both.
  */
 const modules = import.meta.glob<{ default: AnyDrillType }>('./*/drill.ts', { eager: true });
 
@@ -23,15 +25,23 @@ export function getDrill(id: string): AnyDrillType | undefined {
   return BY_ID.get(id);
 }
 
-/** Downloads a drill's view and context panel, so it renders without a fallback. */
+/**
+ * Downloads a drill's logic, view and context panel, so it can make prompts
+ * and renders without a fallback.
+ */
 export async function preloadDrill(drill: AnyDrillType): Promise<void> {
   await Promise.all([
+    drill.logic.preload(),
     resolveView(drill.render),
     drill.contextPanel ? resolveView(drill.contextPanel) : undefined,
   ]);
 }
 
-/** Whether a drill's view and context panel render without suspending. */
+/** Whether a drill's logic has loaded, and its view and context panel render without suspending. */
 export function drillReady(drill: AnyDrillType): boolean {
-  return viewReady(drill.render) && (!drill.contextPanel || viewReady(drill.contextPanel));
+  return (
+    drill.logic.ready() &&
+    viewReady(drill.render) &&
+    (!drill.contextPanel || viewReady(drill.contextPanel))
+  );
 }

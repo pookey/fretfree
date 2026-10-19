@@ -12,9 +12,9 @@ import {
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 
-/** D1 "Name the highlighted note" (design §6) — the pure half of the reference drill. */
+export { D1_ID, D1_SCOPE, d1CanTest, d1ConceptOf } from './meta';
 
-export const D1_ID = 'name-the-note';
+/** D1 "Name the highlighted note" (design §6) — the pure half of the reference drill. */
 
 export interface D1Prompt {
   itemId: string;
@@ -28,19 +28,9 @@ export interface D1Prompt {
 /** The answer is a pitch class, as typed or tapped. */
 export type D1Answer = string;
 
-/**
- * Scope levels: 0 = the 7 natural-note buttons (when the target is natural);
- * 1 = all 12 chromatic buttons. Accidental targets always get 12 buttons.
- */
-export const D1_SCOPE = { minLevel: 0, maxLevel: 1 };
-
 export function d1Choices(expectedPc: string, scopeLevel: number, pref: AccidentalPref): string[] {
   if (scopeLevel <= 0 && isNatural(expectedPc)) return [...NATURAL_PCS];
   return Array.from({ length: 12 }, (_, c) => chromaToPc(c, pref));
-}
-
-export function d1CanTest(item: Item): boolean {
-  return parseNoteItemId(item.id) !== null;
 }
 
 export function d1MakePrompt(item: Item, ctx: DrillContext): D1Prompt {
@@ -157,14 +147,6 @@ export function d1GuideMarkers(
     }
   }
   return marks;
-}
-
-export function d1ConceptOf(
-  item: Item,
-  ctx: Pick<DrillContext, 'tuning' | 'accidentalPref'>,
-): string | null {
-  const pos = parseNoteItemId(item.id);
-  return pos ? noteAt(pos, ctx.tuning, ctx.accidentalPref).pc : null;
 }
 
 /**

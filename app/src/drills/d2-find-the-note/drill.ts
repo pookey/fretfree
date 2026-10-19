@@ -1,22 +1,19 @@
-import { lazyParts } from '../lazy-view';
+import { lazyLogic, lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as logic from './logic';
+import type { D2Answer, D2Prompt } from './logic';
 import type * as views from './views';
-import {
-  D2_ID,
-  D2_SCOPE,
-  d2CanTest,
-  d2Check,
-  d2ConceptOf,
-  d2DescribeAnswer,
-  d2FeedbackPositions,
-  d2MakePrompt,
-  d2Sounds,
-  type D2Answer,
-  type D2Prompt,
-} from './logic';
+import { D2_ID, D2_SCOPE, d2CanTest, d2ConceptOf } from './meta';
 
-// Lazy: the views stay out of first-load JS (design §10).
-const parts = lazyParts<typeof views>('d2-find-the-note');
+// Lazy: the logic and views stay out of first-load JS (design §10).
+const lazy = lazyLogic('d2-find-the-note', (l: typeof logic) => ({
+  makePrompt: l.d2MakePrompt,
+  check: l.d2Check,
+  describeAnswer: l.d2DescribeAnswer,
+  sounds: l.d2Sounds,
+  feedbackPositions: l.d2FeedbackPositions,
+}));
+const parts = lazyParts<typeof views>('d2-find-the-note', lazy);
 
 const findTheNote: DrillType<D2Prompt, D2Answer> = {
   id: D2_ID,
@@ -25,12 +22,8 @@ const findTheNote: DrillType<D2Prompt, D2Answer> = {
   inputModes: ['tap', 'keyboard'],
   scope: D2_SCOPE,
   canTest: d2CanTest,
-  makePrompt: d2MakePrompt,
-  check: d2Check,
-  describeAnswer: d2DescribeAnswer,
-  sounds: d2Sounds,
-  feedbackPositions: d2FeedbackPositions,
   conceptOf: d2ConceptOf,
+  logic: lazy,
   render: parts.render,
 };
 

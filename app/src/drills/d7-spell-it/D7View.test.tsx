@@ -63,7 +63,8 @@ describe('<D7View>', () => {
       'C5.sevenths',
       'C5.sus-add',
     ]);
-    expect(drill?.gradedResponseMs).toBeDefined();
+    // Its view loads with its logic, so the logic is in by now.
+    expect(drill?.logic.get().gradedResponseMs).toBeDefined();
   });
 
   it('fills the slots in order and checks the whole spelling', () => {

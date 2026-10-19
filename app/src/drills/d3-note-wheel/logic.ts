@@ -1,4 +1,4 @@
-import { parseLetterItemId, parseStepItemId, type Item } from '../../engine/model';
+import type { Item } from '../../engine/model';
 import {
   NATURAL_PCS,
   chromaOf,
@@ -12,6 +12,9 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { d3Parse as parse, d3SemitonesOf as semitonesOf, type D3Kind } from './meta';
+
+export { D3_ID, D3_SCOPE, d3CanTest, d3ConceptOf, type D3Kind } from './meta';
 
 /**
  * D3 "Note-wheel steps" (design §6): "a whole step above E?". Tests the F1
@@ -20,10 +23,6 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * above E is F (never E♯) and a whole step below F is D♯ or E♭. The learner
  * answers with a button, a key, or by tapping the note anywhere on the neck.
  */
-
-export const D3_ID = 'note-wheel';
-
-export type D3Kind = 'letter' | 'step';
 
 export interface D3Prompt {
   itemId: string;
@@ -73,13 +72,6 @@ export function d3DescribeAnswer(answer: D3Answer): string {
   return `${answer.pc}@s${answer.position.string}f${answer.position.fret}`;
 }
 
-/**
- * Scope levels: 0 = a 7-button chromatic window around the starting note
- * (the step's confusables stay in it: F vs F♯ above E); 1 = all 12 buttons.
- * Letter items always use the 7 naturals.
- */
-export const D3_SCOPE = { minLevel: 0, maxLevel: 1 };
-
 /** Half-width of the level-0 window, in semitones. */
 export const D3_WINDOW = 3;
 
@@ -88,8 +80,6 @@ export const D3_STRING = 6;
 
 /** Every fret D3 can draw: feedback positions stay within this by default. */
 const FULL_NECK: FretRange = { from: 0, to: 15 };
-
-const ALPHABET = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
@@ -127,30 +117,6 @@ export function d3Choices(
     return Array.from({ length: size }, (_, i) => chromaToPc(fromChroma - D3_WINDOW + i, pref));
   }
   return Array.from({ length: 12 }, (_, c) => chromaToPc(c, pref));
-}
-
-function parse(item: Item): { kind: D3Kind; from: string; offset: number } | null {
-  const step = parseStepItemId(item.id);
-  if (step) return { kind: 'step', from: step.from, offset: step.semitones };
-  const letter = parseLetterItemId(item.id);
-  return letter ? { kind: 'letter', from: letter.from, offset: letter.steps } : null;
-}
-
-export function d3CanTest(item: Item): boolean {
-  return parse(item) !== null;
-}
-
-/** Signed semitones from `from` to the answer: letters walk the natural alphabet. */
-function semitonesOf(kind: D3Kind, from: string, offset: number): number {
-  if (kind === 'step') return offset;
-  const start = ALPHABET.indexOf(from);
-  const letter = (i: number) => chromaOf(ALPHABET[mod(start + i, 7)] as string);
-  let semitones = 0;
-  for (let i = 1; i <= Math.abs(offset); i++) {
-    semitones +=
-      offset > 0 ? mod(letter(i) - letter(i - 1), 12) : -mod(letter(-i + 1) - letter(-i), 12);
-  }
-  return semitones;
 }
 
 /** The starting fret on the drawn string, kept so the answer stays on 0–15. */
@@ -282,16 +248,6 @@ export function d3FeedbackPositions(
   if (fb.result.correct) return { expected, given: [] };
   const given = d3GivenPosition(prompt, answer);
   return { expected, given: given ? [given] : [] };
-}
-
-export function d3ConceptOf(
-  item: Item,
-  ctx: Pick<DrillContext, 'tuning' | 'accidentalPref'>,
-): string | null {
-  const parsed = parse(item);
-  if (!parsed) return null;
-  const semitones = semitonesOf(parsed.kind, parsed.from, parsed.offset);
-  return chromaToPc(chromaOf(parsed.from) + semitones, ctx.accidentalPref);
 }
 
 /**

@@ -70,19 +70,12 @@ export interface DrillSounds {
   given?: string[];
 }
 
-export interface DrillType<P = unknown, A = unknown> {
-  id: string;
-  title: string;
-  /** Skill IDs this drill can test. */
-  skills: readonly string[];
-  inputModes: readonly InputMode[];
-  /**
-   * The drill is answered by playing a real guitar into the mic (design §6,
-   * §9), so it is served only once the learner has enabled mic mode.
-   */
-  requiresMic?: boolean;
-  scope: { minLevel: number; maxLevel: number };
-  canTest(item: Item): boolean;
+/**
+ * The lazy half of a drill (design §6, §10): building prompts and grading
+ * answers. It lives in the drill's `logic.ts`, which only the logic chunk
+ * (`drills/logics.ts`) imports, so it stays out of first-load JS.
+ */
+export interface DrillLogic<P = unknown, A = unknown> {
   /** Pure: builds the prompt for an item. */
   makePrompt(item: Item, ctx: DrillContext): P;
   check(prompt: P, answer: A): DrillCheck;
@@ -102,8 +95,40 @@ export interface DrillType<P = unknown, A = unknown> {
    * speed targets apply (design §3.2). Defaults to the time itself.
    */
   gradedResponseMs?(prompt: P, answer: A, elapsedMs: number): number;
+}
+
+/** A drill's logic, downloaded on demand (with its views, by `preloadDrill`). */
+export interface LazyLogic<L> {
+  /** Downloads the logic chunk; resolves to the logic. Safe to call often. */
+  preload(): Promise<L>;
+  /** Whether it has loaded, so `get()` returns it. */
+  ready(): boolean;
+  /** The loaded logic. Throws until `preload()` has resolved. */
+  get(): L;
+}
+
+/**
+ * A drill plugin. Everything but `logic` is eager metadata: what the session
+ * planner, the drill picker and the Today cards need, from the drill's own
+ * small `meta.ts`. The logic and the views load on demand.
+ */
+export interface DrillType<P = unknown, A = unknown> {
+  id: string;
+  title: string;
+  /** Skill IDs this drill can test. */
+  skills: readonly string[];
+  inputModes: readonly InputMode[];
+  /**
+   * The drill is answered by playing a real guitar into the mic (design §6,
+   * §9), so it is served only once the learner has enabled mic mode.
+   */
+  requiresMic?: boolean;
+  scope: { minLevel: number; maxLevel: number };
+  canTest(item: Item): boolean;
   /** The concept an item is keyed by in the confusion matrix (e.g. its pitch class). */
   conceptOf(item: Item, ctx: Pick<DrillContext, 'tuning' | 'accidentalPref'>): string | null;
+  /** Prompts and grading, from the drill's `logic.ts`, loaded on demand (`lazyLogic`). */
+  logic: LazyLogic<DrillLogic<P, A>>;
   render: FC<DrillRenderProps<P, A>>;
   /**
    * The contents of the session's context panel for this drill. The session

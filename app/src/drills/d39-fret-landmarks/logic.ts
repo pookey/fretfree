@@ -16,6 +16,9 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D39_MARKERS, d39CanTest, d39Concept } from './meta';
+
+export { D39_ID, D39_MARKERS, D39_SCOPE, d39CanTest, d39ConceptOf } from './meta';
 
 /**
  * D39 "Fret landmarks" (design §6): the fret-marker landmarks and the
@@ -30,22 +33,10 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * Every answer is a fret number.
  */
 
-export const D39_ID = 'fret-landmarks';
-
 export type D39Mode = 'name-marker' | 'find-marker' | 'repeat';
-
-/** The landmarks F3 teaches: the inlays up to the double dot at 12. */
-export const D39_MARKERS: readonly number[] = INLAY_FRETS.filter((f) => f <= 12);
 
 const LOW_OCTAVE: FretRange = { from: 0, to: 12 };
 const HIGH_OCTAVE: FretRange = { from: 12, to: 24 };
-
-/**
- * Scope levels (design §3.3 step 4, research/02 rule 5): 0 offers only the
- * landmark frets as answers; 1 offers every fret of the octave, so a near
- * miss (6 for 7) is possible.
- */
-export const D39_SCOPE = { minLevel: 0, maxLevel: 1 };
 
 export interface D39Prompt {
   itemId: string;
@@ -85,15 +76,6 @@ export function d39Ordinal(fret: number): string {
   if (tens >= 11 && tens <= 13) return `${fret}th`;
   const suffix = ['th', 'st', 'nd', 'rd'][fret % 10] ?? 'th';
   return `${fret}${suffix}`;
-}
-
-export function d39CanTest(item: Item): boolean {
-  const marker = parseMarkerItemId(item.id);
-  if (marker) return D39_MARKERS.includes(marker.fret);
-  const repeat = parseRepeatItemId(item.id);
-  if (!repeat || Math.abs(repeat.frets) !== 12) return false;
-  const to = repeat.from + repeat.frets;
-  return to >= 0 && to <= 24;
 }
 
 export function d39MakePrompt(item: Item, ctx: DrillContext): D39Prompt {
@@ -167,10 +149,6 @@ export function d39Check(prompt: D39Prompt, answer: D39Answer): DrillCheck {
   return { correct: false, expected, confusedWith: d39Concept(answer) };
 }
 
-function d39Concept(fret: number): string {
-  return `fret:${fret}`;
-}
-
 export function d39DescribeAnswer(answer: D39Answer): string {
   return `f${answer}`;
 }
@@ -235,14 +213,6 @@ export function d39NeckGuideLevel(
   if (opts.guided) return 3;
   if (opts.answered || prompt.mode === 'repeat') return guideLevel;
   return Math.min(guideLevel, 1) as GuideLevel;
-}
-
-export function d39ConceptOf(item: Item): string | null {
-  if (!d39CanTest(item)) return null;
-  const marker = parseMarkerItemId(item.id);
-  if (marker) return d39Concept(marker.fret);
-  const repeat = parseRepeatItemId(item.id) as { frets: number; from: number };
-  return d39Concept(repeat.from + repeat.frets);
 }
 
 // --- Keyboard path ----------------------------------------------------------

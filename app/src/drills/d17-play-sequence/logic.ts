@@ -32,6 +32,9 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D17_SCOPES, d17ConceptOf, type D17Scope } from './meta';
+
+export { D17_ID, D17_SCOPES, D17_SCOPE, d17CanTest, d17ConceptOf, type D17Scope } from './meta';
 
 /**
  * D17 "Play the interval, arpeggio or scale" (design §6): the mic drill that
@@ -49,20 +52,7 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * order; the first wrong note ends the attempt.
  */
 
-export const D17_ID = 'play-sequence';
-
 export type D17Kind = 'interval' | 'scale' | 'arpeggio';
-
-/**
- * Adaptive scope (design §3.3 step 4, research/02 rule 5), narrowest first:
- *
- * - `placed` (0): the root is marked on the neck, so the learner starts there.
- * - `anywhere` (1): only the root's name is given; finding it is part of the task.
- */
-export type D17Scope = 'placed' | 'anywhere';
-
-export const D17_SCOPES: readonly D17Scope[] = ['placed', 'anywhere'];
-export const D17_SCOPE = { minLevel: 0, maxLevel: D17_SCOPES.length - 1 };
 
 /** Each later note may be an octave off the expected pitch (design §9). */
 export const D17_MATCH_MODE: PitchMatchMode = 'octave';
@@ -195,10 +185,6 @@ function arpeggioPlan(root: string, kind: ChordKind): Plan {
     offsets: formula.map((d) => chordDegreeSemitones(d)),
     strings: null,
   };
-}
-
-export function d17CanTest(item: Item): boolean {
-  return plan(item) !== null;
 }
 
 // --- Fingering --------------------------------------------------------------
@@ -453,23 +439,6 @@ export function d17FeedbackPositions(
 ): { expected: Position[]; given: Position[] } {
   // The mic hears pitches, not positions, so a played note has no cell.
   return { expected: prompt.steps.map((s) => s.position), given: [] };
-}
-
-/** Major and minor triads use the seed pair `triad:maj` / `triad:min` (engine/confusions), as D7. */
-function chordConcept(kind: ChordKind): string {
-  if (kind === 'major') return 'triad:maj';
-  if (kind === 'minor') return 'triad:min';
-  return `chord:${kind}`;
-}
-
-export function d17ConceptOf(item: Item): string | null {
-  const interval = parseIntervalItemId(item.id);
-  if (interval?.kind === 'interval') return interval.interval;
-  const key = parseSpellKeyItemId(item.id);
-  if (key) return `key:${key.tonic}`;
-  const chord = parseSpellChordItemId(item.id);
-  if (chord) return chordConcept(chord.chord);
-  return null;
 }
 
 /** Stored as `answerGiven`: the pitches heard, e.g. `F#3 G#3 A3`. */

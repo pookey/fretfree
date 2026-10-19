@@ -1,4 +1,4 @@
-import { parseIntervalItemId, type Item } from '../../engine/model';
+import type { Item } from '../../engine/model';
 import {
   allStrings,
   inRange,
@@ -19,6 +19,17 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D6_SCOPES, conceptFor, tapRef, type D6Scope } from './meta';
+
+export {
+  D6_ID,
+  D6_SCOPE,
+  D6_SCOPES,
+  GB_SHIFT_SUFFIX,
+  d6CanTest,
+  d6ConceptOf,
+  type D6Scope,
+} from './meta';
 
 /**
  * D6 "Tap the M3/P5/b7 from a root" (design §6, research/03 C3): name →
@@ -31,29 +42,12 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * below a root is still that chord's 3rd.
  */
 
-export const D6_ID = 'interval-tap';
-
-/**
- * Adaptive scope (design §3.3 step 4, research/02 rule 5), narrowest first:
- *
- * - `shape` (0): only the shape's upper string is live, within the hand
- *   position around the root, so the one right cell is the shape itself.
- * - `box` (1): every string is live within the hand position.
- * - `neck` (2): every string is live across frets 0–12.
- */
-export type D6Scope = 'shape' | 'box' | 'neck';
-
-export const D6_SCOPES: readonly D6Scope[] = ['shape', 'box', 'neck'];
-export const D6_SCOPE = { minLevel: 0, maxLevel: D6_SCOPES.length - 1 };
-
 /** Frets 0–12: the whole region, and the bounds every prompt stays within. */
 export const D6_NECK: FretRange = { from: 0, to: 12 };
 /** The hand position: a 5-fret box around the root, which also fits a compact screen. */
 export const D6_BOX_FRETS = 5;
 /** Roots go on fretted notes, so every shape is a movable shape. */
 const ROOT_FRETS: FretRange = { from: 1, to: 12 };
-
-export const GB_SHIFT_SUFFIX = ' (G–B shift)';
 
 export interface D6Prompt {
   itemId: string;
@@ -84,19 +78,6 @@ export type D6Answer = Position;
 export function d6ScopeFor(level: number): D6Scope {
   const i = Math.max(0, Math.min(D6_SCOPES.length - 1, Math.round(level)));
   return D6_SCOPES[i] as D6Scope;
-}
-
-function tapRef(item: Item) {
-  const ref = parseIntervalItemId(item.id);
-  return ref?.kind === 'interval' ? ref : null;
-}
-
-export function d6CanTest(item: Item): boolean {
-  return tapRef(item) !== null;
-}
-
-function conceptFor(interval: IntervalName, gbShift: boolean): string {
-  return gbShift ? `${interval}${GB_SHIFT_SUFFIX}` : interval;
 }
 
 /** How far a shape between two strings sits above the all-fourths shape (1 across G–B). */
@@ -248,18 +229,6 @@ export function d6FeedbackPositions(
   fb: DrillFeedback<D6Answer>,
 ): { expected: Position[]; given: Position[] } {
   return { expected: prompt.targets, given: fb.result.correct ? [] : [fb.answer] };
-}
-
-export function d6ConceptOf(
-  item: Item,
-  ctx: Pick<DrillContext, 'tuning' | 'accidentalPref'>,
-): string | null {
-  const ref = tapRef(item);
-  if (!ref) return null;
-  return conceptFor(
-    ref.interval,
-    intervalShape(ref.interval, ref.from, ref.to, ctx.tuning).gbShift,
-  );
 }
 
 // --- Wording ----------------------------------------------------------------

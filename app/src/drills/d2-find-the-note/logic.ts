@@ -14,24 +14,11 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D2_SCOPES, type D2Scope } from './meta';
+
+export { D2_ID, D2_SCOPE, D2_SCOPES, d2CanTest, d2ConceptOf, type D2Scope } from './meta';
 
 /** D2 "Find the note" (design §6): name → position, the pure half of the drill. */
-
-export const D2_ID = 'find-the-note';
-
-/**
- * Adaptive scope (design §3.3 step 4, research/02 rule 5), narrowest first:
- *
- * - `string` (0): only the named string is live; the other strings are dimmed.
- * - `region` (1): every string is live within frets 0–12, so the learner must
- *   also pick out the right string. A tap on the wrong string is wrong.
- * - `neck` (2): the whole 15-fret neck is live, and the octave repeats above
- *   fret 12 also count.
- */
-export type D2Scope = 'string' | 'region' | 'neck';
-
-export const D2_SCOPES: readonly D2Scope[] = ['string', 'region', 'neck'];
-export const D2_SCOPE = { minLevel: 0, maxLevel: D2_SCOPES.length - 1 };
 
 const REGION: FretRange = { from: 0, to: 12 };
 const NECK: FretRange = { from: 0, to: 15 };
@@ -63,10 +50,6 @@ export type D2Answer = Position;
 export function d2ScopeFor(level: number): D2Scope {
   const i = Math.max(0, Math.min(D2_SCOPES.length - 1, Math.round(level)));
   return D2_SCOPES[i] as D2Scope;
-}
-
-export function d2CanTest(item: Item): boolean {
-  return parseFindItemId(item.id) !== null;
 }
 
 export function d2MakePrompt(item: Item, ctx: DrillContext): D2Prompt {
@@ -157,14 +140,6 @@ export function d2Explain(prompt: D2Prompt, fb: DrillFeedback<D2Answer>): string
   if (fb.result.correct) return where;
   const { string, fret } = fb.answer;
   return `You tapped ${pcAt(prompt, fb.answer)} (string ${string}, fret ${fret}). ${where}`;
-}
-
-export function d2ConceptOf(
-  item: Item,
-  ctx: Pick<DrillContext, 'tuning' | 'accidentalPref'>,
-): string | null {
-  const ref = parseFindItemId(item.id);
-  return ref ? chromaToPc(chromaOf(ref.pc), ctx.accidentalPref) : null;
 }
 
 /**

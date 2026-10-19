@@ -23,7 +23,10 @@ import {
 } from '../../theory';
 import type { SizeClass } from '../../shell/size-class';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
-import { isD8Kind, placements, templatesFor, type VoicingTemplate } from './voicings';
+import { D8_SCOPES, INTERVAL, d8CanTest, type D8Scope } from './meta';
+import { placements, templatesFor, type VoicingTemplate } from './voicings';
+
+export { D8_ID, D8_SCOPE, D8_SCOPES, d8CanTest, d8ConceptOf, type D8Scope } from './meta';
 
 /**
  * D8 "Find the chord tone in a shape" (design §6), the pure half of the
@@ -41,19 +44,6 @@ import { isD8Kind, placements, templatesFor, type VoicingTemplate } from './voic
  * `m7`, `M7`), so the interval seed pairs interleave them (rule 6).
  */
 
-export const D8_ID = 'chord-tone';
-
-/**
- * Adaptive scope (design §3.3 step 4, research/02 rule 5): `naturals` (0)
- * roots shapes on natural notes at their lowest position, which brings in
- * the open chords; `all-roots` (1) on any of the 12 pitch classes; `anywhere`
- * (2) at either octave of the neck as well.
- */
-export type D8Scope = 'naturals' | 'all-roots' | 'anywhere';
-
-export const D8_SCOPES: readonly D8Scope[] = ['naturals', 'all-roots', 'anywhere'];
-export const D8_SCOPE = { minLevel: 0, maxLevel: D8_SCOPES.length - 1 };
-
 /** The neck the iPad shows: every shape fits at every root within it. */
 export const D8_REGION: FretRange = { from: 0, to: 15 };
 
@@ -62,16 +52,6 @@ const DEGREE_ORDER: readonly ChordDegree[] = ['1', 'b3', '3', '5', 'b7', '7'];
 
 /** The degree each one is confused with. */
 const TWIN: Partial<Record<ChordDegree, ChordDegree>> = { '3': 'b3', b3: '3', '7': 'b7', b7: '7' };
-
-/** Intervals from the root, as the confusion matrix keys them (engine/confusions.ts). */
-const INTERVAL: Partial<Record<ChordDegree, string>> = {
-  '1': 'P1',
-  b3: 'm3',
-  '3': 'M3',
-  '5': 'P5',
-  b7: 'm7',
-  '7': 'M7',
-};
 
 export interface ToneNote extends Position {
   readonly degree: ChordDegree;
@@ -113,11 +93,6 @@ export type D8Answer = Position | ChordDegree;
 export function d8ScopeFor(level: number): D8Scope {
   const i = Math.max(0, Math.min(D8_SCOPES.length - 1, Math.round(level)));
   return D8_SCOPES[i] as D8Scope;
-}
-
-export function d8CanTest(item: Item): boolean {
-  const ref = parseChordToneItemId(item.id);
-  return ref !== null && isD8Kind(ref.chord) && ref.degree in INTERVAL;
 }
 
 /** Button and marker label: `R`, `♭3`, `3`, `5`, `♭7`, `7`. */
@@ -263,11 +238,6 @@ export function d8Check(prompt: D8Prompt, answer: D8Answer): DrillCheck {
 
 export function d8DescribeAnswer(answer: D8Answer): string {
   return typeof answer === 'string' ? answer : `s${answer.string}f${answer.fret}`;
-}
-
-export function d8ConceptOf(item: Item): string | null {
-  const ref = parseChordToneItemId(item.id);
-  return ref ? (INTERVAL[ref.degree] ?? null) : null;
 }
 
 /** The note sounded for the answer: the ringed note, or the nearest note of the asked degree. */
