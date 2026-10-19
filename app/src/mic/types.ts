@@ -116,8 +116,9 @@ export interface PitchSource {
 export interface PitchDriver {
   /**
    * Starts producing frames through `emit`; resolves once running. May reject
-   * with a `PitchSourceError`. Once running, it calls `fail` (reason `lost`)
-   * if the input goes away; the source then stops it and enters `error`.
+   * with a `PitchSourceError`. Once its graph is up, it calls `fail` (reason
+   * `lost`) if the input goes away; the source then stops it and enters
+   * `error`. A `fail` before the start settles makes that start reject.
    * `createPitchSource` calls it synchronously from
    * `PitchSource.start()` (so it runs inside the user gesture) and never calls
    * it again until the previous call has settled and, if it resolved, `stop()`

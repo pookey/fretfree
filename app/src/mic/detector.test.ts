@@ -230,6 +230,18 @@ describe('createWorkletPitchDriver', () => {
     expect(browser.contexts[0]?.onstatechange).toBeNull();
   });
 
+  it('fails the start when the track has already ended by the time it is wired', async () => {
+    const browser = fakeBrowser();
+    const track = { stop: vi.fn(), onended: null, readyState: 'ended' };
+    browser.behaviour.media = () =>
+      Promise.resolve({ id: 'dead', getTracks: () => [track] } as never);
+    const source = createPitchSource(driverFor(browser));
+    await expect(source.start()).rejects.toMatchObject({ reason: 'lost' });
+    expect(source.state).toBe('error');
+    expect(track.stop).toHaveBeenCalled();
+    expect(browser.contexts[0]?.close).toHaveBeenCalled();
+  });
+
   it('turns a lost input into an error state, ready to restart', async () => {
     const browser = fakeBrowser();
     const source = createPitchSource(driverFor(browser));

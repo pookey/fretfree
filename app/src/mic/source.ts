@@ -68,9 +68,17 @@ export function createPitchSource(
       frameListeners.forEach((l) => l(frame));
       dispatch(tracker.push(frame));
     };
-    // The input went away while running: release it and report the loss.
+    // The input went away. While running, release it and report the loss at
+    // once; while starting (the driver's graph is up but its start has not
+    // settled yet), report it when the start settles.
+    let lostWhileStarting: PitchSourceError | null = null;
     const fail = (err: PitchSourceError) => {
-      if (gen !== generation || state !== 'running') return;
+      if (gen !== generation) return;
+      if (state === 'starting') {
+        lostWhileStarting ??= err;
+        return;
+      }
+      if (state !== 'running') return;
       generation += 1;
       driver.stop();
       dispatch(tracker.flush());
@@ -89,7 +97,12 @@ export function createPitchSource(
         () => {
           // Cancelled meanwhile: release the device before any newer start runs.
           if (gen !== generation) driver.stop();
-          else setState('running');
+          else if (lostWhileStarting) {
+            driver.stop();
+            error = lostWhileStarting;
+            setState('error');
+            throw error;
+          } else setState('running');
         },
         (err: unknown) => {
           if (gen !== generation) return;

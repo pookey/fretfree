@@ -173,6 +173,10 @@ export function createWorkletPitchDriver(options: DetectorOptions = {}): PitchDr
           context.onstatechange = () => {
             if (context.state !== 'running') lost(`Audio is ${context.state}`);
           };
+          // A track that ended before the handlers were wired fires nothing.
+          if (stream.getTracks().some((track) => track.readyState === 'ended')) {
+            lost('The microphone was disconnected');
+          }
         } catch (err) {
           release(context, stream);
           throw err instanceof PitchSourceError

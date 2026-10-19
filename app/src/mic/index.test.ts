@@ -256,15 +256,16 @@ describe('createPitchSource', () => {
   function controllableDriver() {
     const calls: {
       emit: (f: PitchFrame) => void;
+      fail: (e: PitchSourceError) => void;
       resolve: () => void;
       reject: (e: unknown) => void;
     }[] = [];
     const log: string[] = [];
     const driver = {
-      start: vi.fn((emit: (f: PitchFrame) => void) => {
+      start: vi.fn((emit: (f: PitchFrame) => void, fail: (e: PitchSourceError) => void) => {
         log.push(`start${calls.length}`);
         return new Promise<void>((resolve, reject) => {
-          calls.push({ emit, resolve, reject });
+          calls.push({ emit, fail, resolve, reject });
         });
       }),
       stop: vi.fn(() => {
@@ -276,6 +277,7 @@ describe('createPitchSource', () => {
       driver,
       log,
       emit: (f: PitchFrame, i?: number) => call(i)?.emit(f),
+      fail: (e: PitchSourceError, i?: number) => call(i)?.fail(e),
       resolve: (i?: number) => call(i)?.resolve(),
       reject: (e: unknown, i?: number) => call(i)?.reject(e),
     };
@@ -447,6 +449,38 @@ describe('createPitchSource', () => {
     c.resolve();
     await r;
     expect(source.state).toBe('running');
+  });
+
+  it('fails a start whose input is lost before it settles, releasing the driver', async () => {
+    const c = controllableDriver();
+    const source = createPitchSource(c.driver);
+    const p = source.start();
+    c.fail(new PitchSourceError('lost', 'track ended'));
+    c.fail(new PitchSourceError('lost', 'later'));
+    expect(source.state).toBe('starting');
+    c.resolve();
+    await expect(p).rejects.toMatchObject({ reason: 'lost', message: 'track ended' });
+    expect(source.state).toBe('error');
+    expect(source.error?.reason).toBe('lost');
+    expect(c.driver.stop).toHaveBeenCalledTimes(1);
+
+    // A retry starts clean.
+    const q = source.start();
+    c.resolve();
+    await q;
+    expect(source.state).toBe('running');
+  });
+
+  it('ignores a loss reported by a start that was cancelled', async () => {
+    const c = controllableDriver();
+    const source = createPitchSource(c.driver);
+    const p = source.start();
+    source.stop();
+    c.fail(new PitchSourceError('lost'));
+    c.resolve();
+    await p;
+    expect(source.state).toBe('idle');
+    expect(source.error).toBeNull();
   });
 
   it('stops delivering to unsubscribed listeners', async () => {
