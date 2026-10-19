@@ -7,7 +7,9 @@ import {
   isChordKind,
   isIntervalName,
   keyLabel,
+  nameChord,
   nashvilleNumber,
+  parseChord,
   parseKey,
   parseNashville,
   parseRoman,
@@ -173,7 +175,8 @@ export type ItemRef =
   | { kind: 'build-chord'; chord: ChordKind; string: number }
   | { kind: CapoItemKind; shape: string }
   | { kind: NumeralItemKind; numeral: string; key: string }
-  | { kind: 'progression'; progression: string; task: ProgressionTask };
+  | { kind: 'progression'; progression: string; task: ProgressionTask }
+  | { kind: 'chord-tones'; root: string; chord: ChordKind; degree: ChordDegree | null };
 
 const INT = '(0|[1-9]\\d*)';
 const OFFSET = '([+-][1-9]\\d*)';
@@ -198,6 +201,7 @@ const BUILD_CHORD_ITEM = new RegExp(`^build-chord:([A-Za-z0-9]+)@s${INT}$`);
 const CAPO_ITEM = new RegExp(`^(capo-sound|capo-shape|capo-fret):${PC}(m?)$`);
 const NUMERAL_ITEM = /^(numeral|numeral-of|nashville):([^@\s]+)@key=([A-G][#b]?m?)$/;
 const PROGRESSION_ITEM = /^prog:([A-Za-z0-9-]+):(build|transpose)$/;
+const CHORD_TONES_ITEM = /^chord-tones:(?:(b{0,2}\d|#\d)@)?([A-G][#b]?[A-Za-z0-9]*)$/;
 
 function count(n: number, what: string): number {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Invalid ${what}: ${n}`);
@@ -582,6 +586,43 @@ export function parseProgressionItemId(
   return { progression: m[1] as string, task: m[2] as ProgressionTask };
 }
 
+/**
+ * `chord-tones:C`: tap every note of C major across the neck (D37, chord →
+ * positions). `chord-tones:3@C` taps every 3rd of C major, and
+ * `chord-tones:b7@Cm7` every ♭7 of Cm7. One card per chord: the chord's
+ * symbol is part of the ID, so "Quiz me on this" in Explore can find it.
+ */
+export function chordTonesItemId(
+  root: string,
+  chord: ChordKind,
+  degree: ChordDegree | null = null,
+): string {
+  if (!isChordKind(chord)) throw new RangeError(`Invalid chord kind: ${String(chord)}`);
+  if (degree !== null && !chordFormula(chord).includes(degree)) {
+    throw new RangeError(`${chord} has no degree ${String(degree)}`);
+  }
+  const symbol = nameChord(pitchClass(root), chord);
+  return degree === null ? `chord-tones:${symbol}` : `chord-tones:${degree}@${symbol}`;
+}
+
+export function parseChordTonesItemId(
+  id: string,
+): { root: string; chord: ChordKind; degree: ChordDegree | null } | null {
+  const m = CHORD_TONES_ITEM.exec(id);
+  if (!m) return null;
+  let parsed;
+  try {
+    parsed = parseChord(m[2] as string);
+  } catch {
+    return null;
+  }
+  // Canonical symbols only (`Cm7`, not `Cmin7`), so an ID round-trips.
+  if (nameChord(parsed.root, parsed.kind) !== m[2]) return null;
+  const degree = (m[1] ?? null) as ChordDegree | null;
+  if (degree !== null && !chordFormula(parsed.kind).includes(degree)) return null;
+  return { root: parsed.root, chord: parsed.kind, degree };
+}
+
 export function itemId(ref: ItemRef): string {
   switch (ref.kind) {
     case 'note':
@@ -632,6 +673,8 @@ export function itemId(ref: ItemRef): string {
       return numeralItemId(ref.kind, ref.numeral, ref.key);
     case 'progression':
       return progressionItemId(ref.progression, ref.task);
+    case 'chord-tones':
+      return chordTonesItemId(ref.root, ref.chord, ref.degree);
   }
 }
 
@@ -674,5 +717,7 @@ export function parseItemId(id: string): ItemRef | null {
   if (numeral) return numeral;
   const progression = parseProgressionItemId(id);
   if (progression) return { kind: 'progression', ...progression };
+  const chordTones = parseChordTonesItemId(id);
+  if (chordTones) return { kind: 'chord-tones', ...chordTones };
   return null;
 }
