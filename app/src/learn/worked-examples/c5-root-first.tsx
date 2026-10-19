@@ -93,7 +93,7 @@ export function rootFirstStep(
  */
 const example: WorkedExample = {
   id: 'c5-root-first',
-  for: ['C5.tones-roots', 'C5.tones-thirds', 'C5.triads'],
+  for: ['C5.tones-roots', 'C5.tones-thirds', 'C5.tones-fifths', 'C5.triads'],
   title: 'Find the root first',
   idea: 'The 3rd tells major from minor, but only counted from the root. Find the root first; it isn’t always the lowest note.',
   // One window for every shape, so where the neck starts says nothing about the root.

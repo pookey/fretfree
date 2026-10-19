@@ -66,6 +66,7 @@ describe('c5-root-first', () => {
   it('is the example for the triad skills, not for sus and add chords', () => {
     expect(exampleFor(getSkill('C5.tones-roots')!)?.id).toBe('c5-root-first');
     expect(exampleFor(getSkill('C5.tones-thirds')!)?.id).toBe('c5-root-first');
+    expect(exampleFor(getSkill('C5.tones-fifths')!)?.id).toBe('c5-root-first');
     expect(exampleFor(getSkill('C5.triads')!)?.id).toBe('c5-root-first');
     expect(exampleFor(getSkill('C5.sus-add')!)).toBeUndefined();
   });
