@@ -434,12 +434,14 @@ const cell = (string: number, fret: number) =>
   document.querySelector(`[data-cell="s${string}f${fret}"]`) as Element;
 
 describe('<View>', () => {
-  it('names the chord as notes are tapped, plays each, and lifts a note tapped again', () => {
+  it('names the chord as notes are tapped, plays each, and lifts a note tapped again', async () => {
     const play = vi.spyOn(audio, 'playNotes').mockResolvedValue();
     renderView();
     expect(screen.getByTestId('chord-name')).toHaveTextContent('Tap at least two notes');
     fireEvent.pointerDown(cell(5, 3));
-    expect(play).toHaveBeenLastCalledWith(['C3'], expect.objectContaining({ gap: 0 }));
+    await vi.waitFor(() =>
+      expect(play).toHaveBeenLastCalledWith(['C3'], expect.objectContaining({ gap: 0 })),
+    );
     fireEvent.pointerDown(cell(4, 2));
     fireEvent.pointerDown(cell(3, 0));
     expect(screen.getByTestId('chord-name')).toHaveTextContent('C (major)');
@@ -448,6 +450,8 @@ describe('<View>', () => {
     expect(screen.getAllByTestId('marker-root')).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'string 5, fret 3, C, picked' })).toBeInTheDocument();
 
+    // Let the three taps' sounds land before checking the lift is silent.
+    await vi.waitFor(() => expect(play).toHaveBeenCalledTimes(3));
     play.mockClear();
     fireEvent.pointerDown(cell(3, 0));
     expect(play).not.toHaveBeenCalled();
@@ -459,7 +463,7 @@ describe('<View>', () => {
     expect(screen.getByTestId('chord-notes')).toHaveTextContent('B 7');
   });
 
-  it('strums the tapped notes and clears them', () => {
+  it('strums the tapped notes and clears them', async () => {
     const play = vi.spyOn(audio, 'playNotes').mockResolvedValue();
     renderView();
     const strum = screen.getByRole('button', { name: 'Play' });
@@ -470,9 +474,11 @@ describe('<View>', () => {
     fireEvent.pointerDown(cell(2, 1));
     expect(screen.getByTestId('chord-name')).toHaveTextContent('Am');
     fireEvent.click(strum);
-    expect(play).toHaveBeenLastCalledWith(
-      ['A2', 'E3', 'A3', 'C4'],
-      expect.objectContaining({ gap: STRUM_GAP }),
+    await vi.waitFor(() =>
+      expect(play).toHaveBeenLastCalledWith(
+        ['A2', 'E3', 'A3', 'C4'],
+        expect.objectContaining({ gap: STRUM_GAP }),
+      ),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
     expect(document.querySelectorAll('[data-testid^="marker-"]')).toHaveLength(0);
@@ -520,13 +526,15 @@ describe('<View>', () => {
     expect(screen.queryByRole('list', { name: /^Voicings of / })).not.toBeInTheDocument();
   });
 
-  it('plays a voicing and puts it on the neck, where it is named', () => {
+  it('plays a voicing and puts it on the neck, where it is named', async () => {
     const play = vi.spyOn(audio, 'playNotes').mockResolvedValue();
     renderView();
     fireEvent.click(screen.getByRole('button', { name: 'Play C, frets 1–3' }));
-    expect(play).toHaveBeenLastCalledWith(
-      ['C3', 'E3', 'G3', 'C4', 'E4'],
-      expect.objectContaining({ gap: STRUM_GAP }),
+    await vi.waitFor(() =>
+      expect(play).toHaveBeenLastCalledWith(
+        ['C3', 'E3', 'G3', 'C4', 'E4'],
+        expect.objectContaining({ gap: STRUM_GAP }),
+      ),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Show C, frets 3–5, on the neck' }));
     expect(screen.getByTestId('chord-name')).toHaveTextContent('C');

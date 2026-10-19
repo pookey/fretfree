@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { Chord, Interval, Note } from 'tonal';
 import guitar from '@tombatossals/chords-db/lib/guitar.json';
 import { useAppStore } from '../../../app-store';
-import { playNotes } from '../../../audio/audio';
+import type { PlayOptions } from '../../../audio/audio';
 import {
   ChordDiagram,
   type ChordDiagramNote,
@@ -49,6 +49,16 @@ import own from './chord-finder.module.css';
 
 /** Seconds between strings when a chord is strummed. */
 export const STRUM_GAP = 0.06;
+
+/**
+ * The audio module, imported on demand: a static import from this lazy view
+ * splits the shared first-load code into extra chunks, costing about 3 KB of
+ * first-load JS (design §10). It is in the first-load graph anyway, so this
+ * fetches nothing.
+ */
+function playNotes(notes: readonly string[], opts: PlayOptions): Promise<void> {
+  return import('../../../audio/audio').then((audio) => audio.playNotes(notes, opts));
+}
 
 // ---------------------------------------------------------------------------
 // Naming tapped notes
