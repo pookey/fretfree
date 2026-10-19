@@ -212,7 +212,8 @@ describe('d10MakePrompt', () => {
         expect(places.size, id).toBeGreaterThanOrEqual(4);
       }
     }
-  });
+    // About 3,600 prompts: quick alone, but over 20 s under coverage in a loaded verify.
+  }, 90_000);
 
   it('keeps each note at its pitch in drop D', () => {
     const std = make('caged:E-shape@major', { rng: () => NAME });
