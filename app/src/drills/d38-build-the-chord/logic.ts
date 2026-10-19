@@ -225,7 +225,9 @@ export function d38Span(notes: readonly Position[]): number {
 /**
  * Fingers the voicing needs: one per fretted note, except that the notes on
  * the lowest fretted fret share a barre unless an open string rings between
- * them.
+ * them. A muted string under the barre doesn't break it, though a real barre
+ * would sound it (the player damps it): accepting more voicings is the safe
+ * side.
  */
 export function d38Fingers(notes: readonly Position[]): number {
   const fretted = notes.filter((n) => n.fret > 0);
@@ -244,6 +246,8 @@ export interface D38Verdict {
   missing: ChordTone[];
   /** Notes the chord doesn't have. */
   extras: VoicedNote[];
+  /** Placed notes pitched below the root (an open string under a fretted root). */
+  belowRoot: VoicedNote[];
   span: number;
   fingers: number;
   tooWide: boolean;
@@ -258,6 +262,8 @@ function verdictFor(t: Target, placed: readonly Position[]): D38Verdict {
     (tone) => tone.required && !have.has(tone.degree),
   );
   const extras = notes.filter((n) => !n.inChord);
+  const root = midiAt(t.anchor, t.tuning);
+  const belowRoot = notes.filter((n) => midiAt(n, t.tuning) < root);
   const span = d38Span(notes);
   const fingers = d38Fingers(notes);
   const { maxSpan, maxFingers } = ENGINE_CONFIG.buildChord;
@@ -267,11 +273,17 @@ function verdictFor(t: Target, placed: readonly Position[]): D38Verdict {
     notes,
     missing,
     extras,
+    belowRoot,
     span,
     fingers,
     tooWide,
     tooManyFingers,
-    correct: missing.length === 0 && extras.length === 0 && !tooWide && !tooManyFingers,
+    correct:
+      missing.length === 0 &&
+      extras.length === 0 &&
+      belowRoot.length === 0 &&
+      !tooWide &&
+      !tooManyFingers,
   };
 }
 
@@ -308,7 +320,8 @@ export function d38Voicings(
   const options = strings.map((string) =>
     frets
       .map((fret) => ({ string, fret, semis: semitones(t, { string, fret }) }))
-      .filter((p) => tones.has(p.semis)),
+      // Root position: nothing below the root (an open string under a fretted one).
+      .filter((p) => tones.has(p.semis) && midiAt(p, t.tuning) >= midiAt(t.anchor, t.tuning)),
   );
   const out: Position[][] = [];
   const chosen: (Position & { semis: number })[] = [];
@@ -338,20 +351,22 @@ export function d38Voicings(
 }
 
 /**
- * Lower is better: strings ringing in a row from the root, then more notes,
- * then notes close to the root, then fewer fingers. An open string is close
- * while the root is near the nut, and as far as the root's fret beyond it,
- * so the example up the neck is a barre-style voicing, not one with a stray
- * open string.
+ * Lower is better: no open string far from the hand, then strings ringing in
+ * a row from the root, then more notes, then notes close to the root, then
+ * fewer fingers. An open string is close while the root is near the nut, and
+ * as far as the root's fret beyond it, so the example up the neck is a
+ * barre-style voicing, not one filled out with stray open strings (which a
+ * 12-fret window round a high root wouldn't show).
  */
 function cost(anchor: Position, strings: readonly number[], v: readonly Position[]): number[] {
   const on = new Set(v.map((p) => p.string));
   const run = strings.findIndex((s) => !on.has(s));
   const gaps = run < 0 ? 0 : strings.slice(run).filter((s) => on.has(s)).length;
   const nearNut = anchor.fret < ENGINE_CONFIG.buildChord.maxSpan;
+  const farOpen = nearNut ? 0 : v.filter((p) => p.fret === 0).length;
   const away = (p: Position) => (p.fret === 0 && nearNut ? 0 : Math.abs(p.fret - anchor.fret));
   const reach = v.reduce((sum, p) => sum + away(p), 0);
-  return [gaps, -v.length, reach, d38Fingers([anchor, ...v]), d38Span([anchor, ...v])];
+  return [farOpen, gaps, -v.length, reach, d38Fingers([anchor, ...v]), d38Span([anchor, ...v])];
 }
 
 function compare(a: readonly number[], b: readonly number[]): number {
@@ -523,11 +538,14 @@ export function d38DescribeAnswer(taps: D38Answer): string {
 }
 
 /**
- * Time per string decided, so a five-string voicing meets the usual speed
- * targets (design §3.2), as D9 grades per note.
+ * Time per note placed, so a five-string voicing meets the usual speed
+ * targets (design §3.2), as D9 grades per note. Strings left muted count
+ * for all but one, so a sparse voicing isn't graded as if each note took
+ * the time of the whole build.
  */
-export function d38GradedResponseMs(prompt: D38Prompt, _taps: D38Answer, elapsedMs: number) {
-  return elapsedMs / Math.max(1, prompt.strings.length);
+export function d38GradedResponseMs(prompt: D38Prompt, taps: D38Answer, elapsedMs: number) {
+  const placed = d38Placed(prompt, taps).length;
+  return elapsedMs / Math.max(1, placed, prompt.strings.length - 1);
 }
 
 function pitches(prompt: D38Prompt, notes: readonly Position[]): string[] {
@@ -551,8 +569,12 @@ export function d38FeedbackPositions(
   prompt: D38Prompt,
   fb: DrillFeedback<D38Answer>,
 ): { expected: Position[]; given: Position[] } {
-  const extras = d38Verdict(prompt, fb.answer).extras.map(({ string, fret }) => ({ string, fret }));
-  return { expected: [prompt.anchor, ...d38Example(prompt, fb.answer)], given: extras };
+  const v = d38Verdict(prompt, fb.answer);
+  const given = [...v.extras, ...v.belowRoot.filter((n) => n.inChord)].map(({ string, fret }) => ({
+    string,
+    fret,
+  }));
+  return { expected: [prompt.anchor, ...d38Example(prompt, fb.answer)], given };
 }
 
 // --- Text ------------------------------------------------------------------
@@ -611,6 +633,12 @@ export function d38Explain(prompt: D38Prompt, fb: DrillFeedback<D38Answer>): str
     for (const n of v.extras) {
       lines.push(
         `${d38Display(n.name)} on string ${n.string} is ${d38DegreeName(n.degree)}: not in ${chord}.`,
+      );
+    }
+    for (const n of v.belowRoot) {
+      const open = n.fret === 0 ? 'Open ' : '';
+      lines.push(
+        `${open}${d38Display(n.name)} on string ${n.string} is below the root: the root must be the lowest note.`,
       );
     }
     if (v.tooWide) lines.push(`It spans ${v.span} frets: keep it within ${prompt.maxSpan}.`);
@@ -676,12 +704,16 @@ export function d38Window(
   };
 }
 
-/** iPad portrait's 12-fret neck: frets 0–12, slid up just far enough for any voicing. */
-export function d38RegularWindow(prompt: D38Prompt): FretRange {
+/**
+ * iPad portrait's 12-fret neck: frets 0–12, slid up just far enough for any
+ * voicing. Like the compact window, it widens to cover `shown`.
+ */
+export function d38RegularWindow(prompt: D38Prompt, shown: readonly Position[] = []): FretRange {
   const bounds = prompt.activeRange;
   const top = Math.min(
     bounds.to,
     Math.max(bounds.from + D38_REGULAR_SPAN, prompt.anchor.fret + reach(prompt)),
   );
-  return { from: top - D38_REGULAR_SPAN, to: top };
+  const frets = shown.map((p) => p.fret);
+  return { from: Math.min(top - D38_REGULAR_SPAN, ...frets), to: Math.max(top, ...frets) };
 }

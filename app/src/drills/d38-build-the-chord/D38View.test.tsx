@@ -122,6 +122,20 @@ describe('<D38View>', () => {
     expect(screen.getByTestId('d38-notice')).toHaveTextContent(
       'String 6 stays muted: the root is the lowest note.',
     );
+    tap(5, 3);
+    expect(screen.getByTestId('d38-notice')).toHaveTextContent('String 5 plays the root, A.');
+    expect(markers('tone')).toEqual([]);
+  });
+
+  it('marks a note below the root as wrong in feedback', () => {
+    const p = prompt('7', 'B', 6, 7);
+    const answer = [at(5, 0), at(4, 7), at(3, 8)];
+    view(p, { feedback: fb(p, answer) });
+    expect(markers('wrong')).toEqual([{ string: 5, fret: 0, label: '♭7' }]);
+    expect(slots()[1]).toBe('String 5: fret 0, flat 7th, below the root');
+    expect(screen.getByTestId('d38-explain')).toHaveTextContent(
+      'Open A on string 5 is below the root: the root must be the lowest note.',
+    );
   });
 
   it('clears the voicing', () => {

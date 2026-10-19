@@ -184,6 +184,45 @@ describe('d38MakePrompt', () => {
     }
   });
 
+  it('keeps every root position in root position, with its example on screen', () => {
+    // Every root fret of every item (the whole 'anywhere' scope): the
+    // example never sounds below the root (rule 8: the worked example), and
+    // fits iPad portrait's 12-fret window without widening.
+    let count = 0;
+    for (const it of all) {
+      const ref = parseBuildChordItemId(it.id)!;
+      const p0 = d38MakePrompt(it, ctx());
+      for (let fret = 0; fret <= 15; fret++) {
+        const anchor = { string: ref.string, fret };
+        const root = noteAt(anchor, STANDARD_TUNING).pc;
+        let p: D38Prompt;
+        try {
+          p = d38PromptAt(it.id, p0.kind, root, anchor, 'anywhere', STANDARD_TUNING, 'sharp');
+        } catch {
+          continue; // no root-position voicing here: d38MakePrompt never offers it
+        }
+        count++;
+        const low = midiAt(p.anchor);
+        for (const n of p.example)
+          expect(midiAt(n), `${p.chord}@f${fret}`).toBeGreaterThanOrEqual(low);
+        const w = d38RegularWindow(p);
+        for (const n of p.example) {
+          expect(n.fret, `${p.chord}@f${fret}`).toBeGreaterThanOrEqual(w.from);
+          expect(n.fret).toBeLessThanOrEqual(w.to);
+        }
+      }
+    }
+    expect(count).toBeGreaterThan(300);
+  }, 60_000);
+
+  it('offers no root fret without a root-position voicing', () => {
+    for (let i = 0; i < 24; i++) {
+      const p = d38MakePrompt(item('minor', 6), ctx({ scopeLevel: 2, rng: () => i / 24 }));
+      const low = midiAt(p.anchor);
+      expect(p.example.every((n) => midiAt(n) >= low)).toBe(true);
+    }
+  });
+
   it('roots on natural notes at their lowest fret at scope 0', () => {
     for (const r of [0, 0.2, 0.4, 0.6, 0.8, 0.99]) {
       const p = d38MakePrompt(item('major', 5), ctx({ rng: () => r }));
@@ -280,6 +319,24 @@ describe('voicing validation', () => {
     const f = at('major', 'F', 6, 1);
     const v = d38Verdict(f, tab(f, '1 x 3 2 1 5'));
     expect(v).toMatchObject({ span: 5, tooWide: true, correct: false });
+  });
+
+  it('rejects a note below the root: an open string under a fretted root', () => {
+    // B7 from string 6, fret 7 with the open A: B7/A, an inversion.
+    const b7 = at('7', 'B', 6, 7);
+    const v = d38Verdict(b7, tab(b7, '7 0 7 8 x x'));
+    expect(v.correct).toBe(false);
+    expect(v.belowRoot).toEqual([expect.objectContaining({ string: 5, fret: 0, degree: 'b7' })]);
+    expect(d38Explain(b7, fb(b7, tab(b7, '7 0 7 8 x x')))).toContain(
+      'Open A on string 5 is below the root: the root must be the lowest note.',
+    );
+    expect(d38FeedbackPositions(b7, fb(b7, tab(b7, '7 0 7 8 x x'))).given).toEqual([
+      { string: 5, fret: 0 },
+    ]);
+    // E7 from string 5, fret 7 with the open D.
+    const e7 = at('7', 'E', 5, 7);
+    expect(d38Verdict(e7, tab(e7, 'x 7 0 7 9 x')).belowRoot).toHaveLength(1);
+    expect(d38Check(e7, tab(e7, 'x 7 0 7 9 x')).correct).toBe(false);
   });
 
   it('rejects a voicing that needs more fingers than a hand has', () => {
@@ -427,7 +484,10 @@ describe('feedback', () => {
   it('logs, grades and keys the answer', () => {
     expect(d38DescribeAnswer(tab(am7, 'x02010'))).toBe('s4f2 s3f0 s2f1 s1f0');
     expect(d38DescribeAnswer([])).toBe('none');
-    expect(d38GradedResponseMs(am7, [], 8000)).toBe(2000);
+    // Per note placed, with strings left muted counting for all but one.
+    expect(d38GradedResponseMs(am7, tab(am7, 'x02010'), 8000)).toBe(2000);
+    expect(d38GradedResponseMs(am7, tab(am7, 'x0x01x'), 6000)).toBe(2000);
+    expect(d38GradedResponseMs(am7, [], 6000)).toBe(2000);
     expect(d38ConceptOf(item('major', 5))).toBe('triad:maj');
     expect(d38ConceptOf(item('minor', 5))).toBe('triad:min');
     expect(d38ConceptOf({ id: 'note@s6f0', skillId: 'x' })).toBeNull();
@@ -481,8 +541,12 @@ describe('windows', () => {
     expect(d38Window(at('m7', 'D', 5, 5), 5, [{ string: 1, fret: 0 }])).toEqual({ from: 0, to: 8 });
   });
 
-  it('slides the 12-fret neck up for a high root', () => {
+  it('slides the 12-fret neck up for a high root, widening for notes it must draw', () => {
     expect(d38RegularWindow(at('m7', 'A', 5, 0))).toEqual({ from: 0, to: 12 });
     expect(d38RegularWindow(at('m7', 'A', 5, 12))).toEqual({ from: 3, to: 15 });
+    expect(d38RegularWindow(at('m7', 'A', 5, 12), [{ string: 1, fret: 0 }])).toEqual({
+      from: 0,
+      to: 15,
+    });
   });
 });

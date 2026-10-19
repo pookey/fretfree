@@ -75,7 +75,7 @@ export function D38View({
   else if (guided) shown = prompt.example;
   let visible: FretRange;
   if (compact) visible = d38Window(prompt, compactFrets, shown);
-  else visible = sizeClass === 'regular-wide' ? WIDE : d38RegularWindow(prompt);
+  else visible = sizeClass === 'regular-wide' ? WIDE : d38RegularWindow(prompt, shown);
 
   const root = d38Display(prompt.root);
   const chord = d38Display(prompt.chord);
@@ -83,10 +83,12 @@ export function D38View({
   const tap = (pos: Position) => {
     if (feedback) return;
     if (!d38IsLive(prompt, pos)) {
-      const below = pos.string >= prompt.anchor.string;
-      const notice = below
-        ? `String ${pos.string} stays muted: the root is the lowest note.`
-        : `Fret ${pos.fret} is out of reach.`;
+      let notice = `Fret ${pos.fret} is out of reach.`;
+      if (pos.string === prompt.anchor.string) {
+        notice = `String ${pos.string} plays the root, ${root}.`;
+      } else if (pos.string > prompt.anchor.string) {
+        notice = `String ${pos.string} stays muted: the root is the lowest note.`;
+      }
       setState({ ...view, notice });
       return;
     }
@@ -117,7 +119,8 @@ export function D38View({
     const verdict = d38Verdict(prompt, feedback.answer);
     markers.push({ ...prompt.anchor, style: 'root', label: root, forceLabel: true });
     for (const n of verdict.notes.slice(1)) {
-      markers.push(byDegree(n, n.inChord ? d38DegreeStyle(n.degree) : 'wrong'));
+      const below = verdict.belowRoot.some((b) => samePosition(b, n));
+      markers.push(byDegree(n, n.inChord && !below ? d38DegreeStyle(n.degree) : 'wrong'));
     }
     if (!feedback.result.correct) {
       // The notes of a voicing that works that the learner didn't play.
@@ -264,11 +267,12 @@ function Readout({
         const note = all.find((p) => p.string === s);
         const degree = verdict?.notes.find((n) => n.string === s);
         const isRoot = s === prompt.anchor.string;
-        const status = !degree ? undefined : degree.inChord ? 'in' : 'out';
+        const below = verdict?.belowRoot.some((b) => b.string === s) ?? false;
+        const status = !degree ? undefined : degree.inChord && !below ? 'in' : 'out';
         const spoken = note
           ? `String ${s}: fret ${note.fret}${isRoot ? ', the root' : ''}${
               degree && !isRoot ? `, ${d38DegreeSpoken(degree.degree)}` : ''
-            }${status === 'out' ? ', not in the chord' : ''}`
+            }${below ? ', below the root' : status === 'out' ? ', not in the chord' : ''}`
           : `String ${s}: muted`;
         return (
           <li
