@@ -2,6 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { generatorParameters, type Grade } from 'ts-fsrs';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useAppStore } from '../app-store';
+import { lazyView, resolveView } from '../drills/lazy-view';
 import { getDrill, preloadDrill } from '../drills/registry';
 import {
   DEFAULT_SETTINGS,
@@ -41,6 +42,7 @@ const NOW = new Date('2026-10-18T09:00:00Z');
 
 function renderTest({
   scheduler = createScheduler({ enableFuzz: false }) as Scheduler | null,
+  drills = DRILLS,
 } = {}) {
   return render(
     <PlacementTest
@@ -49,7 +51,7 @@ function renderTest({
       clock={() => NOW}
       rng={() => 0.5}
       skills={SKILLS}
-      drills={DRILLS}
+      drills={drills}
       db={db}
       scheduler={scheduler ?? undefined}
     />,
@@ -112,6 +114,29 @@ describe('PlacementTest', () => {
       guideLevel: 1,
     });
     expect(await db.reviewLogs.count()).toBe(3);
+  });
+
+  it('waits for a drill view still downloading, keeping it out of the response time', async () => {
+    // A first launch before the precache has the views chunk.
+    const d1 = DRILLS[0]!;
+    const D1View = await resolveView(d1.render);
+    let arrive!: () => void;
+    const slow = {
+      ...d1,
+      render: lazyView(() => new Promise<typeof D1View>((r) => (arrive = () => r(D1View)))),
+    };
+    renderTest({ drills: [slow] });
+    fireEvent.click(screen.getByRole('button', { name: 'Start the test' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    t = 10_000; // a slow download, which must not count against the answer
+    arrive();
+    expect(await screen.findByRole('dialog', { name: 'Placement test' })).toBeInTheDocument();
+    await answerRight();
+    await answerRight();
+    choose(probeNote());
+    expect(await screen.findByTestId('placement-result')).toHaveTextContent(
+      /You already know this/,
+    );
   });
 
   it('counts a slow answer as not yet known', async () => {
@@ -212,7 +237,8 @@ describe('the placement onboarding step', () => {
     const onNext = vi.fn();
     render(<step.Step onNext={onNext} />);
     fireEvent.click(screen.getByRole('button', { name: 'Start the test' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Finish now' }));
+    // The first probe waits for the drill views to download.
+    fireEvent.click(await screen.findByRole('button', { name: 'Finish now' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Continue' }));
     expect(onNext).toHaveBeenCalledOnce();
   });

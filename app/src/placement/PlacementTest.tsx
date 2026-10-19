@@ -11,7 +11,8 @@ import {
 import { createPortal } from 'react-dom';
 import { useAppStore } from '../app-store';
 import { playNotes } from '../audio/audio';
-import { DRILLS, preloadDrill } from '../drills/registry';
+import { DrillLoadFailed } from '../drills/DrillLoadFailed';
+import { DRILLS, drillReady, preloadDrill } from '../drills/registry';
 import type { AnyDrillType, DrillFeedback } from '../drills/types';
 import { ENGINE_CONFIG } from '../engine/config';
 import { gradeAnswer, speedTargets } from '../engine/grading';
@@ -197,8 +198,16 @@ export function PlacementTest({
       scopeLevel: drill.scope.minLevel,
       rng,
     });
-    setPhase({ kind: 'probe', shown: { probe, drill, prompt } });
-    shownAt.current = now();
+    const show = () => {
+      setPhase({ kind: 'probe', shown: { probe, drill, prompt } });
+      shownAt.current = now();
+    };
+    if (drillReady(drill)) return show();
+    // The views haven't downloaded yet (a first launch before the precache
+    // has them): wait, so the download stays out of the probe's response time.
+    void preloadDrill(drill)
+      .catch(() => undefined)
+      .then(() => state.current === s && show());
   };
 
   const begin = (groups: readonly GroupInput[]) => {
@@ -301,21 +310,27 @@ export function PlacementTest({
           data-testid="placement-probe"
           data-item={shown.probe.item.id}
         >
-          <Suspense fallback={<p role="status">Loading {shown.drill.title}…</p>}>
-            <Drill
-              key={`${shown.probe.group.id}:${shown.probe.item.id}`}
-              prompt={shown.prompt}
-              guideLevel={PROBE_GUIDE_LEVEL}
-              guided={false}
-              handedness={settings.handedness}
-              sizeClass={sizeClass}
-              compactFrets={compactFrets}
-              tuning={tuning}
-              feedback={feedback}
-              onAnswer={onAnswer}
-              blindMode={settings.blindMode}
-            />
-          </Suspense>
+          <DrillLoadFailed
+            key={shown.drill.id}
+            title={shown.drill.title}
+            buttonClassName={onboarding.primary}
+          >
+            <Suspense fallback={<p role="status">Loading {shown.drill.title}…</p>}>
+              <Drill
+                key={`${shown.probe.group.id}:${shown.probe.item.id}`}
+                prompt={shown.prompt}
+                guideLevel={PROBE_GUIDE_LEVEL}
+                guided={false}
+                handedness={settings.handedness}
+                sizeClass={sizeClass}
+                compactFrets={compactFrets}
+                tuning={tuning}
+                feedback={feedback}
+                onAnswer={onAnswer}
+                blindMode={settings.blindMode}
+              />
+            </Suspense>
+          </DrillLoadFailed>
           <div className={styles.feedbackBar} aria-live="polite">
             {!feedback && (
               <button type="button" className={styles.secondary} onClick={notSure}>

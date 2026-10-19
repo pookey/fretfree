@@ -48,7 +48,8 @@ describe('<RetakeScreen>', () => {
   it('runs the same test, then points to Learn', async () => {
     renderScreen();
     fireEvent.click(screen.getByRole('button', { name: 'Start the test' }));
-    expect(screen.getByRole('dialog', { name: 'Placement test' })).toBeInTheDocument();
+    // The first probe waits for the drill views to download.
+    expect(await screen.findByRole('dialog', { name: 'Placement test' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Finish now' }));
     expect(await screen.findByTestId('placement-result')).toHaveTextContent(/Nothing to skip/);
     expect(screen.getByRole('link', { name: 'See your skills in Learn' })).toHaveAttribute(
