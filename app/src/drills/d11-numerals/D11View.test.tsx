@@ -69,11 +69,16 @@ describe('<D11View>', () => {
     const { onAnswer } = renderView(prompt('numeral-of:vii°@key=Bb', 2));
     expect(screen.getByTestId('d11-cue')).toHaveAccessibleName('A diminished');
     expect(screen.getByTestId('d11-cue')).toHaveTextContent('Adim');
-    const shown = choices().map((b) => b.textContent);
-    expect(shown).toHaveLength(8);
-    expect(shown).toContain('vii');
-    // vii° brings a diminished decoy, so ° alone doesn't name it.
-    expect(shown.filter((c) => c?.endsWith('°'))).toHaveLength(2);
+    // The key's own numerals only: no twin to throw out by the pattern.
+    expect(choices().map((b) => b.textContent)).toEqual([
+      'I',
+      'ii',
+      'iii',
+      'IV',
+      'V',
+      'vi',
+      'vii°',
+    ]);
     fireEvent.click(screen.getByRole('button', { name: '7 diminished' }));
     expect(onAnswer).toHaveBeenCalledWith('vii°');
   });

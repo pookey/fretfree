@@ -32,15 +32,24 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * - `numeral-of:vi@key=D`: "Bm in D major?", answered with a numeral (vi);
  * - `nashville:6m@key=D`: "6m in D major?", answered with a chord (Bm).
  *
- * The choices come in quality pairs, one root (or degree) each: the answer
- * with its twin (Bm beside B, vi beside VI), a neighbouring degree, since
- * counting off by one is the common slip, then other degrees of the key.
- * Major vs minor is the confusion research/02 rule 6 names, and every root
- * shows up twice, so the choices' shape never points at the answer: only
- * knowing the key does (rule 1). A diminished answer brings a diminished
- * decoy on another root, so ° alone doesn't give it away. A wrong degree is
- * logged against the numeral it really is (`numeral:<roman>`), so the
- * session interleaves the pair.
+ * Neither the choices' shape nor the quality pattern may point at the
+ * answer: only knowing the key does (rule 1).
+ *
+ * - A chord answer's choices come in quality pairs, one root each: the
+ *   answer with its twin (Bm beside B), a neighbouring degree, since
+ *   counting off by one is the common slip, then other degrees of the key.
+ *   Major vs minor is the confusion research/02 rule 6 names, and every root
+ *   shows up twice. A diminished answer brings a diminished decoy on another
+ *   root, so ° alone doesn't give it away.
+ * - A numeral answer's choices are the key's own numerals, one per degree.
+ *   The chord on screen already shows its quality, so a twin (VI beside vi)
+ *   would be thrown out by anyone who knows the pattern I ii iii IV V vi
+ *   vii°. Instead the other numerals of the answer's quality come first,
+ *   then the neighbour, so the pattern narrows a card to one in three at
+ *   best. vii° is the only diminished numeral: naming it is the fact taught.
+ *
+ * A wrong degree is logged against the numeral it really is
+ * (`numeral:<roman>`), so the session interleaves the pair.
  *
  * Minor keys (for I4) are read too. Their numerals count from the major
  * scale on the same tonic (i ii° ♭III iv v ♭VI ♭VII, `theory/harmony`), and
@@ -56,6 +65,9 @@ export type D11Ask = 'chord' | 'numeral';
 
 /** How many choices each adaptive-scope level offers (research/02 rule 5: distractors). */
 export const D11_CHOICES: readonly number[] = [4, 6, 8];
+
+/** Numeral answers offer at most the key's seven numerals. */
+const MAX_NUMERAL_CHOICES = 7;
 
 export const D11_SCOPE = { minLevel: 0, maxLevel: D11_CHOICES.length - 1 };
 
@@ -147,13 +159,9 @@ function pairOf(diminished: boolean): ChordQuality[] {
 }
 
 /**
- * The choices, in quality pairs (see above): the answer's root, a
- * neighbouring degree, then other degrees at random, one pair per root up to
- * the level's count. A diminished answer's neighbour is offered as a
- * diminished pair too; for any other answer the neighbour is never the
- * diminished chord, so the answer's quality is always offered twice. Chords
- * read in letter order (C to B), not scale order, so a choice's place never
- * gives its degree away; numerals read I to vii.
+ * The choices (see above), up to the level's count. Chords read in letter
+ * order (C to B), not scale order, so a choice's place never gives its
+ * degree away; numerals read I to vii.
  */
 export function d11Choices(
   key: MusicalKey,
@@ -163,27 +171,54 @@ export function d11Choices(
   rng: () => number,
 ): string[] {
   const i = Math.max(D11_SCOPE.minLevel, Math.min(D11_SCOPE.maxLevel, Math.round(level)));
-  const pairs = (D11_CHOICES[i] as number) / 2;
-  const dim = target.quality === 'diminished';
+  const count = D11_CHOICES[i] as number;
   const others = shuffle(
     diatonicChords(key).filter((c) => c.degree !== target.degree),
     rng,
   );
+  const picked =
+    ask === 'chord'
+      ? chordPairs(target, others, count)
+      : numeralChoices(target, others, Math.min(count, MAX_NUMERAL_CHOICES));
+  const rank = ask === 'chord' ? chordRank : numeralRank;
+  return picked.sort((a, b) => rank(a) - rank(b));
+}
+
+/**
+ * Chord answers: one quality pair per root, the answer's first, then a
+ * neighbour's, then others'. A diminished answer's neighbour is offered as a
+ * diminished pair too; for any other answer the neighbour is never the
+ * diminished chord, so the answer's quality is always offered twice.
+ */
+function chordPairs(target: DiatonicChord, others: DiatonicChord[], count: number): string[] {
+  const dim = target.quality === 'diminished';
   const neighbour = others.find(
     (c) => degreeGap(c.degree, target.degree) === 1 && (dim || c.quality !== 'diminished'),
   ) as DiatonicChord;
-  const roots = [
+  return [
     { chord: target, diminished: dim },
     { chord: neighbour, diminished: dim },
     ...others
       .filter((c) => c !== neighbour)
       .map((c) => ({ chord: c, diminished: c.quality === 'diminished' })),
-  ].slice(0, pairs);
-  const picked = roots.flatMap(({ chord, diminished }) =>
-    pairOf(diminished).map((q) => valueOf(chord, ask, q)),
+  ]
+    .slice(0, count / 2)
+    .flatMap(({ chord, diminished }) => pairOf(diminished).map((q) => valueOf(chord, 'chord', q)));
+}
+
+/**
+ * Numeral answers: the key's own numerals, the answer's quality first (ii,
+ * iii and vi for a minor chord), then a neighbour, then the rest.
+ */
+function numeralChoices(target: DiatonicChord, others: DiatonicChord[], count: number): string[] {
+  const same = others.filter((c) => c.quality === target.quality);
+  const neighbour = others.find(
+    (c) => degreeGap(c.degree, target.degree) === 1 && !same.includes(c),
   );
-  const rank = ask === 'chord' ? chordRank : numeralRank;
-  return picked.sort((a, b) => rank(a) - rank(b));
+  const rest = others.filter((c) => !same.includes(c) && c !== neighbour);
+  return [target, ...same, ...(neighbour ? [neighbour] : []), ...rest]
+    .slice(0, count)
+    .map((c) => valueOf(c, 'numeral'));
 }
 
 export function d11MakePrompt(item: Item, ctx: DrillContext): D11Prompt {

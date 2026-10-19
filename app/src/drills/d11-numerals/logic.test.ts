@@ -36,6 +36,7 @@ import {
 } from './logic';
 import {
   diatonicChord,
+  diatonicChords,
   keyName,
   majorKey,
   minorKey,
@@ -154,18 +155,27 @@ describe('d11MakePrompt', () => {
     );
   });
 
-  it('reads numeral choices I to vii, in case pairs', () => {
-    const p = prompt('numeral-of:vi@key=D', 1);
-    expect(p.choices).toHaveLength(6);
-    expect(p.choices).toContain('vi');
-    expect(p.choices).toContain('VI');
-    expect(p.choices).toContain('V');
-    expect(p.choices).toContain('v');
-    const degrees = p.choices.map((c) => parseRoman(c)!.degree);
-    expect(degrees).toEqual([...degrees].sort((a, b) => a - b));
+  it('reads numeral choices from the key’s own numerals, its quality first', () => {
+    for (let seed = 1; seed < 10; seed++) {
+      const p = prompt('numeral-of:vi@key=D', 0, lcg(seed));
+      // vi with the other minor numerals, then its non-minor neighbour.
+      expect(p.choices).toEqual(
+        p.choices.includes('V') ? ['ii', 'iii', 'V', 'vi'] : ['ii', 'iii', 'vi', 'vii°'],
+      );
+    }
+    expect(prompt('numeral-of:IV@key=D', 1).choices).toHaveLength(6);
+    expect(prompt('numeral-of:IV@key=D', 2).choices).toEqual([
+      'I',
+      'ii',
+      'iii',
+      'IV',
+      'V',
+      'vi',
+      'vii°',
+    ]);
   });
 
-  it('gives vii° a diminished decoy on its neighbour', () => {
+  it('gives vii° a diminished decoy on its neighbour when the answer is a chord', () => {
     for (let seed = 1; seed < 10; seed++) {
       const c = prompt('numeral:vii°@key=C', 0, lcg(seed)).choices;
       expect(c.filter((x) => x.endsWith('dim'))).toHaveLength(2);
@@ -174,18 +184,18 @@ describe('d11MakePrompt', () => {
       expect(c.includes('Adim') ? ['Am', 'Adim'] : ['Cm', 'Cdim']).toEqual(
         c.filter((x) => !x.startsWith('B')),
       );
+      // As a numeral, vii° is the key's one diminished numeral: that's the fact.
       const n = prompt('numeral-of:vii°@key=C', 0, lcg(seed)).choices;
-      expect(n.filter((x) => x.endsWith('°'))).toHaveLength(2);
+      expect(n.filter((x) => x.endsWith('°'))).toEqual(['vii°']);
     }
   });
 
   it('numbers minor keys from the parallel major, never offering III, VI or VII', () => {
     const p = prompt('numeral-of:bIII@key=Am', 2);
     expect(p.answer).toBe('bIII');
-    expect(p.choices).toContain('bIII');
-    expect(p.choices).toContain('biii');
+    expect(p.choices).toEqual(['i', 'ii°', 'bIII', 'iv', 'v', 'bVI', 'bVII']);
     for (let seed = 1; seed < 20; seed++) {
-      for (const id of ['numeral-of:bVI@key=Em', 'numeral-of:bVII@key=Dm']) {
+      for (const id of ['numeral-of:bVI@key=Em', 'numeral-of:bVII@key=Dm', 'numeral:bVI@key=Em']) {
         const choices = prompt(id, 2, lcg(seed)).choices;
         expect(choices.filter((c) => /^(III|VI|VII|iii|vi|vii)/.test(c))).toEqual([]);
       }
@@ -203,46 +213,62 @@ describe('d11Choices', () => {
   const MINORS = ['A', 'E', 'B', 'F#', 'C#', 'G#', 'D', 'G', 'C', 'F', 'Bb', 'Eb'];
   const keys = [...MAJORS.map((t) => majorKey(t)), ...MINORS.map((t) => minorKey(t))];
 
-  /** A choice's root (chord) or degree (numeral), and its quality. */
-  function parts(value: string, ask: 'chord' | 'numeral') {
-    if (ask === 'chord') {
-      const c = parseChordSymbol(value);
-      return { root: c.root, quality: c.quality };
-    }
-    const n = parseRoman(value)!;
-    return { root: `${n.alteration}:${n.degree}`, quality: n.quality };
-  }
-
-  it('never gives the answer away by the choices’ shape (rule 1)', () => {
+  /** Every key × degree × level × seed, with its choices. */
+  function* cases(ask: 'chord' | 'numeral') {
     for (const key of keys) {
       for (let degree = 1; degree <= 7; degree++) {
         const target = diatonicChord(key, degree as 1);
-        for (const ask of ['chord', 'numeral'] as const) {
-          const answer = ask === 'chord' ? target.symbol : target.roman;
-          for (let level = 0; level < D11_CHOICES.length; level++) {
-            for (let seed = 1; seed <= 10; seed++) {
-              const choices = d11Choices(key, target, ask, level, lcg(seed));
-              const label = `${keyName(key)} ${answer} ${ask} level ${level}`;
-              expect(choices, label).toContain(answer);
-              expect(new Set(choices).size, label).toBe(choices.length);
-              const all = choices.map((c) => parts(c, ask));
-              const mine = parts(answer, ask);
-              // Every root (degree) appears exactly twice, the answer's included.
-              const counts = new Map<string, number>();
-              for (const c of all) counts.set(c.root, (counts.get(c.root) ?? 0) + 1);
-              expect(
-                [...counts.values()].every((n) => n === 2),
-                label,
-              ).toBe(true);
-              // The cue names the quality, so it must never single the answer out.
-              expect(all.filter((c) => c.quality === mine.quality).length, label).toBeGreaterThan(
-                1,
-              );
-            }
+        const answer = ask === 'chord' ? target.symbol : target.roman;
+        for (let level = 0; level < D11_CHOICES.length; level++) {
+          for (let seed = 1; seed <= 10; seed++) {
+            const choices = d11Choices(key, target, ask, level, lcg(seed));
+            const label = `${keyName(key)} ${answer} ${ask} level ${level}`;
+            yield { key, target, answer, choices, label };
           }
         }
       }
     }
+  }
+
+  it('never gives a chord answer away by the choices’ shape (rule 1)', () => {
+    for (const { answer, choices, label } of cases('chord')) {
+      expect(choices, label).toContain(answer);
+      expect(new Set(choices).size, label).toBe(choices.length);
+      const all = choices.map((c) => parseChordSymbol(c));
+      // Every root appears exactly twice, the answer's included.
+      const counts = new Map<string, number>();
+      for (const c of all) counts.set(c.root, (counts.get(c.root) ?? 0) + 1);
+      expect(
+        [...counts.values()].every((n) => n === 2),
+        label,
+      ).toBe(true);
+      // The cue names the quality, so it must never single the answer out.
+      const quality = parseChordSymbol(answer).quality;
+      expect(all.filter((c) => c.quality === quality).length, label).toBeGreaterThan(1);
+    }
+  });
+
+  it('offers only the key’s numerals, and the pattern alone never finds the answer', () => {
+    let guesses = 0;
+    let right = 0;
+    for (const { key, target, answer, choices, label } of cases('numeral')) {
+      const own = diatonicChords(key).map((c) => c.roman);
+      expect(choices, label).toContain(answer);
+      // Diatonic only, one per degree: no twin to throw out by the pattern.
+      expect(
+        choices.every((c) => own.includes(c)),
+        label,
+      ).toBe(true);
+      expect(new Set(choices.map((c) => parseRoman(c)!.degree)).size, label).toBe(choices.length);
+      if (target.quality === 'diminished') continue;
+      // Knowing only "which numerals are minor" leaves at least three choices.
+      const same = choices.filter((c) => parseRoman(c)!.quality === target.quality);
+      expect(same.length, label).toBeGreaterThanOrEqual(3);
+      guesses += 1;
+      right += 1 / same.length;
+    }
+    // A learner using the pattern alone is right a third of the time, far below the band.
+    expect(right / guesses).toBeLessThanOrEqual(1 / 3 + 1e-9);
   });
 });
 
