@@ -671,7 +671,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m2-21.spec.ts`, iPad projects): each of these drills shows its panel inside the session's context region, with no horizontal overflow. Existing drill specs stay green.
 
 ### M1-40 · iPad portrait: D1-family layout, and an intervals seeding helper
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §7 layout system
 - **Owns:** `app/src/drills/d1-name-the-note/D1View.module.css`, `app/src/drills/d2-find-the-note/D2View.module.css`, `app/e2e/helpers/intervals.ts`, `app/e2e/m2-20.spec.ts`, `app/e2e/m1-40.spec.ts`
