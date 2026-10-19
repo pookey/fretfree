@@ -65,7 +65,8 @@ describe('buildMap', () => {
     expect(notes1.skills.map((s) => s.skill.topic)).toContain('F2');
     expect(map.find((m) => m.module.id === 'notes-2')?.state).toBe('locked');
     expect(map.find((m) => m.module.id === 'caged')?.state).toBe('locked');
-    expect(map.find((m) => m.module.id === 'pentatonic')?.state).toBe('soon');
+    expect(map.find((m) => m.module.id === 'pentatonic')?.state).toBe('locked');
+    expect(map.find((m) => m.module.id === 'advanced')?.state).toBe('soon');
     expect(
       buildMap({ skills: SKILLS, goal: 'songs', stored: stored(), cards: [] })[0]?.module.id,
     ).toBe('harmony');
