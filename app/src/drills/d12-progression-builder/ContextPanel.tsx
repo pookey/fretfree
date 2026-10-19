@@ -1,5 +1,6 @@
 import type { DrillContextPanelProps } from '../types';
-import { d12KeyChords, pretty, type D12Answer, type D12Prompt } from './logic';
+import { pretty, type D12Answer, type D12Prompt } from './logic';
+import { d12KeyChords } from './present';
 import styles from './ContextPanel.module.css';
 
 /**

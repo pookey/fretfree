@@ -8,6 +8,7 @@ import {
 } from 'react';
 import type { GuideLevel } from '../../engine/model';
 import type { DrillRenderProps } from '../types';
+import { d12Verdicts, pretty, type D12Answer, type D12Prompt } from './logic';
 import {
   clearSlot,
   d12Columns,
@@ -18,18 +19,14 @@ import {
   d12SlotNoun,
   d12Subject,
   d12Task,
-  d12Verdicts,
   d12WorkedExample,
   emptySlots,
   isFull,
   moveChord,
   nextEmpty,
   placeChord,
-  pretty,
   spokenChord,
-  type D12Answer,
-  type D12Prompt,
-} from './logic';
+} from './present';
 import styles from './D12View.module.css';
 
 /** Pointer travel (px) before a press becomes a drag rather than a tap. */
