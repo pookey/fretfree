@@ -92,6 +92,7 @@ test.describe('M5-08 screenshot pass', () => {
 
     await page.getByRole('link', { name: /Tuner/ }).click();
     await expect(page.getByRole('heading', { name: 'Tuner', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('mic-check')).toHaveAttribute('data-state', 'off');
     await shoot(page, info, '05-tuner-idle');
     await page.getByRole('button', { name: 'Start tuner' }).click();
     await expect(page.getByTestId('mic-check')).toHaveAttribute('data-state', 'listening');
