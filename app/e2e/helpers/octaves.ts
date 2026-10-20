@@ -35,6 +35,9 @@ const ALL_SKILLS = [
   'C7.minor-boxes',
   'C7.major-boxes',
   'C7.relative',
+  'I7.positions',
+  'I7.root-runs',
+  'I7.degree-runs',
 ];
 
 /**
