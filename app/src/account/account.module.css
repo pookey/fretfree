@@ -1,0 +1,168 @@
+/* The account panel and sign-in steps (M7-04). Regular-wide first: the
+   explanation beside the form; below ~44rem the form wraps under it. */
+.panel {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-l);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  scroll-margin-top: var(--space-4);
+}
+
+.title {
+  font-size: 1.25rem;
+  margin: 0 0 var(--space-3);
+}
+
+.stepTitle {
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-4) var(--space-6);
+}
+
+.copy {
+  flex: 1 1 20rem;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.copy p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.copy a {
+  color: var(--accent);
+}
+
+.form {
+  flex: 1 1 20rem;
+  min-width: 0;
+  max-width: 28rem;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.form p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.field {
+  display: grid;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.field input {
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border);
+  background: var(--bg-sunken);
+  color: var(--text);
+  /* 1rem or more stops iOS Safari zooming into the field. */
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 400;
+}
+
+.field input:disabled {
+  opacity: 0.6;
+}
+
+.code {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3em;
+  font-size: 1.5rem !important;
+}
+
+.email {
+  overflow-wrap: anywhere;
+}
+
+.hint,
+.status {
+  color: var(--text-muted);
+}
+
+.status strong {
+  color: var(--text);
+}
+
+.error {
+  color: var(--text);
+  padding: var(--space-2) var(--space-3);
+  border-left: 0.25rem solid var(--accent);
+  background: var(--surface);
+  border-radius: var(--radius-s);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary {
+  justify-self: start;
+  border: none;
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.secondary {
+  justify-self: start;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.primary:disabled,
+.secondary:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.verify {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 60rem;
+}
+
+.verify .panel {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.verify .title {
+  margin: 0;
+}
+
+.verify a.primary {
+  text-decoration: none;
+}

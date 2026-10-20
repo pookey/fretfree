@@ -1,0 +1,62 @@
+/* Today's offer to save progress (M7-04). Regular-wide first: the copy beside
+   its two buttons; on narrow widths the buttons wrap below. */
+.card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-l);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+}
+
+.body {
+  flex: 1 1 24rem;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.body h2 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.body p {
+  margin: 0;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.actions {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.primary,
+.dismiss {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary {
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.dismiss {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+}

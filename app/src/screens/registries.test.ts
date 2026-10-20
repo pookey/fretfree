@@ -4,7 +4,7 @@ import { PROGRESS_PANELS } from './progress/registry';
 import { TODAY_CARDS } from './today/registry';
 
 describe('screen registries', () => {
-  it('composes Today from the hero, the install tip, streak repair, quests, the stats, then quick drills', () => {
+  it('composes Today from the hero, the install tip, streak repair, quests, the stats, quick drills, then the account offer', () => {
     expect(TODAY_CARDS.map((c) => c.id)).toEqual([
       'hero',
       'install',
@@ -12,16 +12,18 @@ describe('screen registries', () => {
       'quests',
       'stats',
       'quick-drills',
+      'account',
     ]);
     for (const c of TODAY_CARDS) expect(typeof c.Card).toBe('function');
   });
 
-  it('composes Progress from the mastery map, topics, stats, then achievements', () => {
+  it('composes Progress from the mastery map, topics, stats, achievements, then the account', () => {
     expect(PROGRESS_PANELS.map((p) => [p.id, p.title])).toEqual([
       ['heatmap', 'Mastery map'],
       ['topics', 'Topics'],
       ['stats', undefined],
       ['achievements', 'Achievements'],
+      ['account', undefined],
     ]);
   });
 

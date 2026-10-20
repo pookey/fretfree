@@ -15,6 +15,7 @@ describe('route registry', () => {
     expect(ROUTES.map((r) => [r.path, r.layout])).toEqual([
       ['/', 'shell'],
       ['/about', 'shell'],
+      ['/account/verify', 'shell'],
       ['/explore', 'shell'],
       ['/learn', 'shell'],
       ['/onboarding', 'fullscreen'],
