@@ -2,6 +2,49 @@
 
 ## Current status
 
+**Fourth shift report (2026-10-19 07:55 → 2026-10-20 handover, PM session guitar-nosync-45). 96 work packages done, 19 shipped this shift. Every package in flight was drained to production before the handover. Production at https://fretfree.app is healthy: smoke passed after every ship.**
+
+Shipped this shift:
+- **Tools and the tuner (user priority):**
+  - **M4-12:** a Tools section (sixth nav section, auto-registered tools).
+  - **M5-02:** the AudioWorklet pitch detector.
+  - **M5-03:** the tuner: string-aware flat/sharp guidance, reference tones, a mic check, and handling for a lost mic.
+- **Audio and mic:**
+  - **M4-06:** audio engine v2: guitar pluck voice, strums, progression playback, volume and silent mode.
+  - **M5-06:** D17, plus a generic `requiresMic` gate and a fake-mic e2e hook.
+  - **M5-05:** D16 "Play the note".
+  - **M5-04:** mic onboarding and settings.
+- **Drills:**
+  - **M3-13:** D36 "What chord is this?".
+  - **M3-14:** D37 chord tones across the neck.
+  - **M3-15:** D38 build the chord.
+  - **M3-17:** chord tones in stages (user request).
+  - **M4-02:** D11 Roman numerals. It took three review rounds; the reviewers' guessing strategies are now unit tests.
+  - **M4-03:** D12 progression builder.
+  - **M4-04:** D13 capo calculator.
+  - **M4-05:** I3 plus D40 "Key-signature cards" (user decision) and the circle of fifths.
+  - **M6-02:** C7 pentatonic boxes.
+- **Fixes:**
+  - **M1-41:** D39's neck on iPad mini.
+  - **M2-22:** D5's widest scope on iPad mini.
+- **M1-42:** drill logic out of first-load JS. First-load fell from 261.3 to 233.5 KB, and the budget is back to 250 KB (it was raised to 280 temporarily; see Decisions).
+
+**Pipeline changes this shift** (the user said rebasing and testing had slowed development to a crawl):
+- **Test load is gated by machine-wide slots** (`scripts/cpu-slot.sh`, `e2e-slot.sh`, `slot-lib.sh`). The lane gets priority. The agent count no longer follows load1.
+- **Workers run `pnpm verify:quick`.** It runs the static gates plus their own specs, or the full suite when shared code changes.
+- **The lane ships batches**, one verify per batch, and bisects on failure. Its verify is the only full verify.
+- **`Priority: high` in the backlog** brings work forward. It was used for the tuner path, M1-42 and M1-43.
+- **New high-priority work filed:** M1-42 (done) and **M1-43**: one file per item kind, because every drill collided in `engine/model.ts`.
+- **An experimental remote test runner** (`scripts/remote-run.sh`, user-provided box, unprivileged `ipc-freefret` account) is built but **off**: Playwright's WebKit crashes there under load. See `docs/handoff/06-pm-handoff.md`.
+
+**Incidents:**
+- **M1-41's first lane run** failed on timeouts caused by a reserved third e2e slot (since removed).
+- **Flakes:** M5-06 (M2-14 on portrait) and M5-04 (M4-06's console-error check on iPad mini) failed in the lane, then passed 3/3 and 5/5 at the merge SHA, and were re-queued.
+- **M4-02 hit the first-load budget** (250.5 KB). See Decisions.
+- No stop-the-line events.
+
+**Parallelism (740 samples):** average 7.6 in flight, peak 12, ceiling 5–8, idle slots 19% (mostly during the drain).
+
 **Third shift, overnight report (2026-10-19, 04:10). 69 work packages live. 10 shipped since the 23:40 report. Production at https://fretfree.app is healthy: smoke passed after every ship.**
 
 Shipped overnight:
@@ -322,5 +365,6 @@ The trust-folder prompt never appeared, because worktrees under the trusted repo
 
 | Fan-out, 09:24–11:47 UTC | fanout | 5–8 (one hotfix burst to 10) | 7.3 | 10 | 155 samples, 4% idle slots. The serial ship lane (≈5–10 min per ship) was the bottleneck, not workers. Reviewers ran in parallel throughout |
 | Drain, 11:47–handoff | fanout → paused | 2–5 (load-driven, iCloud) | ≈4 | 6 | No new spawns after the user asked for the handoff. M1-12, M1-07, M6-01 and M1-19 drained through the lane |
+| Fourth shift, 2026-10-19 07:55 → 2026-10-20 handover | fanout → drain | 5–8 (slot-gated, no longer load-driven) | 7.6 | 12 | 740 samples, 19% idle slots (mostly the drain). The serial lane and model.ts rebase churn were the bottleneck. Lane batching was added at the end |
 
 From here on, the builder appends rows from `.orchestrator/state.json` → `parallelism`.
