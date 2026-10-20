@@ -862,7 +862,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Coordinate through the PM with drills in flight: they rebase onto the new contract.
 
 ### M1-43 · [contract] One file per item kind, so drills stop colliding in engine/model.ts
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (every drill package now conflicts with every other in engine/model.ts, and each conflict costs a rebase plus a full verify)
 - **Deps:** none
 - **Design:** §6, CLAUDE.md "add things by adding files"
@@ -887,7 +887,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - E2E (`m3-18.spec.ts`): a multi-drill session switches drills without visible loading after the first prompt; onboarding and placement still work offline after a first load. Existing specs stay green.
 
 ### M3-12 · M3 milestone QA
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-01, M3-02, M3-03, M3-04, M3-05, M3-06, M3-07, M3-08, M3-09, M3-10, M3-11, M3-13, M3-14, M3-15
 - **Owns:** `docs/progress.md`, `app/e2e/m3-12.spec.ts`
 - **Acceptance:**
@@ -951,7 +951,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/drills/d15-ear-find/**`, `app/e2e/m4-08.spec.ts`
 
 ### M4-09 · Explore: progression player
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-01, M4-06, M1-01
 - **Owns:** `app/src/screens/explore/views/progression-player.tsx`, `app/src/screens/explore/views/progression-player.meta.ts`, `app/e2e/m4-09.spec.ts`
 
@@ -1234,7 +1234,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - RTL tests for rendering and hit-testing; e2e on the iPad profiles.
 
 ### M8-03 · [contract] Staff theory (pure)
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **After:** M6-10
 - **Owns:** `app/src/theory/staff.ts`, `app/src/theory/staff.test.ts`
