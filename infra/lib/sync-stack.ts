@@ -149,7 +149,10 @@ export class SyncStack extends Stack {
       selfSignUpEnabled: false,
       signInAliases: { email: true },
       signInCaseSensitive: false,
-      standardAttributes: { email: { required: true, mutable: true } },
+      // Not required: Cognito makes every required attribute writable by each app
+      // client, and the client mustn't write email (below). AdminCreateUser always
+      // sets it, and it is the username anyway. Mutable can't change later.
+      standardAttributes: { email: { required: false, mutable: true } },
       // An address change only takes effect once the new address is verified.
       keepOriginal: { email: true },
       // A random password nobody knows confirms each user; no client may use it.

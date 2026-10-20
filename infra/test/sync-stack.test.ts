@@ -159,6 +159,97 @@ describe('SyncStack: sign-in', () => {
   });
 });
 
+type Props = Record<string, unknown>;
+const only = (type: string): Props => {
+  const all = Object.values(t.findResources(type));
+  expect(all).toHaveLength(1);
+  return (all[0] as { Properties: Props }).Properties;
+};
+
+/**
+ * Rules Cognito checks when CloudFormation creates the pool and client. A synth
+ * passes without them, and the first deploy fails, so each is asserted here.
+ */
+describe('SyncStack: Cognito create-time constraints', () => {
+  const pool = only('AWS::Cognito::UserPool');
+  const client = only('AWS::Cognito::UserPoolClient');
+  const writable = client.WriteAttributes as string[];
+
+  it('gives the client write access to every required attribute', () => {
+    const schema = (pool.Schema ?? []) as { Name: string; Required?: boolean }[];
+    const required = schema.filter((a) => a.Required).map((a) => a.Name);
+    for (const name of required) expect(writable).toContain(name);
+    // And the client can't write email, so it can't make Cognito mail anyone.
+    expect(writable).not.toContain('email');
+  });
+
+  it('reads at least what it writes', () => {
+    const readable = client.ReadAttributes as string[] | undefined;
+    if (readable) for (const name of writable) expect(readable).toContain(name);
+  });
+
+  it('keeps original values only for attributes Cognito verifies', () => {
+    const keep = (pool.UserAttributeUpdateSettings as Props)
+      .AttributesRequireVerificationBeforeUpdate as string[];
+    for (const name of keep) expect(pool.AutoVerifiedAttributes).toContain(name);
+  });
+
+  it('uses email usernames without aliases (the two are exclusive)', () => {
+    expect(pool.UsernameAttributes).toEqual(['email']);
+    expect(pool.AliasAttributes).toBeUndefined();
+  });
+
+  it('uses no feature the Lite plan lacks', () => {
+    expect(pool.UserPoolTier).toBe('LITE');
+    expect(pool.UserPoolAddOns).toBeUndefined();
+    const policy = (pool.Policies as Props).PasswordPolicy as Props;
+    expect(policy.PasswordHistorySize).toBeUndefined();
+    expect(policy.MinimumLength).toBeGreaterThanOrEqual(6);
+    expect(policy.MinimumLength).toBeLessThanOrEqual(99);
+  });
+
+  it('sends from the verified domain, in an SES region a us-east-1 pool may use', () => {
+    const config = pool.EmailConfiguration as { From: string; SourceArn: unknown };
+    const arn = JSON.stringify(config.SourceArn);
+    expect(config.From).toMatch(/<[^@>]+@example\.com>$/);
+    expect(arn).toMatch(/:identity\/example\.com"/);
+    const region = /:ses:([a-z0-9-]+):/.exec(arn)?.[1];
+    expect(['us-east-1', 'us-west-2', 'eu-west-1']).toContain(region);
+  });
+
+  it('keeps the auth session and token lifetimes inside the allowed ranges', () => {
+    expect(client.AuthSessionValidity).toBeGreaterThanOrEqual(3);
+    expect(client.AuthSessionValidity).toBeLessThanOrEqual(15);
+    const units = client.TokenValidityUnits as Record<string, string>;
+    const minutes = (value: unknown, unit: string | undefined): number =>
+      Number(value) * ({ minutes: 1, hours: 60, days: 1440 }[unit ?? 'days'] ?? NaN);
+    const access = minutes(client.AccessTokenValidity, units.AccessToken);
+    const id = minutes(client.IdTokenValidity, units.IdToken);
+    const refresh = minutes(client.RefreshTokenValidity, units.RefreshToken);
+    for (const short of [access, id]) {
+      expect(short).toBeGreaterThanOrEqual(5);
+      expect(short).toBeLessThanOrEqual(1440);
+      expect(short).toBeLessThan(refresh);
+    }
+    expect(refresh).toBeGreaterThanOrEqual(60);
+    expect(refresh).toBeLessThanOrEqual(3650 * 1440);
+  });
+
+  it('sets no OAuth flow, so it needs no callback URL', () => {
+    expect(client.AllowedOAuthFlowsUserPoolClient).toBe(false);
+    expect(client.AllowedOAuthFlows).toBeUndefined();
+    expect(client.CallbackURLs).toBeUndefined();
+  });
+
+  it('lets Cognito invoke the trigger function', () => {
+    t.hasResourceProperties('AWS::Lambda::Permission', {
+      Action: 'lambda:InvokeFunction',
+      Principal: 'cognito-idp.amazonaws.com',
+      SourceArn: { 'Fn::GetAtt': [Match.stringLikeRegexp('^Users'), 'Arn'] },
+    });
+  });
+});
+
 describe('SyncStack: sync API', () => {
   it('partitions the sync table by user, with a seq LSI for consistent pulls', () => {
     t.hasResourceProperties('AWS::DynamoDB::GlobalTable', {
