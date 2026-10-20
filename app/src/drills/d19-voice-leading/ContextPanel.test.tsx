@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import type { GuideLevel } from '../../engine/model';
 import { STANDARD_TUNING } from '../../theory';
+import { resolveView } from '../lazy-view';
 import { VoiceLeadingPanel } from './ContextPanel';
+import { D19View } from './D19View';
 import voiceLeading from './drill';
 import { d19Check, d19MakePrompt, type D19Prompt } from './logic';
 
@@ -34,20 +36,12 @@ const chords = () => within(screen.getByRole('list', { name: 'Chords' })).getAll
 const rows = () => chords().map((li) => li.textContent);
 
 describe('<VoiceLeadingPanel>', () => {
-  it('is the D19 plugin’s context panel, loaded on first use', async () => {
-    const Panel = voiceLeading.contextPanel!;
-    render(
-      <Panel
-        prompt={prompt('voice-lead:I-IV@s3')}
-        guideLevel={1}
-        guided={false}
-        handedness="right"
-        tuning={STANDARD_TUNING}
-        feedback={null}
-      />,
-    );
-    expect(await screen.findByRole('heading', { name: 'I–IV–V in C' })).toBeInTheDocument();
-  });
+  // The first use imports every drill's views (one shared chunk), which can
+  // take several seconds cold on a loaded machine.
+  it('is the D19 plugin’s view and context panel, loaded on first use', async () => {
+    expect(await resolveView(voiceLeading.render)).toBe(D19View);
+    expect(await resolveView(voiceLeading.contextPanel!)).toBe(VoiceLeadingPanel);
+  }, 30_000);
 
   it('tags the chords it moves from and to, without spelling them at low guide levels', () => {
     panel(prompt('voice-lead:I-IV@s3'), 1);

@@ -5,7 +5,6 @@ import type { SizeClass } from '../../shell/size-class';
 import { STANDARD_TUNING, type Position } from '../../theory';
 import type { DrillFeedback } from '../types';
 import { D19View } from './D19View';
-import voiceLeading from './drill';
 import { d19Check, d19MakePrompt, type D19Answer, type D19Prompt } from './logic';
 
 const prompt = (id: string, rng: () => number = () => 0) =>
@@ -60,23 +59,6 @@ const at = (string: number, fret: number): Position => ({ string, fret });
 const taps = (...ps: Position[]): D19Answer => ({ taps: ps });
 
 describe('<D19View>', () => {
-  it('is the D19 plugin’s view, loaded on first use', async () => {
-    const View = voiceLeading.render;
-    render(
-      <View
-        prompt={cToF()}
-        guideLevel={1}
-        guided={false}
-        handedness="right"
-        sizeClass="regular-wide"
-        tuning={STANDARD_TUNING}
-        feedback={null}
-        onAnswer={() => {}}
-      />,
-    );
-    expect(await screen.findByTestId('d19-drill')).toHaveAttribute('data-scope', 'naturals');
-  });
-
   it('draws the starting triad as rings and asks for the next chord, without giving it away', () => {
     view(cToF());
     expect(screen.getByTestId('d19-prompt')).toHaveTextContent('Voice-lead C to F on strings 3–1');
