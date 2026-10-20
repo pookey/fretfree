@@ -52,7 +52,8 @@ describe('<TimingCalibration>', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     await flush();
     expect(screen.getByText(/Get ready/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Tap on each click' })).toBeInTheDocument();
+    // The pad takes focus whatever the source, so Space works at once.
+    expect(screen.getByRole('button', { name: 'Tap on each click' })).toHaveFocus();
     act(() => {
       metronome.tickUntil(1);
     });

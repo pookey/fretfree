@@ -103,9 +103,9 @@ export function TimingCalibration({
   // Taps count from the pad; it takes focus so Space works at once.
   useEffect(() => {
     const el = pad.current;
-    if (!el || !source || !isTapSource(source)) return;
+    if (!el || !source) return;
     el.focus();
-    return source.attach(el);
+    if (isTapSource(source)) return source.attach(el);
   }, [source]);
 
   const start = () => {
