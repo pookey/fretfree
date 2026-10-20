@@ -1,22 +1,19 @@
 import { SKILLS } from '../../engine/skills';
-import { lazyParts } from '../lazy-view';
+import { lazyLogic, lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as logic from './logic';
+import type { D11Answer, D11Prompt } from './logic';
 import type * as views from './views';
-import {
-  D11_ID,
-  D11_SCOPE,
-  d11CanTest,
-  d11Check,
-  d11ConceptOf,
-  d11DescribeAnswer,
-  d11MakePrompt,
-  d11Sounds,
-  type D11Answer,
-  type D11Prompt,
-} from './logic';
+import { D11_ID, D11_SCOPE, d11CanTest, d11ConceptOf } from './meta';
 
-// Lazy: the views stay out of first-load JS (design §10).
-const parts = lazyParts<typeof views>('d11-numerals');
+// Lazy: the logic and views stay out of first-load JS (design §10).
+const lazy = lazyLogic('d11-numerals', (l: typeof logic) => ({
+  makePrompt: l.d11MakePrompt,
+  check: l.d11Check,
+  describeAnswer: l.d11DescribeAnswer,
+  sounds: l.d11Sounds,
+}));
+const parts = lazyParts<typeof views>('d11-numerals', lazy);
 
 const numerals: DrillType<D11Prompt, D11Answer> = {
   id: D11_ID,
@@ -27,11 +24,8 @@ const numerals: DrillType<D11Prompt, D11Answer> = {
   inputModes: ['choice', 'keyboard'],
   scope: D11_SCOPE,
   canTest: d11CanTest,
-  makePrompt: d11MakePrompt,
-  check: d11Check,
-  describeAnswer: d11DescribeAnswer,
-  sounds: d11Sounds,
   conceptOf: d11ConceptOf,
+  logic: lazy,
   render: parts.render,
   contextPanel: parts.contextPanel,
 };

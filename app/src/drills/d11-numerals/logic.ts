@@ -1,18 +1,11 @@
-import {
-  parseNumeralItemId,
-  type GuideLevel,
-  type Item,
-  type NumeralItemKind,
-} from '../../engine/model';
+import type { GuideLevel, Item, NumeralItemKind } from '../../engine/model';
 import {
   chordSymbol,
   chordTones,
   diatonicChords,
   keyName,
   nashvilleNumber,
-  nashvilleToRoman,
   parseChordSymbol,
-  parseKey,
   parseRoman,
   romanNumeral,
   romanOf,
@@ -23,6 +16,9 @@ import {
   type Numeral,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D11_CHOICES, D11_SCOPE, d11Concept as concept, d11Parse as parse } from './meta';
+
+export { D11_CHOICES, D11_ID, D11_SCOPE, d11CanTest, d11ConceptOf } from './meta';
 
 /**
  * D11 "Roman numeral ↔ chord in a key" (design §6), the pure half of the
@@ -64,18 +60,11 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * correct-but-differently-numbered answer and be marked wrong.
  */
 
-export const D11_ID = 'numerals';
-
 /** What the learner answers with. */
 export type D11Ask = 'chord' | 'numeral';
 
-/** How many choices each adaptive-scope level offers (research/02 rule 5: distractors). */
-export const D11_CHOICES: readonly number[] = [4, 6, 8];
-
 /** Numeral answers offer at most the key's seven numerals. */
 const MAX_NUMERAL_CHOICES = 7;
-
-export const D11_SCOPE = { minLevel: 0, maxLevel: D11_CHOICES.length - 1 };
 
 export interface D11Prompt {
   itemId: string;
@@ -93,26 +82,6 @@ export interface D11Prompt {
 
 /** A chord symbol or a Roman numeral, as written in `choices`. */
 export type D11Answer = string;
-
-interface Parsed {
-  kind: NumeralItemKind;
-  key: MusicalKey;
-  target: DiatonicChord;
-}
-
-function parse(item: Item): Parsed | null {
-  const ref = parseNumeralItemId(item.id);
-  if (!ref) return null;
-  const key = parseKey(ref.key);
-  const target = diatonicChords(key).find((c) =>
-    ref.kind === 'nashville' ? c.nashville === ref.numeral : c.roman === ref.numeral,
-  );
-  return target ? { kind: ref.kind, key, target } : null;
-}
-
-export function d11CanTest(item: Item): boolean {
-  return parse(item) !== null;
-}
 
 export function d11Ask(kind: NumeralItemKind): D11Ask {
   return kind === 'numeral-of' ? 'numeral' : 'chord';
@@ -478,10 +447,6 @@ export function d11Expected(prompt: D11Prompt): string {
   return prettyChoice(prompt, prompt.answer);
 }
 
-function concept(roman: string): string {
-  return `numeral:${roman}`;
-}
-
 export function d11Check(prompt: D11Prompt, answer: D11Answer): DrillCheck {
   const expected = d11Expected(prompt);
   const own = concept(prompt.target.roman);
@@ -554,12 +519,6 @@ export function d11Sounds(prompt: D11Prompt, fb: DrillFeedback<D11Answer>): Dril
   if (fb.result.correct) return { expected };
   const given = chordOf(prompt, fb.answer);
   return given ? { expected, given: d11Voicing(given) } : { expected };
-}
-
-export function d11ConceptOf(item: Item): string | null {
-  const ref = parseNumeralItemId(item.id);
-  if (!ref) return null;
-  return concept(ref.kind === 'nashville' ? nashvilleToRoman(ref.numeral) : ref.numeral);
 }
 
 /** Stored as `answerGiven`. */
