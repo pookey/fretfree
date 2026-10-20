@@ -296,6 +296,49 @@ The evidence is `app/e2e/m2-14.spec.ts`. It runs on all four Playwright profiles
 
 The production screenshots also confirm the M1 QA fixes: inactive frets recede in light theme and the nut's string names are legible (M1-31), the iPad-portrait mastery map shows fret 12 (M1-32), and Done stays in view on a sideways phone's summary (M1-33).
 
+## M3 definition of done (M3-12 QA, 2026-10-20)
+
+**M3 is done for its §11 scope.** Design §11 gives M3 no separate definition of done, so this checks its scope: "C4, C5, C6 via D7–D10, Explore (CAGED visualiser, chord finder), worked examples". Every M3 package (M3-01 to M3-18) is live, including D36–D38 and the staged chord tones (M3-17), which came from user requests. The pass ran on `origin/main` at f28b252, and production served `index-oxSeeCam.js`.
+
+The evidence is `app/e2e/m3-12.spec.ts`. Its screen walk is tagged `@smoke`, so it runs on all four Playwright profiles, both locally and against https://fretfree.app (4 of 4 passed on production). The walk opens:
+- the Keys, Chords and CAGED modules, with five C4–C6 worked examples;
+- the CAGED visualiser (C, then G's chain) and the chord finder (tapped C7, then F#m7's voicings);
+- the first prompt of D7 (key and chord), D8, D9, D36, D37 and D38, each with its context panel;
+- a D10 answer and its feedback, then the summary and Progress.
+
+Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep @screens`, the walk also saves each screen in dark and light: 184 shots from production. The command is in the spec header. A second test aborts the CAGED chunk and checks that Explore's Reload button is a full 44pt tap target. It was 28px tall; fixed in this package, from the M3-16 review.
+
+| §11 scope | Status | Evidence |
+|---|---|---|
+| C4 key spelling and scale degrees through D7 (enharmonics enforced) | ✅ | `c4.test.ts`; `m3-02`, `m3-12` |
+| C5 chord construction, triads → 7ths → sus/add, with the 7 vs maj7 pairing | ✅ | `c5.test.ts`; `m3-03`, `m3-12` |
+| D8 chord tones in a shape, root first, both directions | ✅ | `c5-chord-tones.test.ts`; `m3-04`, `m3-17`, `m3-12` |
+| C6 CAGED through D9 (triad cores first, whole neck on iPad) and D10 | ✅ | `c6.test.ts`; `m3-05`, `m3-06`, `m3-12` |
+| Also in M3: D36 name the chord, D37 chord tones across the neck, D38 build the chord | ✅ | `m3-13`, `m3-14`, `m3-15`, `m3-12` |
+| Chord-diagram component and drill context panels | ✅ | `ChordDiagram.test.tsx`; `m3-09`, `m3-11`, `m3-12` |
+| Explore: CAGED visualiser (respects reduced motion, Quiz me) | ✅ | `m3-08`, `m3-12` |
+| Explore: chord finder (`Chord.detect`, voicings from MIT chords-db) | ✅ | `m3-09`, `m3-12` |
+| Worked examples for C4–C6 ("CAGED is a map", "find the root first") | ✅ | `m3-10`, `m3-12` (but see finding 1) |
+| Explore views and drill views lazy, first-load JS ≤ 250 KB | ✅ | `m3-16`, `m3-18`, M1-42; `scripts/check-bundle.mjs` |
+
+**Findings** (production screenshots, four profiles). None blocks M3; 1 and 2 are the ones to fix first:
+1. **"Find the root first" cuts off the note it asks for, on iPad portrait and iPad mini.** The Learn card shows frets 1–5 of the example's 1–7 window. The C# on fret 6 ("Tap the highlighted C# to go on") is off the card, along with the right edge of the shape outline. It's fine on iPad landscape. Every worked-example neck also runs to the card's right edge with no padding: on iPad mini, C5's seventh-shapes example clips its "8" fret label, and the CAGED example clips a marker.
+2. **Guided prompts lose the degree shapes.** On a first-exposure prompt, D8, D9, D37 and D38 draw every chord tone as the same blue circle, labelled R, 3 or 5. The context panel's legend on the same screen draws the root as a square and the 5th as a triangle. D9 says "The square is the root", yet its second root is a circle. Feedback and D36 use the shapes correctly. This breaks the "shape as well as colour" rule (CLAUDE.md, design §8).
+3. **D10 and D36 show the generic "Musical alphabet" panel** (they declare no `contextPanel`). M3-11 rightly keeps the CAGED chain away from D10, since it would give the answer away, but the alphabet is noise there. D36 could show the triad formulas and the rule that the 3rd decides the quality, without naming the chord.
+4. **D36 on iPad mini scrolls.** The 12 root chips wrap 10 + 2 and the 8 qualities 7 + 1. That pushes the neck's bottom string to the fold, and its fret numbers below it (a 910pt page on a 768pt screen). D38 there scrolls through about 93pt of empty padding. On iPad Pro landscape, D36 and D38 scroll by 17–38pt.
+5. **iPad portrait: D9, D37 and D38 centre the neck in a tall empty band.** The context panel is pinned at the bottom. This is the same pattern M2-20 fixed for D5 and D6.
+6. **D10 at guide level 1** shows no fret numbers or string names. Its 5ths are drawn as circles, the same as the 3rd, until feedback turns them into triangles. Yet the explanation talks about frets and "back toward the nut". On a sideways phone the explanation doesn't appear at all, only the bar's "That was the A shape of A".
+7. **Copy:**
+   - D10: "Both root on string 5" should read "Both have the root on string 5".
+   - The summary says "Those notes come back sooner" after a chord or CAGED session; it should say "items". It also says "come back tomorrow" twice.
+   - The "Already know this? Test out" offer runs skill titles together: "a short test of Interval shapes: 3rds, Interval shapes: 4ths, 5ths and the tritone, Spell the sharp keys and Spell the flat keys". M1-38 fixed the prerequisite list, but not this sentence.
+   - D7 and D37 repeat their hint word for word under the prompt and in the panel.
+8. **D7's note picker has holes.** Spelling-only distractors (C♭, B♯) sit alone in their columns, so the grid looks like it's missing buttons.
+9. **Small panel diagrams.** The context-panel chord diagrams (D8) and the CAGED-chain mini-map (D9) are about 75pt wide, with about 5pt labels. In light theme the mini-map's yellow 5th triangles nearly vanish on its white neck.
+10. **Sideways phone (best effort):** the CAGED visualiser's neck sits below the fold under its controls. The pinned feedback bar covers the session header (✕ and help) until Continue.
+
+**Not findings:** the walk's seeding masters the F2 skills, so "String 6 master" and "String 5 master" unlock on Progress, and the seeded CAGED reviews count as learning there while the summary says 0. The yellow 5th triangles are `--chord-fifth` (Okabe–Ito #f0e442), not the sunflower brand colour.
+
 ## Fan-out incidents and fixes (2026-10-18)
 
 - **Stale Vitest module cache (fixed, a53c400).** Vitest 5's `fsModuleCache` reused a cached `import.meta.glob` expansion in the long-lived main checkout, so `pnpm verify` on main lost M1-03's new skill files while fresh worktrees passed. The quality gate now runs with `fsModuleCache: false`.
