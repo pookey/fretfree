@@ -9,13 +9,13 @@ import type { SizeClass } from '../../shell/size-class';
 import { STANDARD_TUNING, type Position } from '../../theory';
 import type { DrillFeedback } from '../types';
 import { D15View } from './D15View';
-import { d15Check, d15MakePrompt, type D15Answer, type D15Prompt } from './logic';
+import { d15Check, d15MakePrompt, type D15Prompt } from './logic';
 
 vi.mock('../../audio/audio', () => ({ playNotes: vi.fn(() => Promise.resolve()) }));
 
 const prompt = (id: string, scopeLevel = 0) =>
   d15MakePrompt(
-    { id, skillId: 'C2.all-notes' },
+    { id, skillId: id.startsWith('ear-') ? 'I6.ear-find' : 'C2.all-notes' },
     { tuning: STANDARD_TUNING, accidentalPref: 'sharp', scopeLevel, rng: () => 0 },
   );
 
@@ -27,7 +27,7 @@ function view(
     sizeClass?: SizeClass;
     compactFrets?: number;
     handedness?: Handedness;
-    feedback?: DrillFeedback<D15Answer> | null;
+    feedback?: DrillFeedback<Position> | null;
   } = {},
 ) {
   const onAnswer = vi.fn();
@@ -49,32 +49,40 @@ function view(
 const neck = () => screen.getByRole('group', { name: /find the note you hear on string/ });
 const cell = (string: number, fret: number) =>
   neck().querySelector(`[data-cell="s${string}f${fret}"]`) as SVGElement;
-const fb = (p: D15Prompt, answer: Position): DrillFeedback<D15Answer> => ({
-  answer: { ...answer, byEar: true },
+const fb = (p: D15Prompt, answer: Position): DrillFeedback<Position> => ({
+  answer,
   result: d15Check(p, answer),
 });
+const setSettings = (over: Partial<typeof DEFAULT_SETTINGS>) =>
+  useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, ...over } });
 
 beforeEach(() => {
   vi.mocked(playNotes).mockClear();
-  useAppStore.setState({ settings: { ...DEFAULT_SETTINGS } });
+  setSettings({});
 });
 
 describe('<D15View>', () => {
-  it('plays the open string, then the note, and answers with the tapped cell', () => {
+  it('names the note on a C2 find card, plays it, and answers with the tapped cell', () => {
     const p = prompt('find:G@s5');
-    const { onAnswer } = view(p);
+    // The name follows the card, not the guides: it shows at every guide level.
+    const { onAnswer } = view(p, { guideLevel: 0 });
+    expect(screen.getByTestId('d15-prompt')).toHaveTextContent('Find the G you hear on string 5');
+    expect(screen.getByTestId('d15-explain')).toHaveTextContent('First the open A, then the note.');
+    expect(playNotes).toHaveBeenCalledTimes(1);
+    expect(playNotes).toHaveBeenCalledWith(['A2', 'G3'], { volume: 0.8 });
+    fireEvent.pointerDown(cell(5, 10));
+    expect(onAnswer).toHaveBeenCalledWith({ string: 5, fret: 10 });
+  });
+
+  it('holds the name back on an ear card, at every guide level', () => {
+    view(prompt('ear-find:G@s5'), { guideLevel: 3 });
     expect(screen.getByTestId('d15-prompt')).toHaveTextContent(
       'Find the note you hear on string 5',
     );
-    expect(screen.getByTestId('d15-explain')).toHaveTextContent('First the open A, then the note.');
-    expect(playNotes).toHaveBeenCalledTimes(1);
-    expect(playNotes).toHaveBeenCalledWith(['A2', 'G3'], { muted: false, volume: 0.8 });
-    fireEvent.pointerDown(cell(5, 10));
-    expect(onAnswer).toHaveBeenCalledWith({ string: 5, fret: 10, byEar: true });
   });
 
   it('plays each prompt once under StrictMode, and again on request', () => {
-    const p = prompt('find:G@s5');
+    const p = prompt('ear-find:G@s5');
     const props = {
       prompt: p,
       guideLevel: 1 as GuideLevel,
@@ -102,52 +110,66 @@ describe('<D15View>', () => {
     expect(playNotes).toHaveBeenCalledTimes(2);
     rerender(
       <StrictMode>
-        <D15View {...props} prompt={prompt('find:C@s4')} />
+        <D15View {...props} prompt={prompt('ear-find:C@s4')} />
       </StrictMode>,
     );
     expect(playNotes).toHaveBeenCalledTimes(3);
-    expect(playNotes).toHaveBeenLastCalledWith(['D3', 'C4'], { muted: false, volume: 0.8 });
+    expect(playNotes).toHaveBeenLastCalledWith(['D3', 'C4'], { volume: 0.8 });
   });
 
-  it('names the note while the guides are up, and says the answer was not by ear', () => {
-    const { onAnswer } = view(prompt('find:G@s5'), { guideLevel: 2 });
-    expect(screen.getByTestId('d15-prompt')).toHaveTextContent('Find the G you hear on string 5');
-    fireEvent.pointerDown(cell(5, 10));
-    expect(onAnswer).toHaveBeenCalledWith({ string: 5, fret: 10, byEar: false });
-  });
-
-  it('names the note with sound off, and says why', () => {
-    useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, soundOn: false } });
+  it('with sound off, still names a find card, and waits to play', () => {
+    setSettings({ soundOn: false });
     view(prompt('find:G@s5'));
     expect(screen.getByTestId('d15-prompt')).toHaveTextContent('Find the G you hear on string 5');
     expect(screen.getByTestId('d15-explain')).toHaveTextContent('Sound is off');
     expect(screen.getByRole('button', { name: 'Hear it again' })).toBeDisabled();
-    expect(playNotes).toHaveBeenCalledWith(['A2', 'G3'], { muted: true, volume: 0.8 });
+    expect(playNotes).not.toHaveBeenCalled();
+  });
+
+  it('with sound off, asks for sound on an ear card instead of naming the note', async () => {
+    setSettings({ soundOn: false });
+    const update = vi.fn(async () => setSettings({ soundOn: true }));
+    useAppStore.setState({ update });
+    view(prompt('ear-find:G@s5'));
+    expect(screen.getByTestId('d15-prompt')).toHaveTextContent(
+      'Find the note you hear on string 5',
+    );
+    expect(screen.getByTestId('d15-explain')).toHaveTextContent('Turn it on to hear the note.');
+    expect(playNotes).not.toHaveBeenCalled();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Turn sound on' }));
+    });
+    expect(update).toHaveBeenCalledWith({ soundOn: true });
+    // The prompt plays as soon as sound is on.
+    expect(playNotes).toHaveBeenCalledWith(['A2', 'G3'], { volume: 0.8 });
+    expect(screen.getByRole('button', { name: 'Hear it again' })).toBeEnabled();
   });
 
   it('follows the volume setting', () => {
-    view(prompt('find:G@s5'));
-    act(() => useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, volume: 0.3 } }));
+    view(prompt('ear-find:G@s5'));
+    act(() => setSettings({ volume: 0.3 }));
     fireEvent.click(screen.getByRole('button', { name: 'Hear it again' }));
     expect(playNotes).toHaveBeenLastCalledWith(['A2', 'G3'], { muted: false, volume: 0.3 });
   });
 
   it('ignores taps on other strings and beyond fret 12', () => {
-    const { container, onAnswer } = view(prompt('find:G@s5'));
+    const { container, onAnswer } = view(prompt('ear-find:G@s5'));
     fireEvent.pointerDown(cell(4, 5));
     fireEvent.pointerDown(cell(5, 14));
     expect(onAnswer).not.toHaveBeenCalled();
     expect(container.querySelector('[data-live-string="5"]')).not.toBeNull();
   });
 
-  it('never shows the note before an unguided answer by ear', () => {
+  it('never shows the note on an ear card before an unguided answer, even at guide level 3', () => {
     // Includes notes that name an open string (A at fret 12 of string 5) and accidentals.
-    for (const id of ['find:A@s5', 'find:G@s5', 'find:C@s5', 'find:F#@s3', 'find:E@s1']) {
+    for (const id of ['ear-find:A@s5', 'ear-find:G@s5', 'ear-find:F#@s3', 'ear-find:E@s1']) {
       const p = prompt(id);
-      const { container, unmount } = view(p);
+      const { container, unmount } = view(p, { guideLevel: 3 });
       const svg = container.querySelector('svg[data-fret-from]') as SVGElement;
-      const texts = [...svg.querySelectorAll('text')].map((t) => t.textContent);
-      expect(texts, id).not.toContain(p.pc);
+      const strings = [...svg.querySelectorAll('[data-testid="string-name"]')].map(
+        (t) => t.textContent,
+      );
+      expect(strings, id).not.toContain(p.pc);
       expect(screen.getByTestId('d15-prompt'), id).not.toHaveTextContent(
         new RegExp(`\\b${p.pc}\\b`),
       );
@@ -164,12 +186,16 @@ describe('<D15View>', () => {
     }
   });
 
-  it('labels the open string as the reference unless it would name the note', () => {
-    view(prompt('find:G@s5'));
-    expect(screen.getByTestId('marker-root')).toHaveTextContent('A');
+  it('always labels the open string, even when the note is its octave', () => {
+    // A bare reference would mark the octave (fret 12) as the answer.
+    for (const id of ['ear-find:A@s5', 'ear-find:G@s5']) {
+      const { unmount } = view(prompt(id));
+      expect(screen.getByTestId('marker-root'), id).toHaveTextContent('A');
+      unmount();
+    }
   });
 
-  it('keeps the note off the neck while the prompt names it', () => {
+  it('keeps the note off the neck on a named card', () => {
     for (const id of ['find:A@s5', 'find:G@s5', 'find:E@s1']) {
       const p = prompt(id);
       const { container, unmount } = view(p, { guideLevel: 3 });
@@ -184,14 +210,14 @@ describe('<D15View>', () => {
   });
 
   it('lets every string answer at the wider scope', () => {
-    const { container, onAnswer } = view(prompt('find:G@s5', 1));
+    const { container, onAnswer } = view(prompt('ear-find:G@s5', 1));
     expect(container.querySelector('[data-live-string]')).toBeNull();
     fireEvent.pointerDown(cell(4, 5));
-    expect(onAnswer).toHaveBeenCalledWith({ string: 4, fret: 5, byEar: true });
+    expect(onAnswer).toHaveBeenCalledWith({ string: 4, fret: 5 });
   });
 
-  it('shows the note on a guided worked example', () => {
-    view(prompt('find:G@s5'), { guided: true, guideLevel: 0 });
+  it('shows the note on a guided worked example, ear cards too', () => {
+    view(prompt('ear-find:G@s5'), { guided: true, guideLevel: 0 });
     expect(screen.getByTestId('d15-prompt')).toHaveTextContent(
       'This is G on string 5, a minor 7th above the open A. Listen, then tap it.',
     );
@@ -199,7 +225,7 @@ describe('<D15View>', () => {
   });
 
   it('shows both positions and how far off a wrong tap was', () => {
-    const p = prompt('find:G@s5');
+    const p = prompt('ear-find:G@s5');
     const { onAnswer } = view(p, { feedback: fb(p, { string: 5, fret: 8 }) });
     expect(screen.getByTestId('marker-correct')).toHaveAttribute('data-fret', '10');
     expect(screen.getByTestId('marker-correct')).toHaveTextContent('G');
@@ -212,7 +238,7 @@ describe('<D15View>', () => {
   });
 
   it('moves a focus cell along the string with the arrow keys and taps it with Enter', () => {
-    const { onAnswer } = view(prompt('find:G@s5'));
+    const { onAnswer } = view(prompt('ear-find:G@s5'));
     fireEvent.keyDown(window, { key: 'Enter' });
     expect(onAnswer).not.toHaveBeenCalled();
     fireEvent.keyDown(window, { key: 'ArrowRight' });
@@ -227,11 +253,11 @@ describe('<D15View>', () => {
     fireEvent.keyDown(window, { key: 'ArrowDown', metaKey: true });
     (document.activeElement as SVGElement).blur();
     fireEvent.keyDown(window, { key: 'Enter' });
-    expect(onAnswer).toHaveBeenCalledWith({ string: 5, fret: 10, byEar: true });
+    expect(onAnswer).toHaveBeenCalledWith({ string: 5, fret: 10 });
   });
 
   it('ignores Enter on other controls and keys once answered', () => {
-    const p = prompt('find:G@s5');
+    const p = prompt('ear-find:G@s5');
     const { onAnswer, rerender, props } = view(p, { sizeClass: 'compact' });
     fireEvent.keyDown(window, { key: 'ArrowRight' });
     fireEvent.keyDown(screen.getByRole('button', { name: 'Higher frets' }), { key: 'Enter' });
@@ -242,7 +268,7 @@ describe('<D15View>', () => {
   });
 
   it('slides a 5-fret window on compact, following the focus cell', () => {
-    view(prompt('find:G@s5'), { sizeClass: 'compact' });
+    view(prompt('ear-find:G@s5'), { sizeClass: 'compact' });
     expect(neck()).toHaveAttribute('data-fret-from', '0');
     expect(neck()).toHaveAttribute('data-fret-to', '4');
     expect(screen.getByRole('button', { name: 'Lower frets' })).toBeDisabled();
@@ -257,7 +283,7 @@ describe('<D15View>', () => {
   });
 
   it('opens a worked example on the note, and widens to show a wrong tap', () => {
-    const p = prompt('find:G@s5');
+    const p = prompt('ear-find:G@s5');
     const { unmount } = view(p, { sizeClass: 'compact', guided: true });
     expect(neck()).toHaveAttribute('data-fret-from', '8');
     unmount();
@@ -267,7 +293,7 @@ describe('<D15View>', () => {
   });
 
   it('resizes the compact window on rotation and mirrors a left-handed neck', () => {
-    const p = prompt('find:G@s5');
+    const p = prompt('ear-find:G@s5');
     const { rerender, props } = view(p, {
       sizeClass: 'compact',
       compactFrets: 10,
@@ -284,7 +310,7 @@ describe('<D15View>', () => {
   });
 
   it('shows the 12-fret neck on iPad portrait', () => {
-    view(prompt('find:G@s5'), { sizeClass: 'regular' });
+    view(prompt('ear-find:G@s5'), { sizeClass: 'regular' });
     expect(neck()).toHaveAttribute('data-fret-to', '12');
   });
 });

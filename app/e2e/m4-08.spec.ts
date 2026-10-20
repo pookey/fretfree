@@ -3,21 +3,22 @@ import { expectNoHorizontalOverflow, F1_SKILLS, F3_SKILLS, freshStart } from './
 import { audioLevel, tapAudioOutput } from './helpers/audio';
 
 // M4-08: D15 "Hear it, find it" (research/02 rule 13). The open string
-// sounds, then a note on it, and the learner taps the note. It serves C2's
-// find cards on the reps D2 doesn't (the picker varies the drill), and the
-// note's name fades with the skill's guide level.
+// sounds, then a note on it, and the learner taps the note. On C2's find
+// cards (after D2 has served them) the note is named; on I6's own ear-find
+// cards it is found by ear.
 
-const ITEM = 'find:G@s4';
+const FIND = 'find:G@s4';
+const EAR = 'ear-find:G@s4';
 const DAY = 86_400_000;
 
 /**
- * A learner past F1–F3 whose C2 card for G on string 4 is due, last served
- * by D2, so D15 serves it first. C2 sits at `guideLevel`: 2+ names the note,
- * 0–1 is by ear.
+ * A learner past F1–F3 with one card due: C2's `find:G@s4`, last served by
+ * D2 (so D15 serves it next), or I6's `ear-find:G@s4` at guide level 1.
  */
-async function seedDueCard(page: Page, guideLevel: number): Promise<void> {
+async function seedDueCard(page: Page, item: string): Promise<void> {
+  const skillId = item === EAR ? 'I6.ear-find' : 'C2.all-notes';
   await page.evaluate(
-    async ({ item, mastered, guideLevel, DAY }) => {
+    async ({ item, skillId, mastered, DAY }) => {
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
         const req = indexedDB.open('fretwork');
         req.onsuccess = () => resolve(req.result);
@@ -25,23 +26,23 @@ async function seedDueCard(page: Page, guideLevel: number): Promise<void> {
       });
       const tx = db.transaction(['skillStates', 'cards', 'reviewLogs'], 'readwrite');
       const now = Date.now();
-      for (const skillId of mastered) {
+      for (const id of mastered) {
         tx.objectStore('skillStates').put({
-          skillId,
+          skillId: id,
           status: 'mastered',
           guideLevel: 0,
           rollingAccuracy: 1,
         });
       }
       tx.objectStore('skillStates').put({
-        skillId: 'C2.all-notes',
+        skillId,
         status: 'practising',
-        guideLevel,
+        guideLevel: 1,
         rollingAccuracy: 0.9,
       });
       tx.objectStore('cards').put({
         itemId: item,
-        skillId: 'C2.all-notes',
+        skillId,
         fsrs: {
           due: new Date(now - 60_000),
           stability: 3,
@@ -57,17 +58,19 @@ async function seedDueCard(page: Page, guideLevel: number): Promise<void> {
         createdAt: new Date(now - 6 * DAY),
         lastReviewedAt: new Date(now - 3 * DAY),
       });
-      tx.objectStore('reviewLogs').add({
-        itemId: item,
-        skillId: 'C2.all-notes',
-        drillType: 'find-the-note',
-        correct: true,
-        responseMs: 1500,
-        rating: 3,
-        hintUsed: false,
-        answerGiven: 's4f5',
-        at: new Date(now - 3 * DAY),
-      });
+      if (skillId === 'C2.all-notes') {
+        tx.objectStore('reviewLogs').add({
+          itemId: item,
+          skillId,
+          drillType: 'find-the-note',
+          correct: true,
+          responseMs: 1500,
+          rating: 3,
+          hintUsed: false,
+          answerGiven: 's4f5',
+          at: new Date(now - 3 * DAY),
+        });
+      }
       await new Promise<void>((resolve, reject) => {
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
@@ -75,9 +78,9 @@ async function seedDueCard(page: Page, guideLevel: number): Promise<void> {
       db.close();
     },
     {
-      item: ITEM,
+      item,
+      skillId,
       mastered: [...F1_SKILLS, ...F3_SKILLS, 'F2.string6-naturals', 'F2.string5-naturals'],
-      guideLevel,
       DAY,
     },
   );
@@ -106,8 +109,8 @@ async function soundOff(page: Page): Promise<void> {
 }
 
 /** A session on the one item, the way "Quiz me on this" focuses one; D15 serves it. */
-async function startD15(page: Page): Promise<void> {
-  await page.goto(`/session?item=${encodeURIComponent(ITEM)}`);
+async function startD15(page: Page, item: string): Promise<void> {
+  await page.goto(`/session?item=${encodeURIComponent(item)}`);
   await expect(page.getByTestId('session')).toBeVisible();
   await expect(page.getByText('Preparing your session…')).toBeHidden({ timeout: 15_000 });
   await expect(page.locator('[data-drill]')).toHaveAttribute('data-drill', 'hear-it-find-it');
@@ -130,15 +133,12 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('D15 "Hear it, find it"', () => {
-  test('plays the open string and the note, and grades the tap by ear @smoke', async ({ page }) => {
-    await seedDueCard(page, 1);
-    await startD15(page);
+  test('finds a C2 note it names and plays @smoke', async ({ page }) => {
+    await seedDueCard(page, FIND);
+    await startD15(page, FIND);
 
-    const prompt = page.getByTestId('d15-prompt');
-    await expect(prompt).toHaveText('Find the note you hear on string 4');
+    await expect(page.getByTestId('d15-prompt')).toHaveText('Find the G you hear on string 4');
     await expect(page.getByTestId('d15-explain')).toHaveText('First the open D, then the note.');
-    // Only the reference is marked: the open string, named.
-    await expect(page.getByTestId('marker-root')).toHaveAttribute('data-fret', '0');
     await expect(page.getByTestId('marker-root')).toHaveText('D');
     await expectNoHorizontalOverflow(page);
 
@@ -155,10 +155,30 @@ test.describe('D15 "Hear it, find it"', () => {
     await expect(page.getByTestId('marker-correct')).toHaveAttribute('data-fret', '5');
   });
 
-  test('shows a wrong tap against the note, and how far off it was', async ({ page }, info) => {
+  test('finds an I6 ear card by ear @smoke', async ({ page }) => {
+    await seedDueCard(page, EAR);
+    await startD15(page, EAR);
+
+    await expect(page.getByTestId('d15-prompt')).toHaveText('Find the note you hear on string 4');
+    // Only the reference is marked: the open string, named.
+    await expect(page.getByTestId('marker-root')).toHaveAttribute('data-fret', '0');
+    await expect(page.getByTestId('marker-root')).toHaveText('D');
+    await expectNoHorizontalOverflow(page);
+
+    await page.getByRole('button', { name: 'Hear it again' }).click();
+    await expect
+      .poll(() => audioLevel(page), { timeout: 10_000, intervals: [50] })
+      .toBeGreaterThan(0.01);
+    await tapFret(page, 5);
+    await expect(page.getByTestId('feedback-correct')).toContainText('G');
+  });
+
+  test('shows a wrong tap by ear against the note, and how far off it was', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
-    await seedDueCard(page, 1);
-    await startD15(page);
+    await seedDueCard(page, EAR);
+    await startD15(page, EAR);
 
     await tapFret(page, 3);
     await expect(page.getByTestId('feedback-wrong')).toContainText('That was G.');
@@ -171,26 +191,20 @@ test.describe('D15 "Hear it, find it"', () => {
     await expect(page.getByTestId('feedback-wrong')).toBeHidden();
   });
 
-  test('names the note while the guides are up', async ({ page }, info) => {
+  test('asks for sound on an ear card with sound off, then plays it', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
-    await seedDueCard(page, 3);
-    await startD15(page);
-
-    await expect(page.getByTestId('d15-prompt')).toHaveText('Find the G you hear on string 4');
-    // The neck still doesn't mark the answer.
-    await expect(page.getByTestId('marker-target')).toHaveCount(0);
-    await tapFret(page, 5);
-    await expect(page.getByTestId('feedback-correct')).toContainText('G');
-  });
-
-  test('names the note when sound is off', async ({ page }, info) => {
-    test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
-    await seedDueCard(page, 1);
+    await seedDueCard(page, EAR);
     await soundOff(page);
-    await startD15(page);
+    await startD15(page, EAR);
 
-    await expect(page.getByTestId('d15-prompt')).toHaveText('Find the G you hear on string 4');
-    await expect(page.getByTestId('d15-explain')).toContainText('Sound is off');
-    await expect(page.getByRole('button', { name: 'Hear it again' })).toBeDisabled();
+    await expect(page.getByTestId('d15-prompt')).toHaveText('Find the note you hear on string 4');
+    await expect(page.getByTestId('d15-explain')).toHaveText(
+      'Sound is off. Turn it on to hear the note.',
+    );
+    await page.getByRole('button', { name: 'Turn sound on' }).click();
+    await expect(page.getByRole('button', { name: 'Hear it again' })).toBeEnabled();
+    await expect
+      .poll(() => audioLevel(page), { timeout: 10_000, intervals: [50] })
+      .toBeGreaterThan(0.01);
   });
 });

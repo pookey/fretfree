@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../../app-store';
 import { playNotes } from '../../audio/audio';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
-import { chromaOf, noteAt, type FretRange, type Position } from '../../theory';
+import { noteAt, type FretRange, type Position } from '../../theory';
 import {
   d2MoveFocus,
   d2SlideWindow,
@@ -17,7 +17,6 @@ import {
   d15FeedbackPositions,
   d15InitialWindow,
   d15IsLive,
-  d15Named,
   d15NeckGuideLevel,
   d15PromptNotes,
   type D15Answer,
@@ -40,8 +39,9 @@ const REGULAR: FretRange = { from: 0, to: 12 };
 
 /**
  * D15 view: the open string sounds, then the note, and the learner taps the
- * note on that string (design §6 D15). The prompt names the note while the
- * guides are up (or with sound off); by ear, nothing names it until feedback.
+ * note on that string (design §6 D15). A C2 `find:` card names the note; on
+ * an I6 `ear-find:` card nothing names it until feedback, and with sound off
+ * the view asks for sound rather than giving the name away.
  */
 export function D15View({
   prompt,
@@ -57,6 +57,7 @@ export function D15View({
 }: DrillRenderProps<D15Prompt, D15Answer>) {
   const soundOn = useAppStore((s) => s.settings.soundOn);
   const volume = useAppStore((s) => s.settings.volume);
+  const updateSettings = useAppStore((s) => s.update);
   const compact = sizeClass === 'compact';
   const neckRef = useRef<HTMLDivElement>(null);
   const moved = useRef(false);
@@ -79,14 +80,15 @@ export function D15View({
     setState(view);
   }
 
-  const named = guided || d15Named(guideLevel, soundOn);
+  const named = guided || !prompt.byEar;
   const play = () => void playNotes(d15PromptNotes(prompt), { muted: !soundOn, volume });
 
-  // Each prompt plays once as it appears (once, under StrictMode too).
+  // Each prompt plays once as it appears (once, under StrictMode too). With
+  // sound off it waits, and plays as soon as sound is turned on.
   useEffect(() => {
-    if (feedback || played.current === prompt) return;
+    if (feedback || !soundOn || played.current === prompt) return;
     played.current = prompt;
-    void playNotes(d15PromptNotes(prompt), { muted: !soundOn, volume });
+    void playNotes(d15PromptNotes(prompt), { volume });
   }, [prompt, feedback, soundOn, volume]);
 
   let visible: FretRange;
@@ -103,7 +105,7 @@ export function D15View({
 
   const tap = (pos: Position) => {
     if (feedback || !d15IsLive(prompt, pos)) return;
-    onAnswer({ string: pos.string, fret: pos.fret, byEar: !named });
+    onAnswer(pos);
   };
 
   useEffect(() => {
@@ -114,7 +116,7 @@ export function D15View({
         // A focused cell handles its own Enter; this covers focus left on the page.
         if (e.target instanceof Element && e.target.closest('button, a, input')) return;
         e.preventDefault();
-        if (d15IsLive(prompt, view.focus)) onAnswer({ ...view.focus, byEar: !named });
+        if (d15IsLive(prompt, view.focus)) onAnswer(view.focus);
         return;
       }
       const from = view.focus ?? { string: prompt.string, fret: navRange.from };
@@ -134,7 +136,7 @@ export function D15View({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [feedback, onAnswer, named, prompt, view.focus, navRange, handedness, compact]);
+  }, [feedback, onAnswer, prompt, view.focus, navRange, handedness, compact]);
 
   // Move DOM focus to the focus cell once it is rendered (the compact window may have slid).
   useEffect(() => {
@@ -148,12 +150,12 @@ export function D15View({
 
   const pcAt = (p: Position) => noteAt(p, tuning, prompt.accidentalPref).pc;
   const openPc = pcAt(prompt.reference);
-  // By ear, an open string an octave below the note would name it.
-  const labelReference = named || Boolean(feedback) || chromaOf(openPc) !== chromaOf(prompt.pc);
+  // Always named: the reference is what the note is heard against.
   const reference: FretMarker = {
     ...prompt.reference,
     style: 'root',
-    ...(labelReference ? { label: openPc, forceLabel: true } : {}),
+    label: openPc,
+    forceLabel: true,
   };
   let markers: FretMarker[] = [reference];
   if (feedback) {
@@ -226,8 +228,8 @@ export function D15View({
 
   let explain: string;
   if (feedback) explain = d15Explain(prompt, feedback);
-  else if (!soundOn)
-    explain = 'Sound is off, so the note is named. Turn sound on to find it by ear.';
+  else if (!soundOn && named) explain = 'Sound is off, so you won’t hear the note.';
+  else if (!soundOn) explain = 'Sound is off. Turn it on to hear the note.';
   else explain = `First the open ${openPc}, then the note.`;
 
   return (
@@ -238,15 +240,27 @@ export function D15View({
             {promptText}
           </p>
           <div className={styles.listen}>
-            <button
-              type="button"
-              className={styles.again}
-              onClick={play}
-              disabled={!soundOn}
-              data-testid="d15-play"
-            >
-              <span aria-hidden="true">▶</span> Hear it again
-            </button>
+            {!soundOn && prompt.byEar && !feedback ? (
+              // An ear card can't be answered unheard, and naming the note would
+              // grade it on another fact, so ask for sound instead.
+              <button
+                type="button"
+                className={styles.primary}
+                onClick={() => void updateSettings({ soundOn: true })}
+              >
+                Turn sound on
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={styles.again}
+                onClick={play}
+                disabled={!soundOn}
+                data-testid="d15-play"
+              >
+                <span aria-hidden="true">▶</span> Hear it again
+              </button>
+            )}
           </div>
           <p className={styles.explain} data-testid="d15-explain">
             {explain}

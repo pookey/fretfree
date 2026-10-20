@@ -1,5 +1,4 @@
 import { ENGINE_CONFIG } from '../../engine/config';
-import { parseFindItemId } from '../../engine/items/find';
 import type { GuideLevel, Item } from '../../engine/model';
 import {
   allStrings,
@@ -19,14 +18,23 @@ import {
 } from '../../theory';
 import { d2SpanWindow } from '../d2-find-the-note/logic';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
-import { D15_SCOPES, type D15Scope } from './meta';
+import { D15_SCOPES, d15CardOf, d15EarConcept, d15TargetFret, type D15Scope } from './meta';
 
-export { D15_ID, D15_SCOPE, D15_SCOPES, d15CanTest, d15ConceptOf, type D15Scope } from './meta';
+export {
+  D15_ID,
+  D15_SCOPE,
+  D15_SCOPES,
+  d15CanTest,
+  d15CardOf,
+  d15ConceptOf,
+  type D15Scope,
+} from './meta';
 
 /**
  * D15 "Hear it, find it" (design §6, research/02 rule 13): the open string
- * sounds, then a note on it, and the learner taps that note. It tests the
- * same `find:<pc>@s<n>` cards as D2, with the sound as the cue.
+ * sounds, then a note on it, and the learner taps that note. On C2's
+ * `find:` cards the note is named too; on I6's `ear-find:` cards it is
+ * found by ear (`meta.ts`).
  */
 
 /** Taps count on the named string, frets 0–12. */
@@ -37,6 +45,8 @@ export interface D15Prompt {
   /** The note's pitch class, spelled per the accidental preference. */
   pc: string;
   string: number;
+  /** An `ear-find:` card: the name is held back until feedback. */
+  byEar: boolean;
   scope: D15Scope;
   /** The one cell that sounds the note heard. The open string's own note is at fret 12. */
   target: Position;
@@ -49,10 +59,8 @@ export interface D15Prompt {
   accidentalPref: AccidentalPref;
 }
 
-/** The tapped cell, and whether the prompt held the note's name back. */
-export interface D15Answer extends Position {
-  byEar: boolean;
-}
+/** The answer is the tapped cell. */
+export type D15Answer = Position;
 
 export function d15ScopeFor(level: number): D15Scope {
   const i = Math.max(0, Math.min(D15_SCOPES.length - 1, Math.round(level)));
@@ -60,20 +68,20 @@ export function d15ScopeFor(level: number): D15Scope {
 }
 
 export function d15MakePrompt(item: Item, ctx: DrillContext): D15Prompt {
-  const ref = parseFindItemId(item.id);
+  const ref = d15CardOf(item);
   if (!ref || ref.string > stringCount(ctx.tuning)) {
     throw new Error(`D15 cannot test item ${item.id}`);
   }
   const reference = { string: ref.string, fret: 0 };
-  const open = noteAt(reference, ctx.tuning).chroma;
   // The note above the open string, never the open string itself: unison with
-  // the reference would give it away, and the name sits on that cell.
-  const fret = (chromaOf(ref.pc) - open + 12) % 12 || 12;
+  // the reference would give it away.
+  const fret = d15TargetFret(ref.pc, ref.string, ctx.tuning);
   const scope = d15ScopeFor(ctx.scopeLevel);
   return {
     itemId: item.id,
     pc: chromaToPc(chromaOf(ref.pc), ctx.accidentalPref),
     string: ref.string,
+    byEar: ref.byEar,
     scope,
     target: { string: ref.string, fret },
     reference,
@@ -82,16 +90,6 @@ export function d15MakePrompt(item: Item, ctx: DrillContext): D15Prompt {
     tuning: ctx.tuning,
     accidentalPref: ctx.accidentalPref,
   };
-}
-
-/**
- * Whether the prompt names the note. The name is a guide (design §3.5): it
- * shows while the neck still highlights roots (level 2+), so new reps pair
- * the sound with a name, and fades with the skill. With sound off there is
- * nothing to hear, so it always shows.
- */
-export function d15Named(guideLevel: GuideLevel, soundOn: boolean): boolean {
-  return guideLevel >= 2 || !soundOn;
 }
 
 /** True if a tap on this cell is an answer (dimmed cells are inert). */
@@ -113,12 +111,21 @@ export function d15PromptNotes(prompt: D15Prompt): string[] {
 }
 
 export function d15Check(prompt: D15Prompt, answer: Position): DrillCheck {
-  if (samePosition(answer, prompt.target)) return { correct: true, expected: prompt.pc };
+  const expected = prompt.pc;
+  // By ear the confusion matrix is keyed by interval over the open string.
+  const concept = prompt.byEar ? { concept: d15EarConcept(prompt.target.fret) } : {};
+  if (samePosition(answer, prompt.target)) return { correct: true, expected, ...concept };
   const given = d15IsLive(prompt, answer) ? pcAt(prompt, answer) : null;
-  // The note on another string, or an octave off, is a place error, not a note confusion.
-  return given && chromaOf(given) !== chromaOf(prompt.pc)
-    ? { correct: false, expected: prompt.pc, confusedWith: given }
-    : { correct: false, expected: prompt.pc };
+  // The note on another string, or an octave off, is a place error, not a note
+  // confusion; by ear, so is the open string itself (the reference).
+  if (!given || chromaOf(given) === chromaOf(prompt.pc)) {
+    return { correct: false, expected, ...concept };
+  }
+  if (!prompt.byEar) return { correct: false, expected, confusedWith: given };
+  if (answer.string !== prompt.string || answer.fret === 0) {
+    return { correct: false, expected, ...concept };
+  }
+  return { correct: false, expected, ...concept, confusedWith: d15EarConcept(answer.fret) };
 }
 
 export function d15DescribeAnswer(answer: Position): string {
@@ -131,11 +138,11 @@ export function d15DescribeAnswer(answer: Position): string {
  * named note is graded like D2.
  */
 export function d15GradedResponseMs(
-  _prompt: D15Prompt,
-  answer: D15Answer,
+  prompt: D15Prompt,
+  _answer: D15Answer,
   elapsedMs: number,
 ): number {
-  if (!answer.byEar) return elapsedMs;
+  if (!prompt.byEar) return elapsedMs;
   return Math.max(0, elapsedMs - ENGINE_CONFIG.earFind.listenAllowanceMs);
 }
 
@@ -149,8 +156,7 @@ export function d15FeedbackPositions(
   prompt: D15Prompt,
   fb: DrillFeedback<Position>,
 ): { expected: Position[]; given: Position[] } {
-  const { string, fret } = fb.answer;
-  return { expected: [prompt.target], given: fb.result.correct ? [] : [{ string, fret }] };
+  return { expected: [prompt.target], given: fb.result.correct ? [] : [fb.answer] };
 }
 
 /** "a minor 7th above the open A": how the note sits over the reference. */

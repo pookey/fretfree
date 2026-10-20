@@ -6,6 +6,7 @@ import {
   D15_SCOPE,
   d15Above,
   d15CanTest,
+  d15CardOf,
   d15Check,
   d15ConceptOf,
   d15DescribeAnswer,
@@ -15,7 +16,6 @@ import {
   d15InitialWindow,
   d15IsLive,
   d15MakePrompt,
-  d15Named,
   d15NeckGuideLevel,
   d15PromptNotes,
   d15ScopeFor,
@@ -29,7 +29,10 @@ const ctx = {
   scopeLevel: 0,
   rng: () => 0,
 };
-const item = (id: string) => ({ id, skillId: 'C2.all-notes' });
+const item = (id: string) => ({
+  id,
+  skillId: id.startsWith('ear-') ? 'I6.ear-find' : 'C2.all-notes',
+});
 const prompt = (id: string, over: Partial<typeof ctx> = {}) =>
   d15MakePrompt(item(id), { ...ctx, ...over });
 const at = (string: number, fret: number): Position => ({ string, fret });
@@ -38,14 +41,30 @@ const feedback = (p: D15Prompt, answer: Position): DrillFeedback<Position> => ({
   result: d15Check(p, answer),
 });
 
-describe('D15 prompts', () => {
-  it('tests find items only', () => {
+describe('D15 cards', () => {
+  it('tests C2 find cards named and I6 ear-find cards by ear', () => {
     expect(d15CanTest(item('find:G@s5'))).toBe(true);
+    expect(d15CanTest(item('ear-find:G@s5'))).toBe(true);
     expect(d15CanTest(item('note@s5f3'))).toBe(false);
+    expect(d15CardOf(item('find:G@s5'))).toEqual({ pc: 'G', string: 5, byEar: false });
+    expect(d15CardOf(item('ear-find:G@s5'))).toEqual({ pc: 'G', string: 5, byEar: true });
     expect(() => prompt('note@s5f3')).toThrow(/cannot test/);
     expect(() => prompt('find:G@s7')).toThrow(/cannot test/);
+    expect(prompt('find:G@s5').byEar).toBe(false);
+    expect(prompt('ear-find:G@s5').byEar).toBe(true);
   });
 
+  it('keys named cards by pitch class, as D2 does, and ear cards by interval', () => {
+    expect(d15ConceptOf(item('find:A#@s4'), { ...ctx, accidentalPref: 'flat' })).toBe('Bb');
+    expect(d15ConceptOf(item('ear-find:G@s4'), ctx)).toBe('ear:P4');
+    expect(d15ConceptOf(item('ear-find:A@s5'), ctx)).toBe('ear:P8');
+    expect(d15ConceptOf(item('ear-find:E@s6'), { ...ctx, tuning: DROP_D_TUNING })).toBe('ear:M2');
+    expect(d15ConceptOf(item('ear-find:G@s7'), ctx)).toBeNull();
+    expect(d15ConceptOf(item('note@s4f1'), ctx)).toBeNull();
+  });
+});
+
+describe('D15 prompts', () => {
   it('plays the open string, then the note above it on that string', () => {
     const p = prompt('find:G@s5');
     expect(p).toMatchObject({
@@ -57,15 +76,15 @@ describe('D15 prompts', () => {
       activeRange: { from: 0, to: 12 },
       liveStrings: [5],
     });
+    expect(d15PromptNotes(p)).toEqual(['A2', 'G3']);
     expect(prompt('find:G@s5', { scopeLevel: 1 })).toMatchObject({
       scope: 'region',
       liveStrings: [1, 2, 3, 4, 5, 6],
     });
-    expect(d15PromptNotes(p)).toEqual(['A2', 'G3']);
   });
 
   it("puts the open string's own note at fret 12, never in unison with the reference", () => {
-    const p = prompt('find:A@s5');
+    const p = prompt('ear-find:A@s5');
     expect(p.target).toEqual(at(5, 12));
     expect(d15PromptNotes(p)).toEqual(['A2', 'A3']);
   });
@@ -85,29 +104,16 @@ describe('D15 prompts', () => {
     expect(d15ScopeFor(1)).toBe('region');
     expect(d15ScopeFor(7)).toBe('region');
   });
-
-  it('names the note while the guides are up, or whenever sound is off', () => {
-    expect(d15Named(3, true)).toBe(true);
-    expect(d15Named(2, true)).toBe(true);
-    expect(d15Named(1, true)).toBe(false);
-    expect(d15Named(0, true)).toBe(false);
-    expect(d15Named(0, false)).toBe(true);
-  });
-
-  it('keys confusions by pitch class, as D2 does', () => {
-    expect(d15ConceptOf(item('find:A#@s4'), { ...ctx, accidentalPref: 'flat' })).toBe('Bb');
-    expect(d15ConceptOf(item('note@s4f1'), ctx)).toBeNull();
-  });
 });
 
-describe('D15 grading', () => {
+describe('D15 grading a named card', () => {
   const p = prompt('find:G@s5');
 
   it('accepts only the cell that sounds the note', () => {
     expect(d15Check(p, at(5, 10))).toEqual({ correct: true, expected: 'G' });
   });
 
-  it('logs another note on the string as a confusion', () => {
+  it('logs another note on the string as a pitch-class confusion', () => {
     expect(d15Check(p, at(5, 8))).toEqual({ correct: false, expected: 'G', confusedWith: 'F' });
   });
 
@@ -128,16 +134,44 @@ describe('D15 grading', () => {
     expect(d15Check(wide, at(4, 3))).toEqual({ correct: false, expected: 'G', confusedWith: 'F' });
   });
 
-  it('describes the tapped cell for the review log', () => {
-    expect(d15DescribeAnswer(at(5, 10))).toBe('s5f10');
+  it('is graded like D2, with no listening allowance', () => {
+    expect(d15GradedResponseMs(p, at(5, 10), 1500)).toBe(1500);
+  });
+});
+
+describe('D15 grading by ear', () => {
+  const p = prompt('ear-find:G@s4');
+  const wide = prompt('ear-find:G@s4', { scopeLevel: 1 });
+  const place = { correct: false, expected: 'G', concept: 'ear:P4' };
+
+  it('keys the answer by its interval over the open string', () => {
+    expect(d15Check(p, at(4, 5))).toEqual({ correct: true, expected: 'G', concept: 'ear:P4' });
   });
 
-  it('takes the listening time off by ear, not when the note is named', () => {
+  it('logs a wrong fret on the string as an interval confusion', () => {
+    expect(d15Check(p, at(4, 4))).toEqual({ ...place, confusedWith: 'ear:M3' });
+  });
+
+  it('counts the reference, an octave off or another string as place errors', () => {
+    expect(d15Check(p, at(4, 0))).toEqual(place);
+    expect(d15Check(p, at(3, 0))).toEqual(place);
+    expect(d15Check(wide, at(3, 0))).toEqual(place);
+    expect(d15Check(wide, at(5, 7))).toEqual(place);
+    expect(d15Check(prompt('ear-find:G@s3'), at(3, 0))).toEqual({
+      correct: false,
+      expected: 'G',
+      concept: 'ear:P8',
+    });
+  });
+
+  it('takes the listening time off before grading', () => {
     const allowance = ENGINE_CONFIG.earFind.listenAllowanceMs;
-    const byEar = { ...at(5, 10), byEar: true };
-    expect(d15GradedResponseMs(p, byEar, allowance + 900)).toBe(900);
-    expect(d15GradedResponseMs(p, byEar, 200)).toBe(0);
-    expect(d15GradedResponseMs(p, { ...byEar, byEar: false }, 1500)).toBe(1500);
+    expect(d15GradedResponseMs(p, at(4, 5), allowance + 900)).toBe(900);
+    expect(d15GradedResponseMs(p, at(4, 5), 200)).toBe(0);
+  });
+
+  it('describes the tapped cell for the review log', () => {
+    expect(d15DescribeAnswer(at(4, 5))).toBe('s4f5');
   });
 });
 
@@ -154,8 +188,7 @@ describe('D15 feedback', () => {
       expected: [at(5, 10)],
       given: [],
     });
-    // The view's answer also says whether it was by ear; only the cell is marked.
-    expect(d15FeedbackPositions(p, feedback(p, { ...at(5, 7), byEar: true } as Position))).toEqual({
+    expect(d15FeedbackPositions(p, feedback(p, at(5, 7)))).toEqual({
       expected: [at(5, 10)],
       given: [at(5, 7)],
     });
