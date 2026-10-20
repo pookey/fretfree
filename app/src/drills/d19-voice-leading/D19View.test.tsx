@@ -70,7 +70,7 @@ describe('<D19View>', () => {
     ]);
     expect(markers('target')).toEqual([]);
     expect(screen.getByTestId('d19-explain')).toHaveTextContent(
-      'Hold any note C and F share; move each other note to the nearest note of F.',
+      'Hold any note C and F share, and move each other note along its string to a note of F, 2 frets at most. If they share none, all three move the same way.',
     );
     expect(screen.getByTestId('d19-count')).toHaveTextContent('Found 0 of 3');
     expect(neck()).toHaveAttribute('data-fret-from', '0');
@@ -144,6 +144,20 @@ describe('<D19View>', () => {
     expect(neck()).toHaveAccessibleName('Fretboard: F in 2nd inversion on strings 3–1');
     tap(at(2, 6)); // feedback is inert
     expect(screen.getByTestId('d19-count')).toHaveTextContent('Found 0 of 3');
+  });
+
+  it('gives IV to V a hint that holds when no note is shared', () => {
+    view(prompt('voice-lead:IV-V@s3'));
+    expect(screen.getByTestId('d19-explain')).toHaveTextContent(
+      'Hold any note F and G share, and move each other note along its string to a note of G, 2 frets at most. If they share none, all three move the same way.',
+    );
+  });
+
+  it('spells a wrong tap for the key', () => {
+    // In F, with the sharp preference, the tapped note is B♭, not A♯.
+    const p = prompt('voice-lead:I-IV@s3', () => 0.5);
+    view(p, { feedback: fb(p, taps(at(2, 11))) });
+    expect(markers('wrong')).toEqual([{ string: 2, fret: 11, label: 'B♭' }]);
   });
 
   it('centres a compact window on the triad, without the hint line', () => {

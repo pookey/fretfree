@@ -13,6 +13,8 @@ import {
   d19Found,
   d19IsLive,
   d19Missed,
+  d19Rule,
+  d19SpellTap,
   d19NoteName,
   d19Subject,
   d19TargetAt,
@@ -21,7 +23,7 @@ import {
   type D19Answer,
   type D19Prompt,
 } from './logic';
-import { d18Display, d18StringSpan } from '../d18-inversions/logic';
+import { d18StringSpan } from '../d18-inversions/logic';
 import styles from './D19View.module.css';
 
 interface ViewState {
@@ -119,7 +121,7 @@ export function D19View({
       ...d19WrongTaps(prompt, taps).map((p): FretMarker => ({
         ...p,
         style: 'wrong',
-        label: d18Display(noteAt(p, tuning, prompt.accidentalPref).pc),
+        label: d19SpellTap(prompt, p),
         forceLabel: true,
       })),
     );
@@ -146,9 +148,7 @@ export function D19View({
     </>
   );
   const hint =
-    level >= cfg.ruleGuideLevel
-      ? `Hold any note ${from} and ${to} share; move each other note to the nearest note of ${to}.`
-      : `Tap the ${to} nearest this ${from}.`;
+    level >= cfg.ruleGuideLevel ? d19Rule(prompt) : `Tap the ${to} nearest this ${from}.`;
 
   const found = d19Found(prompt, taps).length;
   return (

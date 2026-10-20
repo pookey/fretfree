@@ -49,16 +49,20 @@ describe('<VoiceLeadingPanel>', () => {
     expect(chords()[0]).toHaveAttribute('data-role', 'from');
     expect(chords()[1]).toHaveAttribute('aria-current', 'step');
     expect(screen.queryByTestId('d19-moves')).toBeNull();
-    expect(screen.queryByText(/Hold the note/)).toBeNull();
+    expect(screen.queryByText(/Hold any note/)).toBeNull();
   });
 
   it('spells each chord from guide level 2, and states the rule at level 3 (rule 9)', () => {
     const { unmount } = panel(prompt('voice-lead:IV-V@s3'), 2);
     expect(rows()).toEqual(['ICC E G', 'IVFF A Cfrom', 'VGG B Dto']);
-    expect(screen.queryByText(/Hold the note/)).toBeNull();
+    expect(screen.queryByText(/Hold any note/)).toBeNull();
     unmount();
     panel(prompt('voice-lead:IV-V@s3'), 3);
-    expect(screen.getByText(/Hold the note the two chords share/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Hold any note F and G share, and move each other note along its string to a note of G, 2 frets at most. If they share none, all three move the same way.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('spells the chords for the key', () => {

@@ -16,6 +16,7 @@ import {
   inRange,
   majorKey,
   midiAt,
+  spellInKey,
   noteAt,
   samePosition,
   stringCount,
@@ -353,8 +354,28 @@ function where(pos: Position): string {
 }
 
 /** Why a wrong tap is wrong: a note of the other chord, a far note of the right one, or one held. */
+/** A tapped note's name, spelled for the key (B♭ in F, whatever the accidental preference). */
+export function d19SpellTap(prompt: D19Prompt, pos: Position): string {
+  return d18Display(spellInKey(midiAt(pos, prompt.tuning) % 12, majorKey(prompt.key)));
+}
+
+/**
+ * The rule that finds every answer: hold what the chords share, move the
+ * rest along their strings. IV and V share no note, so all three voices
+ * move a whole step the same way (the semitone-nearest note is not always
+ * in the answer: F A C → G B D moves C up to D, not down to B).
+ */
+export function d19Rule(prompt: D19Prompt): string {
+  const from = d19Chord(prompt, prompt.from);
+  const to = d19Chord(prompt, prompt.to);
+  return (
+    `Hold any note ${from} and ${to} share, and move each other note along its string ` +
+    `to a note of ${to}, ${D19_MAX_MOVE} frets at most. If they share none, all three move the same way.`
+  );
+}
+
 function wrongWhy(prompt: D19Prompt, wrong: Position, confused: boolean): string {
-  const pc = d18Display(noteAt(wrong, prompt.tuning, prompt.accidentalPref).pc);
+  const pc = d19SpellTap(prompt, wrong);
   const to = d19Chord(prompt, prompt.to);
   if (confused) {
     return ` That's ${pc}, a note of ${d19Chord(prompt, prompt.other)} (${prompt.other}), not ${to}.`;
@@ -366,7 +387,10 @@ function wrongWhy(prompt: D19Prompt, wrong: Position, confused: boolean): string
   }
   const chroma = midiAt(wrong, prompt.tuning) % 12;
   const toChromas = prompt.targets.map((t) => midiAt(t, prompt.tuning) % 12);
-  if (toChromas.includes(chroma)) return ` That's ${pc}, a note of ${to}, but not the nearest one.`;
+  if (toChromas.includes(chroma)) {
+    const from = d19Chord(prompt, prompt.from);
+    return ` That's ${pc}, a note of ${to}, but not in the ${to} nearest this ${from}.`;
+  }
   return ` That's ${pc}, not a note of ${to}.`;
 }
 

@@ -6,8 +6,9 @@ export const voiceLeading = {
    */
   noteNamesGuideLevel: 2,
   /**
-   * D19's hint line states the rule ("hold the shared note, move the others
-   * to the nearest note") at this guide level and above.
+   * D19's hint line states the rule ("hold any shared note, move each other
+   * note along its string to a note of the next chord, 2 frets at most; with
+   * none shared, all three move the same way") at this guide level and above.
    */
   ruleGuideLevel: 1,
   /** D19's context panel spells each chord of the key at this guide level and above. */

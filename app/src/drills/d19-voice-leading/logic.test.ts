@@ -32,6 +32,8 @@ import {
   d19MovesLine,
   d19Nearest,
   d19Roots,
+  d19Rule,
+  d19SpellTap,
   d19ScopeFor,
   d19Sounds,
   d19Subject,
@@ -308,10 +310,36 @@ describe('d19Explain', () => {
     );
     // A on string 2 is a note of F, but the nearest F has F there.
     expect(d19Explain(p, fb(p, taps(at(2, 10))))).toBe(
-      `You tapped string 2, fret 10. That's A, a note of F, but not the nearest one. It's ${answer}`,
+      `You tapped string 2, fret 10. That's A, a note of F, but not in the F nearest this C. It's ${answer}`,
     );
     expect(d19Explain(p, fb(p, taps(at(1, 2))))).toBe(
       `You tapped string 1, fret 2. That's F♯, not a note of F. It's ${answer}`,
+    );
+  });
+});
+
+describe('the rule and its wording', () => {
+  it('states a rule that holds for moves with no shared note', () => {
+    expect(d19Rule(cToF())).toBe(
+      'Hold any note C and F share, and move each other note along its string to a note of F, 2 frets at most. If they share none, all three move the same way.',
+    );
+    // IV and V share no note: every voice moves a whole step up, so the
+    // semitone-nearest G note to C (B, a fret down) is not in the answer.
+    const p = prompt('voice-lead:IV-V@s3');
+    expect(d19Rule(p)).toContain('If they share none, all three move the same way.');
+    expect(d19Explain(p, fb(p, taps(at(1, 7))))).toBe(
+      "You tapped string 1, fret 7. That's B, a note of G, but not in the G nearest this F. " +
+        "It's G in root position on strings 3–1: F up 2 frets to G, A up 2 frets to B, C up 2 frets to D.",
+    );
+  });
+
+  it('spells a tapped note for the key, not the accidental preference', () => {
+    // In F, with the sharp preference: B♭ on string 2, but not the nearest B♭.
+    const p = prompt('voice-lead:I-IV@s3', { rng: () => 0.5 });
+    expect(p.key).toBe('F');
+    expect(d19SpellTap(p, at(2, 11))).toBe('B♭');
+    expect(d19Explain(p, fb(p, taps(at(2, 11))))).toContain(
+      "That's B♭, a note of B♭, but not in the B♭ nearest this F.",
     );
   });
 });

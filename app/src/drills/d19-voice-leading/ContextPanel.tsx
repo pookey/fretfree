@@ -3,7 +3,7 @@ import { VOICE_LEAD_CHORDS, type VoiceLeadChord } from '../../engine/items/voice
 import type { GuideLevel } from '../../engine/model';
 import type { DrillContextPanelProps } from '../types';
 import { d18Display, d18Tone } from '../d18-inversions/logic';
-import { d19Chord, d19MoveLine, d19Moves, type D19Answer, type D19Prompt } from './logic';
+import { d19Chord, d19MoveLine, d19Moves, d19Rule, type D19Answer, type D19Prompt } from './logic';
 import styles from './ContextPanel.module.css';
 
 function spelling(prompt: D19Prompt, chord: VoiceLeadChord): string {
@@ -51,12 +51,7 @@ export function VoiceLeadingPanel({
           ))}
         </ul>
       ) : (
-        level >= 3 && (
-          <p>
-            Hold the note the two chords share, if they share one, and move each other note to the
-            nearest note of the next chord: a fret or two.
-          </p>
-        )
+        level >= 3 && <p>{d19Rule(prompt)}</p>
       )}
     </div>
   );
