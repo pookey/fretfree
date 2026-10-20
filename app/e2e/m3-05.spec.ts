@@ -240,6 +240,8 @@ test.describe('M3-05 D9 builds the CAGED shape at a root', () => {
 
   test('whole shapes follow the cores, over the whole neck', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
+    // About 17 s on an idle machine, past 30 s under lane load on the mini.
+    test.slow();
     await freshStart(page);
     await masterSkills(page, [...PREREQS, 'C6.triad-cores']);
     await focusSession(page, 'C6.major-shapes');
