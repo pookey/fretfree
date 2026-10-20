@@ -76,3 +76,29 @@ export function noteSkillIds(skills: readonly Skill[]): string[] {
     })
     .map((s) => s.id);
 }
+
+/**
+ * The open skills nearest `targets`: those of them on the `frontier`, or,
+ * walking back one level of prerequisites at a time, the nearest open ones.
+ * Null when nothing on the way is open. Explore's "Quiz me on this" uses it
+ * so a focus offers what the learner can practise now, with gating left on
+ * (research/02 rule 7).
+ */
+export function nearestOpenSkills(
+  targets: readonly string[],
+  frontier: ReadonlySet<string>,
+  skills: readonly Skill[],
+): string[] | null {
+  const byId = new Map(skills.map((s) => [s.id, s]));
+  let level = targets.filter((id) => byId.has(id));
+  const seen = new Set(level);
+  while (level.length > 0) {
+    const open = level.filter((id) => frontier.has(id));
+    if (open.length > 0) return open;
+    level = [...new Set(level.flatMap((id) => byId.get(id)?.prerequisites ?? []))].filter(
+      (id) => byId.has(id) && !seen.has(id),
+    );
+    for (const id of level) seen.add(id);
+  }
+  return null;
+}

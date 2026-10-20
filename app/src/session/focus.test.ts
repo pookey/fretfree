@@ -5,6 +5,7 @@ import {
   ITEM_PARAM,
   focusFilter,
   focusHref,
+  nearestOpenSkills,
   noteSkillIds,
   parseFocus,
   practiseHref,
@@ -71,5 +72,28 @@ describe('noteSkillIds', () => {
   it('skips skills with no items', () => {
     const empty = { ...SKILLS[0]!, items: () => [] };
     expect(noteSkillIds([empty])).toEqual([]);
+  });
+});
+
+describe('nearestOpenSkills', () => {
+  const skill = (id: string, prerequisites: string[] = []) => ({
+    ...SKILLS[0]!,
+    id,
+    prerequisites,
+  });
+  const skills = [skill('a'), skill('b', ['a']), skill('c', ['b', 'x']), skill('d', ['b'])];
+
+  it('keeps the open targets', () => {
+    expect(nearestOpenSkills(['c', 'd'], new Set(['c', 'a']), skills)).toEqual(['c']);
+  });
+
+  it('walks back through prerequisites to the nearest open level', () => {
+    expect(nearestOpenSkills(['c', 'd'], new Set(['a']), skills)).toEqual(['a']);
+    expect(nearestOpenSkills(['c'], new Set(['a', 'b']), skills)).toEqual(['b']);
+  });
+
+  it('is null when nothing on the way is open, or no target is known', () => {
+    expect(nearestOpenSkills(['c'], new Set(), skills)).toBeNull();
+    expect(nearestOpenSkills(['nope'], new Set(['a']), skills)).toBeNull();
   });
 });
