@@ -146,10 +146,16 @@ async function checkPwa(page) {
   check(controlled, 'the service worker controls the page');
   await page.context().setOffline(true);
   await page.goto(`${base}/onboarding`);
-  check(
-    await page.getByRole('heading', { level: 1 }).first().isVisible(),
-    'offline, the service worker serves the app',
-  );
+  // Onboarding is a lazy chunk: its heading renders a moment after load.
+  const served = await page
+    .getByRole('heading', { level: 1 })
+    .first()
+    .waitFor({ timeout: 10_000 })
+    .then(
+      () => true,
+      () => false,
+    );
+  check(served, 'offline, the service worker serves the app');
   await page.context().setOffline(false);
 }
 
@@ -167,7 +173,8 @@ function run(command, args) {
 }
 
 async function lighthouse(route, scheme) {
-  const out = join(reports, `${scheme}-${route === '/' ? 'today' : route.slice(1)}.json`);
+  const name = route === '/' ? 'today' : route.slice(1).replaceAll('/', '-');
+  const out = join(reports, `${scheme}-${name}.json`);
   // With nothing on --port, Lighthouse would launch a Chrome of its own.
   try {
     await fetch(`http://127.0.0.1:${debugPort}/json/version`);
