@@ -1,0 +1,117 @@
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+  justify-content: space-between;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.prompt {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.prompt strong {
+  color: var(--tone);
+}
+
+.explain {
+  margin: 0;
+  min-height: 1.5em;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.count {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.done {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .done:hover {
+    border-color: var(--tone);
+  }
+}
+
+.neckArea {
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-2);
+  justify-content: flex-start;
+}
+
+/* One wrapped row (prompt and count) so the neck keeps the height. */
+.drill[data-size-class='compact'] .top {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: var(--space-4);
+  row-gap: var(--space-1);
+}
+
+.drill[data-size-class='compact'] .explain {
+  flex-basis: 100%;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+/* Best-effort iPhone: keep the zoomed neck within short landscape viewports. */
+.drill[data-size-class='compact'] .neckArea svg {
+  max-height: calc(100dvh - 7rem);
+}
+
+/* A phone on its side has no room for the feedback line above the letterboxed
+   neck; the session's feedback bar still says what was right. */
+@media (max-height: 499px) {
+  .drill[data-size-class='compact'] .explain {
+    display: none;
+  }
+}

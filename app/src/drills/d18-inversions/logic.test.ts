@@ -65,10 +65,10 @@ function seeded(seed: number): () => number {
 }
 
 describe('D18 registration', () => {
-  it('is a tap drill for every I1 skill, and tests only inversion cards', () => {
+  it('is a tap drill for every I1 inversion skill, and tests only inversion cards', () => {
     const drill = getDrill(D18_ID)!;
     expect(drill.inputModes).toEqual(['tap', 'choice', 'keyboard']);
-    const i1 = SKILLS.filter((s) => s.topic === 'I1').map((s) => s.id);
+    const i1 = SKILLS.filter((s) => s.drillTypes.includes(D18_ID)).map((s) => s.id);
     expect([...drill.skills]).toEqual(i1);
     expect(d18CanTest({ id: 'inversion:0@s3/major', skillId: 'x' })).toBe(true);
     expect(d18CanTest({ id: 'caged-core:A-shape@major', skillId: 'x' })).toBe(false);
@@ -76,7 +76,7 @@ describe('D18 registration', () => {
       'inversion-name:2@s5/minor',
     );
     expect(d18ConceptOf({ id: 'note@s6f5', skillId: 'x' })).toBeNull();
-    for (const s of SKILLS.filter((x) => x.topic === 'I1')) {
+    for (const s of SKILLS.filter((x) => x.drillTypes.includes(D18_ID))) {
       for (const item of s.items()) expect(d18CanTest(item), item.id).toBe(true);
     }
   });
@@ -175,7 +175,7 @@ describe('d18MakePrompt', () => {
 
   it('places every card at every root, close-voiced, within the region and a 4-fret stretch', () => {
     const rng = seeded(11);
-    for (const s of SKILLS.filter((x) => x.topic === 'I1')) {
+    for (const s of SKILLS.filter((x) => x.drillTypes.includes(D18_ID))) {
       for (const item of s.items()) {
         for (const tuning of [STANDARD_TUNING, DROP_D_TUNING]) {
           for (let i = 0; i < 24; i++) {

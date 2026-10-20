@@ -1,0 +1,82 @@
+/* D19's context panel: I, IV and V in the key, then how each voice moved
+   once answered. It fits above the neck on an iPad mini in landscape. */
+.panel h2 {
+  margin: 0 0 var(--space-2);
+}
+
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.chords {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.chords li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 0.125rem var(--space-2);
+  border: 2px solid transparent;
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* The chords in play: a border (dashed for the start) and a text tag, not only a colour. */
+.chords li[data-role] {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.chords li[data-role='from'] {
+  border-color: var(--text-muted);
+  border-style: dashed;
+}
+
+.chords li[data-role='to'] {
+  border-color: var(--text);
+}
+
+.numeral {
+  min-width: 1.75rem;
+  font-family: var(--font-display);
+}
+
+.chord {
+  min-width: 1.75rem;
+}
+
+.notes {
+  flex: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.role {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.moves {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.string {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
