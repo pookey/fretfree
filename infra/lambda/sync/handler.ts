@@ -1,12 +1,26 @@
-import { json, type HttpEvent, type HttpResult } from '../shared/http';
+import { sdkCall } from '../shared/aws';
+import { createSyncHandler } from './api';
+import { createDeleteUser } from './users';
 
-/**
- * Placeholder for the sync API (M7-03 replaces this file): `POST /sync/push`,
- * `GET /sync/pull` and `DELETE /account`, all behind the JWT authoriser. The
- * stack (lib/sync-stack.ts) gives it TABLE_NAME, SEQ_INDEX and USER_POOL_ID, read
- * and write on the table, and cognito-idp:AdminDeleteUser on the pool. The user
- * ID is the token's `sub` claim, never anything from the body.
- */
-export async function handler(_event: HttpEvent): Promise<HttpResult> {
-  return json(501, { error: 'not-implemented' });
-}
+// The sync API Lambda (`POST /sync/push`, `GET /sync/pull`, `DELETE /account`):
+// the handlers in api.ts wired to the runtime's AWS SDK. The stack
+// (lib/sync-stack.ts) sets TABLE_NAME, SEQ_INDEX and USER_POOL_ID.
+const env = (name: string): string => {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is not set`);
+  return value;
+};
+
+export const handler = createSyncHandler({
+  table: {
+    call: sdkCall('dynamodb', 'DynamoDB'),
+    tableName: env('TABLE_NAME'),
+    seqIndex: env('SEQ_INDEX'),
+  },
+  deleteUser: createDeleteUser(
+    sdkCall('cognito-identity-provider', 'CognitoIdentityProvider'),
+    env('USER_POOL_ID'),
+  ),
+  sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  random: Math.random,
+});
