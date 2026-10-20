@@ -47,33 +47,39 @@ export async function pullRecords(
   // everything again. Merging records already held is a no-op.
   const after = cursor > counter.lastSeq ? 0 : cursor;
 
-  // One more than the limit, to tell whether there is more.
-  const found: StoredRecord[] = [];
+  // Reads one record past the page, to tell whether there is more, and stops
+  // reading as soon as the page is full by count or by bytes.
+  const served: StoredRecord[] = [];
+  let bytes = 0;
+  let more = false;
   let startKey: Parameters<typeof queryBySeq>[5];
-  while (after < counter.lastSeq && found.length <= limit) {
+  paging: while (after < counter.lastSeq) {
     const page = await queryBySeq(
       t,
       userId,
       after,
       counter.lastSeq,
-      limit + 1 - found.length,
+      limit + 1 - served.length,
       startKey,
     );
-    found.push(...page.records);
+    for (const record of page.records) {
+      const size = Buffer.byteLength(record.json);
+      if (
+        served.length === limit ||
+        (served.length > 0 && bytes + size > SYNC_SERVER.maxPullBytes)
+      ) {
+        more = true;
+        break paging;
+      }
+      served.push(record);
+      bytes += size;
+    }
     startKey = page.next;
     if (!startKey) break;
-  }
-
-  const served: StoredRecord[] = [];
-  let bytes = 0;
-  for (const record of found.slice(0, limit)) {
-    bytes += Buffer.byteLength(record.json);
-    if (served.length > 0 && bytes > SYNC_SERVER.maxPullBytes) break;
-    served.push(record);
   }
   return {
     records: served.map((r) => JSON.parse(r.json) as unknown),
     cursor: String(served.at(-1)?.seq ?? after),
-    more: found.length > served.length,
+    more,
   };
 }

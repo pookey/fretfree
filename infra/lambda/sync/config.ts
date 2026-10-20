@@ -14,8 +14,12 @@ export const SYNC_SERVER = {
   /** Backoff before retry n is up to `backoffMs * 2^n`, capped at `maxBackoffMs`. */
   backoffMs: 25,
   maxBackoffMs: 1000,
-  /** One stored record's canonical JSON. A DynamoDB item holds at most 400 KB. */
-  maxRecordBytes: 350_000,
+  /**
+   * One stored record's canonical JSON. A transaction reads or writes at most
+   * 4 MB in all, so a full chunk of 99 records plus their keys must fit in it.
+   * Real records are well under 1 KB.
+   */
+  maxRecordBytes: 40_000,
   /** A record ID. The sort key `table#id` may be at most 1024 bytes. */
   maxIdBytes: 512,
   /** A pull page stops adding records past this many bytes (a Lambda reply is ≤ 6 MB). */
@@ -32,7 +36,10 @@ export const ATTR = {
   record: 'record',
   /** On the counter item: the last sequence number given out. */
   counter: 'lastSeq',
-  /** On the counter item: set while `DELETE /account` runs. Every push and pull then fails. */
+  /**
+   * On the counter item: set when `DELETE /account` starts, and kept after it
+   * finishes as the account's tombstone. Every push and pull then fails.
+   */
   closing: 'closing',
 } as const;
 

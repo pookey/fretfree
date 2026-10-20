@@ -75,7 +75,11 @@ function setup(options: Pick<FakeDynamoOptions, 'pageItems' | 'before'> = {}) {
       (itemsOf(sub).find((i) => (i.sk as { S: string }).S === COUNTER_SK)?.lastSeq as { N: string })
         ?.N ?? 0,
     );
-  return { db, deps, handler, as, itemsOf, counterOf, deletedUsers, sleeps };
+  /** All a deleted account leaves: the closing mark on its counter key. */
+  const tombstone = (sub: string) => [
+    { userId: { S: sub }, sk: { S: COUNTER_SK }, closing: { BOOL: true } },
+  ];
+  return { db, deps, handler, as, itemsOf, counterOf, tombstone, deletedUsers, sleeps };
 }
 
 const at = (iso: string) => new Date(`2026-10-${iso}Z`);
@@ -124,7 +128,7 @@ describe('sync API: auth and routing', () => {
 
 describe('sync API: a user reaches only their own data', () => {
   it('keeps each user to their own partition, whatever the body or query says', async () => {
-    const { as, itemsOf } = setup();
+    const { as, itemsOf, tombstone } = setup();
     const alice = as('alice');
     const mallory = as('mallory');
     expect((await alice.push([card('c1', 1000, 5), day('2026-10-18', 40, 10)])).statusCode).toBe(
@@ -144,7 +148,7 @@ describe('sync API: a user reaches only their own data', () => {
 
     // Nor delete them.
     await mallory.deleteAccount();
-    expect(itemsOf('mallory')).toEqual([]);
+    expect(itemsOf('mallory')).toEqual(tombstone('mallory'));
     expect(itemsOf('alice')).toHaveLength(3);
     expect((await alice.pullAll()).records).toHaveLength(2);
   });
@@ -217,6 +221,8 @@ describe('sync API: push', () => {
       { ...card('x'.repeat(SYNC_SERVER.maxIdBytes + 1), 1) },
       { ...card('c', 1), data: [] },
       { ...card('c', 1), fields: [1] },
+      { ...card('c', 1), fields: null },
+      { ...card('c', 1), fields: 5 },
       { ...card('c', 1), fields: { a: 'soon' } },
     ]) {
       const res = await u.pushRaw(JSON.stringify({ records: [bad] }));
@@ -248,13 +254,38 @@ describe('sync API: push', () => {
   it('refuses a merge that outgrows an item', async () => {
     const { as } = setup();
     const quests = (prefix: string) =>
-      Array.from({ length: 4000 }, (_, i) => `${prefix}-${i}-${'q'.repeat(40)}`);
+      Array.from({ length: 500 }, (_, i) => `${prefix}-${i}-${'q'.repeat(40)}`);
     const half = (prefix: string): SyncRecord => ({
       ...day('2026-10-18', 1, 1),
       data: { date: '2026-10-18', questsCompleted: quests(prefix) },
     });
     expect((await as('u').push([half('a')])).statusCode).toBe(200);
     expect(body(await as('u').push([half('b')]))).toEqual({ error: 'record-too-large' });
+  });
+
+  it('fits a full chunk of records at the size limit in one transaction', async () => {
+    const { as } = setup();
+    const id = (i: number) => `d${String(i).padStart(3, '0')}`;
+    const version = (i: number, quests: string[], updatedAt: number): SyncRecord => ({
+      table: 'dailyProgress',
+      id: id(i),
+      updatedAt,
+      deleted: false,
+      data: { date: id(i), questsCompleted: quests },
+    });
+    // Records just under the limit, stored a few per push to stay under 1 MB a batch.
+    const big = Array.from({ length: SYNC_SERVER.chunkRecords }, (_, i) =>
+      version(i, ['q'.repeat(SYNC_SERVER.maxRecordBytes - 300)], 1),
+    );
+    for (let i = 0; i < big.length; i += 20) {
+      expect((await as('u').push(big.slice(i, i + 20))).statusCode).toBe(200);
+    }
+    // One small change to each: the chunk reads 99 big records and writes 99 big merges.
+    const small = big.map((_, i) => version(i, ['new'], 2));
+    expect(body(await as('u').push(small))).toEqual({ ok: true });
+    const { records } = await as('u').pullAll();
+    expect(records).toHaveLength(SYNC_SERVER.chunkRecords);
+    expect(records.every((r) => (r.data?.questsCompleted as string[]).includes('new'))).toBe(true);
   });
 
   it('re-reads and re-merges when a concurrent push wins the race, losing nothing', async () => {
@@ -360,16 +391,45 @@ describe('sync API: pull', () => {
 
   it('stops a page at the byte cap, but always serves one record', async () => {
     const { as } = setup();
-    const big = (id: string) => ({
-      ...card(id, 1),
+    const big = (i: number) => ({
+      ...card(`c${String(i).padStart(2, '0')}`, 1),
       data: { notes: 'x'.repeat(SYNC_SERVER.maxRecordBytes - 100) },
     });
-    const n = Math.ceil(SYNC_SERVER.maxPullBytes / SYNC_SERVER.maxRecordBytes) + 1;
-    for (let i = 0; i < n; i++) await as('u').push([big(`c${i}`)]);
+    const size = Buffer.byteLength(canonical(big(0)));
+    const perPage = Math.floor(SYNC_SERVER.maxPullBytes / size);
+    for (let i = 0; i <= perPage; i++) await as('u').push([big(i)]);
     const page = body(await as('u').pull());
-    expect((page.records as unknown[]).length).toBe(n - 2);
+    expect(page.records).toHaveLength(perPage);
     expect(page.more).toBe(true);
-    expect((await as('u').pullAll()).records).toHaveLength(n);
+    expect((await as('u').pullAll()).records).toHaveLength(perPage + 1);
+    // A page always holds one record, however small the byte cap.
+    const one = body(await as('u').pull({ cursor: String(perPage) }));
+    expect(one).toMatchObject({ cursor: String(perPage + 1), more: false });
+  });
+
+  it('stops reading once a page is full by bytes', async () => {
+    let queries = 0;
+    const { as } = setup({
+      pageItems: 2,
+      before(op) {
+        if (op === 'Query') queries++;
+      },
+    });
+    const big = (i: number) => ({
+      ...card(`c${String(i).padStart(2, '0')}`, 1),
+      data: { notes: 'x'.repeat(SYNC_SERVER.maxRecordBytes - 100) },
+    });
+    for (let i = 0; i < 30; i += 10) {
+      await as('u').push(Array.from({ length: 10 }, (_, j) => big(i + j)));
+    }
+    await as('u').push(Array.from({ length: 40 }, (_, i) => card(`s${i}`, 1)));
+    const perPage = Math.floor(SYNC_SERVER.maxPullBytes / Buffer.byteLength(canonical(big(0))));
+    queries = 0;
+    const page = body(await as('u').pull());
+    expect(page).toMatchObject({ cursor: String(perPage), more: true });
+    expect(page.records).toHaveLength(perPage);
+    // It read only as far as the first record that didn't fit, not 70 records.
+    expect(queries).toBe(Math.ceil((perPage + 1) / 2));
   });
 
   it('ends a pull at the counter read when it began', async () => {
@@ -412,20 +472,35 @@ describe('sync API: pull', () => {
 
 describe('sync API: DELETE /account', () => {
   it("removes every item in the user's partition, then the Cognito user", async () => {
-    const { as, itemsOf, deletedUsers, db } = setup({ pageItems: 7 });
+    const { as, itemsOf, tombstone, deletedUsers, db } = setup({ pageItems: 7 });
     await as('u').push(Array.from({ length: 60 }, (_, i) => card(`c${i}`, 1)));
     await as('other').push([card('c0', 1)]);
     const start = db.log.length;
     expect(body(await as('u').deleteAccount())).toEqual({ ok: true });
-    expect(itemsOf('u')).toEqual([]);
+    expect(itemsOf('u')).toEqual(tombstone('u'));
     expect(itemsOf('other')).toHaveLength(2);
     expect(deletedUsers).toEqual(['u']);
     // Mark the account closing, page through deleting records, delete the user,
-    // and only then drop the counter.
+    // and only then reduce the counter to the tombstone.
     const ops = db.log.slice(start);
     expect(ops[0]).toBe('UpdateItem');
     expect(new Set(ops.slice(1, -2))).toEqual(new Set(['Query', 'BatchWriteItem']));
-    expect(ops.slice(-2)).toEqual(['AdminDeleteUser', 'DeleteItem']);
+    expect(ops.slice(-2)).toEqual(['AdminDeleteUser', 'PutItem']);
+  });
+
+  it('keeps a deleted account deleted against tokens still in use', async () => {
+    const { as, itemsOf, tombstone } = setup();
+    await as('u').push([card('a', 1)]);
+    expect(body(await as('u').deleteAccount())).toEqual({ ok: true });
+    // Another device's access token stays valid for up to an hour.
+    expect(body(await as('u').push([card('queued', 2)]))).toEqual({ error: 'account-closing' });
+    expect((await as('u').pull()).statusCode).toBe(410);
+    expect(body(await as('u').deleteAccount())).toEqual({ ok: true });
+    expect(itemsOf('u')).toEqual(tombstone('u'));
+    // So does an account that never synced.
+    expect(body(await as('never').deleteAccount())).toEqual({ ok: true });
+    expect(body(await as('never').push([card('a', 1)]))).toEqual({ error: 'account-closing' });
+    expect(itemsOf('never')).toEqual(tombstone('never'));
   });
 
   it('is safe to retry after failing halfway, and blocks sync until it finishes', async () => {
@@ -451,11 +526,11 @@ describe('sync API: DELETE /account', () => {
 
     fail = false;
     expect(body(await del())).toEqual({ ok: true });
-    expect(env.itemsOf('u')).toEqual([]);
+    expect(env.itemsOf('u')).toEqual(env.tombstone('u'));
     expect(env.deletedUsers).toEqual(['u']);
     // Deleting again is harmless.
     expect(body(await del())).toEqual({ ok: true });
-    expect(env.itemsOf('u')).toEqual([]);
+    expect(env.itemsOf('u')).toEqual(env.tombstone('u'));
   });
 
   it('fails a push already in flight when the delete starts', async () => {
@@ -490,7 +565,7 @@ describe('sync API: DELETE /account', () => {
       requestContext: { authorizer: { jwt: { claims: { sub: 'u' } } } },
     });
     expect(res.statusCode).toBe(200);
-    expect(env.itemsOf('u')).toEqual([]);
+    expect(env.itemsOf('u')).toEqual(env.tombstone('u'));
     expect(env.sleeps.length).toBeGreaterThan(0);
   });
 

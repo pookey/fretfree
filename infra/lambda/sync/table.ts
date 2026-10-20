@@ -239,7 +239,13 @@ export async function deleteBatch(
   );
 }
 
-/** Deletes one item. */
-export async function deleteItem(t: SyncTable, userId: string, sk: string): Promise<void> {
-  await t.call('DeleteItem', { TableName: t.tableName, Key: key(userId, sk) });
+/**
+ * Replaces the counter with the account's tombstone: the closing mark alone,
+ * keyed by the opaque `sub`. Every later push and pull fails on it.
+ */
+export async function closeAccount(t: SyncTable, userId: string): Promise<void> {
+  await t.call('PutItem', {
+    TableName: t.tableName,
+    Item: { ...key(userId, COUNTER_SK), [ATTR.closing]: { BOOL: true } },
+  });
 }

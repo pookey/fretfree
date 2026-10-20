@@ -52,14 +52,16 @@ export function decodePushBody(
 
 /** What `decodeSyncRecord` leaves unchecked, and what the table's keys need. */
 function isWellFormed(r: SyncRecord): boolean {
-  const stamps = r.fields === undefined ? [] : Object.values(r.fields);
+  const fields: unknown = r.fields;
+  if (fields !== undefined && (typeof fields !== 'object' || !fields || Array.isArray(fields))) {
+    return false;
+  }
   return (
     r.id.length > 0 &&
     Buffer.byteLength(r.id) <= SYNC_SERVER.maxIdBytes &&
     Number.isFinite(r.updatedAt) &&
     !Array.isArray(r.data) &&
-    (r.fields === undefined || (typeof r.fields === 'object' && !Array.isArray(r.fields))) &&
-    stamps.every((t) => typeof t === 'number' && Number.isFinite(t))
+    Object.values(fields ?? {}).every((t) => typeof t === 'number' && Number.isFinite(t))
   );
 }
 

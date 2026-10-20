@@ -33,6 +33,8 @@ export interface FakeDynamo {
 }
 
 const MAX_ITEM_BYTES = 400 * 1024;
+/** What one transaction may read or write in all. */
+const MAX_TRANSACTION_BYTES = 4 * 1024 * 1024;
 
 function failure(name: string, message = name, extra: Record<string, unknown> = {}): Error {
   return Object.assign(new Error(message), { name }, extra);
@@ -107,17 +109,22 @@ export function fakeDynamo(options: FakeDynamoOptions): FakeDynamo {
     TransactGetItems(input) {
       const gets = input.TransactItems as { Get: Record<string, unknown> }[];
       if (gets.length > 100) throw failure('ValidationException', 'Too many items');
-      return {
-        Responses: gets.map(({ Get }) => {
-          checkTable(Get);
-          const item = items.get(keyOf(Get.Key as Record<string, unknown>));
-          return item ? { Item: structuredClone(item) } : {};
-        }),
-      };
+      const responses = gets.map(({ Get }) => {
+        checkTable(Get);
+        const item = items.get(keyOf(Get.Key as Record<string, unknown>));
+        return item ? { Item: structuredClone(item) } : {};
+      });
+      if (JSON.stringify(responses).length > MAX_TRANSACTION_BYTES) {
+        throw failure('ValidationException', 'Transaction size has exceeded the limit');
+      }
+      return { Responses: responses };
     },
     TransactWriteItems(input) {
       const writes = input.TransactItems as Record<string, Record<string, unknown>>[];
       if (writes.length > 100) throw failure('ValidationException', 'Too many items');
+      if (JSON.stringify(writes).length > MAX_TRANSACTION_BYTES) {
+        throw failure('ValidationException', 'Transaction size has exceeded the limit');
+      }
       const seen = new Set<string>();
       const prepared = writes.map((w) => {
         const [kind, body] = Object.entries(w)[0]!;

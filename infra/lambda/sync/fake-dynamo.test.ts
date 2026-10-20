@@ -101,6 +101,24 @@ describe('fakeDynamo', () => {
         call('PutItem', { TableName: T, Item: { ...key('a'), big: { S: 'x'.repeat(410_000) } } }),
       ),
     ).toBe('ValidationException');
+    const large = (sk: string) => ({
+      Put: { TableName: T, Item: { ...key(sk), big: { S: 'x'.repeat(390_000) } } },
+    });
+    const tooBig = Array.from({ length: 11 }, (_, i) => large(`k${i}`));
+    expect(await errorOf(call('TransactWriteItems', { TransactItems: tooBig }))).toBe(
+      'ValidationException',
+    );
+    for (const p of tooBig.slice(0, 10)) await call('PutItem', p.Put);
+    await call('PutItem', {
+      TableName: T,
+      Item: { ...key('k10'), big: { S: 'x'.repeat(390_000) } },
+    });
+    const gets = Array.from({ length: 11 }, (_, i) => ({
+      Get: { TableName: T, Key: key(`k${i}`) },
+    }));
+    expect(await errorOf(call('TransactGetItems', { TransactItems: gets }))).toBe(
+      'ValidationException',
+    );
     expect(await errorOf(call('PutItem', { TableName: T, Item: { pk: { S: 'u' } } }))).toBe(
       'ValidationException',
     );

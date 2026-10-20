@@ -1,19 +1,27 @@
 import { COUNTER_SK, SYNC_SERVER } from './config';
 import { waitToRetry, type Backoff } from './retry';
-import { deleteBatch, deleteItem, markClosing, querySortKeys, type SyncTable } from './table';
+import { closeAccount, deleteBatch, markClosing, querySortKeys, type SyncTable } from './table';
 
 /** BatchWriteItem takes at most 25 requests. */
 const DELETE_BATCH = 25;
 
 /**
  * `DELETE /account`: removes every record of the user, then the Cognito user,
- * then the counter. Safe to retry after a failure at any step.
+ * and leaves only an anonymous tombstone. Safe to retry after a failure at
+ * any step, and after it has finished.
  *
  * It first marks the counter as closing, which fails every later push and
  * pull, and fails any push transaction already in flight (its counter
  * condition breaks). So nothing can write behind the delete as it pages
- * through the partition. The mark goes last, once the user is gone; a retry
- * after a partial failure finds it still set and finishes the job.
+ * through the partition, and a retry after a partial failure finds the mark
+ * still set and finishes the job.
+ *
+ * The mark is never removed. The user's other devices keep valid access
+ * tokens for up to an hour after the delete (the JWT authoriser checks only
+ * signature and expiry), and without the mark their next push would start a
+ * new partition that nothing would ever delete. So the counter ends as a
+ * tombstone holding only the opaque `sub` and the flag: no sequence number,
+ * no record data.
  */
 export async function deleteAccount(
   t: SyncTable,
@@ -32,7 +40,7 @@ export async function deleteAccount(
     startKey = page.next;
   } while (startKey);
   await deleteUser(userId);
-  await deleteItem(t, userId, COUNTER_SK);
+  await closeAccount(t, userId);
 }
 
 /** One batch delete, retrying whatever DynamoDB leaves unprocessed. */
