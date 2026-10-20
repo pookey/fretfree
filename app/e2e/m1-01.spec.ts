@@ -44,17 +44,17 @@ test.describe('M1-01 registries', () => {
   test('screens compose their registered cards, panels and views', async ({ page }) => {
     await freshStart(page);
     const cards = page.locator('[data-today-card]');
-    await expect(cards).toHaveCount(6);
+    await expect(cards).toHaveCount(7);
     expect(
       await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-today-card'))),
-    ).toEqual(['hero', 'install', 'streak-repair', 'quests', 'stats', 'quick-drills']);
+    ).toEqual(['hero', 'install', 'streak-repair', 'quests', 'stats', 'quick-drills', 'account']);
     await expect(page.getByTestId('start-session')).toBeVisible();
 
     await page.goto('/progress');
     const panels = page.locator('[data-progress-panel]');
     expect(
       await panels.evaluateAll((els) => els.map((e) => e.getAttribute('data-progress-panel'))),
-    ).toEqual(['heatmap', 'topics', 'stats', 'achievements']);
+    ).toEqual(['heatmap', 'topics', 'stats', 'achievements', 'account']);
 
     await page.goto('/settings');
     await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
