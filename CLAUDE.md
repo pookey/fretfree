@@ -43,7 +43,7 @@ Playwright projects: `ipad-landscape`, `ipad-portrait` and `ipad-mini-landscape`
 ## Conventions
 
 - TypeScript strict with `noUncheckedIndexedAccess`. Keep theory and engine pure and deterministic: pass `now` and `rng` in, and never read the clock inside them.
-- Coverage thresholds apply to `theory`, `engine`, `storage` and `drills` logic (90% lines). New pure modules need tests. UI gets RTL and Playwright tests.
+- Coverage thresholds apply to `theory`, `engine`, `storage` and `drills` logic (90% lines). New pure modules need tests. UI gets RTL and Playwright tests. Vitest runs `.test.ts` files in node and `.test.tsx` files in jsdom; a `.ts` test that needs the DOM starts with `// @vitest-environment jsdom`.
 - Add things by adding files: a new skill topic → `engine/skills/<topic>.ts`, a new drill → `drills/<id>/drill.ts`. Avoid editing shared hubs when a new file will do.
 - A skill may name only drills that are registered, or that are listed in `PENDING` in `drills/registry.test.ts` with the open backlog WP that builds them. Otherwise its lesson opens to an empty session.
 - CSS Modules plus the tokens in `styles/tokens.css`. Dark-first. Use the Okabe–Ito colours for highlights, and distinguish markers by shape as well as colour. Use rem units and respect `prefers-reduced-motion`.

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Rating } from 'ts-fsrs';
 import { createScheduler, type CardRecord } from '../engine';

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FretworkDB } from './db';
 import { downloadExport, exportFileName } from './download-export';

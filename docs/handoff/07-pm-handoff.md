@@ -19,6 +19,11 @@ The user found that delivery had stalled: 8 Playwright runs queued on 2 slots, l
 - **Watch `slot_waiters` in `health.sh`.** More than 4, or load over 40, means something is running the matrix outside the lane: `pgrep -fl 'playwright test'` shows who. Don't raise `E2E_SLOTS`.
 - The remote test runner (`scripts/remote-run.sh`) is still experimental and off. Branch `tools/remote-runner` (worktree `.orchestrator/worktrees/remote-runner`) holds the fifth shift's work on it; it must be rebased onto main after the pipeline change before anything is taken from it. Don't enable it without the user.
 
-## Where things stand
+## Where things stand (from the fifth-shift PM's wind-down, 2026-10-20 ~16:00)
 
-(filled in at the handover: see the end of `.orchestrator/pm-notes.md`)
+- **Production = origin/main = `f28b252`.** Nothing shipped in the fifth shift. Local `main` carried five unpushed commits (`81dd35e` flake fixes, `48f6ba3` the M4-13 backlog entry, `aa65034` the SKILL.md DNS rule, `816211a` a TestOut preload, `9b0b8df`); the pipeline change (`tools/pipeline`) was merged on top and pushed with them.
+- **Lane queue (`.orchestrator/lane-queue.txt`): M3-12, M8-03, M1-43, M4-09.** All approved and static-preflighted; they were 960/961 green in the failed batch. Ship them as one batch first thing (`lane-next.sh`): with retries on, the one failure (M4-13's spec) is out of the batch.
+- **M4-13 (user priority: silent audio on iPhone and iPad)** failed the lane twice on its own spec: `navigator.serviceWorker.ready` hangs under load in WebKit (a stuck service-worker install, as in m1-19). The audio fix is approved. It has a fix brief (a bounded activation poll before navigation, proven with `--repeat-each 4`). Ship it as soon as it reports: don't wait for a batch to fill.
+- **M7-02** (FretworkSync infra, approved) needs its round-3 reviewer, the last one allowed (SKILL §6). **M8-01** waits for M4-13 to ship before editing `audio.ts`. **M5-07** is in preflight. **M8-02** is still working.
+- **Held drills** (set `blocked` until M1-43 ships): M4-07, M4-08, M6-03, M6-05, M6-06, M6-07, M6-09, M9-02. After M1-43 ships, set them back to `todo` in one docs commit between lane runs, then refill.
+- The remote-runner subagent of the fifth-shift session may still be editing `.orchestrator/worktrees/remote-runner` (branch `tools/remote-runner`). Leave it alone.

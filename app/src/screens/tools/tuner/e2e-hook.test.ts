@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
 import { getPitchSource, setPitchSourceFactory } from '../../../mic/source';
 import { FAKE_PITCH_KEY, installFakePitchForE2E, type TunerTestHooks } from './e2e-hook';
