@@ -118,22 +118,32 @@ describe('<D16View>', () => {
     }
   });
 
-  it("doesn't let the wrong-answer playback answer the next prompt", async () => {
-    const first = prompt(findItemId('A', 6));
-    const { onAnswer, rerender, props } = view(first);
-    await startListening();
-    play('B2');
-    expect(onAnswer).toHaveBeenCalledTimes(1);
-    act(() => mic.silence(100));
-    rerender(<D16View {...props} feedback={fb(first, 47, 'B2')} />);
-    // Continue at once: the session's A2 then B2 are still sounding.
-    rerender(<D16View {...props} prompt={prompt(findItemId('B', 6))} />);
-    play('A2', { durationMs: 450 });
-    play('B2', { durationMs: 900 });
-    expect(onAnswer).toHaveBeenCalledTimes(1);
-    act(() => mic.silence(1_000));
-    play('B2');
-    expect(onAnswer).toHaveBeenCalledTimes(2);
+  it("doesn't let the wrong-answer playback answer the next prompt, or time it", async () => {
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(1_000);
+    try {
+      const first = prompt(findItemId('A', 6));
+      const { onAnswer, rerender, props } = view(first);
+      await startListening();
+      play('B2');
+      expect(onAnswer).toHaveBeenCalledTimes(1);
+      act(() => mic.silence(100));
+      clock.mockReturnValue(2_000);
+      rerender(<D16View {...props} feedback={fb(first, 47, 'B2')} />);
+      // Continue at once: the session's A2 then B2 are still sounding.
+      clock.mockReturnValue(2_100);
+      rerender(<D16View {...props} prompt={prompt(findItemId('B', 6))} />);
+      play('A2', { durationMs: 450 });
+      play('B2', { durationMs: 900 });
+      expect(onAnswer).toHaveBeenCalledTimes(1);
+      act(() => mic.silence(1_500));
+      // Timed from the end of the playback (2s + 2450ms), not the prompt.
+      clock.mockReturnValue(5_000);
+      play('B2');
+      expect(onAnswer).toHaveBeenCalledTimes(2);
+      expect((onAnswer.mock.calls[1]![0] as D16Answer).listenedMs).toBe(550);
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it("doesn't let a note ringing from the last prompt answer the next", async () => {

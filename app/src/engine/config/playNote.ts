@@ -22,10 +22,10 @@ export const playNote = {
    * After a wrong answer the session plays the right note, then the one
    * played. D16 ignores notes that start while they sound, so the speaker
    * can't answer the next prompt. Session playback spaces notes 450ms apart,
-   * each ringing 0.9s with a 0.8s release (audio/audio.ts).
+   * each ringing 1.1s with a 0.9s release (audio/config.ts).
    */
   playbackGapMs: 450,
-  playbackTailMs: 1700,
+  playbackTailMs: 2000,
 } as const;
 
 declare module './index' {

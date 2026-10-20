@@ -176,8 +176,8 @@ describe('d16 answers, timing and sounds', () => {
 
   it('times the feedback sounds the view must not hear', () => {
     expect(d16PlaybackMs({ expected: [] })).toBe(0);
-    expect(d16PlaybackMs({ expected: ['E3'] })).toBe(1700);
-    expect(d16PlaybackMs({ expected: ['E3'], given: ['D3'] })).toBe(2150);
+    expect(d16PlaybackMs({ expected: ['E3'] })).toBe(2000);
+    expect(d16PlaybackMs({ expected: ['E3'], given: ['D3'] })).toBe(2450);
   });
 
   it('plays nothing on a right answer, and the nearest right pitch then the played one on a wrong one', () => {

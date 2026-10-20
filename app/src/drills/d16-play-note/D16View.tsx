@@ -44,6 +44,8 @@ interface Live {
   /** When the prompt appeared and when the mic last started (`performance.now()`). */
   shownAt: number;
   runningAt: number;
+  /** When the last miss's playback ends; notes before it are ignored. */
+  quietUntil: number;
 }
 
 /**
@@ -52,8 +54,9 @@ interface Live {
  * it is never on outside a mic drill. Consecutive D16 prompts share the view,
  * so the mic stays on between them.
  *
- * The answer carries the time listened, from the prompt or the mic starting,
- * whichever came later, so starting the mic isn't graded (rules 2–3).
+ * The answer carries the time listened, from the prompt, the mic starting or
+ * the last miss's playback ending, whichever came last, so neither starting
+ * the mic nor waiting out the playback is graded (rules 2–3).
  */
 function useMicAnswer(
   prompt: D16Prompt,
@@ -72,6 +75,7 @@ function useMicAnswer(
     answered: null,
     shownAt: 0,
     runningAt: 0,
+    quietUntil: 0,
   });
 
   // A new prompt is pinned to the last frame heard before it appeared.
@@ -92,7 +96,9 @@ function useMicAnswer(
   // A miss is played back: notes that start while it sounds are the speaker's.
   useEffect(() => {
     if (feedback && !feedback.result.correct) {
-      listener.quiet(d16PlaybackMs(d16Sounds(prompt, feedback)));
+      const ms = d16PlaybackMs(d16Sounds(prompt, feedback));
+      listener.quiet(ms);
+      live.current.quietUntil = performance.now() + ms;
     }
   }, [listener, prompt, feedback]);
 
@@ -113,7 +119,8 @@ function useMicAnswer(
         const now = live.current;
         if (!answers || now.feedback || now.answered === now.prompt) return;
         now.answered = now.prompt;
-        const listenedMs = performance.now() - Math.max(now.shownAt, now.runningAt);
+        const from = Math.max(now.shownAt, now.runningAt, now.quietUntil);
+        const listenedMs = Math.max(0, performance.now() - from);
         now.onAnswer({ midi: note.midi, name: note.name, cents: note.cents, listenedMs });
       }),
       source.onNoteEnd((end) => {
