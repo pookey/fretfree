@@ -2,7 +2,6 @@ import { ENGINE_CONFIG } from '../../engine/config';
 import { parsePentaItemId, pentaItemId, type GuideLevel, type Item } from '../../engine/model';
 import {
   NATURAL_PCS,
-  STANDARD_TUNING,
   boxShape,
   cagedShape,
   chromaOf,
@@ -11,7 +10,6 @@ import {
   midiAt,
   nextBox,
   noteAt,
-  openStringMidi,
   pentatonicBox,
   pentatonicScale,
   previousBox,
@@ -30,9 +28,18 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
-import { DPB_SCOPES, type DpbScope } from './meta';
+import type { DpbScope } from './meta';
+import { DPB_REGION, byPitch, dpbDisplay, dpbScopeFor, has, pick, retune, where } from './shared';
 
 export { DPB_ID, DPB_SCOPE, DPB_SCOPES, dpbCanTest, dpbConceptOf, type DpbScope } from './meta';
+export {
+  DPB_REGION,
+  DPB_REGULAR_SPAN,
+  dpbDisplay,
+  dpbRegularWindow,
+  dpbScopeFor,
+  dpbWindow,
+} from './shared';
 
 /**
  * The pentatonic-box drill (C7, research/03 "overlay a box on its shape;
@@ -61,12 +68,6 @@ export { DPB_ID, DPB_SCOPE, DPB_SCOPES, dpbCanTest, dpbConceptOf, type DpbScope 
  * Boxes are standard tuning. In another tuning each note keeps its pitch
  * and moves along its string, as D9's shapes do.
  */
-
-/** Boxes sit within frets 0–15, the whole neck the iPad shows. */
-export const DPB_REGION: FretRange = { from: 0, to: 15 };
-
-/** The frets iPad portrait shows at once: a 12-fret neck (design §7), 13 cells. */
-export const DPB_REGULAR_SPAN = 12;
 
 export type DpbMode = 'overlay' | 'relative';
 
@@ -113,39 +114,12 @@ export interface DpbPrompt {
 /** The taps, in order. */
 export type DpbAnswer = readonly Position[];
 
-export function dpbScopeFor(level: number): DpbScope {
-  const i = Math.max(0, Math.min(DPB_SCOPES.length - 1, Math.round(level)));
-  return DPB_SCOPES[i] as DpbScope;
-}
-
-/** Display form: `F#` → `F♯`, `b3` → `♭3`, the root degree `1` → `R`. */
-export function dpbDisplay(s: string): string {
-  if (s === '1') return 'R';
-  return s
-    .replace(/^b(?=\d)/, '♭')
-    .replace('#', '♯')
-    .replace(/(?<=[A-G])b/, '♭');
-}
-
 export function dpbChordSymbol(root: string, quality: PentatonicQuality): string {
   return `${root}${quality === 'minor' ? 'm' : ''}`;
 }
 
 const otherQuality = (q: PentatonicQuality): PentatonicQuality =>
   q === 'minor' ? 'major' : 'minor';
-
-/** Frets to add on each string so a standard-tuning note keeps its pitch in `tuning`. */
-function retune<T extends Position>(notes: readonly T[], tuning: Tuning): T[] {
-  return notes.map((n) => ({
-    ...n,
-    fret: n.fret + openStringMidi(n.string, STANDARD_TUNING) - openStringMidi(n.string, tuning),
-  }));
-}
-
-const byPitch = (tuning: Tuning) => (a: Position, b: Position) =>
-  midiAt(a, tuning) - midiAt(b, tuning);
-
-const has = (notes: readonly Position[], p: Position) => notes.some((n) => samePosition(n, p));
 
 interface Placement {
   /** The box's notes in the drill's tuning, with degrees. */
@@ -202,10 +176,6 @@ export function dpbPlacements(
     out.push({ notes, shape: retune(shape, tuning), from: placed.span.from });
   }
   return out;
-}
-
-function pick<T>(xs: readonly T[], rng: () => number): T | undefined {
-  return xs[Math.min(xs.length - 1, Math.floor(rng() * xs.length))];
 }
 
 /** The boxes either side of a placed box, as positions this box lacks. */
@@ -424,10 +394,6 @@ export function dpbDegreeLine(notes: readonly BoxNote[]): string {
   return notes.map((n) => dpbDisplay(n.degree)).join(' ');
 }
 
-function where(pos: Position): string {
-  return `string ${pos.string}, fret ${pos.fret}`;
-}
-
 /** The interval from a root to its relative root, named for the feedback line. */
 function relativeStep(prompt: DpbPrompt): string {
   return prompt.quality === 'minor' ? 'a minor 3rd up' : 'a minor 3rd down';
@@ -478,27 +444,4 @@ export function dpbShowsCount(guideLevel: GuideLevel, guided: boolean): boolean 
 /** Whether the prompt names the shape or the relative key (rule 9: hints fade). */
 export function dpbShowsHint(guideLevel: GuideLevel, guided: boolean): boolean {
   return guided || guideLevel >= ENGINE_CONFIG.pentatonicBox.hintGuideLevel;
-}
-
-// --- Windows ---------------------------------------------------------------
-
-/** The compact window: the box with room either side, clamped to the active range. */
-export function dpbWindow(prompt: DpbPrompt, compactFrets: number): FretRange {
-  const span = prompt.span.to - prompt.span.from + 1;
-  const size = Math.max(ENGINE_CONFIG.pentatonicBox.compactWindowFrets, compactFrets, span + 2);
-  const bounds = prompt.activeRange;
-  const width = Math.min(size, bounds.to - bounds.from + 1);
-  const centre = (prompt.span.from + prompt.span.to) / 2;
-  const start = Math.max(
-    bounds.from,
-    Math.min(Math.round(centre - (width - 1) / 2), bounds.to - width + 1),
-  );
-  return { from: start, to: start + width - 1 };
-}
-
-/** iPad portrait's 12-fret neck: frets 0–12, slid up just far enough to hold the box. */
-export function dpbRegularWindow(prompt: DpbPrompt): FretRange {
-  const bounds = prompt.activeRange;
-  const top = Math.min(bounds.to, Math.max(bounds.from + DPB_REGULAR_SPAN, prompt.span.to + 1));
-  return { from: top - DPB_REGULAR_SPAN, to: top };
 }
