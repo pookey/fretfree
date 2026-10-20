@@ -15,6 +15,8 @@ import {
   d16FeedbackPositions,
   d16ModeHint,
   d16NeckGuideLevel,
+  d16PlaybackMs,
+  d16Sounds,
   d16Window,
   type D16Answer,
   type D16Prompt,
@@ -39,6 +41,9 @@ interface Live {
   onAnswer(answer: D16Answer): void;
   /** The prompt already answered, so a second note can't answer it twice. */
   answered: D16Prompt | null;
+  /** When the prompt appeared and when the mic last started (`performance.now()`). */
+  shownAt: number;
+  runningAt: number;
 }
 
 /**
@@ -46,6 +51,9 @@ interface Live {
  * §9; iOS grants it only inside a gesture) and stops when the view goes, so
  * it is never on outside a mic drill. Consecutive D16 prompts share the view,
  * so the mic stays on between them.
+ *
+ * The answer carries the time listened, from the prompt or the mic starting,
+ * whichever came later, so starting the mic isn't graded (rules 2–3).
  */
 function useMicAnswer(
   prompt: D16Prompt,
@@ -57,7 +65,14 @@ function useMicAnswer(
   const [state, setState] = useState<PitchSourceState>(source.state);
   // Bumped when a note starts or stops, so the "still ringing" line re-renders.
   const [, setTick] = useState(0);
-  const live = useRef<Live>({ prompt, feedback, onAnswer, answered: null });
+  const live = useRef<Live>({
+    prompt,
+    feedback,
+    onAnswer,
+    answered: null,
+    shownAt: 0,
+    runningAt: 0,
+  });
 
   // A new prompt is pinned to the last frame heard before it appeared.
   const [pinned, setPinned] = useState(prompt);
@@ -71,10 +86,24 @@ function useMicAnswer(
   }, [prompt, feedback, onAnswer]);
 
   useEffect(() => {
+    live.current.shownAt = performance.now();
+  }, [prompt]);
+
+  // A miss is played back: notes that start while it sounds are the speaker's.
+  useEffect(() => {
+    if (feedback && !feedback.result.correct) {
+      listener.quiet(d16PlaybackMs(d16Sounds(prompt, feedback)));
+    }
+  }, [listener, prompt, feedback]);
+
+  useEffect(() => {
     const bump = () => setTick((t) => t + 1);
     const offs = [
       source.onStateChange((next) => {
-        if (next === 'running') listener.reset();
+        if (next === 'running') {
+          listener.reset();
+          live.current.runningAt = performance.now();
+        }
         setState(next);
       }),
       source.onFrame((frame) => listener.frame(frame.at)),
@@ -84,7 +113,8 @@ function useMicAnswer(
         const now = live.current;
         if (!answers || now.feedback || now.answered === now.prompt) return;
         now.answered = now.prompt;
-        now.onAnswer({ midi: note.midi, name: note.name, cents: note.cents });
+        const listenedMs = performance.now() - Math.max(now.shownAt, now.runningAt);
+        now.onAnswer({ midi: note.midi, name: note.name, cents: note.cents, listenedMs });
       }),
       source.onNoteEnd((end) => {
         listener.noteEnd(end);

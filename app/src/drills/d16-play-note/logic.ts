@@ -72,6 +72,11 @@ export interface D16Answer {
   /** Scientific pitch name, e.g. `A2`. */
   name: string;
   cents: number;
+  /**
+   * The time from when the prompt appeared, or the mic started if later, to
+   * the note (`performance.now()`), so starting the mic isn't graded.
+   */
+  listenedMs?: number;
 }
 
 export function d16ModeFor(level: number): D16Mode {
@@ -151,15 +156,29 @@ export function d16DescribeAnswer(answer: D16Answer): string {
 /**
  * The time to the stable note, less the detector's latency and the extra
  * time a guitar takes over a tap, so the usual speed targets apply
- * (research/02 rules 2–3; engine/config/playNote.ts).
+ * (research/02 rules 2–3; engine/config/playNote.ts). Timed from when the mic
+ * was listening, so tapping "Start listening" and the permission prompt don't
+ * count against the learner.
  */
 export function d16GradedResponseMs(
   _prompt: D16Prompt,
-  _answer: D16Answer,
+  answer: D16Answer,
   elapsedMs: number,
 ): number {
   const { micLatencyMs, playAllowanceMs } = ENGINE_CONFIG.playNote;
-  return Math.max(0, elapsedMs - micLatencyMs - playAllowanceMs);
+  const ms = Math.min(elapsedMs, answer.listenedMs ?? elapsedMs);
+  return Math.max(0, ms - micLatencyMs - playAllowanceMs);
+}
+
+/**
+ * How long the session's feedback sounds play after a wrong answer, so the
+ * view can ignore the speaker for that long (M5-05 review): notes spaced
+ * `playbackGapMs` apart, the last ringing `playbackTailMs`.
+ */
+export function d16PlaybackMs(sounds: DrillSounds): number {
+  const notes = sounds.expected.length + (sounds.given?.length ?? 0);
+  const { playbackGapMs, playbackTailMs } = ENGINE_CONFIG.playNote;
+  return notes === 0 ? 0 : (notes - 1) * playbackGapMs + playbackTailMs;
 }
 
 const nameOf = (prompt: D16Prompt, midi: number) =>

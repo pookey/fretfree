@@ -10,6 +10,8 @@ import type { NoteEnd, StableNote } from '../../mic/types';
  *   answer, or the feedback sound) never answers it.
  * - A note that takes over from such a note without a gap, an octave away, is
  *   that string decaying onto an octave, not a pluck.
+ * - A note that begins inside a quiet window (the feedback sounds playing)
+ *   is the speaker's, not the learner's.
  * - A restart of the source may restart its clock, so `reset()` forgets
  *   everything and lets the next note answer.
  */
@@ -18,6 +20,8 @@ export interface D16Listener {
   frame(at: number): void;
   /** A new prompt is on screen. */
   prompt(): void;
+  /** Ignore notes that start in the next `ms`, from the last frame heard. */
+  quiet(ms: number): void;
   /** The source (re)started: its clock may have restarted too. */
   reset(): void;
   /** A stable note; true if it answers the prompt. */
@@ -34,6 +38,7 @@ export function createD16Listener(
   let promptAt = -Infinity;
   let sounding: StableNote | null = null;
   let lastEnd: NoteEnd | null = null;
+  let quietUntil = -Infinity;
 
   const before = (note: StableNote) => note.startedAt <= promptAt;
 
@@ -50,15 +55,19 @@ export function createD16Listener(
     prompt() {
       promptAt = lastFrameAt;
     },
+    quiet(ms) {
+      quietUntil = lastFrameAt + ms;
+    },
     reset() {
       lastFrameAt = -Infinity;
+      quietUntil = -Infinity;
       promptAt = -Infinity;
       sounding = null;
       lastEnd = null;
     },
     note(note) {
       sounding = note;
-      return !before(note) && !octaveTakeover(note);
+      return !before(note) && note.startedAt >= quietUntil && !octaveTakeover(note);
     },
     noteEnd(end) {
       if (sounding?.startedAt === end.note.startedAt) sounding = null;

@@ -101,6 +101,29 @@ describe('createD16Listener', () => {
     expect(answers).toEqual(['A2']);
   });
 
+  it('ignores notes that start while the feedback sounds play', async () => {
+    const { source, listener, answers } = await rig();
+    source.silence(100);
+    listener.quiet(2150);
+    listener.prompt();
+    source.play('E3', { durationMs: 900 });
+    source.play('D3', { durationMs: 900 });
+    expect(answers).toEqual([]);
+    source.silence(400);
+    source.play('A2');
+    expect(answers).toEqual(['A2']);
+  });
+
+  it('forgets a quiet window when the source restarts', () => {
+    const listener = createD16Listener(100);
+    listener.frame(1000);
+    listener.quiet(2150);
+    expect(listener.note(note(45, 2000))).toBe(false);
+    listener.reset();
+    listener.frame(0);
+    expect(listener.note(note(47, 20))).toBe(true);
+  });
+
   it('keeps the ringing note when an older note ends', () => {
     const listener = createD16Listener(100);
     const a2 = note(45, 0);

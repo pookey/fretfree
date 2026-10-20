@@ -11,6 +11,7 @@ import {
   d16Explain,
   d16FeedbackPositions,
   d16GradedResponseMs,
+  d16PlaybackMs,
   d16MakePrompt,
   d16MatchMode,
   d16ModeFor,
@@ -163,6 +164,20 @@ describe('d16 answers, timing and sounds', () => {
     const p = prompt(findItemId('A', 6));
     expect(d16GradedResponseMs(p, A2, 3000)).toBe(1850);
     expect(d16GradedResponseMs(p, A2, 400)).toBe(0);
+  });
+
+  it('grades from when the mic was listening, not from a late "Start listening"', () => {
+    const p = prompt(findItemId('A', 6));
+    // The prompt appeared 9s before the note; the mic ran for the last 2s.
+    expect(d16GradedResponseMs(p, { ...A2, listenedMs: 2000 }, 9000)).toBe(850);
+    // Never longer than the session measured.
+    expect(d16GradedResponseMs(p, { ...A2, listenedMs: 5000 }, 3000)).toBe(1850);
+  });
+
+  it('times the feedback sounds the view must not hear', () => {
+    expect(d16PlaybackMs({ expected: [] })).toBe(0);
+    expect(d16PlaybackMs({ expected: ['E3'] })).toBe(1700);
+    expect(d16PlaybackMs({ expected: ['E3'], given: ['D3'] })).toBe(2150);
   });
 
   it('plays nothing on a right answer, and the nearest right pitch then the played one on a wrong one', () => {

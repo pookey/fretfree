@@ -6,7 +6,13 @@ import type { SizeClass } from '../../shell/size-class';
 import { STANDARD_TUNING } from '../../theory';
 import type { DrillFeedback } from '../types';
 import { D16View } from './D16View';
-import { d16Check, d16MakePrompt, type D16Answer, type D16Prompt } from './logic';
+import {
+  d16Check,
+  d16GradedResponseMs,
+  d16MakePrompt,
+  type D16Answer,
+  type D16Prompt,
+} from './logic';
 
 const prompt = (id: string, scopeLevel = 1) =>
   d16MakePrompt(
@@ -82,10 +88,52 @@ describe('<D16View>', () => {
     const { onAnswer } = view(prompt(findItemId('A', 6)));
     await startListening();
     play('A2');
-    expect(onAnswer).toHaveBeenCalledWith({ midi: 45, name: 'A2', cents: 0 });
+    expect(onAnswer).toHaveBeenCalledWith({
+      midi: 45,
+      name: 'A2',
+      cents: 0,
+      listenedMs: expect.any(Number),
+    });
     act(() => mic.silence(200));
     play('B2');
     expect(onAnswer).toHaveBeenCalledTimes(1);
+  });
+
+  it('times the answer from when the mic started, not from the prompt', async () => {
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(1_000);
+    try {
+      const p = prompt(findItemId('A', 6));
+      const { onAnswer } = view(p);
+      // The learner reads the panel, taps, and grants the mic 8s later.
+      clock.mockReturnValue(9_000);
+      await startListening();
+      clock.mockReturnValue(10_500);
+      play('A2');
+      const answer = onAnswer.mock.calls[0]![0] as D16Answer;
+      expect(answer.listenedMs).toBe(1_500);
+      // The session measured 9.5s; only the 1.5s listened is graded.
+      expect(d16GradedResponseMs(p, answer, 9_500)).toBe(350);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it("doesn't let the wrong-answer playback answer the next prompt", async () => {
+    const first = prompt(findItemId('A', 6));
+    const { onAnswer, rerender, props } = view(first);
+    await startListening();
+    play('B2');
+    expect(onAnswer).toHaveBeenCalledTimes(1);
+    act(() => mic.silence(100));
+    rerender(<D16View {...props} feedback={fb(first, 47, 'B2')} />);
+    // Continue at once: the session's A2 then B2 are still sounding.
+    rerender(<D16View {...props} prompt={prompt(findItemId('B', 6))} />);
+    play('A2', { durationMs: 450 });
+    play('B2', { durationMs: 900 });
+    expect(onAnswer).toHaveBeenCalledTimes(1);
+    act(() => mic.silence(1_000));
+    play('B2');
+    expect(onAnswer).toHaveBeenCalledTimes(2);
   });
 
   it("doesn't let a note ringing from the last prompt answer the next", async () => {

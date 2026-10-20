@@ -18,6 +18,14 @@ export const playNote = {
    * real detector's 100ms dropout (M5-02).
    */
   takeoverGapMs: 100,
+  /**
+   * After a wrong answer the session plays the right note, then the one
+   * played. D16 ignores notes that start while they sound, so the speaker
+   * can't answer the next prompt. Session playback spaces notes 450ms apart,
+   * each ringing 0.9s with a 0.8s release (audio/audio.ts).
+   */
+  playbackGapMs: 450,
+  playbackTailMs: 1700,
 } as const;
 
 declare module './index' {
