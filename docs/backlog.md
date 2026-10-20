@@ -40,7 +40,7 @@ Status values: `todo` · `in-progress` · `review` · `done` · `blocked`. Only 
 
 **M9 (tab reading)** was added from user feedback (2026-10-18). It's a small track, so a learner who picks "I'd like to learn to read tab" gets real lessons. It has no `After` and runs in normal priority order (after ready M1–M6 work, ahead of the deferred M8).
 
-**M10 (learning-path fixes)** comes from the learning-path review of 2026-10-20 (`docs/review/2026-10-20-learning-path-review.md`, verified against main in `docs/review/2026-10-20-verification.md`). Its first six WPs are `Priority: high` in the review's order: the songs on-ramp (M10-01, M10-02), session lanes (M10-03), concept intros (M10-04) and teaching feedback (M10-05, M10-06).
+**M10 (learning-path fixes)** comes from the learning-path review of 2026-10-20 (`docs/review/2026-10-20-learning-path-review.md`, verified against main in `docs/handoff/08-review-verification.md`). Its first six WPs are `Priority: high` in the review's order: the songs on-ramp (M10-01, M10-02), session lanes (M10-03), concept intros (M10-04) and teaching feedback (M10-05, M10-06).
 
 **M8 (future: reading and meter)** has its own section at the end. Its timing-engine contract (M8-01) is shared with M6-08 and scheduled early. The rest follows M6 via soft `After` ordering.
 
@@ -1495,7 +1495,7 @@ A short track for learners who want to read tab. Tab maps straight onto skills F
 
 ## M10: Learning-path fixes
 
-From the learning-path review of 2026-10-20 (`docs/review/2026-10-20-learning-path-review.md` and its two copy audits), checked finding by finding against main at `1249751c` and the in-flight branches in `docs/review/2026-10-20-verification.md`. The engine follows the evidence rules, but the curriculum around it doesn't yet do what the design promises a beginner: harmony and progressions sit behind months of mastery gates, the frontier is one queue that starves the parallel tracks, a first session brings in about 21 new items, and most skills are never explained before they are tested. Copy is mostly honest, but the first drills a beginner meets mark a wrong answer without saying why.
+From the learning-path review of 2026-10-20 (`docs/review/2026-10-20-learning-path-review.md` and its two copy audits), checked finding by finding against main at `1249751c` and the in-flight branches in `docs/handoff/08-review-verification.md`. The engine follows the evidence rules, but the curriculum around it doesn't yet do what the design promises a beginner: harmony and progressions sit behind months of mastery gates, the frontier is one queue that starves the parallel tracks, a first session brings in about 21 new items, and most skills are never explained before they are tested. Copy is mostly honest, but the first drills a beginner meets mark a wrong answer without saying why.
 
 The first six WPs are `Priority: high`, in the review's order (adjusted where verification changed it). M10-01 and M10-02 keep research/02 rule 7 intact: CAGED stays gated on mastered F2 notes, and progressions on mastered chord construction, so the review's "soft on practising" gates are expressed as per-prerequisite soft gates, not whole-skill soft unlocks.
 
