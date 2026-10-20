@@ -3,6 +3,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const SIDE_EFFECT_FREE = /[\\/]src[\\/]theory[\\/]|[\\/]node_modules[\\/](?:@tonaljs|tonal)[\\/]/;
+
 export default defineConfig({
   plugins: [
     react(),
@@ -37,6 +39,25 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: true,
+    // First-load JS budget (design §10, M1-44). See scripts/check-bundle.mjs.
+    rolldownOptions: {
+      treeshake: {
+        // Theory is pure (CLAUDE.md), and tonal's packages are too but don't
+        // say so in package.json. Without this, a module's unused top-level
+        // initialisers are kept, and an unused import keeps its module.
+        moduleSideEffects: [{ test: SIDE_EFFECT_FREE, sideEffects: false }],
+      },
+      output: {
+        codeSplitting: {
+          // Everything first load needs goes in one chunk. Left to itself,
+          // Rolldown spread it over a dozen shared chunks (theory, tonal,
+          // item kinds, D8's voicings, …), and gzip compresses each one
+          // alone: 13 files cost 2.5 KB more than the same code in one.
+          // Code only lazy chunks reach is still split as before.
+          groups: [{ name: 'app', tags: ['$initial'] }],
+        },
+      },
+    },
   },
   test: {
     // The persistent transform cache keys on file content, so an unchanged

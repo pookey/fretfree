@@ -7,6 +7,10 @@
 // First-load JS is the entry <script> and <link rel="modulepreload"> tags in
 // app/dist/index.html plus every chunk they import statically. Run after
 // `pnpm build`; `pnpm verify` does both.
+//
+// It must be one chunk, plus Rolldown's runtime (M1-44): gzip compresses each
+// file alone, so first-load code spread over many shared chunks costs more.
+// The `$initial` group in app/vite.config.ts keeps it together.
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +22,8 @@ const BUDGET_KB = 250;
 const AUDIO_PACKAGES = /\/node_modules\/(?:tone|standardized-audio-context|automation-events)\//;
 // Notation (M8-02): VexFlow and its embedded font load with the first <Staff>.
 const NOTATION_PACKAGES = /\/node_modules\/vexflow\//;
+// Rolldown's module runtime is its own chunk, whatever the grouping.
+const RUNTIME_CHUNK = /^assets\/rolldown-runtime-[^/]+\.js$/;
 
 const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'app', 'dist');
 const indexPath = join(dist, 'index.html');
@@ -84,7 +90,16 @@ const rows = [...seen].sort().map((file) => {
 const totalKb = total / 1000;
 console.log('check-bundle: first-load JS (gzip)');
 console.log(rows.join('\n'));
-console.log(`  ${totalKb.toFixed(1).padStart(7)} KB  total (budget ${BUDGET_KB} KB)`);
+console.log(
+  `  ${totalKb.toFixed(1).padStart(7)} KB  total (budget ${BUDGET_KB} KB, ${(BUDGET_KB - totalKb).toFixed(1)} KB headroom)`,
+);
+const chunks = [...seen].filter((file) => !RUNTIME_CHUNK.test(file));
+if (chunks.length > 1) {
+  failures.push(
+    `first-load JS is ${chunks.length} chunks (${chunks.join(', ')}), not one. ` +
+      'Check the `$initial` group in app/vite.config.ts.',
+  );
+}
 if (totalKb > BUDGET_KB) {
   failures.push(`first-load JS is ${totalKb.toFixed(1)} KB gzip, over the ${BUDGET_KB} KB budget.`);
 }
