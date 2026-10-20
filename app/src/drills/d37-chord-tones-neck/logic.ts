@@ -1,4 +1,4 @@
-import { parseChordTonesItemId, type GuideLevel, type Item } from '../../engine/model';
+import type { GuideLevel, Item } from '../../engine/model';
 import {
   allStrings,
   chordDegreeSemitones,
@@ -25,8 +25,25 @@ import {
 import { placements, templatesFor, type PlacedNote } from '../../theory/voicings';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { d8DegreeLabel, d8DegreeName, d8Display } from '../d8-chord-tone/logic';
-import { isD8Kind } from '../d8-chord-tone/voicings';
 import { d4RegionWindow, d4RoundOrder } from '../d4-octave-finder/logic';
+import {
+  D37_INTERVAL as INTERVAL,
+  D37_SCOPES,
+  d37ChordConcept as chordConcept,
+  d37Concept,
+  d37Parse as parse,
+  type D37Scope,
+} from './meta';
+
+export {
+  D37_ID,
+  D37_SCOPE,
+  D37_SCOPES,
+  d37CanTest,
+  d37Concept,
+  d37ConceptOf,
+  type D37Scope,
+} from './meta';
 
 /**
  * D37 "Chord tones across the neck" (design §6), the pure half of the drill.
@@ -42,20 +59,6 @@ import { d4RegionWindow, d4RoundOrder } from '../d4-octave-finder/logic';
  *
  * The answer is the list of taps in order.
  */
-
-export const D37_ID = 'chord-tones-neck';
-
-/**
- * Adaptive scope (design §3.3 step 4, research/02 rule 5):
- *
- * - `shape` (0): the frets one CAGED shape of the chord spans, picked per
- *   prompt, so the box moves round the neck (rule 12);
- * - `neck` (1): frets 0–12, every string.
- */
-export type D37Scope = 'shape' | 'neck';
-
-export const D37_SCOPES: readonly D37Scope[] = ['shape', 'neck'];
-export const D37_SCOPE = { minLevel: 0, maxLevel: D37_SCOPES.length - 1 };
 
 /** Frets 0–12, as for D4: above 12 the neck repeats (dimmed, not hidden). */
 export const D37_NECK: FretRange = { from: 0, to: 12 };
@@ -108,16 +111,6 @@ export type D37Answer = readonly Position[];
 export function d37ScopeFor(level: number): D37Scope {
   const i = Math.max(0, Math.min(D37_SCOPES.length - 1, Math.round(level)));
   return D37_SCOPES[i] as D37Scope;
-}
-
-function parse(item: Item) {
-  const ref = parseChordTonesItemId(item.id);
-  return ref && isD8Kind(ref.chord) ? ref : null;
-}
-
-/** The kinds with CAGED shapes to draw a region from (`theory/voicings`). */
-export function d37CanTest(item: Item): boolean {
-  return parse(item) !== null;
 }
 
 /** The degrees a prompt asks for. */
@@ -219,23 +212,6 @@ function semitonesAt(prompt: D37Prompt, pos: Position): number {
   return (((midiAt(pos, prompt.tuning) - chromaOf(prompt.root)) % 12) + 12) % 12;
 }
 
-/** D7's concepts, so the seed pairs (`triad:maj`/`triad:min`, `chord:7`/`chord:maj7` …) apply. */
-function chordConcept(kind: ChordKind): string {
-  if (kind === 'major') return 'triad:maj';
-  if (kind === 'minor') return 'triad:min';
-  return `chord:${kind}`;
-}
-
-/** Intervals from the root, as the confusion matrix keys them (engine/confusions.ts). */
-const INTERVAL: Partial<Record<ChordDegree, string>> = {
-  '1': 'P1',
-  b3: 'm3',
-  '3': 'M3',
-  '5': 'P5',
-  b7: 'm7',
-  '7': 'M7',
-};
-
 /** The interval key of a semitone count, for the twins a tap can confuse. */
 const BY_SEMITONES: Readonly<Record<number, string>> = { 3: 'm3', 4: 'M3', 10: 'm7', 11: 'M7' };
 
@@ -250,13 +226,6 @@ const SWAPPED: Partial<Record<ChordKind, Readonly<Record<number, ChordKind>>>> =
   maj7: { 10: '7' },
   m7: { 6: 'm7b5', 4: '7' },
 };
-
-/** The concept a card is keyed by: the chord's kind, or a degree's interval. */
-export function d37Concept(prompt: Pick<D37Prompt, 'kind' | 'degree'>): string {
-  return prompt.degree === null
-    ? chordConcept(prompt.kind)
-    : (INTERVAL[prompt.degree] ?? prompt.degree);
-}
 
 /**
  * What a wrong tap confuses the card with, if it is the confusable twin:
@@ -323,11 +292,6 @@ export function d37GradedResponseMs(
   elapsedMs: number,
 ): number {
   return elapsedMs / Math.max(1, prompt.targets.length);
-}
-
-export function d37ConceptOf(item: Item): string | null {
-  const ref = parse(item);
-  return ref ? d37Concept({ kind: ref.chord, degree: ref.degree }) : null;
 }
 
 /** The lowest root in frets 0–12, which the sounds build up from. */
