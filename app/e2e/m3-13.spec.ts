@@ -139,6 +139,8 @@ async function confusionPairs(page: Page): Promise<string[][]> {
 
 test.describe('M3-13 D36 names the chord from its dots', () => {
   test('a worked example, then recall on the neck and the chart @smoke', async ({ page }, info) => {
+    // Up to 20 cards: about 20 s on an idle machine, past 30 s under lane load.
+    test.slow();
     await freshStart(page);
     await masterSkills(page, PREREQS);
     await focusSession(page, 'C5.name-triads');
