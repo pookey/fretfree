@@ -1174,7 +1174,7 @@ Notes for whoever picks this up:
   - `DELETE /account` removes all of the user's server data and the Cognito user.
 
 ### M7-04 · "Save your progress": optional email sign-in UI
-- **Status:** todo
+- **Status:** done
 - **Deps:** M7-02
 - **Owns:** `app/src/account/**`, `app/src/routes/account.route.tsx`, `app/src/screens/progress/panels/account.tsx`, `app/e2e/m7-04.spec.ts`
 - **Acceptance:**
