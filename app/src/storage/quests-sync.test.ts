@@ -124,11 +124,14 @@ describe('loadQuestDay', () => {
     expect(ctx.date).toBe(DATE);
   });
 
-  it('names the drill that asked each answer', async () => {
+  it('names the drill that asked each answer, and what was answered', async () => {
     await answered(at(18, 9), 'due', { itemId: 'a', drillType: 'play-the-note' });
-    await answered(at(18, 9, 1), 'due', { itemId: 'b' });
+    await answered(at(18, 9, 1), 'due', { itemId: 'b', answerGiven: '(show me)' });
     const ctx = await loadQuestDay(db, DATE, now);
-    expect(ctx.answers.map((a) => a.drillType)).toEqual(['play-the-note', 'name-the-note']);
+    expect(ctx.answers.map((a) => [a.drillType, a.answerGiven])).toEqual([
+      ['play-the-note', 'A'],
+      ['name-the-note', '(show me)'],
+    ]);
   });
 });
 

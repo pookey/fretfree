@@ -100,6 +100,7 @@ export async function loadQuestDay(
     guided: r.hintUsed,
     at: r.at,
     drillType: r.drillType,
+    answerGiven: r.answerGiven,
   }));
   return { date, todaysReviews, dueRemaining, skillStates, answers };
 }

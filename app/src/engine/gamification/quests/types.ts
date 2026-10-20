@@ -4,9 +4,11 @@ import type { LocalDate } from '../local-date';
 import type { CardKind, QuestContext, QuestDefinition } from '../types';
 
 /**
- * What a quest may look at when the day's quests are drawn: only history from
- * before the date, so the draw (and any weak area a quest names) stays put
- * all day, however that day's practice goes.
+ * What a quest may look at when the day's quests are drawn: history from
+ * before the date, so the day's practice never changes the draw (or any weak
+ * area a quest names), plus the live mic-mode setting. Toggling mic mode
+ * mid-day re-runs the draw: the mic quest joins or leaves, and since the
+ * shuffled pool is fixed per date, it displaces at most one other quest.
  */
 export interface QuestSnapshot {
   date: LocalDate;
@@ -28,6 +30,8 @@ export interface QuestAnswer {
   at: Date;
   /** The drill that asked it (`reviewLogs.drillType`), e.g. to spot a mic drill. */
   drillType?: string;
+  /** What the learner answered (`reviewLogs.answerGiven`), e.g. to spot a give-up. */
+  answerGiven?: string;
 }
 
 /** What a drawn quest measures progress against. */

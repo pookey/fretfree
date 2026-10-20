@@ -4,7 +4,8 @@ import { ENGINE_CONFIG } from '../../config';
 import type { ReviewLogRecord } from '../../model';
 import { SKILLS } from '../../skills';
 import { DRILLS } from '../../../drills/registry';
-import { MIC_DRILLS, MIC_SKILLS } from '../achievements/mic-drills';
+import { d17DescribeAnswer } from '../../../drills/d17-play-sequence/logic';
+import { MIC_DRILLS, MIC_SKILLS, isGiveUp } from '../achievements/mic-drills';
 import { QUEST_TEMPLATES, drawQuests, type QuestAnswer, type QuestDayContext } from './index';
 import tryMic from './try-mic';
 
@@ -114,6 +115,32 @@ describe('try-mic quest', () => {
         ]),
       ),
     ).toBe(0);
+  });
+
+  it('ignores "Show me" give-ups, which need no guitar', () => {
+    const quest = tryMic.draw(micSnapshot)!;
+    const gaveUp = (played: number[]) =>
+      answer({
+        drillType: 'play-sequence',
+        correct: false,
+        rating: Rating.Again,
+        answerGiven: d17DescribeAnswer({ played, gaveUp: true }),
+      });
+    const played = answer({
+      drillType: 'play-sequence',
+      correct: false,
+      rating: Rating.Again,
+      answerGiven: d17DescribeAnswer({ played: [55, 57] }),
+    });
+    expect(quest.progress(ctx([gaveUp([]), gaveUp([55, 57])]))).toBe(0);
+    expect(quest.progress(ctx([gaveUp([]), played, answer({ answerGiven: 'A2' })]))).toBe(2);
+  });
+
+  it("spots D17's logged give-up, and only that", () => {
+    expect(isGiveUp(d17DescribeAnswer({ played: [], gaveUp: true }))).toBe(true);
+    expect(isGiveUp(d17DescribeAnswer({ played: [55], gaveUp: true }))).toBe(true);
+    expect(isGiveUp(d17DescribeAnswer({ played: [55, 57] }))).toBe(false);
+    expect(isGiveUp(undefined)).toBe(false);
   });
 
   it('caps progress at the target', () => {

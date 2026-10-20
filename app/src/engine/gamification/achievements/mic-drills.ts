@@ -19,6 +19,17 @@ export function isMicDrill(drillType: string | undefined): boolean {
   return drillType !== undefined && MIC_DRILLS.has(drillType);
 }
 
+/**
+ * How a mic drill logs "Show me", the learner asking for the answer instead
+ * of playing it (D17's `describeAnswer`; a test keeps them in step).
+ */
+export const GIVE_UP_MARK = '(show me)';
+
+/** Whether `answerGiven` records a give-up rather than notes played. */
+export function isGiveUp(answerGiven: string | undefined): boolean {
+  return answerGiven?.endsWith(GIVE_UP_MARK) ?? false;
+}
+
 /** Skills that list a mic drill, so a session can serve one for their items. */
 export const MIC_SKILLS: ReadonlySet<string> = new Set(
   SKILLS.filter((s) => s.drillTypes.some((d) => MIC_DRILLS.has(d))).map((s) => s.id),

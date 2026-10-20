@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart } from './helpers';
+import { focusSession } from './helpers/focus';
 import { playNotes, startListening, useFakeMic } from './helpers/mic';
 
 // M5-07: the mic quest and badges (design §3.7). "Play 3 answers on your
@@ -157,6 +158,74 @@ async function micQuestDay(page: Page): Promise<void> {
   throw new Error('No day drew the mic quest');
 }
 
+/**
+ * Due C4 cards for G and D major, last spelled with D7 a month ago (before
+ * the quest lookback, so the draw doesn't change), so the picker turns to
+ * D17 next, as M5-06's spec seeds them.
+ */
+async function seedSpelledKeys(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    const DAY = 86_400_000;
+    const db = await (window as DbWindow).__m507Db!();
+    const tx = db.transaction(['cards', 'reviewLogs'], 'readwrite');
+    const now = Date.now();
+    ['spell-key:G', 'spell-key:D'].forEach((itemId, i) => {
+      const last = new Date(now - (30 - 7 * i) * DAY);
+      const skillId = 'C4.sharp-keys';
+      tx.objectStore('cards').put({
+        itemId,
+        skillId,
+        fsrs: {
+          due: new Date(now - DAY),
+          stability: 5,
+          difficulty: 5,
+          elapsed_days: 0,
+          scheduled_days: 5,
+          learning_steps: 0,
+          reps: 1,
+          lapses: 0,
+          state: 2,
+          last_review: last,
+        },
+        createdAt: last,
+        lastReviewedAt: last,
+      });
+      tx.objectStore('reviewLogs').add({
+        itemId,
+        skillId,
+        drillType: 'spell-it',
+        correct: true,
+        responseMs: 1500,
+        rating: 3,
+        hintUsed: false,
+        answerGiven: '',
+        at: last,
+      });
+    });
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  });
+}
+
+/** Today's logged D17 answers. */
+async function d17Answers(page: Page): Promise<string[]> {
+  return page.evaluate(async () => {
+    const db = await (window as DbWindow).__m507Db!();
+    const req = db.transaction('reviewLogs').objectStore('reviewLogs').getAll();
+    const rows = await new Promise<{ drillType: string; answerGiven: string }[]>(
+      (resolve, reject) => {
+        req.onsuccess = () => resolve(req.result as { drillType: string; answerGiven: string }[]);
+        req.onerror = () => reject(req.error);
+      },
+    );
+    db.close();
+    return rows.filter((r) => r.drillType === 'play-sequence').map((r) => r.answerGiven);
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await installDbHelper(page);
   await useFakeMic(page);
@@ -219,6 +288,22 @@ test.describe('M5-07 mic quest', () => {
     await expect(
       quests(page).getByRole('progressbar', { name: 'Play 3 answers on your guitar' }),
     ).toHaveAttribute('aria-valuetext', '1 of 3');
+  });
+
+  test('a D17 "Show me" needs no guitar, so it doesn\'t move the quest', async ({ page }, info) => {
+    test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
+    await micQuestDay(page);
+    await seedSpelledKeys(page);
+    await focusSession(page, 'C4.sharp-keys');
+    await expect(page.locator('[data-drill="play-sequence"]')).toBeVisible();
+    await page.getByRole('button', { name: 'Show me' }).click();
+    await expect(page.getByTestId('feedback-wrong')).toContainText('G A B C D E F♯ G');
+    await expect.poll(() => d17Answers(page)).toEqual(['(show me)']);
+
+    await page.goto('/');
+    await expect(
+      quests(page).getByRole('progressbar', { name: 'Play 3 answers on your guitar' }),
+    ).toHaveAttribute('aria-valuetext', '0 of 3');
   });
 });
 
