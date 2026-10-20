@@ -956,7 +956,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Volume and silent mode. It stays lazily loaded and inside the budget.
 
 ### M4-07 · I6 ear skills plus D14 "Hear it → identify"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-01, M4-06
 - **Owns:** `app/src/engine/skills/i6.ts`, `app/src/drills/d14-ear-identify/**`, `app/e2e/m4-07.spec.ts`
 
