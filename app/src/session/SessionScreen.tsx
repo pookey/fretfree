@@ -155,7 +155,8 @@ export function SessionScreen() {
     });
     setPhase({ kind: 'feedback', current, feedback: { answer, result: res.result } });
     busy.current = false;
-    if (res.result.correct) window.setTimeout(advance, AUTO_ADVANCE_MS);
+    if (res.result.correct)
+      window.setTimeout(advance, current.drill.feedbackHoldMs ?? AUTO_ADVANCE_MS);
   };
 
   useEffect(() => {

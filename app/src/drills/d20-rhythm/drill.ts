@@ -1,3 +1,4 @@
+import { ENGINE_CONFIG } from '../../engine/config';
 import { SKILLS } from '../../engine/skills';
 import { lazyLogic, lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
@@ -25,6 +26,8 @@ const tapStrumRhythm: DrillType<D20Prompt, D20Answer> = {
   // The pad (pointer, Space or Enter), or a real guitar in mic mode.
   inputModes: ['tap', 'keyboard', 'mic'],
   scope: D20_SCOPE,
+  // The hit-by-hit marks are the feedback: keep a right answer's on screen.
+  feedbackHoldMs: ENGINE_CONFIG.rhythm.feedbackHoldMs,
   canTest: d20CanTest,
   conceptOf: d20ConceptOf,
   logic: lazy,

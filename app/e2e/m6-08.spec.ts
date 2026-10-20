@@ -78,6 +78,12 @@ test.describe('M6-08 D20 tap and strum rhythm', () => {
     await expect(grid.locator('[aria-current="step"]')).toHaveCount(1, { timeout: 10_000 });
 
     await expectCorrect(page, '✓ 16 of 16 on time');
+    // A right answer's marks stay a while: they are the drill's feedback.
+    const results = drill.getByTestId('d20-results');
+    await expect(results).toBeVisible();
+    await expect(
+      results.getByRole('list', { name: 'Bar 2' }).getByRole('listitem').first(),
+    ).toHaveAccessibleName('1: on time, 10 ms late');
     expect(errors).toEqual([]);
   });
 

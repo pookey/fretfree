@@ -3,7 +3,8 @@ import { Rating } from 'ts-fsrs';
 import { DEFAULT_SETTINGS, SKILLS, createScheduler } from '../../engine';
 import { FretworkDB } from '../../storage';
 import { SessionRunner } from '../../session/runner';
-import { DRILLS } from '../registry';
+import { ENGINE_CONFIG } from '../../engine/config';
+import { DRILLS, getDrill } from '../registry';
 import { D20_ID, type D20Answer, type D20Prompt } from './logic';
 
 /** D20 through the real session runner (plan → prompt → grade → FSRS → persist). */
@@ -45,6 +46,11 @@ function start(itemIds: string[] = []) {
 }
 
 describe('D20 in a session', () => {
+  it('holds a right answer’s hit-by-hit marks on screen', () => {
+    expect(getDrill(D20_ID)?.feedbackHoldMs).toBe(ENGINE_CONFIG.rhythm.feedbackHoldMs);
+    expect(ENGINE_CONFIG.rhythm.feedbackHoldMs).toBeGreaterThan(700);
+  });
+
   it('serves every beat first, guided, and grades the timing, not the time taken', async () => {
     const r = await start();
     const cur = r.currentPrompt()!;

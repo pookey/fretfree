@@ -136,6 +136,12 @@ export interface DrillType<P = unknown, A = unknown> {
    * learner has sound off: a guess at an unheard sound would go to FSRS.
    */
   requiresSound?: boolean;
+  /**
+   * How long a right answer's feedback stays before the session moves on, in
+   * ms; default the session's brief tick. D20 holds its hit-by-hit marks,
+   * which are the point of the drill.
+   */
+  feedbackHoldMs?: number;
   scope: { minLevel: number; maxLevel: number };
   canTest(item: Item): boolean;
   /** The concept an item is keyed by in the confusion matrix (e.g. its pitch class). */
