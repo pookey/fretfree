@@ -858,7 +858,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Found by the PM, 2026-10-19: M3-18 made drill views lazy, but each `drill.ts` still imports its `logic.ts` (prompt building, grading, choices) statically, and the registry loads every `drill.ts` eagerly. First-load JS grew from 232 to about 240 KB in one day of drills.
   - Split each plugin into eager metadata (id, skills, item kinds, scope levels, `requiresMic`, …) and lazily loaded logic, following the M3-18 pattern for views (`lazyParts`). The session planner and runner work from metadata, and await a drill's logic chunk (preloaded with its view) before its first prompt.
   - Migrate every existing drill (D1–D13 and D36–D40, plus any landed by then). `drills/lazy-view.test.tsx` (or a sibling test) fails if a `drill.ts` statically imports its `logic.ts`, so new drills can't regress.
-  - `check-bundle` shows first-load JS down by at least the drills' logic, and the report gives before and after numbers. No change in behaviour: the full e2e suite passes unchanged.
+  - `check-bundle` shows first-load JS down by at least the drills' logic, and the report gives before and after numbers. **Restore `BUDGET_KB` in `scripts/check-bundle.mjs` to 250.** It was raised to 280 temporarily on 2026-10-20 (user decision; see progress.md "Decisions and deviations"). No change in behaviour: the full e2e suite passes unchanged.
   - Coordinate through the PM with drills in flight: they rebase onto the new contract.
 
 ### M1-43 · [contract] One file per item kind, so drills stop colliding in engine/model.ts

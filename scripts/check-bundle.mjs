@@ -12,7 +12,9 @@ import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
-const BUDGET_KB = 250;
+// TEMPORARY: raised from 250 to 280 KB by user decision on 2026-10-20, so the
+// drills in flight can ship. M1-42 (drill logic out of first-load JS) restores 250.
+const BUDGET_KB = 280;
 // Packages whose sources (from the sourcemap) mark a chunk as audio. The small
 // app/src/audio loader is meant to be first-load; it imports Tone lazily.
 const AUDIO_PACKAGES = /\/node_modules\/(?:tone|standardized-audio-context|automation-events)\//;
