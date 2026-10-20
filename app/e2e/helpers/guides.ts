@@ -52,6 +52,10 @@ const OTHER_SKILLS = [
   'C10.capo-g-c-d',
   'C10.capo-a-e',
   'C10.capo-minor',
+  'I1.major-top-sets',
+  'I1.major-low-sets',
+  'I1.minor-top-sets',
+  'I1.minor-low-sets',
 ];
 
 /**
