@@ -13,6 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "e2e": "pnpm build && ../scripts/e2e-slot.sh playwright test",
     "e2e:only": "../scripts/e2e-slot.sh playwright test",
+    "e2e:fast": "../scripts/e2e-slot.sh playwright test --project=ipad-landscape --project=iphone-smoke",
     "e2e:prod": "E2E_BASE_URL=${SITE_URL:-https://fretfree.app} playwright test --grep @smoke"
   },
   "dependencies": {

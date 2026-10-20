@@ -7,13 +7,21 @@ const external = Boolean(process.env.E2E_BASE_URL);
 
 // iPad-first (design §2, §7). iPad profiles run the full suite; the iPhone
 // profile is best-effort and only runs specs tagged @smoke.
+// The whole matrix runs in the integration lane (`pnpm e2e`). Worker checks
+// run `pnpm e2e:fast`: ipad-landscape (the primary size class) plus the phone
+// smoke tests, a third of the matrix (scripts/verify-quick.sh).
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   // Two e2e slots (plus the lane's) run at once; cap browsers per run so they
   // share the machine. The integration lane raises it.
   workers: Number(process.env.PW_WORKERS ?? 4),
-  retries: process.env.CI ? 2 : 0,
+  // The integration lane retries a failed test once: one load-induced timeout
+  // used to fail a whole batch (a 35-minute verify, then every WP again, one
+  // at a time). integrate.sh records the tests that passed on retry in
+  // .orchestrator/flaky.log so they get fixed. Worker runs keep 0 retries so a
+  // new spec can't hide its own flakiness.
+  retries: Number(process.env.PW_RETRIES ?? (process.env.FRETWORK_LANE === '1' ? 1 : 0)),
   reporter: [['list']],
   use: {
     baseURL,

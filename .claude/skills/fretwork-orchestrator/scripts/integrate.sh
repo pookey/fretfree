@@ -77,10 +77,21 @@ rm -f "$phase_file"
 set +e
 # The lane jumps the queue for CPU and e2e slots (scripts/slot-lib.sh), and
 # runs more test workers than a worktree check, because every ship waits on it.
+# It is the only run of the whole Playwright matrix (workers run e2e:fast).
 FRETWORK_LANE=1 PW_WORKERS="${PW_WORKERS:-5}" VITEST_MAX_WORKERS="${VITEST_MAX_WORKERS:-6}" \
   SHIP_PHASE_FILE="$phase_file" pnpm ship 2>&1 | tee -a "${logs[@]}" >/dev/null
 rc=${PIPESTATUS[0]}
 set -e
+# Playwright retried these once in the lane (PW_RETRIES, app/playwright.config.ts)
+# and they passed the second time. Record them so they get fixed: a flake that
+# fails the one-at-a-time re-run still costs a full verify.
+flaky="$(awk '/^ +[0-9]+ flaky$/{f=1; next} f && /^ +\[/{print; next} f{exit}' "${logs[0]}" | sed 's/^ *//')"
+if [[ -n "$flaky" ]]; then
+  { echo "$(date -u +%FT%TZ) $(git rev-parse --short HEAD) ${batch[*]}"; sed 's/^/  /' <<<"$flaky"; } >>"$ORCH/flaky.log"
+  $STATE event flaky "${batch[*]}: $(head -1 <<<"$flaky" | cut -c1-120) (+$(($(wc -l <<<"$flaky") - 1)) more; see .orchestrator/flaky.log)" >/dev/null
+  say "integrate: flaky in the lane (passed on retry; listed in .orchestrator/flaky.log):"
+  while IFS= read -r line; do say "  $line"; done <<<"$flaky"
+fi
 if ((rc != 0)); then
   failed_phase="$(cat "$phase_file" 2>/dev/null || echo unknown)"
   if [[ "$failed_phase" == deploy || "$failed_phase" == smoke ]]; then

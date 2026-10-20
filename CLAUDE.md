@@ -16,14 +16,15 @@ An iPad-first guitar-learning PWA (iPhone is best-effort). It is public and MIT-
 |---|---|
 | `pnpm dev` | Vite dev server (`PORT=5xxx pnpm dev` for a custom port) |
 | `pnpm verify` | **The quality gate**: typecheck, lint, prettier check, unit tests with coverage thresholds, infra tests, build, first-load JS budget (`scripts/check-bundle.mjs`, ≤250 KB gzip), Playwright e2e |
-| `pnpm verify:quick` | Work-package check: every static gate (in a CPU slot, `scripts/cpu-slot.sh`), then Playwright on the branch's own specs, or the full suite when the change reaches shared code or adds a drill (`scripts/verify-quick.sh`) |
+| `pnpm verify:quick` | Work-package check: every static gate (in a CPU slot, `scripts/cpu-slot.sh`), then Playwright on the branch's own specs, or `e2e:fast` when the change reaches shared code or adds a drill. `--preflight` after a rebase skips the fast suite when origin/main hasn't moved since the last passing run (`scripts/verify-quick.sh`) |
 | `pnpm test` / `pnpm --filter app test:watch` | Unit tests only |
 | `pnpm lighthouse` | Build, then the local PWA + accessibility gate (`scripts/lighthouse.mjs`): Chrome installability, manifest and offline checks, then Lighthouse a11y (must be 100) and best practices on every screen, dark and light. Fetches a pinned Lighthouse via `pnpm dlx` |
 | `pnpm e2e` | Build, then run Playwright through the machine-wide e2e semaphore (`scripts/e2e-slot.sh`, 2 slots, port per slot) |
+| `pnpm --filter app e2e:fast` | Playwright on `ipad-landscape` and `iphone-smoke` only: a third of the matrix. What worker checks run; the lane runs the whole matrix |
 | `pnpm ship` | On a clean `main`: secret scan → verify → deploy (`scripts/deploy.sh`) → smoke test production (`scripts/smoke.sh`) |
 | `pnpm secret-scan [range]` | Scan a git range for account IDs, zone IDs and keys |
 
-Playwright projects: `ipad-landscape`, `ipad-portrait` and `ipad-mini-landscape` run everything. `iphone-smoke` runs only tests tagged `@smoke`.
+Playwright projects: `ipad-landscape`, `ipad-portrait` and `ipad-mini-landscape` run everything. `iphone-smoke` runs only tests tagged `@smoke`. The whole matrix runs only in the integration lane (`pnpm verify`, once per batch, with one retry per test, and tests that pass on retry are logged to `.orchestrator/flaky.log`). Everything else runs `e2e:fast` or the branch's own specs.
 
 ## Architecture (`app/src`)
 
