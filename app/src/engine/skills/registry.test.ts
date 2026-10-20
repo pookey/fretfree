@@ -39,6 +39,37 @@ describe('skill registry', () => {
     }
   });
 
+  it('keeps the curriculum order across topics', () => {
+    // One skill per topic, in the frontier order the course teaches them
+    // (research/03): a mistaken `order` in one file moves its topic out of line.
+    const chain = [
+      'F1.alphabet',
+      'F2.string6-naturals',
+      'F3.markers',
+      'C1.octaves',
+      'C2.all-notes',
+      'C3.thirds',
+      'C4.sharp-keys',
+      'I3.sharp-signatures',
+      'C5.triads',
+      'C5.tones-roots',
+      'C5.name-triads',
+      'C5.build-triads',
+      'C5.neck-triads',
+      'C8.numerals-major',
+      'C9.pop',
+      'C6.triad-cores',
+      'C7.minor-boxes',
+      'C10.capo-g-c-d',
+    ];
+    const index = (id: string) => SKILLS.findIndex((s) => s.id === id);
+    for (const id of chain) expect(index(id), id).toBeGreaterThanOrEqual(0);
+    for (let i = 1; i < chain.length; i++) {
+      const [a, b] = [chain[i - 1]!, chain[i]!];
+      expect(index(a), `${a} before ${b}`).toBeLessThan(index(b));
+    }
+  });
+
   it('has unique skill IDs whose prerequisites exist', () => {
     const skillIds = SKILLS.map((s) => s.id);
     expect(new Set(skillIds).size).toBe(skillIds.length);
