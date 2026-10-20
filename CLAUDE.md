@@ -21,6 +21,7 @@ An iPad-first guitar-learning PWA (iPhone is best-effort). It is public and MIT-
 | `pnpm lighthouse` | Build, then the local PWA + accessibility gate (`scripts/lighthouse.mjs`): Chrome installability, manifest and offline checks, then Lighthouse a11y (must be 100) and best practices on every screen, dark and light. Fetches a pinned Lighthouse via `pnpm dlx` |
 | `pnpm e2e` | Build, then run Playwright through the machine-wide e2e semaphore (`scripts/e2e-slot.sh`, 2 slots, port per slot) |
 | `pnpm --filter app e2e:fast` | Playwright on `ipad-landscape` and `iphone-smoke` only: a third of the matrix. What worker checks run; the lane runs the whole matrix |
+| Remote runner | Opt-in: with an SSH address in `$(git rev-parse --git-common-dir)/fretwork-remote` (never committed) or `FRETWORK_REMOTE`, `pnpm verify`, `verify:quick` and `e2e` run on a Linux test box (`scripts/remote-run.sh`; a full e2e takes about 4 min) and fall back to this machine when it's unreachable |
 | `pnpm ship` | On a clean `main`: secret scan → verify → deploy (`scripts/deploy.sh`) → smoke test production (`scripts/smoke.sh`) |
 | `pnpm secret-scan [range]` | Scan a git range for account IDs, zone IDs and keys |
 

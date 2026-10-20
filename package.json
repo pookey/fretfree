@@ -15,7 +15,7 @@
     "format:check": "prettier --check .",
     "test": "pnpm --filter app test",
     "test:coverage": "pnpm --filter app test:coverage",
-    "e2e": "pnpm --filter app e2e",
+    "e2e": "./scripts/remote-run.sh pnpm --filter app e2e",
     "lighthouse": "pnpm build && node scripts/lighthouse.mjs",
     "verify": "./scripts/remote-run.sh pnpm verify:here",
     "verify:here": "./scripts/cpu-slot.sh pnpm verify:static && pnpm --filter app e2e:only",
