@@ -1530,8 +1530,8 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - The gate rationale comments in `c5.ts`, `c8.ts`, `c9.ts` and `c10.ts` say what changed and why. `docs/progress.md` records the change from the old gates and why rule 7 still holds.
   - A unit test (or a short scripted simulation in `c8.test.ts`) shows the first C8 card is reachable once `C3.thirds` is mastered and C4 sharp keys are practising, with no flat-key mastery.
   - E2E: a seeded songs learner with `C3.thirds` mastered sees Chords and Harmony open on Learn, and a session serves a D11 numeral in C, G or D.
-  - Needs user decision: whether `C6.triad-cores` should still need `C5.triads` *mastered* (today), or only practising (hard on F2 ×2, soft on `C5.triads`). The review asks for practising; rule 7 is satisfied either way.
-  - Needs user decision: the stage-1 keys. The review proposes C, G, D. An alternative is the five open-chord keys C, G, D, A, E.
+  - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): `C6.triad-cores` stays hard on F2 ×2 and becomes soft on `C5.triads` (practising). Placing a triad on the neck needs the string notes to be automatic (the hard part), while spelling triads is reinforced by building them, so interleaving the two is a desirable difficulty, not an overload. Rule 7 holds.
+  - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): stage 1 is C, G, D. Three keys keep the first harmony stage small enough to master in days (early success, low load), and they are the commonest keys for beginner songs. A and E come in stage 2.
 
 ### M10-03 · Session lanes and a new-item cap, so parallel tracks get a turn
 - **Status:** todo
@@ -1547,8 +1547,8 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - The runner builds the lanes from the frontier skills. Stretch top-up (`gamification-bridge.ts`) is unchanged.
   - Unit tests, for each goal: a 10-minute day-one session has at most `maxNewPerSession` new items; once two modules are open, a session draws from both; once Ear or Rhythm is open, it appears within the first three sessions; due reviews still come first (rule 16).
   - Move I3 (key signatures) out of the first slice of the Keys lane: either its own module after Progressions, or kept in Keys but ordered after C8 stage 1. M10-07 owns the Learn copy for whichever is chosen.
-  - Needs user decision: what fills the rest of a session once the new-item cap is reached and nothing is due (on day one, 8 new items is about 32 prompts, about 4 minutes). Options: end the session early and say why (rule 11 allows it); add a second spaced pass over today's new items; or offer a quick drill. Also whether that short session counts as meeting the daily goal.
-  - Needs user decision: I3 as its own "Key signatures" module, or reordered inside Keys.
+  - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): when the cap is reached and nothing is due, run one more spaced retrieval pass over today's new items (expanding retrieval inside the session consolidates them), then end the session and say why in plain words ("That's enough new material for today: it sticks better after a sleep"). A planned session that ends this way counts as meeting the daily goal: the goal rewards doing the plan, never grinding past it.
+  - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): I3 becomes its own "Key signatures" module, ordered after C8 stage 1. A separate module gives it a clear outcome on the Learn map and its own session lane, so it no longer queues behind every C4 item.
 
 ### M10-04 · Concept intros: a registry, a session card, and the first ten
 - **Status:** todo
@@ -1628,7 +1628,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Progress topic rows are grouped and titled by Learn's modules (`MODULES` titles), with topic rows under them if needed.
   - "Its skills start feeding your sessions once you've made progress…" (`ModuleDetail.tsx:67-68`) is rewritten in learner words.
   - RTL tests for the legend and the topic titles.
-  - Needs user decision: the learner-facing word for one fact you learn ("item" as the review proposes, or "note"/"fact"/"card"), and whether Learn's skill rows should say "lesson".
+  - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): the learner-facing word is "card" everywhere ("12 cards learning, 40 stable"): it matches the one-prompt-at-a-time flashcard model the app actually uses and works for every drill type, while "note" collides with musical notes and "item" is jargon. Don't use "lesson": a skill is practised, not lectured; concept intros are "intro" cards.
 
 ### M10-10 · Copy fixes: onboarding, Today, Progress and Settings
 - **Status:** todo
@@ -1668,7 +1668,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Migration (schema version, the `c5-tone-stages` pattern, frozen) moves cards, logs and states to the stage that owns each item. A mastered `C2.all-notes` carries to every stage. JSON import restages too.
   - "String 4/3/2/1 master" achievements (mastery-tied). "Whole neck" needs every C2 stage mastered (`helpers.ts` takes a list of skills).
   - M4-08 adds `hear-it-find-it` to C2's drill types: keep it on every stage.
-  - Needs user decision: the stage order (strings 4 → 1 first, or 1 and 2 first because string 1 repeats string 6's names).
+  - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): string 1 first (it repeats string 6's names two octaves up, so it transfers almost for free), then 4 and 3 (each reachable by the octave shapes from strings 6 and 5 the learner already knows, C1.octaves), and string 2 last (the B-string shift makes it the hardest).
 
 ### M10-13 · Worked examples for Neck basics: F1, F2 string 5 and F3
 - **Status:** todo
@@ -1725,4 +1725,4 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Mastery-tied achievements (`masteryAchievement`): for example, "Triads spelled" (C5.triads), "All five CAGED shapes" (C6.major-shapes), "Three-chord songs in any key" (C8 stage 1 or all stages), "Pop progressions" (C9.pop).
   - Speed demon measures against the learner's calibrated tap time (M6-08 already excludes timing drills), or its copy says "1.2 seconds flat".
   - Unit tests for each.
-  - Needs user decision: the milestone list and names. Also, speed demon relative to the learner's tap time, or a fixed 1.2 s with honest copy.
+  - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): milestones mark mastery, never volume: one per module mastered (chords, CAGED shapes, harmony, progressions), plus one for the first song-ready progression; plain, encouraging names; no streak pressure. Speed demon becomes relative to the learner's own calibrated tap time (motor speed differs between people; the goal is fluent recall, not fast hands), with copy that says so.
