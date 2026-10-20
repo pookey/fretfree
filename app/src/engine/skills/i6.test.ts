@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SHAPE_INTERVALS } from '../../theory';
 import { getSkill, SKILLS } from './index';
-import { I6_CHORD_GROUPS, I6_INTERVAL_GROUPS, I6_PROGRESSION_GROUPS } from './i6';
+import { I6_CHORD_GROUPS, I6_INTERVAL_GROUPS, I6_PROGRESSION_GROUPS } from '../items/ear';
 
 const ids = (skillId: string) =>
   getSkill(skillId)!

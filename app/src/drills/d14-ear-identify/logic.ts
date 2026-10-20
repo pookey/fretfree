@@ -1,12 +1,12 @@
 import { ENGINE_CONFIG } from '../../engine/config';
-import type { EarDirection } from '../../engine/items/ear';
-import type { Item } from '../../engine/model';
 import {
   I6_CHORD_GROUPS,
   I6_INTERVAL_GROUPS,
   I6_PROGRESSION_GROUPS,
+  type EarDirection,
   type EarGroup,
-} from '../../engine/skills/i6';
+} from '../../engine/items/ear';
+import type { Item } from '../../engine/model';
 import {
   allStrings,
   chordKindInfo,
