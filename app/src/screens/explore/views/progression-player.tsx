@@ -245,8 +245,8 @@ export function chordMarkers(
 /**
  * "Quiz me on this" (design §7): the C9 skill that teaches this progression,
  * plus the C10 capo skills when a capo is on. Gating stays on (rule 7), so
- * until those are open the quiz offers the nearest open prerequisites (C8's
- * numerals, then the keys and triads they build on).
+ * until those are open the quiz offers the nearest open prerequisites of
+ * each (C8's numerals for C9; the keys and triads for C10).
  */
 export function playerQuizFocus(
   progressionId: string,
@@ -258,9 +258,12 @@ export function playerQuizFocus(
   const c9 = skills
     .filter((s) => s.topic === 'C9' && s.items().some((i) => i.id === item))
     .map((s) => s.id);
-  const c10 = capo > 0 ? skills.filter((s) => s.topic === 'C10').map((s) => s.id) : [];
-  const targets = [...c9, ...c10];
-  return { skillIds: nearestOpenSkills(targets, frontier, skills) ?? targets };
+  // Each part walks back on its own, so an open C9 skill can't hide C10's
+  // prerequisites, nor an open C10 skill C9's.
+  const progression = nearestOpenSkills(c9, frontier, skills) ?? c9;
+  const c10 = skills.filter((s) => s.topic === 'C10').map((s) => s.id);
+  const capoPart = capo > 0 ? (nearestOpenSkills(c10, frontier, skills) ?? []) : [];
+  return { skillIds: [...new Set([...progression, ...capoPart])] };
 }
 
 const LEGEND: Partial<Record<MarkerStyle, string>> = {
