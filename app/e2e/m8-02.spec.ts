@@ -71,10 +71,12 @@ test.describe('M8-02 <Staff>', () => {
 
     // Each fret number sits under its note (the rest at index 3 has none),
     // within VexFlow's usual offset from the notehead's centre.
-    const centreX = async (l: Locator) => {
-      const box = (await l.boundingBox())!;
-      return box.x + box.width / 2;
-    };
+    // getBoundingClientRect, as Playwright's boundingBox() misreads SVG text.
+    const centreX = (l: Locator) =>
+      l.evaluate((e) => {
+        const b = e.getBoundingClientRect();
+        return b.x + b.width / 2;
+      });
     const notes = phrase.getByRole('img');
     const frets = tab.locator('.vf-tabnote text');
     for (const [fret, note] of [
