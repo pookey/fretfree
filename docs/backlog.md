@@ -1091,7 +1091,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/engine/skills/i1.ts`, `app/src/drills/d18-inversions/**`
 
 ### M6-04 · D19 "Voice-leading puzzle"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M6-03
 - **Owns:** `app/src/drills/d19-voice-leading/**`
 
