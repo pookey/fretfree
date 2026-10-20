@@ -58,39 +58,44 @@ while IFS=$'\t' read -r status path; do
   esac
 done <<<"$changes"
 
-run() { if [[ -n "$dry" ]]; then echo "would run: $*"; else "$@"; fi; }
-
-echo "verify-quick: static gates (base ${base:0:8})"
-run ./scripts/cpu-slot.sh pnpm verify:static
-
+# Decide what runs, then run it as one command: on the remote test runner when
+# one is configured (scripts/remote-run.sh), so it syncs and builds once.
+static="./scripts/cpu-slot.sh pnpm verify:static"
 if [[ -n "$full" || -z "$local_only" ]]; then
   if [[ -z "$full" ]]; then
     echo "verify-quick: full e2e, because the change reaches beyond its own drill and specs:"
     printf '  %s\n' "${reasons[@]:0:8}"
   fi
-  run pnpm --filter app e2e:only
-  echo "verify-quick: PASS (static + full e2e)"
-  exit 0
+  steps="$static && pnpm --filter app e2e:only"
+  summary="static + full e2e"
+else
+  # Own specs: changed spec files, plus specs that drive a changed drill (by
+  # its test-id prefix, e.g. "d5-").
+  specs=()
+  while IFS=$'\t' read -r status path; do
+    case "$path" in
+      app/e2e/*.spec.ts) [[ "$status" != D ]] && specs+=("${path#app/}") ;;
+      app/src/drills/*/*)
+        folder="${path#app/src/drills/}"; folder="${folder%%/*}"
+        id="${folder%%-*}"
+        while IFS= read -r spec; do specs+=("${spec#app/}"); done < <(grep -l -E "['\"\`]$id-" app/e2e/*.spec.ts || true) ;;
+    esac
+  done <<<"$changes"
+  if ((${#specs[@]} == 0)); then
+    steps="$static"
+    summary="static; no e2e spec touches this change"
+  else
+    IFS=$'\n' read -r -d '' -a specs < <(printf '%s\n' "${specs[@]}" | sort -u) || true
+    echo "verify-quick: e2e on own specs: ${specs[*]}"
+    steps="$static && pnpm --filter app e2e:only $(printf '%q ' "${specs[@]}")"
+    summary="static + ${#specs[@]} own spec(s)"
+  fi
 fi
 
-# Own specs: changed spec files, plus specs that drive a changed drill (by its
-# test-id prefix, e.g. "d5-").
-specs=()
-while IFS=$'\t' read -r status path; do
-  case "$path" in
-    app/e2e/*.spec.ts) [[ "$status" != D ]] && specs+=("${path#app/}") ;;
-    app/src/drills/*/*)
-      folder="${path#app/src/drills/}"; folder="${folder%%/*}"
-      id="${folder%%-*}"
-      while IFS= read -r spec; do specs+=("${spec#app/}"); done < <(grep -l -E "['\"\`]$id-" app/e2e/*.spec.ts || true) ;;
-  esac
-done <<<"$changes"
-
-if ((${#specs[@]} == 0)); then
-  echo "verify-quick: PASS (static; no e2e spec touches this change)"
-  exit 0
+echo "verify-quick: static gates (base ${base:0:8})"
+if [[ -n "$dry" ]]; then
+  echo "would run: ./scripts/remote-run.sh bash -c \"$steps\""
+else
+  ./scripts/remote-run.sh bash -c "$steps"
 fi
-IFS=$'\n' read -r -d '' -a specs < <(printf '%s\n' "${specs[@]}" | sort -u) || true
-echo "verify-quick: e2e on own specs: ${specs[*]}"
-run pnpm --filter app e2e:only "${specs[@]}"
-echo "verify-quick: PASS (static + ${#specs[@]} own spec(s))"
+echo "verify-quick: PASS ($summary)"

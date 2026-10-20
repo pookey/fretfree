@@ -24,7 +24,12 @@ pnpm verify
 # Record the verified SHA (shared by all worktrees) so the pre-push hook can reuse it.
 git rev-parse HEAD >> "$(git rev-parse --git-common-dir)/fretwork-verified"
 phase deploy "Deploy"
-SKIP_BUILD=1 ./scripts/deploy.sh   # pnpm verify already built app/dist
+if ./scripts/remote-run.sh --enabled; then
+  # Verify ran on the remote test runner, so build the same commit here to deploy.
+  ./scripts/deploy.sh
+else
+  SKIP_BUILD=1 ./scripts/deploy.sh   # pnpm verify already built app/dist
+fi
 phase smoke "Smoke"
 ./scripts/smoke.sh
 phase shipped "Shipped $(git rev-parse --short HEAD) to https://$SITE_DOMAIN"
