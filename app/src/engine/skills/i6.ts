@@ -1,4 +1,3 @@
-import type { IntervalName } from '../../theory';
 import {
   I6_CHORD_GROUPS,
   I6_INTERVAL_GROUPS,
@@ -39,17 +38,19 @@ const DRILLS = ['ear-identify'];
 /** Every interval, in group order. */
 const ALL_INTERVALS = I6_INTERVAL_GROUPS.flatMap((g) => g.members);
 
-interface Group {
-  id: string;
-  title: string;
-  prerequisites: readonly string[];
-  ids: () => string[];
+/** A sound set's members, by its ID in `items/ear.ts`. */
+function set<T extends string>(groups: readonly EarGroup<T>[], id: string): readonly T[] {
+  const group = groups.find((g) => g.id === id);
+  if (!group) throw new Error(`No I6 sound set ${id}`);
+  return group.members;
 }
 
-const rising = (intervals: readonly IntervalName[]) => () =>
-  intervals.map((i) => earIntervalItemId(i, 'up'));
+const rising = (id: string) => () =>
+  set(I6_INTERVAL_GROUPS, id).map((i) => earIntervalItemId(i, 'up'));
 const every = (direction: EarDirection) => () =>
   ALL_INTERVALS.map((i) => earIntervalItemId(i, direction));
+const chords = (id: string) => () => set(I6_CHORD_GROUPS, id).map(earChordItemId);
+const progressions = (id: string) => () => set(I6_PROGRESSION_GROUPS, id).map(progressionEarItemId);
 
 /**
  * The first interval and chord sets open once the learner's first skill is
@@ -59,54 +60,96 @@ const every = (direction: EarDirection) => () =>
  */
 const DAY_ONE = ['F1.alphabet'];
 
-const RISING: Group[] = I6_INTERVAL_GROUPS.map((g, i) => ({
-  id: `I6.intervals-${g.id}`,
-  title: `Hear intervals: ${g.title}`,
-  // Each set opens once the one before is being practised (soft unlock).
-  prerequisites:
-    i === 0 ? DAY_ONE : [`I6.intervals-${(I6_INTERVAL_GROUPS[i - 1] as EarGroup<string>).id}`],
-  ids: rising(g.members),
-}));
+interface Group {
+  id: string;
+  title: string;
+  prerequisites: readonly string[];
+  ids: () => string[];
+}
 
-const LAST_RISING = (RISING[RISING.length - 1] as Group).id;
-
+// Skill IDs are written out, not built: e2e/helpers/skills.ts reads them from
+// this file's source. Each set opens once the one before is being practised.
 const INTERVALS: Group[] = [
-  ...RISING,
+  {
+    id: 'I6.intervals-fourths-fifths',
+    title: 'Hear intervals: 4ths, 5ths and octaves',
+    prerequisites: DAY_ONE,
+    ids: rising('fourths-fifths'),
+  },
+  {
+    id: 'I6.intervals-thirds',
+    title: 'Hear intervals: 3rds',
+    prerequisites: ['I6.intervals-fourths-fifths'],
+    ids: rising('thirds'),
+  },
+  {
+    id: 'I6.intervals-seconds-sixths',
+    title: 'Hear intervals: 2nds and 6ths',
+    prerequisites: ['I6.intervals-thirds'],
+    ids: rising('seconds-sixths'),
+  },
+  {
+    id: 'I6.intervals-sevenths',
+    title: 'Hear intervals: 7ths and the tritone',
+    prerequisites: ['I6.intervals-seconds-sixths'],
+    ids: rising('sevenths'),
+  },
   {
     id: 'I6.intervals-falling',
     title: 'Hear intervals falling',
-    prerequisites: [LAST_RISING],
+    prerequisites: ['I6.intervals-sevenths'],
     ids: every('down'),
   },
   {
     id: 'I6.intervals-together',
     title: 'Hear intervals played together',
-    prerequisites: [LAST_RISING],
+    prerequisites: ['I6.intervals-sevenths'],
     ids: every('together'),
   },
 ];
 
-const CHORDS: Group[] = I6_CHORD_GROUPS.map((g, i) => ({
-  id: `I6.chords-${g.id}`,
-  title: `Hear chords: ${g.title.charAt(0).toLowerCase()}${g.title.slice(1)}`,
-  prerequisites:
-    i === 0 ? DAY_ONE : [`I6.chords-${(I6_CHORD_GROUPS[i - 1] as EarGroup<string>).id}`],
-  ids: () => g.members.map(earChordItemId),
-}));
+const CHORDS: Group[] = [
+  {
+    id: 'I6.chords-major-minor',
+    title: 'Hear chords: major or minor',
+    prerequisites: DAY_ONE,
+    ids: chords('major-minor'),
+  },
+  {
+    id: 'I6.chords-diminished-augmented',
+    title: 'Hear chords: diminished and augmented',
+    prerequisites: ['I6.chords-major-minor'],
+    ids: chords('diminished-augmented'),
+  },
+  {
+    id: 'I6.chords-sevenths',
+    title: 'Hear chords: 7th chords',
+    prerequisites: ['I6.chords-diminished-augmented'],
+    ids: chords('sevenths'),
+  },
+];
 
-/** The C9 skill that teaches each progression set's numerals. */
-const PROGRESSION_PREREQS: Record<string, readonly string[]> = {
-  pop: ['C9.pop'],
-  cadences: ['I6.progressions-pop', 'C9.ii-V-I', 'C9.minor'],
-  blues: ['I6.progressions-pop', 'C9.blues'],
-};
-
-const PROGRESSIONS: Group[] = I6_PROGRESSION_GROUPS.map((g) => ({
-  id: `I6.progressions-${g.id}`,
-  title: `Hear progressions: ${g.title}`,
-  prerequisites: PROGRESSION_PREREQS[g.id] ?? [],
-  ids: () => g.members.map(progressionEarItemId),
-}));
+// Progression ear opens with the C9 skill that teaches each set's numerals.
+const PROGRESSIONS: Group[] = [
+  {
+    id: 'I6.progressions-pop',
+    title: 'Hear progressions: pop and rock',
+    prerequisites: ['C9.pop'],
+    ids: progressions('pop'),
+  },
+  {
+    id: 'I6.progressions-cadences',
+    title: 'Hear progressions: ii–V–I and the minor vamp',
+    prerequisites: ['I6.progressions-pop', 'C9.ii-V-I', 'C9.minor'],
+    ids: progressions('cadences'),
+  },
+  {
+    id: 'I6.progressions-blues',
+    title: 'Hear progressions: 12-bar blues',
+    prerequisites: ['I6.progressions-pop', 'C9.blues'],
+    ids: progressions('blues'),
+  },
+];
 
 function skillsOf(groups: readonly Group[], base: number): Skill[] {
   return groups.map((g, i) => ({

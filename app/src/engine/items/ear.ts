@@ -104,38 +104,35 @@ export function earItemId(ref: EarRef): string {
 // what it imports, into a first-load chunk of their own.
 
 export interface EarGroup<T extends string> {
-  /** The skill's ID suffix, and how D14 names the set. */
+  /** The set's name; its I6 skill names it (`set` in `skills/i6.ts`). */
   readonly id: string;
-  readonly title: string;
   readonly members: readonly T[];
 }
 
 /** Rising intervals, in teaching order: the most distinct first, then closer pairs. */
 export const I6_INTERVAL_GROUPS: readonly EarGroup<IntervalName>[] = [
-  { id: 'fourths-fifths', title: '4ths, 5ths and octaves', members: ['P4', 'P5', 'P8'] },
-  { id: 'thirds', title: '3rds', members: ['m3', 'M3'] },
-  { id: 'seconds-sixths', title: '2nds and 6ths', members: ['m2', 'M2', 'm6', 'M6'] },
-  { id: 'sevenths', title: '7ths and the tritone', members: ['TT', 'm7', 'M7'] },
+  { id: 'fourths-fifths', members: ['P4', 'P5', 'P8'] },
+  { id: 'thirds', members: ['m3', 'M3'] },
+  { id: 'seconds-sixths', members: ['m2', 'M2', 'm6', 'M6'] },
+  { id: 'sevenths', members: ['TT', 'm7', 'M7'] },
 ];
 
 export const I6_CHORD_GROUPS: readonly EarGroup<ChordKind>[] = [
-  { id: 'major-minor', title: 'Major or minor', members: ['major', 'minor'] },
+  { id: 'major-minor', members: ['major', 'minor'] },
   {
     id: 'diminished-augmented',
-    title: 'Diminished and augmented',
     members: ['diminished', 'augmented'],
   },
-  { id: 'sevenths', title: '7th chords', members: ['7', 'maj7', 'm7', 'm7b5'] },
+  { id: 'sevenths', members: ['7', 'maj7', 'm7', 'm7b5'] },
 ];
 
 export const I6_PROGRESSION_GROUPS: readonly EarGroup<string>[] = [
   {
     id: 'pop',
-    title: 'Pop and rock',
     members: ['I-IV-V', 'I-V-vi-IV', 'vi-IV-I-V', 'I-vi-IV-V'],
   },
-  { id: 'cadences', title: 'ii–V–I and the minor vamp', members: ['ii-V-I', 'i-bVII-bVI-bVII'] },
-  { id: 'blues', title: '12-bar blues', members: ['12-bar-blues', '12-bar-blues-quick-change'] },
+  { id: 'cadences', members: ['ii-V-I', 'i-bVII-bVI-bVII'] },
+  { id: 'blues', members: ['12-bar-blues', '12-bar-blues-quick-change'] },
 ];
 
 export default {

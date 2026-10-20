@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SHAPE_INTERVALS } from '../../theory';
 import { getSkill, SKILLS } from './index';
+import source from './i6.ts?raw';
 import { I6_CHORD_GROUPS, I6_INTERVAL_GROUPS, I6_PROGRESSION_GROUPS } from '../items/ear';
 
 const ids = (skillId: string) =>
@@ -69,5 +70,12 @@ describe('I6 skills', () => {
       expect(s.skipPlacement).toBeUndefined();
     }
     expect(I6_CHORD_GROUPS.flatMap((g) => g.members)).toHaveLength(8);
+  });
+
+  it('writes each skill ID out, for the e2e seed helpers that read this file', () => {
+    // e2e/helpers/skills.ts reads `id: '<skill>'` literals: a built ID would
+    // leak its cards into every seeded one-skill session.
+    const literal = [...source.matchAll(/\bid: '([A-Z]\d+\.[\w-]+)'/g)].map((m) => m[1]);
+    expect(literal.sort()).toEqual(I6.map((s) => s.id).sort());
   });
 });
