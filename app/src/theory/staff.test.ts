@@ -224,6 +224,12 @@ describe('lines, spaces and ledger lines', () => {
     expect(describeStaffPosition(32)).toBe('12th ledger line above');
     expect(describeStaffPosition(34)).toBe('13th ledger line above');
     expect(describeStaffPosition(50)).toBe('21st ledger line above');
+    expect(describeStaffPosition(-222)).toBe('111th ledger line below');
+    expect(describeStaffPosition(-224)).toBe('112th ledger line below');
+    expect(describeStaffPosition(-226)).toBe('113th ledger line below');
+    expect(describeStaffPosition(-242)).toBe('121st ledger line below');
+    expect(describeStaffPosition(-244)).toBe('122nd ledger line below');
+    expect(describeStaffPosition(-246)).toBe('123rd ledger line below');
     const names = staffPositions(12).map(describeStaffPosition);
     expect(new Set(names).size).toBe(names.length);
   });

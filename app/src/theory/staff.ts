@@ -126,14 +126,8 @@ export function ledgerLinePositions(position: number): number[] {
 }
 
 function ordinal(n: number): string {
-  const suffix =
-    n % 10 === 1 && n !== 11
-      ? 'st'
-      : n % 10 === 2 && n !== 12
-        ? 'nd'
-        : n % 10 === 3 && n !== 13
-          ? 'rd'
-          : 'th';
+  const teen = n % 100 >= 11 && n % 100 <= 13;
+  const suffix = teen ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th');
   return `${n}${suffix}`;
 }
 
