@@ -206,6 +206,10 @@ export function splitDeclarations(include: RegExp): Plugin {
     name: 'fretwork:split-declarations',
     apply: 'build',
     enforce: 'pre',
+    buildStart() {
+      // A watch build re-runs from here after an edit: split the new source.
+      splits.clear();
+    },
     resolveId(source) {
       return PIECE.test(source) ? source : null;
     },
