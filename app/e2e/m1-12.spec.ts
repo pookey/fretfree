@@ -10,6 +10,7 @@ import {
   wrongNote,
 } from './helpers';
 import { C4_SKILLS, I3_SKILLS } from './helpers/keys';
+import { F4_SKILLS } from './helpers/rhythm';
 import { ALL_SKILL_IDS } from './helpers/skills';
 
 // M1-12: session celebrations (design §3.7, §3.3 step 5).
@@ -170,14 +171,15 @@ test.describe('M1-12 session celebrations', () => {
 
   test('confetti fires for a milestone and never blocks the summary', async ({ page }) => {
     await freshStart(page);
-    // C4 and I6 open once F1 is mastered, and I3 once C4 is: keep their new
-    // cards out of this one-item session.
+    // C4 and I6 open once F1 is mastered, I3 once C4 is, and F4 is open from
+    // the start: keep their new cards out of this one-item session.
     await masterSkills(page, [
       ...F1_SKILLS,
       ...F3_SKILLS,
       ...C4_SKILLS,
       ...I3_SKILLS,
       ...I6_SKILLS,
+      ...F4_SKILLS,
     ]);
     await seed(page, { string6Due: true });
     await page.getByTestId('start-session').click();
@@ -197,14 +199,15 @@ test.describe('M1-12 session celebrations', () => {
   test('confetti is off under reduced motion; the milestone copy stays', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await freshStart(page);
-    // C4 and I6 open once F1 is mastered, and I3 once C4 is: keep their new
-    // cards out of this one-item session.
+    // C4 and I6 open once F1 is mastered, I3 once C4 is, and F4 is open from
+    // the start: keep their new cards out of this one-item session.
     await masterSkills(page, [
       ...F1_SKILLS,
       ...F3_SKILLS,
       ...C4_SKILLS,
       ...I3_SKILLS,
       ...I6_SKILLS,
+      ...F4_SKILLS,
     ]);
     await seed(page, { string6Due: true });
     await page.getByTestId('start-session').click();
