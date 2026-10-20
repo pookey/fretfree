@@ -922,7 +922,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/engine/skills/c10.ts`, `app/src/drills/d13-capo/**`, `app/e2e/m4-04.spec.ts`
 
 ### M4-05 · I3 skills, D40 "Key-signature cards" and an interactive circle of fifths
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-01, M1-01
 - **Design:** §6, §Explore, research/03 I3
 - **Owns:** `app/src/engine/skills/i3.ts`, `app/src/drills/d40-key-signature/**`, `app/src/screens/explore/views/circle-of-fifths.*`, `app/e2e/m4-05.spec.ts`, plus a D40 row in design §6
