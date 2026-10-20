@@ -170,9 +170,8 @@ describe('<LearnScreen>', () => {
     const links = within(screen.getByRole('region', { name: 'Modules' })).getAllByRole('link');
     expect(links[0]).toHaveAttribute('data-testid', 'module-harmony');
     expect(screen.getByRole('combobox', { name: 'Ordered for your goal' })).toHaveValue('songs');
-    // Harmony is still locked, so the detail opens on the first open module:
-    // Ear (I6), which the songs goal promotes and which opens from day one.
-    expect(screen.getByTestId('module-detail')).toHaveTextContent('Ear');
+    // Harmony has no skills yet, so the detail opens on the first open module.
+    expect(screen.getByTestId('module-detail')).toHaveTextContent('Neck basics');
   });
 
   it('lets the learner change their goal, which reorders the map', async () => {

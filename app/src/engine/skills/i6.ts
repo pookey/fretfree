@@ -82,12 +82,20 @@ const rising = (intervals: readonly IntervalName[]) => () =>
 const every = (direction: EarDirection) => () =>
   ALL_INTERVALS.map((i) => earIntervalItemId(i, direction));
 
+/**
+ * The first interval and chord sets open once the learner's first skill is
+ * being practised (soft unlock): still day one, but the very first session
+ * stays the neck's, as the onboarding path expects. "Start with sound"
+ * (M4-10) is the route for learners who want ear first.
+ */
+const DAY_ONE = ['F1.alphabet'];
+
 const RISING: Group[] = I6_INTERVAL_GROUPS.map((g, i) => ({
   id: `I6.intervals-${g.id}`,
   title: `Hear intervals: ${g.title}`,
   // Each set opens once the one before is being practised (soft unlock).
   prerequisites:
-    i === 0 ? [] : [`I6.intervals-${(I6_INTERVAL_GROUPS[i - 1] as EarGroup<string>).id}`],
+    i === 0 ? DAY_ONE : [`I6.intervals-${(I6_INTERVAL_GROUPS[i - 1] as EarGroup<string>).id}`],
   ids: rising(g.members),
 }));
 
@@ -112,7 +120,8 @@ const INTERVALS: Group[] = [
 const CHORDS: Group[] = I6_CHORD_GROUPS.map((g, i) => ({
   id: `I6.chords-${g.id}`,
   title: `Hear chords: ${g.title.charAt(0).toLowerCase()}${g.title.slice(1)}`,
-  prerequisites: i === 0 ? [] : [`I6.chords-${(I6_CHORD_GROUPS[i - 1] as EarGroup<string>).id}`],
+  prerequisites:
+    i === 0 ? DAY_ONE : [`I6.chords-${(I6_CHORD_GROUPS[i - 1] as EarGroup<string>).id}`],
   ids: () => g.members.map(earChordItemId),
 }));
 

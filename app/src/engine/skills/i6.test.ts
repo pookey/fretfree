@@ -39,9 +39,9 @@ describe('I6 skills', () => {
     expect(new Set(all).size).toBe(36);
   });
 
-  it('starts from day one: the first interval and chord sets need nothing', () => {
-    expect(getSkill('I6.intervals-fourths-fifths')!.prerequisites).toEqual([]);
-    expect(getSkill('I6.chords-major-minor')!.prerequisites).toEqual([]);
+  it('opens on day one, once the first neck skill is being practised', () => {
+    expect(getSkill('I6.intervals-fourths-fifths')!.prerequisites).toEqual(['F1.alphabet']);
+    expect(getSkill('I6.chords-major-minor')!.prerequisites).toEqual(['F1.alphabet']);
     expect(ids('I6.chords-major-minor')).toEqual(['ear-chord:major', 'ear-chord:minor']);
     expect(getSkill('I6.chords-sevenths')!.prerequisites).toEqual([
       'I6.chords-diminished-augmented',

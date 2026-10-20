@@ -178,8 +178,7 @@ describe('buildMap', () => {
 describe('defaultModule', () => {
   it('prefers the first open module, then one with skills, then the first', () => {
     const map = buildMap({ skills: SKILLS, goal: 'songs', stored: stored(), cards: [] });
-    // Songs promotes Ear, whose first I6 skills are open from day one.
-    expect(defaultModule(map)?.module.id).toBe('ear');
+    expect(defaultModule(map)?.module.id).toBe('notes-1');
     const locked = skill('C2.x', 'C2', { prerequisites: ['nope'] });
     const lockedMap = buildMap({ skills: [locked], goal: 'general', stored: stored(), cards: [] });
     expect(defaultModule(lockedMap)?.module.id).toBe('notes-2');

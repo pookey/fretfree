@@ -84,7 +84,8 @@ async function expectComfortableTargets(page: Page): Promise<void> {
 test.describe('M4-07 D14 hear it → identify', () => {
   test('names rising intervals by ear, from day one @smoke', async ({ page }) => {
     await freshStart(page);
-    // The first ear set needs nothing before it.
+    // The first ear set opens once the first neck skill is being practised.
+    await masterSkills(page, ['F1.alphabet']);
     await focusSession(page, 'I6.intervals-fourths-fifths');
     await expect(drill(page)).toBeVisible();
 
@@ -109,6 +110,7 @@ test.describe('M4-07 D14 hear it → identify', () => {
     page.on('pageerror', (e) => errors.push(e.message));
     await tapAudioOutput(page);
     await freshStart(page);
+    await masterSkills(page, ['F1.alphabet']);
     await focusSession(page, 'I6.intervals-fourths-fifths');
 
     // Opened by URL, with no tap yet to unlock audio: the tap on Play does.
@@ -150,6 +152,7 @@ test.describe('M4-07 D14 hear it → identify', () => {
 
   test('names chord qualities, major or minor first', async ({ page }) => {
     await freshStart(page);
+    await masterSkills(page, ['F1.alphabet']);
     await focusSession(page, 'I6.chords-major-minor');
     await expect(page.locator('#drill-prompt')).toContainText(/(Major|Minor) chord \(1/);
     await expect(choices(page).getByRole('button')).toHaveCount(2);
