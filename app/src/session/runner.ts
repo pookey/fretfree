@@ -414,10 +414,9 @@ export class SessionRunner {
     const responseMs = logic.gradedResponseMs?.(prompt, answer, elapsedMs) ?? elapsedMs;
     const now = this.now();
     const result = logic.check(prompt, answer);
-    const rating = gradeAnswer(
-      { correct: result.correct, responseMs, hintUsed: entry.guided },
-      this.targets,
-    );
+    const rating =
+      logic.rating?.(prompt, answer, { hintUsed: entry.guided }) ??
+      gradeAnswer({ correct: result.correct, responseMs, hintUsed: entry.guided }, this.targets);
 
     const item = { id: entry.itemId, skillId: entry.skillId };
     const existing = this.cards.get(item.id);

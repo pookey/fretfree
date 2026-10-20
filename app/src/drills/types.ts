@@ -1,4 +1,5 @@
 import type { FC, ReactNode } from 'react';
+import type { Grade } from 'ts-fsrs';
 import type { GuideLevel, Handedness, Item } from '../engine/model';
 import type { AccidentalPref, Position, Tuning } from '../theory';
 import type { SizeClass } from '../shell/size-class';
@@ -95,6 +96,13 @@ export interface DrillLogic<P = unknown, A = unknown> {
    * speed targets apply (design §3.2). Defaults to the time itself.
    */
   gradedResponseMs?(prompt: P, answer: A, elapsedMs: number): number;
+  /**
+   * The FSRS rating, for a drill graded on something other than answer
+   * speed: D20 grades onset timing against a click (`gradeTiming`). A worked
+   * example (`hintUsed`) caps it at Hard. Defaults to correctness and speed
+   * (design §3.2).
+   */
+  rating?(prompt: P, answer: A, outcome: { hintUsed: boolean }): Grade;
 }
 
 /** A drill's logic, downloaded on demand (with its views, by `preloadDrill`). */
