@@ -146,6 +146,7 @@ export function SessionScreen() {
       correct: res.result.correct,
       rating: res.rating,
       responseMs,
+      drillType: current.drill.id,
     });
     if (tally) setCombo(tally.combo);
     void playNotes([...res.sounds.expected, ...(res.sounds.given ?? [])], {

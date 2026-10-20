@@ -286,6 +286,17 @@ describe('sessionSpeedMs', () => {
     expect(sessionSpeedMs(answers, 3)).toBe(1100);
     expect(sessionSpeedMs(answers, 4)).toBeNull();
   });
+
+  it('leaves out timing drills: a rhythm rep times the bars, not the answer', () => {
+    const answers = [
+      ans({ responseMs: 900 }),
+      ans({ responseMs: 1100 }),
+      ans({ responseMs: 10_000, drillType: 'tap-strum-rhythm' }),
+      ans({ responseMs: 12_000, drillType: 'tap-strum-rhythm' }),
+    ];
+    expect(sessionSpeedMs(answers, 2)).toBe(1000);
+    expect(sessionSpeedMs(answers, 3)).toBeNull();
+  });
 });
 
 describe('bestPastSpeedMs', () => {
@@ -319,6 +330,19 @@ describe('bestPastSpeedMs', () => {
     expect(bestPastSpeedMs(starts, [...reviews].reverse(), 2)).toBe(1100);
     expect(bestPastSpeedMs(starts, reviews, 3)).toBeNull();
     expect(bestPastSpeedMs([], reviews, 1)).toBeNull();
+  });
+
+  it('never takes a past best from timing-drill reviews', () => {
+    const starts = [at(0), at(100)];
+    const reviews = [
+      log(at(1), 1500),
+      log(at(2), 1700),
+      // A session of D20 reps, each logging its ~20 ms timing error.
+      ...[101, 102, 103].map((m) =>
+        log(at(m), 20, { drillType: 'tap-strum-rhythm', itemId: 'tap-rhythm:quarters' }),
+      ),
+    ];
+    expect(bestPastSpeedMs(starts, reviews, 2)).toBe(1600);
   });
 });
 

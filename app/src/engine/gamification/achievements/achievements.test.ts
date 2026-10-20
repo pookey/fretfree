@@ -250,6 +250,14 @@ describe('speed demon', () => {
     expect(isSpeedDemon(ctx({ recentReviews: reviews(29) }), cfg)).toBe(false);
   });
 
+  it('leaves out timing drills, whose responseMs is a timing error', () => {
+    // 40 tight D20 reps log ~20 ms each, but nothing was answered quickly.
+    const rhythm = reviews(40, { drillType: 'tap-strum-rhythm', responseMs: 20 });
+    expect(isSpeedDemon(ctx({ recentReviews: rhythm }), cfg)).toBe(false);
+    const slow = reviews(30, { responseMs: 3000 });
+    expect(isSpeedDemon(ctx({ recentReviews: [...rhythm, ...slow] }), cfg)).toBe(false);
+  });
+
   it('cannot be earned by fast guessing', () => {
     const recentReviews = [
       ...reviews(26, { responseMs: 400 }),

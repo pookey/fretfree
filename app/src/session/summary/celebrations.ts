@@ -17,6 +17,7 @@ import {
   type LocalDate,
 } from '../../engine/gamification';
 import { isLearning, isStable } from '../../engine/progress';
+import { isSpeedEvidence } from '../../engine/speed';
 import type { SessionSummary } from '../runner';
 
 /**
@@ -44,6 +45,8 @@ export interface TalliedAnswer {
   correct: boolean;
   rating: Grade;
   responseMs: number;
+  /** The drill that asked it; a timing drill's answers say nothing about speed. */
+  drillType?: string;
 }
 
 /** Cards and skill statuses at one moment. */
@@ -328,12 +331,16 @@ export function competenceGains(
 
 // --- Speed ---------------------------------------------------------------
 
-/** Median response time of correct, unguided answers, or null below `minAnswers`. */
-export function sessionSpeedMs(
-  answers: readonly Pick<TalliedAnswer, 'correct' | 'guided' | 'responseMs'>[],
-  minAnswers: number,
-): number | null {
-  const times = answers.filter((a) => a.correct && !a.guided).map((a) => a.responseMs);
+type SpeedAnswer = Pick<TalliedAnswer, 'correct' | 'guided' | 'responseMs' | 'drillType'>;
+
+/**
+ * Median response time of correct, unguided answers, or null below
+ * `minAnswers`. Timing drills' answers are left out (`isSpeedEvidence`).
+ */
+export function sessionSpeedMs(answers: readonly SpeedAnswer[], minAnswers: number): number | null {
+  const times = answers
+    .filter((a) => a.correct && !a.guided && isSpeedEvidence(a.drillType))
+    .map((a) => a.responseMs);
   return times.length >= minAnswers ? median(times) : null;
 }
 
@@ -352,7 +359,7 @@ export function bestPastSpeedMs(
   const sorted = [...reviews].sort((a, b) => a.at.getTime() - b.at.getTime());
   let best: number | null = null;
   let session = -1;
-  let current: Pick<TalliedAnswer, 'correct' | 'guided' | 'responseMs'>[] = [];
+  let current: SpeedAnswer[] = [];
   const close = () => {
     const ms = sessionSpeedMs(current, minAnswers);
     if (ms !== null && (best === null || ms < best)) best = ms;
@@ -371,6 +378,7 @@ export function bestPastSpeedMs(
       correct: review.correct,
       guided: review.hintUsed,
       responseMs: review.responseMs,
+      drillType: review.drillType,
     });
   }
   close();

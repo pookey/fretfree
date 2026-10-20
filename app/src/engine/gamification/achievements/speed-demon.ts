@@ -1,5 +1,6 @@
 import { ENGINE_CONFIG } from '../../config';
 import { median } from '../../mastery';
+import { isSpeedEvidence } from '../../speed';
 import type { AchievementContext, AchievementDefinition } from '../types';
 
 const { medianMs, minAnswers, minAccuracy } = ENGINE_CONFIG.gamification.achievements.speedDemon;
@@ -18,7 +19,8 @@ export function isSpeedDemon(
     minAccuracy,
   },
 ): boolean {
-  const graded = ctx.recentReviews.filter((r) => !r.hintUsed);
+  // A timing drill's responseMs is its timing error, not answer speed.
+  const graded = ctx.recentReviews.filter((r) => !r.hintUsed && isSpeedEvidence(r.drillType));
   if (graded.length < cfg.minAnswers) return false;
   const correct = graded.filter((r) => r.correct);
   if (correct.length / graded.length < cfg.minAccuracy) return false;
