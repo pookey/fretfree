@@ -22,6 +22,9 @@ type ToneModule = typeof import('tone');
 
 let tonePromise: Promise<ToneModule> | null = null;
 let toneModule: ToneModule | null = null;
+/** A context the first tap made and resumed before Tone had loaded, for Tone to adopt. */
+let gestureContext: AudioContext | null = null;
+/** The latest unlock attempt still settling. */
 let unlockPromise: Promise<void> | null = null;
 let unlocked = false;
 let guitar: Guitar | null = null;
@@ -32,31 +35,79 @@ let current: Playback | null = null;
 let generation = 0;
 
 export function loadTone(): Promise<ToneModule> {
-  return (tonePromise ??= import('tone').then((Tone) => (toneModule = Tone)));
+  return (tonePromise ??= import('tone').then((Tone) => {
+    if (gestureContext) {
+      // Importing Tone made a context of its own, outside any gesture, which
+      // iOS keeps suspended. Use the one the tap started instead.
+      Tone.setContext(gestureContext, true);
+      gestureContext = null;
+    }
+    return (toneModule = Tone);
+  }));
 }
 
 export function isAudioUnlocked(): boolean {
   return unlocked;
 }
 
+function audioContextConstructor(): typeof AudioContext | undefined {
+  const g = globalThis as Partial<typeof globalThis> & { webkitAudioContext?: typeof AudioContext };
+  return g.AudioContext ?? g.webkitAudioContext;
+}
+
+/**
+ * Make and start a native context now, inside the gesture. iOS starts a
+ * context only from inside one, and the first tap's gesture is over by the
+ * time Tone's chunk arrives. A one-sample silent buffer is what fully opens
+ * the output on iOS.
+ */
+function contextInGesture(): AudioContext | null {
+  const Context = audioContextConstructor();
+  if (!Context) return null;
+  try {
+    const context = new Context();
+    void context.resume().catch(() => undefined);
+    const blip = context.createBufferSource();
+    blip.buffer = context.createBuffer(1, 1, context.sampleRate);
+    blip.connect(context.destination);
+    blip.start(0);
+    return context;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Unlock audio. Call it from inside a tap or key press: it asks the browser to
+ * start the context synchronously, in the gesture, every time it's called, as
+ * iOS honours only some events (a touch's pointerup or click, not its
+ * pointerdown) and only while their handler runs.
+ */
 export function unlockAudio(): Promise<void> {
   if (unlocked) return Promise.resolve();
-  if (unlockPromise) return unlockPromise;
-  // Once Tone is loaded, resume inside the gesture itself: Safari needs that.
-  const start = toneModule ? toneModule.start() : loadTone().then((Tone) => Tone.start());
-  return (unlockPromise = start
+  let start: Promise<void>;
+  if (toneModule) {
+    start = toneModule.start();
+  } else {
+    if (gestureContext) void gestureContext.resume().catch(() => undefined);
+    else gestureContext = contextInGesture();
+    start = loadTone().then((Tone) => Tone.start());
+  }
+  const attempt: Promise<void> = start
     .then(() => {
       unlocked = true;
     })
     .finally(() => {
-      unlockPromise = null;
-    }));
+      if (unlockPromise === attempt) unlockPromise = null;
+    });
+  unlockPromise = attempt;
+  return attempt;
 }
 
 /**
- * Unlock audio on a pointer or key press anywhere in the app. It stays
- * installed: iOS suspends the context when the app is backgrounded, and the
- * next tap resumes it from inside the gesture, where Safari allows it.
+ * Unlock audio on a tap or key press anywhere in the app. It stays installed:
+ * iOS suspends the context when the app is backgrounded, and the next tap
+ * resumes it from inside the gesture, where Safari allows it.
  */
 export function installAudioUnlock(
   target: Pick<Document, 'addEventListener' | 'removeEventListener'> = document,
@@ -65,15 +116,17 @@ export function installAudioUnlock(
     if (toneModule) {
       if (toneModule.getContext().state === 'running') return;
       unlocked = false;
-    }
+    } else if (unlocked) return;
     void unlockAudio().catch(() => {
       /* Audio stays silent if the browser refuses; the app still works. */
     });
   };
-  target.addEventListener('pointerdown', handler, true);
-  target.addEventListener('keydown', handler, true);
+  for (const type of UNLOCK_EVENTS) target.addEventListener(type, handler, true);
   return handler;
 }
+
+/** A touch unlocks on pointerup in iOS, a mouse on pointerdown, a keyboard on keydown. */
+const UNLOCK_EVENTS = ['pointerdown', 'pointerup', 'keydown'] as const;
 
 export interface AudioOutput {
   /** 0–1. */
@@ -130,7 +183,7 @@ interface SoundOptions {
 /** Tone and the guitar, once the context is unlocked; `null` while it isn't. */
 async function ready(opts: SoundOptions): Promise<{ Tone: ToneModule; guitar: Guitar } | null> {
   // The first tap starts the unlock and may also be the tap that plays a note.
-  if (!unlocked && unlockPromise) await unlockPromise.catch(() => undefined);
+  while (!unlocked && unlockPromise) await unlockPromise.catch(() => undefined);
   if (!unlocked) return null;
   const Tone = await loadTone();
   guitar ??= createGuitar(Tone);

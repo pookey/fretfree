@@ -1,37 +1,20 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AUDIO } from './config';
 
-/** Just enough of Tone to watch what the guitar plays and what the Transport holds. */
+/** Just enough of Tone and the guitar to watch what plays and what the Transport holds. */
 const fake = vi.hoisted(() => {
-  const voices: FakePluck[] = [];
-  class FakePluck {
-    release = 1;
-    attacks: [string, number, number][] = [];
-    releases: [number, number][] = [];
-    constructor(public opts: unknown) {
-      voices.push(this);
-    }
-    connect() {
-      return this;
-    }
-    triggerAttackRelease(note: string, duration: number, time: number) {
-      this.attacks.push([note, duration, time]);
-    }
-    triggerRelease(time: number) {
-      this.releases.push([time, this.release]);
-    }
-  }
-  const output = { volume: { value: 0 }, mute: false };
-  class FakeVolume {
-    toDestination() {
-      return output;
-    }
-  }
-  class FakeFilter {
-    connect() {
-      return this;
-    }
-  }
+  const guitar = {
+    output: { volume: { value: 0 }, mute: false },
+    plucks: [] as { note: string; dur: number; time: number; voice: number }[],
+    damps: [] as number[],
+    pluck(note: string, time: number, dur: number, voice: number) {
+      this.plucks.push({ note, dur, time, voice });
+    },
+    damp(time: number) {
+      this.damps.push(time);
+    },
+  };
+  const output = guitar.output;
   type Callback = (time: number) => void;
   const transport = {
     PPQ: 192,
@@ -65,7 +48,9 @@ const fake = vi.hoisted(() => {
   const flushDraw = () => drawQueue.splice(0).forEach((cb) => cb());
   const ctx = { state: 'running' };
   return {
-    voices,
+    guitar,
+    createGuitar: vi.fn(() => guitar),
+    setContext: vi.fn(),
     output,
     drawQueue,
     flushDraw,
@@ -77,23 +62,21 @@ const fake = vi.hoisted(() => {
       getContext: () => ctx,
       getTransport: () => transport,
       getDraw: () => ({ schedule: (cb: () => void) => drawQueue.push(cb) }),
-      PluckSynth: FakePluck,
-      Volume: FakeVolume,
-      Filter: FakeFilter,
     },
   };
 });
 
-vi.mock('tone', () => ({ ...fake.tone, start: fake.start }));
+vi.mock('tone', () => ({ ...fake.tone, start: fake.start, setContext: fake.setContext }));
+vi.mock('./voice', () => ({ createGuitar: fake.createGuitar }));
 
-const allAttacks = () =>
-  fake.voices.flatMap((v, voice) =>
-    v.attacks.map(([note, dur, time]) => ({ note, dur, time, voice })),
-  );
+const allAttacks = () => fake.guitar.plucks;
 
 beforeEach(() => {
   vi.resetModules();
-  fake.voices.length = 0;
+  fake.guitar.plucks.length = 0;
+  fake.guitar.damps.length = 0;
+  fake.createGuitar.mockClear();
+  fake.setContext.mockClear();
   fake.output.volume.value = 0;
   fake.output.mute = false;
   fake.transport.events.clear();
@@ -155,13 +138,13 @@ describe('unlocking', () => {
   it('stays silent until unlocked, then plucks notes in sequence across strings', async () => {
     const audio = await import('./audio');
     await audio.playNotes(['A2']);
-    expect(fake.voices).toHaveLength(0);
+    expect(fake.createGuitar).not.toHaveBeenCalled();
     await audio.unlockAudio();
     await audio.unlockAudio();
     expect(fake.start).toHaveBeenCalledTimes(1);
     expect(audio.isAudioUnlocked()).toBe(true);
     await audio.playNotes(['A2', 'E3'], { gap: 0.5 });
-    expect(fake.voices).toHaveLength(AUDIO.voices);
+    expect(fake.createGuitar).toHaveBeenCalledTimes(1);
     expect(allAttacks()).toEqual([
       { note: 'A2', dur: AUDIO.notes.duration, time: 10, voice: 0 },
       { note: 'E3', dur: AUDIO.notes.duration, time: 10.5, voice: 1 },
@@ -184,15 +167,31 @@ describe('unlocking', () => {
     expect(audio.isAudioUnlocked()).toBe(true);
   });
 
-  it('unlocks once on the first interaction', async () => {
+  it('unlocks on the first interaction, then leaves a running context alone', async () => {
     const audio = await import('./audio');
     const target = new EventTarget() as unknown as Document;
     audio.installAudioUnlock(target);
     target.dispatchEvent(new Event('pointerdown'));
-    target.dispatchEvent(new Event('pointerdown'));
     await vi.waitFor(() => expect(audio.isAudioUnlocked()).toBe(true));
+    target.dispatchEvent(new Event('pointerup'));
     target.dispatchEvent(new Event('keydown'));
     expect(fake.start).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks again inside each gesture until the browser starts audio', async () => {
+    const audio = await unlocked();
+    const target = new EventTarget() as unknown as Document;
+    audio.installAudioUnlock(target);
+    fake.ctx.state = 'suspended';
+    // iOS refuses a touch's pointerdown and allows its pointerup.
+    fake.start.mockRejectedValueOnce(new Error('NotAllowedError'));
+    target.dispatchEvent(new Event('pointerdown'));
+    target.dispatchEvent(new Event('pointerup'));
+    // Both asked synchronously, inside their own gesture.
+    expect(fake.start).toHaveBeenCalledTimes(3);
+    await vi.waitFor(() => expect(audio.isAudioUnlocked()).toBe(true));
+    await audio.playNotes(['A2']);
+    expect(allAttacks()).toHaveLength(1);
   });
 
   it('resumes a context the system suspended, on the next tap', async () => {
@@ -207,6 +206,92 @@ describe('unlocking', () => {
     expect(fake.start).toHaveBeenCalledTimes(2);
     expect(audio.isAudioUnlocked()).toBe(false);
     await vi.waitFor(() => expect(audio.isAudioUnlocked()).toBe(true));
+  });
+});
+
+describe('the first tap', () => {
+  /** A native context, as the browser makes it. */
+  class FakeAudioContext {
+    static made: FakeAudioContext[] = [];
+    sampleRate = 48_000;
+    destination = {};
+    resume = vi.fn(async () => undefined);
+    blips: { buffer: unknown; started: number | null; to: unknown }[] = [];
+    constructor() {
+      FakeAudioContext.made.push(this);
+    }
+    createBuffer(channels: number, length: number) {
+      return { channels, length };
+    }
+    createBufferSource() {
+      const blip = { buffer: null as unknown, started: null as number | null, to: null as unknown };
+      this.blips.push(blip);
+      return {
+        set buffer(b: unknown) {
+          blip.buffer = b;
+        },
+        connect: (to: unknown) => (blip.to = to),
+        start: (at: number) => (blip.started = at),
+      };
+    }
+  }
+
+  beforeEach(() => {
+    FakeAudioContext.made = [];
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('starts a context inside the gesture, before Tone has loaded, and hands it to Tone', async () => {
+    vi.stubGlobal('AudioContext', FakeAudioContext);
+    const audio = await import('./audio');
+    const unlocking = audio.unlockAudio();
+    // All of this happened synchronously, inside the tap.
+    const [context] = FakeAudioContext.made;
+    expect(FakeAudioContext.made).toHaveLength(1);
+    expect(context?.resume).toHaveBeenCalledTimes(1);
+    expect(context?.blips).toEqual([
+      { buffer: { channels: 1, length: 1 }, started: 0, to: context?.destination },
+    ]);
+    expect(fake.setContext).not.toHaveBeenCalled();
+    // A second event of the same tap (its click, say) asks the same context again.
+    const again = audio.unlockAudio();
+    expect(FakeAudioContext.made).toHaveLength(1);
+    expect(context?.resume).toHaveBeenCalledTimes(2);
+
+    await Promise.all([unlocking, again]);
+    expect(fake.setContext).toHaveBeenCalledTimes(1);
+    expect(fake.setContext).toHaveBeenCalledWith(context, true);
+    expect(audio.isAudioUnlocked()).toBe(true);
+  });
+
+  it('falls back to the prefixed constructor', async () => {
+    vi.stubGlobal('webkitAudioContext', FakeAudioContext);
+    const audio = await import('./audio');
+    await audio.unlockAudio();
+    expect(FakeAudioContext.made).toHaveLength(1);
+    expect(fake.setContext).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves Tone's own context when the browser has none or refuses one", async () => {
+    const audio = await import('./audio');
+    await audio.unlockAudio();
+    expect(fake.setContext).not.toHaveBeenCalled();
+
+    vi.resetModules();
+    vi.stubGlobal(
+      'AudioContext',
+      class {
+        constructor() {
+          throw new Error('NotSupportedError');
+        }
+      },
+    );
+    const refused = await import('./audio');
+    await refused.unlockAudio();
+    expect(fake.setContext).not.toHaveBeenCalled();
+    expect(refused.isAudioUnlocked()).toBe(true);
   });
 });
 
@@ -307,7 +392,7 @@ describe('playProgression', () => {
     fake.flushDraw();
     expect(onEnd).toHaveBeenCalledTimes(1);
     // A natural end lets the last chord ring.
-    expect(fake.voices.every((v) => v.releases.length === 0)).toBe(true);
+    expect(fake.guitar.damps).toEqual([]);
     playback.stop();
     expect(onEnd).toHaveBeenCalledTimes(1);
   });
@@ -332,10 +417,7 @@ describe('playProgression', () => {
     expect(onEnd).toHaveBeenCalledTimes(1);
     expect(fake.transport.loop).toBe(false);
     expect(fake.transport.events.size).toBe(0);
-    expect(fake.voices.every((v) => v.releases.length === 1)).toBe(true);
-    // Damping is quick, and the strings keep their natural release afterwards.
-    expect(fake.voices[0]?.releases[0]?.[1]).toBeLessThan(0.1);
-    expect(fake.voices[0]?.release).toBe(1);
+    expect(fake.guitar.damps).toEqual([10]);
   });
 
   it('stops the progression that was playing when another starts', async () => {
@@ -416,7 +498,7 @@ describe('playProgression', () => {
       upStrings: 2,
     });
     fake.transport.fire(96);
-    expect(allAttacks().map((a) => a.note)).toEqual(['B3', 'E4']);
+    expect(allAttacks().map((a) => a.note)).toEqual(['E4', 'B3']);
   });
 
   it('runs in silent mode, so chord cues still fire', async () => {
@@ -450,6 +532,6 @@ describe('playProgression', () => {
     audio.stopAudio();
     await audio.playNotes(['A2']);
     audio.stopAudio();
-    expect(fake.voices.every((v) => v.releases.length === 1)).toBe(true);
+    expect(fake.guitar.damps).toEqual([10]);
   });
 });

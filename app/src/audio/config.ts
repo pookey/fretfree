@@ -7,17 +7,21 @@ export const AUDIO = {
   defaultVolume: 0.8,
   /** Plucked voices, one per guitar string, so a strum rings like six strings. */
   voices: 6,
-  /** Karplus–Strong pluck (Tone `PluckSynth`): noise burst into a damped comb filter. */
+  /** Karplus–Strong pluck (`pluck.ts`), rendered once per note into a buffer. */
   pluck: {
-    /** Length of the noise burst, in periods of the note. */
-    attackNoise: 1.2,
-    /** Comb-filter lowpass (Hz). Lower is a darker, rounder string. */
-    dampening: 3800,
-    /** Feedback, 0–1. Higher rings longer. */
-    resonance: 0.97,
+    /** Seconds rendered per note. A string has died away by then, so longer notes just end. */
+    seconds: 2.6,
+    /** Seconds for the fundamental to fall 60 dB. Longer rings longer. */
+    t60: 1.6,
+    /** 0–1: how much of the pick's noise burst gets through. Lower is darker and rounder. */
+    brightness: 0.55,
+    /** Peak level of one note, 0–1, leaving headroom for six strings at once. */
+    peak: 0.45,
     /** Seconds for a released string to die away. */
     release: 0.9,
   },
+  /** Rendered notes kept for reuse (about 0.5 MB each); the least recently played go first. */
+  cachedNotes: 24,
   /** A gentle lowpass on the whole guitar that takes the edge off the pick noise (Hz). */
   toneHz: 5000,
   notes: {
