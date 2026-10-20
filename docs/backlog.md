@@ -1045,7 +1045,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/drills/d17-play-sequence/**`, `app/e2e/m5-06.spec.ts`
 
 ### M5-07 · Mic quests and achievements
-- **Status:** todo
+- **Status:** done
 - **Deps:** M2-10, M1-13, M5-05
 - **Owns:** `app/src/engine/gamification/quests/try-mic.ts`, `app/src/engine/gamification/achievements/mic-*.ts`
 
@@ -1207,7 +1207,7 @@ Design §12, research/03 Tracks R and T, drills D22–D32.
 Every M8 view follows the iPad landscape rule: **the staff sits above the neck, both visible at once** (§12 Screens).
 
 ### M8-01 · [contract] Timing engine: metronome, onsets, latency calibration and timing grade
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-06
 - **Design:** §12 timing engine, §9, §3.2
 - **Owns:** `app/src/timing/**`, `app/e2e/m8-01.spec.ts`
@@ -1219,7 +1219,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - Pure logic has ≥90% unit coverage, and the onset detector is tested on synthetic signals. Shared with M6-08 (F4/D20). Document the API in a header comment.
 
 ### M8-02 · [contract] Notation renderer (VexFlow)
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **After:** M6-10
 - **Design:** §12 rendering
