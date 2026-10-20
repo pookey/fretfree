@@ -1111,7 +1111,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/engine/skills/i7.ts`, `app/src/drills/d-pentatonic-box/**`, `app/src/engine/items/scale-position.ts`, `app/src/engine/items/scale-position.test.ts`, `app/e2e/m6-07.spec.ts` (widened by the PM, 2026-10-20: no other drill could serve I7 cards)
 
 ### M6-08 · F4 rhythm track plus D20 "Tap and strum rhythm"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-06, M8-01
 - **Owns:** `app/src/engine/skills/f4.ts`, `app/src/drills/d20-rhythm/**`, `app/e2e/m6-08.spec.ts`
 - **Acceptance:**
