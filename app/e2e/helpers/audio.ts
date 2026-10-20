@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 
 declare global {
   interface Window {
-    __audioTap?: { contexts: number; level(): number };
+    __audioTap?: { contexts(): number; level(): number; suspend(): Promise<void> };
   }
 }
 
@@ -20,8 +20,12 @@ export async function tapAudioOutput(page: Page): Promise<void> {
       ...rest: number[]
     ) => AudioNode;
     const taps = new Map<BaseAudioContext, AnalyserNode>();
+    const live = () => [...taps.keys()].filter((c) => c.state !== 'closed');
     window.__audioTap = {
-      contexts: 0,
+      contexts: () => live().length,
+      async suspend() {
+        await Promise.all(live().map((c) => (c as AudioContext).suspend()));
+      },
       level() {
         let peak = 0;
         for (const analyser of taps.values()) {
@@ -44,7 +48,6 @@ export async function tapAudioOutput(page: Page): Promise<void> {
           connect.call(analyser, sink);
           connect.call(sink, dest);
           taps.set(dest.context, analyser);
-          window.__audioTap!.contexts = taps.size;
         }
         connect.call(this, analyser);
       }
@@ -53,9 +56,20 @@ export async function tapAudioOutput(page: Page): Promise<void> {
   });
 }
 
-/** How many audio contexts have connected to the speakers. */
+/** How many audio contexts, not yet closed, have connected to the speakers. */
 export function audioContexts(page: Page): Promise<number> {
-  return page.evaluate(() => window.__audioTap?.contexts ?? 0);
+  return page.evaluate(() => window.__audioTap?.contexts() ?? 0);
+}
+
+/**
+ * Make every AudioWorklet module load fail, as iOS Safari can when the module
+ * is a blob URL. Call before the page loads.
+ */
+export async function refuseAudioWorklets(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    AudioWorklet.prototype.addModule = () =>
+      Promise.reject(new TypeError('Refused to load the worklet module (test).'));
+  });
 }
 
 /** The loudest sample in the analyser's current frame, 0–1. */
