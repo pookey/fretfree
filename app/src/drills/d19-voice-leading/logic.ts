@@ -353,7 +353,6 @@ function where(pos: Position): string {
   return `string ${pos.string}, fret ${pos.fret}`;
 }
 
-/** Why a wrong tap is wrong: a note of the other chord, a far note of the right one, or one held. */
 /** A tapped note's name, spelled for the key (B♭ in F, whatever the accidental preference). */
 export function d19SpellTap(prompt: D19Prompt, pos: Position): string {
   return d18Display(spellInKey(midiAt(pos, prompt.tuning) % 12, majorKey(prompt.key)));
@@ -374,6 +373,7 @@ export function d19Rule(prompt: D19Prompt): string {
   );
 }
 
+/** Why a wrong tap is wrong: a note of the other chord, a far note of the right one, or one held. */
 function wrongWhy(prompt: D19Prompt, wrong: Position, confused: boolean): string {
   const pc = d19SpellTap(prompt, wrong);
   const to = d19Chord(prompt, prompt.to);
