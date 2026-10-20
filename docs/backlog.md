@@ -1081,7 +1081,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/drills/d19-voice-leading/**`
 
 ### M6-05 · I2 arpeggio skills (reusing D8)
-- **Status:** todo
+- **Status:** done
 - **Deps:** M6-01, M3-04
 - **Owns:** `app/src/engine/skills/i2.ts`
 
