@@ -1135,7 +1135,7 @@ Notes for whoever picks this up:
   - Document the sync protocol (push and pull with a server cursor) in `docs/design/sync.md`.
 
 ### M7-02 · Infra: passwordless auth and sync API stack
-- **Status:** todo
+- **Status:** done
 - **Deps:** M7-01
 - **Owns:** `infra/lib/sync-stack.ts`, `infra/bin/app.ts`, `infra/test/sync-stack.test.ts`, `scripts/deploy.sh`
 - **Acceptance:**
