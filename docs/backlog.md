@@ -941,12 +941,12 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Volume and silent mode. It stays lazily loaded and inside the budget.
 
 ### M4-07 · I6 ear skills plus D14 "Hear it → identify"
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M4-01, M4-06
 - **Owns:** `app/src/engine/skills/i6.ts`, `app/src/drills/d14-ear-identify/**`, `app/e2e/m4-07.spec.ts`
 
 ### M4-08 · D15 "Hear it → find it on the neck"
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M4-06, M1-04
 - **Owns:** `app/src/drills/d15-ear-find/**`, `app/e2e/m4-08.spec.ts`
 
@@ -1071,7 +1071,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/engine/skills/c7.ts`, `app/src/drills/d-pentatonic-box/**`
 
 ### M6-03 · I1 skills plus D18 "Triad inversions on a string set"
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M6-01
 - **Owns:** `app/src/engine/skills/i1.ts`, `app/src/drills/d18-inversions/**`
 
@@ -1081,17 +1081,17 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/drills/d19-voice-leading/**`
 
 ### M6-05 · I2 arpeggio skills (reusing D8)
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M6-01, M3-04
 - **Owns:** `app/src/engine/skills/i2.ts`
 
 ### M6-06 · I4 and I5 minor-harmony and function skills, plus choice drills
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M6-01, M4-01
 - **Owns:** `app/src/engine/skills/i4.ts`, `app/src/engine/skills/i5.ts`, `app/src/drills/d-function/**`
 
 ### M6-07 · I7 major scale in 5 positions
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M6-01
 - **Owns:** `app/src/engine/skills/i7.ts`
 
@@ -1104,7 +1104,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - D20 covers tap and strum timing against a click (±30 ms target, configurable).
 
 ### M6-09 · D21 "Visualise it" (mental practice)
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M3-05
 - **Owns:** `app/src/drills/d21-visualise/**`
 
@@ -1430,7 +1430,7 @@ A short track for learners who want to read tab. Tab maps straight onto skills F
   - RTL tests and an iPad e2e render check.
 
 ### M9-02 · Tab skills, and D33 "Tab → neck"
-- **Status:** blocked
+- **Status:** todo
 - **Deps:** M9-01, M1-03
 - **Design:** `docs/design/tab-track.md`, §6
 - **Owns:** `app/src/engine/skills/tab.ts`, `app/src/engine/skills/tab.test.ts`, `app/src/drills/d33-tab-to-neck/**`, `app/e2e/m9-02.spec.ts`
