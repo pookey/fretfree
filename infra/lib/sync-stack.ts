@@ -218,7 +218,12 @@ export class SyncStack extends Stack {
       },
     });
     signInTable.grantReadWriteData(startFn);
-    userPool.grant(startFn, 'cognito-idp:AdminCreateUser', 'cognito-idp:AdminSetUserPassword');
+    userPool.grant(
+      startFn,
+      'cognito-idp:AdminCreateUser',
+      'cognito-idp:AdminGetUser',
+      'cognito-idp:AdminSetUserPassword',
+    );
     startFn.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ['ses:SendEmail'],

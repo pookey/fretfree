@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AwsCall } from '../shared/aws';
 import { createEnsureUser, randomPassword } from './users';
 
-function fake(fail: Record<string, string> = {}) {
+function fake(fail: Record<string, string> = {}, status = 'CONFIRMED') {
   const calls: [string, Record<string, unknown>][] = [];
   const call: AwsCall = async (op, input) => {
     calls.push([op, input]);
@@ -11,7 +11,7 @@ function fake(fail: Record<string, string> = {}) {
       e.name = fail[op];
       throw e;
     }
-    return {};
+    return op === 'AdminGetUser' ? { UserStatus: status } : {};
   };
   return { calls, ensure: createEnsureUser(call, 'pool', () => 'pw') };
 }
@@ -40,10 +40,24 @@ describe('createEnsureUser', () => {
     ]);
   });
 
-  it('confirms an existing user too, so one stuck unconfirmed recovers', async () => {
+  it('leaves a confirmed user alone, so their other devices stay signed in', async () => {
     const { calls, ensure } = fake({ AdminCreateUser: 'UsernameExistsException' });
     await ensure('ada@example.com');
-    expect(calls.map(([op]) => op)).toEqual(['AdminCreateUser', 'AdminSetUserPassword']);
+    expect(calls.map(([op]) => op)).toEqual(['AdminCreateUser', 'AdminGetUser']);
+    expect(calls[1]).toEqual(['AdminGetUser', { UserPoolId: 'pool', Username: 'ada@example.com' }]);
+  });
+
+  it('confirms an existing user left unconfirmed by an earlier failure', async () => {
+    const { calls, ensure } = fake(
+      { AdminCreateUser: 'UsernameExistsException' },
+      'FORCE_CHANGE_PASSWORD',
+    );
+    await ensure('ada@example.com');
+    expect(calls.map(([op]) => op)).toEqual([
+      'AdminCreateUser',
+      'AdminGetUser',
+      'AdminSetUserPassword',
+    ]);
   });
 
   it('rethrows any other failure', async () => {
@@ -52,6 +66,12 @@ describe('createEnsureUser', () => {
     ).rejects.toThrow('TooManyRequestsException');
     await expect(
       fake({ AdminSetUserPassword: 'TooManyRequestsException' }).ensure('a@b.co'),
+    ).rejects.toThrow('TooManyRequestsException');
+    await expect(
+      fake({
+        AdminCreateUser: 'UsernameExistsException',
+        AdminGetUser: 'TooManyRequestsException',
+      }).ensure('a@b.co'),
     ).rejects.toThrow('TooManyRequestsException');
   });
 

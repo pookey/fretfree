@@ -248,6 +248,22 @@ describe('SyncStack: Cognito create-time constraints', () => {
       SourceArn: { 'Fn::GetAtt': [Match.stringLikeRegexp('^Users'), 'Arn'] },
     });
   });
+
+  it('lets the start function look users up before confirming them', () => {
+    t.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: [
+              'cognito-idp:AdminCreateUser',
+              'cognito-idp:AdminGetUser',
+              'cognito-idp:AdminSetUserPassword',
+            ],
+          }),
+        ]),
+      },
+    });
+  });
 });
 
 describe('SyncStack: sync API', () => {

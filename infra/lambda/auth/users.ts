@@ -7,9 +7,9 @@ export const randomPassword = (): string => `${randomBytes(48).toString('base64u
 /**
  * Makes sure `email` has a Cognito user that custom auth can sign in. A new user
  * starts in FORCE_CHANGE_PASSWORD, and a permanent random password confirms it.
- * The password is set on every call, not just after a create, so a user left
- * unconfirmed by an earlier failure (say, throttling between the two calls)
- * recovers on the next request. Setting it again is harmless.
+ * An existing user gets the password only if it's still unconfirmed, say after
+ * throttling between the two calls on an earlier request. A confirmed user, who
+ * may be signed in on other devices, is never touched.
  */
 export function createEnsureUser(
   cognito: AwsCall,
@@ -30,6 +30,10 @@ export function createEnsureUser(
       });
     } catch (error) {
       if (errorName(error) !== 'UsernameExistsException') throw error;
+      const user = (await cognito('AdminGetUser', { UserPoolId: userPoolId, Username: email })) as {
+        UserStatus?: string;
+      };
+      if (user.UserStatus !== 'FORCE_CHANGE_PASSWORD') return;
     }
     await cognito('AdminSetUserPassword', {
       UserPoolId: userPoolId,
