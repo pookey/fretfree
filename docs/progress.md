@@ -364,7 +364,7 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
 | D16 "Play the note": any position, region, or pitch class | ✅ | `d16-play-note/*.test.ts*`; `m5-05`, `m5-08` (but see findings 1, 2 and 4) |
 | D17 "Play the interval, arpeggio or scale" | ✅ | `d17-play-sequence/*.test.ts*`; `m5-06`, `m5-08` (but see finding 3) |
 | Mic drills served only in mic mode (`requiresMic`) | ✅ | `drill-picker` tests; `m5-05`, `m5-06` ("never served without mic mode") |
-| Mic quest and badges, earned by accuracy rather than volume | ✅ | `try-mic.test.ts`, badge tests; `m5-07`, `m5-08` |
+| Mic quest: counts tries on due cards, right or wrong (not give-ups), target 3, paid once a day. Mic badges: earned by accuracy, not volume | ✅ | `try-mic.test.ts`, `achievements/mic-drills.test.ts`; `m5-07` ("many answers at low accuracy earn nothing"), `m5-08` |
 | Tuned against a real guitar and a real iPad mic | ⏳ pending | Needs the user's hardware; see below |
 | I2 arpeggios in D17 | ⏳ pending | No I2 skill yet (M6) |
 
