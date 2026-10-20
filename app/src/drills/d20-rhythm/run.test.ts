@@ -69,6 +69,25 @@ describe('runRhythm', () => {
     expect(sub.metronome.tickUntil(4).every((c) => c.audible)).toBe(true);
   });
 
+  it('waits past the rhythm for a late onset of the last hit', async () => {
+    // Heard 200 ms late through the speakers; the last hit (pulse 3.5) is due at 4750.
+    const { metronome, source, run } = setup({ pulses: [0, 3.5], settleMs: 200 }, () => ({
+      outputMs: 200,
+      calibrationMs: 0,
+    }));
+    await flush();
+    metronome.tickUntil(4);
+    // The first beat past the rhythm (5000) is too soon: the window closes at 5150.
+    expect(metronome.tick()).toMatchObject({ pulse: 4 });
+    source.emit(5080); // the last hit, 80 ms late as heard
+    expect(metronome.running).toBe(true);
+    expect(metronome.tick()).toMatchObject({ pulse: 4.5 });
+    await expect(run.done).resolves.toEqual({
+      targetsMs: [3000, 4750],
+      onsetsMs: [4880],
+    });
+  });
+
   it('runs for every bar', async () => {
     const { metronome, run } = setup({ bars: 2, pulses: [0, 4] });
     await flush();

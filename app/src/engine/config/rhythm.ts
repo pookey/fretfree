@@ -32,6 +32,14 @@ export const rhythm = {
   ],
   /** Tempos within a band are multiples of this many BPM. */
   tempoStep: 2,
+  /**
+   * A rep ends this long after its last hit's onset window (`grade.matchMs`,
+   * past the output latency and the learner's offset) has closed, so a mic
+   * onset still being detected isn't cut off.
+   */
+  endMarginMs: 50,
+  /** A right answer's hit-by-hit marks stay this long before the session moves on. */
+  feedbackHoldMs: 2500,
   /** Bars of count-in, then bars of the rhythm to play. */
   countInBars: 1,
   bars: 2,

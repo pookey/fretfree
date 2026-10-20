@@ -151,8 +151,11 @@ describe('d20 grading', () => {
     expect(d20Check(p, take(p, [10], [10_250])).expected).toBe('8 of 8 on time');
   });
 
-  it('logs the timing error as the response time, or the time taken when nothing landed', () => {
+  it('logs the timing error of a rep within the target, or else the time taken', () => {
     expect(d20GradedResponseMs(p, take(p, [10, -20]), 9000)).toBe(15);
+    expect(d20GradedResponseMs(p, take(p, [30]), 9000)).toBe(30);
+    // A loose (Hard) rep isn't fluent: it logs the time taken.
+    expect(d20GradedResponseMs(p, take(p, [40, -45]), 9000)).toBe(9000);
     expect(d20GradedResponseMs(p, take(p, [null]), 9000)).toBe(9000);
   });
 

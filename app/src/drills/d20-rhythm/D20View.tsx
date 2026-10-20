@@ -162,6 +162,7 @@ export function RhythmDrill({
         bars: prompt.bars,
         pulses: prompt.pulses,
         subdivided: prompt.offbeats && level >= CFG.subdivideGuideLevel,
+        settleMs: CFG.grade.matchMs + CFG.endMarginMs,
       },
     );
     run.current = r;

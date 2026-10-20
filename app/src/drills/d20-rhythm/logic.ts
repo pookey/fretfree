@@ -19,8 +19,10 @@ export { D20_ID, D20_SCOPE, d20CanTest, d20ConceptOf } from './meta';
  * FSRS rating with D20's windows (`ENGINE_CONFIG.rhythm.grade`, ±30 ms
  * target). That rating replaces the speed grade (`DrillLogic.rating`). The
  * logged response time is the typical timing error (the median |offset| of
- * the on-time hits), so "fast" means "tight", and a rep in time is fluent
- * for mastery and guide fading.
+ * the on-time hits) for a rep within the ±30 ms target, and the time the rep
+ * took otherwise. So a Good or Easy rep is fluent for mastery and guide
+ * fading (rule 9), and a loose (Hard) or failed one is not. Speed measures
+ * across drills leave D20 out (`engine/speed.ts`).
  */
 
 const CFG = ENGINE_CONFIG.rhythm;
@@ -137,13 +139,17 @@ export function d20Rating(
   return gradeTiming(r.offsets, CFG.grade, { extras: r.extras, hintUsed });
 }
 
-/** The typical timing error of the rep; the time taken when nothing was on time. */
+/**
+ * The typical timing error of a rep within the target, so it counts as fluent;
+ * the time the rep took otherwise, which is well past any speed target.
+ */
 export function d20GradedResponseMs(
   _prompt: D20Prompt,
   answer: D20Answer,
   elapsedMs: number,
 ): number {
-  return d20Result(answer).summary.medianAbsMs ?? elapsedMs;
+  const { medianAbsMs } = d20Result(answer).summary;
+  return medianAbsMs !== null && medianAbsMs <= CFG.grade.targetMs ? medianAbsMs : elapsedMs;
 }
 
 /** Each hit's offset, for the review log: `+12 -5 miss +30, 1 extra hit`. */

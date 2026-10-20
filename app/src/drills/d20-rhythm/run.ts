@@ -29,6 +29,11 @@ export interface RhythmRunOptions {
   pulses: readonly number[];
   /** Sound the "&" between beats. */
   subdivided: boolean;
+  /**
+   * How long past the last hit, beyond the latency taken off onsets, the run
+   * waits for its onset: the grade's match window plus a margin. Default 0.
+   */
+  settleMs?: number;
 }
 
 export interface RhythmTake {
@@ -87,9 +92,16 @@ export function runRhythm(deps: RhythmRunDeps, options: RhythmRunOptions): Rhyth
       if (state === 'error' && listening) finish(null);
     }),
   );
-  // The first beat past the rhythm, as it sounds: every onset for the last hit is in.
+  // The run ends on a silent click past the rhythm, once an onset for the last
+  // hit would be in: the learner hears that hit `outputMs` late and plays it
+  // `calibrationMs` later still, and may be up to `settleMs` off.
+  const last = options.pulses.at(-1);
   const onBeat = (click: Click) => {
-    if (click.pulse >= end) finish({ targetsMs: [], onsetsMs: [...onsets] });
+    if (click.pulse < end) return;
+    const lastAt = last === undefined ? null : metronome.timeAtPulse(last);
+    const c = deps.compensation();
+    const due = (lastAt ?? click.at) + c.outputMs + c.calibrationMs + (options.settleMs ?? 0);
+    if (click.at >= due) finish({ targetsMs: [], onsetsMs: [...onsets] });
   };
 
   void source
