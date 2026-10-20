@@ -142,8 +142,13 @@ export function d21Placements(
   });
 }
 
-/** The most frets any shape spans above its lowest fret, in `tuning`. */
+/** `d21Span` per tuning ID: it depends on the tuning alone. */
+const SPANS = new Map<string, number>();
+
+/** The most frets any shape spans above its lowest fret, in `tuning` (memoised). */
 export function d21Span(tuning: Tuning): number {
+  const known = SPANS.get(tuning.id);
+  if (known !== undefined) return known;
   let span = 0;
   for (const shape of CAGED_ORDER) {
     for (const quality of CAGED_QUALITIES) {
@@ -152,6 +157,7 @@ export function d21Span(tuning: Tuning): number {
       }
     }
   }
+  SPANS.set(tuning.id, span);
   return span;
 }
 

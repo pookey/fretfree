@@ -139,6 +139,15 @@ test.describe('M6-09 D21 pictures a CAGED shape and taps its roots', () => {
       expect(from).toBeLessThanOrEqual(task.position);
       expect(to).toBeGreaterThanOrEqual(lastFret);
 
+      if (i === 0) {
+        // The prompt's neck window (at least 7 frets on a phone) fits the
+        // screen: neither the page nor the drill scrolls sideways (design §7).
+        await expectNoHorizontalOverflow(page);
+        const drillOverflow = await visualiseDrill(page).evaluate(
+          (el) => el.scrollWidth - el.clientWidth,
+        );
+        expect(drillOverflow).toBeLessThanOrEqual(1);
+      }
       if (i === 0 && !phone) {
         // Every cell is a comfortable target on iPad (design §7: ≥ 44pt).
         const box = await cellAt(page, cells[0]!).boundingBox();
