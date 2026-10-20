@@ -1,0 +1,214 @@
+.staff {
+  /* What tab numbers knock the tab lines out with; set it to the surface the staff sits on. */
+  --staff-knockout: var(--bg);
+
+  display: grid;
+  width: 100%;
+  /* Set inline: the widths that keep the staff between its min and max scale. */
+  min-width: var(--staff-min);
+  max-width: var(--staff-max);
+  height: auto;
+  color: var(--text);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* The halo layer, the engraving and the overlay stack in one cell. */
+.layer,
+.engraving {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+}
+
+.layer {
+  display: block;
+  overflow: visible;
+}
+
+.staff[data-interactive] .layer:last-child {
+  /* A press slides the ghost note, so it must not scroll the page. */
+  touch-action: none;
+  cursor: pointer;
+}
+
+.engraving {
+  pointer-events: none;
+}
+
+.engraving > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* VexFlow paints in black; repaint it in the theme's ink. */
+.engraving > svg,
+.engraving [fill]:not([fill='none']) {
+  fill: currentColor;
+}
+
+.engraving > svg,
+.engraving [stroke]:not([stroke='none']) {
+  stroke: currentColor;
+}
+
+/* VexFlow clears a white box behind each tab number. */
+.engraving [fill='white'][stroke='none'] {
+  fill: var(--staff-knockout);
+}
+
+/* Scaled up for tapping, lines would turn heavy; keep them hairline-crisp. */
+.staff[data-interactive] .engraving :global(.vf-stave) path {
+  vector-effect: non-scaling-stroke;
+  stroke-width: 2px;
+}
+
+/* Note colours follow their highlight; the halo behind adds the shape. */
+.engraving :global(.vf-stavenote)[data-style='target'],
+.engraving :global(.vf-stavenote)[data-style='current'] {
+  color: var(--tone);
+}
+
+.engraving :global(.vf-stavenote)[data-style='correct'] {
+  color: var(--correct);
+}
+
+.engraving :global(.vf-stavenote)[data-style='wrong'] {
+  color: var(--wrong);
+}
+
+.engraving :global(.vf-stavenote)[data-style='ghost'] {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+/* Tab fades with the guide level (guide.ts). */
+.engraving :global(.vf-tab) {
+  transition: opacity 0.4s ease-out;
+}
+
+.staff[data-tab='faint'] .engraving :global(.vf-tab) {
+  opacity: 0.35;
+}
+
+.halo {
+  pointer-events: none;
+}
+
+.halo.target,
+.halo.current {
+  fill: rgb(86 180 233 / 0.18);
+  stroke: var(--tone);
+  stroke-width: 2;
+}
+
+.halo.ghost {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.halo.correct {
+  fill: var(--correct);
+  opacity: 0.35;
+  animation: flash 0.35s ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.halo.wrong {
+  fill: none;
+  stroke: var(--wrong);
+  stroke-width: 2.5;
+}
+
+.halo.root {
+  fill: none;
+  stroke: var(--root);
+  stroke-width: 2;
+}
+
+.note {
+  fill: transparent;
+  pointer-events: none;
+}
+
+/* Marks and the tap ghost: noteheads the overlay draws, shaped by style. */
+.mark {
+  pointer-events: none;
+}
+
+.mark ellipse {
+  fill: currentColor;
+}
+
+.ledger {
+  stroke: currentColor;
+  stroke-width: 1.4;
+}
+
+.mark.selected {
+  color: var(--tone);
+}
+
+.mark.correct {
+  color: var(--correct);
+}
+
+.mark.correct ellipse {
+  stroke: var(--correct);
+  stroke-width: 6;
+  stroke-opacity: 0.35;
+  animation: flash 0.35s ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.mark.wrong {
+  color: var(--wrong);
+}
+
+/* A wrong answer is hollow and dashed as well as vermillion. */
+.mark.wrong ellipse {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-dasharray: 3 2;
+}
+
+.mark.ghost {
+  color: var(--text-muted);
+  opacity: 0.75;
+}
+
+.caret {
+  fill: var(--tone);
+  pointer-events: none;
+}
+
+.hit {
+  fill: transparent;
+  outline: none;
+}
+
+.hit:focus-visible {
+  fill: rgb(86 180 233 / 0.18);
+  stroke: var(--tone);
+  stroke-width: 1;
+}
+
+/* Short (phone landscape) screens: the smallest size that keeps the targets. */
+@media (max-height: 500px) {
+  .staff {
+    max-width: var(--staff-min);
+  }
+}
+
+@keyframes flash {
+  from {
+    transform: scale(1.5);
+  }
+}
