@@ -27,7 +27,7 @@ type View = { kind: 'checking' } | { kind: 'incomplete' } | { kind: 'unavailable
  * once.
  */
 export function VerifyScreen({ signIn = getSignIn() }: { signIn?: SignIn | null }) {
-  const [link] = useState(() => readLinkFragment(location.hash));
+  const [link, setLink] = useState(() => readLinkFragment(location.hash));
   const [view, setView] = useState<View>(() =>
     !signIn ? { kind: 'unavailable' } : link ? { kind: 'checking' } : { kind: 'incomplete' },
   );
@@ -52,6 +52,18 @@ export function VerifyScreen({ signIn = getSignIn() }: { signIn?: SignIn | null 
       live = false;
     };
   }, [link, signIn, attempt]);
+
+  // A second link opened in the same tab changes only the fragment, so the screen stays mounted.
+  useEffect(() => {
+    const onHashChange = () => {
+      const next = readLinkFragment(location.hash);
+      if (!next || !signIn) return;
+      setLink(next);
+      setView({ kind: 'checking' });
+    };
+    addEventListener('hashchange', onHashChange);
+    return () => removeEventListener('hashchange', onHashChange);
+  }, [signIn]);
 
   useEffect(() => {
     if (view.kind !== 'checking') headingRef.current?.focus();

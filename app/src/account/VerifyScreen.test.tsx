@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { AccountApiError } from './api';
@@ -40,7 +40,8 @@ describe('<VerifyScreen>', () => {
     open(LINK);
     expect(location.hash).toBe('');
     expect(location.pathname).toBe('/account/verify');
-    expect(await screen.findByRole('heading', { name: 'You’re signed in' })).toHaveFocus();
+    const heading = await screen.findByRole('heading', { name: 'You’re signed in' });
+    await waitFor(() => expect(heading).toHaveFocus());
     expect(screen.getByRole('status')).toHaveTextContent(
       'This browser is signed in as me@example.com.',
     );
@@ -81,6 +82,15 @@ describe('<VerifyScreen>', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Check you’re online');
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByRole('heading', { name: 'You’re signed in' })).toBeVisible();
+  });
+
+  it('answers a second link opened in the same tab', async () => {
+    // Tokens are answered once per page load, so this test has its own.
+    open('#email=me%40example.com&token=used', fakeSignIn(fakeServer({ token: 'second-token' })));
+    expect(await screen.findByRole('heading', { name: 'That link didn’t work' })).toBeVisible();
+    location.hash = 'email=me%40example.com&token=second-token';
+    expect(await screen.findByRole('heading', { name: 'You’re signed in' })).toBeVisible();
+    expect(location.hash).toBe('');
   });
 
   it('says so when this copy has no accounts', () => {

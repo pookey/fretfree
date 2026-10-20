@@ -104,7 +104,14 @@ describe('AccountPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
     const panel = await screen.findByRole('region', { name: 'Your account' });
     expect(panel).toHaveTextContent('Signed in as me@example.com.');
+    expect(screen.getByRole('heading', { name: 'Your account' })).toHaveFocus();
     expect(loadAccount()?.email).toBe('me@example.com');
+  });
+
+  it('leaves focus alone when Progress opens with a code pending', () => {
+    savePending(pendingNow());
+    renderPanel();
+    expect(screen.getByLabelText('6-digit code')).not.toHaveFocus();
   });
 
   it('points to the link once the code attempts are spent', () => {
@@ -143,7 +150,7 @@ describe('AccountPanel', () => {
     savePending(pendingNow());
     const { user } = renderPanel();
     await user.click(screen.getByRole('button', { name: 'Use a different email' }));
-    expect(screen.getByLabelText('Email address')).toBeVisible();
+    expect(screen.getByLabelText('Email address')).toHaveFocus();
   });
 
   it('signs out and keeps the progress on this device', async () => {
@@ -159,6 +166,9 @@ describe('AccountPanel', () => {
     expect(
       await screen.findByRole('region', { name: 'Save your progress across devices' }),
     ).toBeVisible();
+    expect(
+      screen.getByRole('heading', { name: 'Save your progress across devices' }),
+    ).toHaveFocus();
     expect(loadAccount()).toBeNull();
     expect(await db.reviewLogs.count()).toBe(1);
   });

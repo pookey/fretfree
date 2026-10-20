@@ -16,9 +16,10 @@ export interface AccountPanelProps {
   signIn?: SignIn | null;
   /** Prefills the email step, e.g. after a link that didn't work. */
   email?: string;
-  /** Focus the first field on mount. */
-  autoFocus?: boolean;
 }
+
+/** Where focus goes after the panel changes step, so it is never dropped on the page. */
+type FocusTarget = 'email' | 'code' | 'heading' | null;
 
 /**
  * "Save your progress across devices" (M7-04): optional email sign-in, never a
@@ -26,24 +27,31 @@ export interface AccountPanelProps {
  * The code is the way into the installed iPad app, whose storage is separate
  * from Safari's, so links (which open in Safari) can't sign it in.
  */
-export function AccountPanel({ signIn = getSignIn(), email, autoFocus }: AccountPanelProps) {
+export function AccountPanel({ signIn = getSignIn(), email }: AccountPanelProps) {
   const account = useAccount();
   const pending = usePending();
   const headingId = useId();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  // Only a step the learner just moved to takes focus: opening Progress with a
+  // code pending mustn't raise the keyboard.
+  const [focus, setFocus] = useState<FocusTarget>(null);
+  useEffect(() => {
+    if (focus === 'heading') headingRef.current?.focus();
+  }, [focus, account]);
   if (!signIn) return null;
 
   return (
     <section id={ACCOUNT_ANCHOR} className={styles.panel} aria-labelledby={headingId}>
       {account ? (
         <>
-          <h2 id={headingId} className={styles.title}>
+          <h2 id={headingId} ref={headingRef} tabIndex={-1} className={styles.title}>
             Your account
           </h2>
-          <SignedIn email={account.email} signIn={signIn} />
+          <SignedIn email={account.email} signIn={signIn} onSignedOut={() => setFocus('heading')} />
         </>
       ) : (
         <>
-          <h2 id={headingId} className={styles.title}>
+          <h2 id={headingId} ref={headingRef} tabIndex={-1} className={styles.title}>
             Save your progress across devices
           </h2>
           <div className={styles.columns}>
@@ -59,9 +67,20 @@ export function AccountPanel({ signIn = getSignIn(), email, autoFocus }: Account
               </p>
             </div>
             {pending ? (
-              <CodeStep pending={pending} signIn={signIn} />
+              <CodeStep
+                pending={pending}
+                signIn={signIn}
+                autoFocus={focus === 'code'}
+                onCancel={() => setFocus('email')}
+                onSignedIn={() => setFocus('heading')}
+              />
             ) : (
-              <EmailStep signIn={signIn} email={email} autoFocus={autoFocus} />
+              <EmailStep
+                signIn={signIn}
+                email={email}
+                autoFocus={focus === 'email'}
+                onSent={() => setFocus('code')}
+              />
             )}
           </div>
         </>
@@ -81,10 +100,12 @@ function EmailStep({
   signIn,
   email: initial = '',
   autoFocus,
+  onSent,
 }: {
   signIn: SignIn;
   email?: string;
-  autoFocus?: boolean;
+  autoFocus: boolean;
+  onSent(): void;
 }) {
   const [email, setEmail] = useState(initial);
   const [busy, setBusy] = useState(false);
@@ -112,7 +133,8 @@ function EmailStep({
     setBusy(false);
     if (outcome.kind === 'rate-limited') setBlocked(blockFor(outcome.retryAfter));
     setError(startError(outcome));
-    if (outcome.kind !== 'sent') inputRef.current?.focus();
+    if (outcome.kind === 'sent') onSent();
+    else inputRef.current?.focus();
   }
 
   return (
@@ -146,7 +168,19 @@ function EmailStep({
   );
 }
 
-function CodeStep({ pending, signIn }: { pending: PendingSignIn; signIn: SignIn }) {
+function CodeStep({
+  pending,
+  signIn,
+  autoFocus,
+  onCancel,
+  onSignedIn,
+}: {
+  pending: PendingSignIn;
+  signIn: SignIn;
+  autoFocus: boolean;
+  onCancel(): void;
+  onSignedIn(): void;
+}) {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState<'code' | 'resend' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -167,10 +201,10 @@ function CodeStep({ pending, signIn }: { pending: PendingSignIn; signIn: SignIn 
       ? codeError({ kind: 'expired' })
       : null;
 
-  // Moving from the email step to here: say so, and put the learner in the code field.
+  // Just sent: put the learner straight in the code field.
   useEffect(() => {
-    inputRef.current?.focus();
-  }, [pending.sentAt]);
+    if (autoFocus) inputRef.current?.focus();
+  }, [autoFocus]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -179,6 +213,7 @@ function CodeStep({ pending, signIn }: { pending: PendingSignIn; signIn: SignIn 
     setError(null);
     setSent(false);
     const outcome = await signIn.submitCode(code);
+    if (outcome.kind === 'signed-in') return onSignedIn();
     setBusy(null);
     const message = codeError(outcome);
     setError(message);
@@ -270,7 +305,10 @@ function CodeStep({ pending, signIn }: { pending: PendingSignIn; signIn: SignIn 
         <button
           type="button"
           className={styles.secondary}
-          onClick={() => signIn.cancel()}
+          onClick={() => {
+            signIn.cancel();
+            onCancel();
+          }}
           disabled={busy !== null}
         >
           Use a different email
@@ -280,7 +318,15 @@ function CodeStep({ pending, signIn }: { pending: PendingSignIn; signIn: SignIn 
   );
 }
 
-function SignedIn({ email, signIn }: { email: string; signIn: SignIn }) {
+function SignedIn({
+  email,
+  signIn,
+  onSignedOut,
+}: {
+  email: string;
+  signIn: SignIn;
+  onSignedOut(): void;
+}) {
   const [busy, setBusy] = useState(false);
   return (
     <div className={styles.columns}>
@@ -299,6 +345,7 @@ function SignedIn({ email, signIn }: { email: string; signIn: SignIn }) {
           disabled={busy}
           onClick={async () => {
             setBusy(true);
+            onSignedOut();
             await signIn.signOut();
           }}
         >

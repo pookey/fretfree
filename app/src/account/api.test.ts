@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AccountApiError, createAccountApi, HOSTED_API_URL, syncApiUrl } from './api';
+import { AccountApiError, createAccountApi } from './api';
+import { HOSTED_API_URL, syncApiUrl } from './endpoint';
 
 const reply = (status: number, body: unknown, headers: Record<string, string> = {}) =>
   new Response(body === undefined ? null : JSON.stringify(body), { status, headers });

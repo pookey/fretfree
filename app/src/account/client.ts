@@ -1,4 +1,5 @@
-import { createAccountApi, syncApiUrl } from './api';
+import { createAccountApi } from './api';
+import { syncApiUrl } from './endpoint';
 import { createCognito } from './cognito';
 import { createSignIn, type SignIn } from './flow';
 

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { syncApiUrl } from '../../../account/api';
+import { syncApiUrl } from '../../../account/endpoint';
 
 export const id = 'account';
 // Last: practice comes first, and the account is optional (design §1 principle 8).

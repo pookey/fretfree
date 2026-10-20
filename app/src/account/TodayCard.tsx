@@ -1,7 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router';
 import { getDb } from '../storage';
-import { syncApiUrl } from './api';
 import { OFFER_AFTER_SESSIONS } from './limits';
 import { dismissOffer, isOfferDismissed, loadAccount, subscribe } from './store';
 import styles from './today-card.module.css';
@@ -22,7 +21,7 @@ export function AccountOfferCard() {
   const signedIn = useSyncExternalStore(subscribe, () => loadAccount() !== null);
   const dismissed = useSyncExternalStore(subscribe, isOfferDismissed);
   const [sessions, setSessions] = useState<number | null>(null);
-  const wanted = Boolean(syncApiUrl()) && !signedIn && !dismissed;
+  const wanted = !signedIn && !dismissed;
 
   useEffect(() => {
     if (!wanted) return;
