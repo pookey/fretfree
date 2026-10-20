@@ -1093,7 +1093,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ### M6-07 · I7 major scale in 5 positions
 - **Status:** todo
 - **Deps:** M6-01
-- **Owns:** `app/src/engine/skills/i7.ts`
+- **Owns:** `app/src/engine/skills/i7.ts`, `app/src/drills/d-pentatonic-box/**`, `app/src/engine/items/scale-position.ts`, `app/src/engine/items/scale-position.test.ts`, `app/e2e/m6-07.spec.ts` (widened by the PM, 2026-10-20: no other drill could serve I7 cards)
 
 ### M6-08 · F4 rhythm track plus D20 "Tap and strum rhythm"
 - **Status:** todo
