@@ -66,5 +66,13 @@ for pair in $SITE_REDIRECT_DOMAINS; do
   check retry bash -c "[[ \$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' 'https://$from/progress') == '301 $url/progress' ]]"
 done
 
+if [[ -n "$SYNC_API_DOMAIN" ]]; then
+  api="https://$SYNC_API_DOMAIN"
+  desc="sync API health route answers ok at $api/health"
+  check retry bash -c "curl -sSf '$api/health' | grep -q '\"ok\":true'"
+  desc="sync routes refuse a request without a token (401)"
+  check bash -c "[[ \$(curl -sS -o /dev/null -w '%{http_code}' '$api/sync/pull') == 401 ]]"
+fi
+
 [[ $failures -eq 0 ]] || fail "$failures smoke check(s) failed"
 log "Smoke test passed"

@@ -8,6 +8,7 @@ if [[ -z "${SITE_DOMAIN:-}" ]]; then
   SITE_DOMAIN=fretfree.app
   : "${HOSTED_ZONE_DOMAIN:=fretfree.app}"
   : "${SITE_REDIRECT_DOMAINS:=www.fretfree.app:fretfree.app}"
+  : "${SYNC_API_DOMAIN:=api.fretfree.app}"
 fi
 : "${HOSTED_ZONE_DOMAIN:=$SITE_DOMAIN}"
 : "${SITE_REDIRECT_DOMAINS:=}"
@@ -27,6 +28,17 @@ export CDK_REGION
 : "${EMAIL_CONFIG_SET:=fretwork-email}"
 : "${EMAIL_SSM_PREFIX:=/fretwork/email}"
 export EMAIL_REGION EMAIL_DOMAIN EMAIL_ZONE_DOMAIN EMAIL_FROM EMAIL_FROM_NAME EMAIL_CONFIG_SET EMAIL_SSM_PREFIX
+
+# Optional, hosted version only (scripts/deploy.sh): the FretworkSync stack, with
+# passwordless sign-in and the sync API (docs/design/sync.md), at its own name.
+# It sends mail through the FretworkEmail identity above, so deploy-email.sh must
+# have run once. Forks that set SITE_DOMAIN get no sync unless they set
+# SYNC_API_DOMAIN too. SYNC_EXTRA_ORIGINS: more CORS origins, space-separated.
+: "${SYNC_API_DOMAIN:=}"
+: "${SYNC_ZONE_DOMAIN:=$HOSTED_ZONE_DOMAIN}"
+: "${SYNC_STACK_NAME:=FretworkSync}"
+: "${SYNC_EXTRA_ORIGINS:=http://localhost:5173}"
+export SYNC_API_DOMAIN SYNC_ZONE_DOMAIN SYNC_STACK_NAME SYNC_EXTRA_ORIGINS
 
 # Optional (scripts/deploy-brand.sh): a static preview of the brand options.
 : "${BRAND_DOMAIN:=brand.fretfree.app}"

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Build → cdk deploy → s3 sync (with cache headers) → CloudFront invalidation.
+# Build → cdk deploy (site, plus sign-in and sync when SYNC_API_DOMAIN is set) →
+# s3 sync (with cache headers) → CloudFront invalidation.
 # Env: AWS_PROFILE, SITE_DOMAIN, HOSTED_ZONE_DOMAIN, SITE_REDIRECT_DOMAINS,
+# SYNC_API_DOMAIN, SYNC_ZONE_DOMAIN, SYNC_EXTRA_ORIGINS, the EMAIL_* sender config,
 # SKIP_BUILD=1, SKIP_INFRA=1.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
@@ -16,11 +18,22 @@ fi
 
 outputs="infra/cdk.out/outputs.json"
 if [[ "${SKIP_INFRA:-}" != 1 ]]; then
-  log "Deploying infrastructure ($STACK_NAME → $SITE_DOMAIN)"
-  (cd infra && pnpm exec cdk deploy "$STACK_NAME" \
+  stacks=("$STACK_NAME")
+  sync_args=()
+  if [[ -n "$SYNC_API_DOMAIN" ]]; then
+    # The sender is the FretworkEmail identity, rebuilt from config (no lookup:
+    # its SSM parameters live in EMAIL_REGION, not here).
+    stacks+=("$SYNC_STACK_NAME")
+    sync_args=(-c syncApiDomain="$SYNC_API_DOMAIN" -c syncZoneDomain="$SYNC_ZONE_DOMAIN"
+      -c syncExtraOrigins="$SYNC_EXTRA_ORIGINS"
+      -c emailRegion="$EMAIL_REGION" -c emailDomain="$EMAIL_DOMAIN" -c emailFrom="$EMAIL_FROM"
+      -c emailFromName="$EMAIL_FROM_NAME" -c emailConfigSet="$EMAIL_CONFIG_SET")
+  fi
+  log "Deploying infrastructure (${stacks[*]} → $SITE_DOMAIN${SYNC_API_DOMAIN:+, $SYNC_API_DOMAIN})"
+  (cd infra && pnpm exec cdk deploy "${stacks[@]}" \
     --require-approval never \
     -c siteDomain="$SITE_DOMAIN" -c zoneDomain="$HOSTED_ZONE_DOMAIN" \
-    -c siteRedirectDomains="$SITE_REDIRECT_DOMAINS" \
+    -c siteRedirectDomains="$SITE_REDIRECT_DOMAINS" ${sync_args[@]+"${sync_args[@]}"} \
     --outputs-file cdk.out/outputs.json)
 fi
 
