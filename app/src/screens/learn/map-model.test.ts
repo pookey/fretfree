@@ -178,7 +178,8 @@ describe('buildMap', () => {
 describe('defaultModule', () => {
   it('prefers the first open module, then one with skills, then the first', () => {
     const map = buildMap({ skills: SKILLS, goal: 'songs', stored: stored(), cards: [] });
-    expect(defaultModule(map)?.module.id).toBe('notes-1');
+    // Songs promotes rhythm, and F4 opens with no prerequisite.
+    expect(defaultModule(map)?.module.id).toBe('rhythm');
     const locked = skill('C2.x', 'C2', { prerequisites: ['nope'] });
     const lockedMap = buildMap({ skills: [locked], goal: 'general', stored: stored(), cards: [] });
     expect(defaultModule(lockedMap)?.module.id).toBe('notes-2');

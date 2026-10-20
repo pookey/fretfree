@@ -170,8 +170,9 @@ describe('<LearnScreen>', () => {
     const links = within(screen.getByRole('region', { name: 'Modules' })).getAllByRole('link');
     expect(links[0]).toHaveAttribute('data-testid', 'module-harmony');
     expect(screen.getByRole('combobox', { name: 'Ordered for your goal' })).toHaveValue('songs');
-    // Harmony has no skills yet, so the detail opens on the first open module.
-    expect(screen.getByTestId('module-detail')).toHaveTextContent('Neck basics');
+    // Harmony has no skills yet, so the detail opens on the first open module:
+    // songs promotes rhythm, whose first F4 skill has no prerequisite.
+    expect(screen.getByTestId('module-detail')).toHaveTextContent('Rhythm');
   });
 
   it('lets the learner change their goal, which reorders the map', async () => {
