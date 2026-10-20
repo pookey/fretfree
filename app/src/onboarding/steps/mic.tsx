@@ -54,6 +54,11 @@ export const MIC_ERROR_COPY: Record<PitchSourceErrorReason, { title: string; det
     title: 'The microphone didn’t start.',
     detail: 'Another app may be using it. Close that app, then try again.',
   },
+  lost: {
+    title: 'The microphone stopped.',
+    detail:
+      'It was unplugged, another app took it, or FretFree went to the background. Try again to listen.',
+  },
 };
 
 export type MicCheckPhase = 'idle' | 'starting' | 'listening' | 'error';
@@ -92,6 +97,13 @@ export function useMicCheck(source: PitchSource = getPitchSource()): MicCheck {
       if (state === 'idle') {
         owns.current = false;
         setPhase((p) => (p === 'listening' ? 'idle' : p));
+      }
+      // Lost mid-check (unplugged, taken by a call, the page backgrounded). A
+      // start that fails instead is reported by `listen()`.
+      if (state === 'error' && source.error?.reason === 'lost') {
+        owns.current = false;
+        setReason('lost');
+        setPhase((p) => (p === 'listening' ? 'error' : p));
       }
     });
     return () => {

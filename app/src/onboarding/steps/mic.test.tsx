@@ -77,6 +77,7 @@ describe('the mic onboarding step', () => {
     ['no-device', /No microphone was found/],
     ['unsupported', /can’t listen for pitch/],
     ['failed', /didn’t start/],
+    ['lost', /microphone stopped/],
   ])('says why when the mic can’t start (%s) and leaves mic mode off', async (reason, copy) => {
     const { onNext } = renderStep();
     source.failNextStart(reason);
@@ -133,6 +134,19 @@ describe('the mic onboarding step', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onNext).toHaveBeenCalledOnce();
     expect(source.state).toBe('running');
+  });
+
+  it('says so when the mic is lost mid-check, and can listen again', async () => {
+    renderStep();
+    fireEvent.click(screen.getByRole('button', { name: 'Turn on mic mode' }));
+    await waitFor(() => expect(status()).toHaveAttribute('data-phase', 'listening'));
+    act(() => source.loseInput());
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveAttribute('data-reason', 'lost');
+    expect(alert).toHaveTextContent(/unplugged, another app took it/);
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(status()).toHaveAttribute('data-phase', 'listening'));
+    expect(source.startCalls).toBe(2);
   });
 
   it('shows as stopped when something else stops the mic', async () => {
