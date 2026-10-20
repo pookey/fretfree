@@ -57,6 +57,8 @@ export function SessionScreen() {
   // Set while the next prompt's view downloads, so Continue can't skip past it.
   const switching = useRef(false);
   const continueRef = useRef<HTMLButtonElement>(null);
+  /** The pending auto-advance after a right answer; cleared when the session ends or the screen goes. */
+  const advanceTimer = useRef<number | undefined>(undefined);
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
   const [progress, setProgress] = useState({ position: 0, length: 1 });
   const [contextOpen, setContextOpen] = useState(true);
@@ -71,6 +73,7 @@ export function SessionScreen() {
     const runner = runnerRef.current;
     const tracker = trackerRef.current;
     if (!runner || !tracker) return;
+    window.clearTimeout(advanceTimer.current);
     const summary = await runner.finish();
     setPhase({ kind: 'summary', celebration: await tracker.finish(summary) });
     void refitIfDue(getDb(), new Date())
@@ -125,6 +128,8 @@ export function SessionScreen() {
     };
   }, [loaded, settings, scheduler, query, routeState, showCurrent, overlay]);
 
+  useEffect(() => () => window.clearTimeout(advanceTimer.current), []);
+
   const advance = useCallback(() => {
     if (switching.current) return;
     runnerRef.current?.next();
@@ -156,7 +161,10 @@ export function SessionScreen() {
     setPhase({ kind: 'feedback', current, feedback: { answer, result: res.result } });
     busy.current = false;
     if (res.result.correct)
-      window.setTimeout(advance, current.drill.feedbackHoldMs ?? AUTO_ADVANCE_MS);
+      advanceTimer.current = window.setTimeout(
+        advance,
+        current.drill.feedbackHoldMs ?? AUTO_ADVANCE_MS,
+      );
   };
 
   useEffect(() => {

@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { useAppStore } from '../app-store';
 import { SKILLS } from '../engine';
 import { getDb } from '../storage';
+import { SessionRunner } from './runner';
 import { SessionScreen } from './SessionScreen';
 
 vi.mock('../audio/audio', () => ({ playNotes: vi.fn(() => Promise.resolve()) }));
@@ -135,6 +136,22 @@ describe('<SessionScreen> feedback bar (M1-28)', () => {
     expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument();
     // One item, answered right: the session is over.
     await waitFor(() => expect(screen.queryByTestId('feedback-correct')).not.toBeInTheDocument());
+  });
+
+  it('drops the pending auto-advance when the session is ended during it', async () => {
+    const next = vi.spyOn(SessionRunner.prototype, 'next');
+    try {
+      renderSession();
+      fireEvent.click(await choice('G'));
+      await screen.findByTestId('feedback-correct');
+      fireEvent.click(screen.getByRole('button', { name: 'End session' }));
+      await screen.findByTestId('session-summary');
+      // Past the right answer's hold: the finished runner is never advanced.
+      await new Promise((r) => setTimeout(r, 900));
+      expect(next).not.toHaveBeenCalled();
+    } finally {
+      next.mockRestore();
+    }
   });
 });
 
