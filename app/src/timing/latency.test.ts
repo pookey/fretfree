@@ -29,7 +29,10 @@ describe('compensation', () => {
   });
 
   it('uses no calibration for an input not yet calibrated', () => {
-    expect(compensation('mic', { tap: 30, mic: null }, {})).toEqual({ outputMs: 0, calibrationMs: 0 });
+    expect(compensation('mic', { tap: 30, mic: null }, {})).toEqual({
+      outputMs: 0,
+      calibrationMs: 0,
+    });
   });
 });
 

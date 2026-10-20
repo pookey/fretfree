@@ -107,7 +107,9 @@ export function createMicOnsetDriver(options: MicOnsetOptions = {}): OnsetDriver
     start(emit, fail) {
       const devices = (options.mediaDevices ?? (() => globalThis.navigator?.mediaDevices))();
       if (!devices?.getUserMedia) {
-        return Promise.reject(new OnsetSourceError('unsupported', 'This browser has no microphone'));
+        return Promise.reject(
+          new OnsetSourceError('unsupported', 'This browser has no microphone'),
+        );
       }
       // Both now, inside the tap: iOS grants the mic and resumes audio only in a gesture.
       const media = attempt(() => devices.getUserMedia(MIC_CONSTRAINTS));

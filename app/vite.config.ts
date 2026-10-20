@@ -75,6 +75,7 @@ export default defineConfig({
         'src/drills/**',
         'src/session/**',
         'src/mic/**',
+        'src/timing/**',
       ],
       exclude: ['**/*.test.*', '**/index.ts', '**/*.tsx'],
       thresholds: { lines: 90, functions: 90, statements: 90, branches: 85 },

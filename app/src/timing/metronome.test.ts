@@ -146,7 +146,16 @@ describe('createMetronome', () => {
     await metronome.start({ ...four, countInBars: 1, fade: { keep: 'bars' } });
     for (let i = 0; i < 8; i += 1) fake.transport.tick(10 + i * 0.5);
     // The count-in sounds in full; after it only the downbeat.
-    expect(scheduled.map((c) => c.audible)).toEqual([true, true, true, true, true, false, false, false]);
+    expect(scheduled.map((c) => c.audible)).toEqual([
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+    ]);
     expect(fake.synths[0]!.attacks).toHaveLength(5);
     metronome.setFade((click) => click.pulseInBar === 2);
     for (let i = 8; i < 12; i += 1) fake.transport.tick(10 + i * 0.5);

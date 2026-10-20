@@ -1,0 +1,131 @@
+/* The tap-to-click calibration (design §12) in Settings: a status line, a
+   big pad to tap on, the beat light, then the actions. */
+.setting {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap);
+}
+
+.muted {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-l);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.status {
+  display: grid;
+  gap: var(--space-2);
+  min-height: 4.5rem;
+}
+
+.status p {
+  margin: 0;
+}
+
+.progress {
+  width: 100%;
+  height: 0.5rem;
+  accent-color: var(--tone);
+}
+
+/* The pad: big enough to hit without looking, iPad first. */
+.pad {
+  display: grid;
+  place-items: center;
+  gap: var(--space-3);
+  min-height: 14rem;
+  padding: var(--space-4);
+  border-radius: var(--radius-l);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+
+.pad:focus-visible {
+  outline: 3px solid var(--tone);
+  outline-offset: 2px;
+}
+
+/* The beat light: a ring, filled on each click; the bar's first click is bigger.
+   Shape and size carry the accent, not colour alone. */
+.light {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 3px solid var(--tone);
+  transition:
+    background-color 80ms ease-out,
+    transform 80ms ease-out;
+}
+
+.light[data-on='true'] {
+  background: var(--tone);
+}
+
+.light[data-accent='bar'] {
+  transform: scale(1.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .light {
+    transition: none;
+  }
+
+  .light[data-accent='bar'] {
+    transform: none;
+    border-width: 5px;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.button,
+.primary {
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary {
+  border-color: transparent;
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+/* Best-effort iPhone: a short landscape viewport keeps the actions in view. */
+.panel[data-size-class='compact'] .pad {
+  min-height: 8rem;
+}

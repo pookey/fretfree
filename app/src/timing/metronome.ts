@@ -9,16 +9,11 @@
  * grading. A tempo change lands on the first whole pulse the Transport hasn't
  * scheduled yet, so the grid never jumps.
  */
-import {
-  getAudioOutput,
-  isAudioUnlocked,
-  loadTone,
-  unlockAudio,
-  volumeToDb,
-} from '../audio/audio';
+import { getAudioOutput, isAudioUnlocked, loadTone, unlockAudio, volumeToDb } from '../audio/audio';
 import { claimTransport, type TransportLease } from '../audio/transport';
 import { NO_FADE, isAudible, type ClickFade } from './fade';
 import type { Accent, ClickMeter } from './meter';
+import type { Unsubscribe } from './onsets';
 import {
   changeTempo,
   checkBpm,
@@ -57,8 +52,6 @@ export interface MetronomeOptions {
   /** Default: every click sounds. */
   fade?: ClickRule;
 }
-
-export type Unsubscribe = () => void;
 
 export interface Metronome {
   readonly running: boolean;

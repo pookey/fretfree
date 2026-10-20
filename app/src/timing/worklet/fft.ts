@@ -9,7 +9,8 @@ export interface Fft {
 }
 
 export function createFft(size: number): Fft {
-  if (size < 2 || (size & (size - 1)) !== 0) throw new RangeError('FFT size must be a power of two');
+  if (size < 2 || (size & (size - 1)) !== 0)
+    throw new RangeError('FFT size must be a power of two');
   const bits = Math.log2(size);
   const reverse = new Uint32Array(size);
   for (let i = 0; i < size; i += 1) {

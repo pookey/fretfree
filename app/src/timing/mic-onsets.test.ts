@@ -14,7 +14,11 @@ function domError(name: string): Error {
 function fakeAudio() {
   const log: string[] = [];
   const statechange = new Set<() => void>();
-  const tracks: { stop: ReturnType<typeof vi.fn>; onended: (() => void) | null; readyState: string }[] = [];
+  const tracks: {
+    stop: ReturnType<typeof vi.fn>;
+    onended: (() => void) | null;
+    readyState: string;
+  }[] = [];
   const behaviour = {
     media: null as (() => Promise<MediaStream>) | null,
     addModule: null as (() => Promise<void>) | null,
@@ -76,7 +80,18 @@ function fakeAudio() {
     raw.state = state;
     statechange.forEach((l) => l());
   };
-  return { log, tracks, nodes, input, behaviour, options, getUserMedia, contextCalls, setState, statechange };
+  return {
+    log,
+    tracks,
+    nodes,
+    input,
+    behaviour,
+    options,
+    getUserMedia,
+    contextCalls,
+    setState,
+    statechange,
+  };
 }
 
 describe('createMicOnsetDriver', () => {
@@ -153,7 +168,9 @@ describe('createMicOnsetDriver', () => {
       audio.tracks.push(track);
       return Promise.resolve({ id: 's', getTracks: () => [track] } as never);
     };
-    await expect(createMicOnsetSource(audio.options).start()).rejects.toMatchObject({ reason: 'lost' });
+    await expect(createMicOnsetSource(audio.options).start()).rejects.toMatchObject({
+      reason: 'lost',
+    });
   });
 
   it('is lost when the mic is unplugged or audio is suspended', async () => {

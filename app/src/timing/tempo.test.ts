@@ -77,7 +77,11 @@ describe('click grid', () => {
   });
 
   it('accents odd groupings across bars', () => {
-    const seven: ClickLayout = { meter: METER_PRESETS['7/8 (2+2+3)'], subdivide: 1, countInBars: 0 };
+    const seven: ClickLayout = {
+      meter: METER_PRESETS['7/8 (2+2+3)'],
+      subdivide: 1,
+      countInBars: 0,
+    };
     const accents = Array.from({ length: 14 }, (_, i) => clickAt(seven, i).accent);
     expect(accents.slice(7)).toEqual(accents.slice(0, 7));
     expect(accents.slice(0, 5)).toEqual(['bar', 'pulse', 'group', 'pulse', 'group']);

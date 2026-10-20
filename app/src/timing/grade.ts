@@ -71,7 +71,8 @@ export function alignOnsets(
     first === undefined || last === undefined
       ? []
       : sorted.filter(
-          (o, j) => !used.has(j) && o >= first - reach[0]!.before && o <= last + reach.at(-1)!.after,
+          (o, j) =>
+            !used.has(j) && o >= first - reach[0]!.before && o <= last + reach.at(-1)!.after,
         );
   return { offsets, extras };
 }

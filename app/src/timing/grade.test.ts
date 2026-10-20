@@ -68,7 +68,10 @@ describe('summariseTiming', () => {
 
   it('takes the middle pair for an even count, and has no median without on-time onsets', () => {
     expect(summariseTiming([10, 20, -30, 40], cfg).medianAbsMs).toBe(25);
-    expect(summariseTiming([null, 90], cfg)).toMatchObject({ medianAbsMs: null, meanOffsetMs: null });
+    expect(summariseTiming([null, 90], cfg)).toMatchObject({
+      medianAbsMs: null,
+      meanOffsetMs: null,
+    });
   });
 
   it('needs a target', () => {

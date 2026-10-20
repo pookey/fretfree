@@ -11,13 +11,13 @@ import {
 } from './onsets';
 
 /** A clock that maps page ms to audio ms by a fixed offset. */
-function fixedClock(offset: number): AudioClock & { start: ReturnType<typeof vi.fn> } {
+function fixedClock(offset: number) {
   return {
-    start: vi.fn(),
-    stop: vi.fn(),
-    sample: vi.fn(),
-    toContextMs: (page) => page + offset,
-  };
+    start: vi.fn<() => void>(),
+    stop: vi.fn<() => void>(),
+    sample: vi.fn<() => void>(),
+    toContextMs: (page: number) => page + offset,
+  } satisfies AudioClock;
 }
 
 describe('createOnsetSource', () => {
@@ -113,7 +113,11 @@ describe('withLatency', () => {
     await fake.start();
     let calibrationMs = 30;
     const seen: unknown[] = [];
-    const stop = withLatency(fake, () => ({ outputMs: 20, calibrationMs }), (o) => seen.push(o));
+    const stop = withLatency(
+      fake,
+      () => ({ outputMs: 20, calibrationMs }),
+      (o) => seen.push(o),
+    );
     fake.emit(1000);
     calibrationMs = 0;
     fake.emit(2000);
@@ -127,7 +131,11 @@ describe('withLatency', () => {
 });
 
 describe('createTapOnsetSource', () => {
-  const press = (type: string, timeStamp: number, extra: object = {}) => ({ type, timeStamp, ...extra });
+  const press = (type: string, timeStamp: number, extra: object = {}) => ({
+    type,
+    timeStamp,
+    ...extra,
+  });
 
   it('maps pointer presses and tap keys onto the audio clock while running', async () => {
     const clock = fixedClock(5000);

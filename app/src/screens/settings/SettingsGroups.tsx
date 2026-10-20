@@ -16,6 +16,7 @@ import {
 } from '../../storage';
 import { ENGINE_CONFIG } from '../../engine/config';
 import { TUNINGS } from '../../theory';
+import { TimingCalibrationSetting } from '../../timing/TimingCalibration';
 import { DeveloperTools } from './DeveloperTools';
 import { MicSettings } from './MicSettings';
 import styles from '../screens.module.css';
@@ -271,6 +272,7 @@ function GuideSettings({ settings, update }: SettingsProps) {
         Once a skill&apos;s guides have faded completely, hide the fret inlays too.
       </Hint>
       <CalibrationSetting />
+      <TimingCalibrationSetting />
     </Group>
   );
 }

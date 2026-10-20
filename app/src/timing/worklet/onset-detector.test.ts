@@ -80,7 +80,14 @@ describe('createOnsetDetector', () => {
     const strings = [82.41, 110, 146.8, 196, 246.9, 329.6];
     const strum = strings.map((frequency, i) => ({
       atMs: 300 + i * 8,
-      signal: pluck({ frequency, sampleRate: 48000, durationMs: 600, amplitude: 0.2, attackMs: 2, seed: i }),
+      signal: pluck({
+        frequency,
+        sampleRate: 48000,
+        durationMs: 600,
+        amplitude: 0.2,
+        attackMs: 2,
+        seed: i,
+      }),
     }));
     expectOnsets(detect(mix(48000, 1200, strum), 48000), [300]);
   });
@@ -88,7 +95,12 @@ describe('createOnsetDetector', () => {
   it('finds the same note re-attacked with no gap (M5-02 review)', () => {
     for (const noise of [0.001, 0.005]) {
       const again = [100, 400, 700];
-      const signal = mix(48000, 1100, plucks(48000, again, { frequency: 220, durationMs: 300 }), noise);
+      const signal = mix(
+        48000,
+        1100,
+        plucks(48000, again, { frequency: 220, durationMs: 300 }),
+        noise,
+      );
       expectOnsets(detect(signal, 48000), again);
     }
   });
@@ -96,7 +108,12 @@ describe('createOnsetDetector', () => {
   it('keeps up with sixteenth notes at 120 BPM, even without a pick noise', () => {
     const sixteenths = Array.from({ length: 8 }, (_, i) => 100 + i * 125);
     for (const attackMs of [0, 3]) {
-      const parts = plucks(48000, sixteenths, { frequency: 330, durationMs: 125, attackMs, amplitude: 0.2 });
+      const parts = plucks(48000, sixteenths, {
+        frequency: 330,
+        durationMs: 125,
+        attackMs,
+        amplitude: 0.2,
+      });
       expectOnsets(detect(mix(48000, 1300, parts, 0.005), 48000), sixteenths);
     }
   });

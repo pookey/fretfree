@@ -88,7 +88,8 @@ export function summariseCalibration(
   const counted = clicksMs.slice(cfg.warmupClicks);
   const { offsets } = alignOnsets(counted, onsetsMs, cfg.matchMs);
   const raw = offsets.filter((o): o is number => o !== null).sort((a, b) => a - b);
-  if (raw.length < cfg.minSamples) return { ok: false, reason: 'too-few', samples: raw.length, spreadMs: null };
+  if (raw.length < cfg.minSamples)
+    return { ok: false, reason: 'too-few', samples: raw.length, spreadMs: null };
   const q1 = quantile(raw, 0.25);
   const q3 = quantile(raw, 0.75);
   const fence = cfg.outlierIqr * (q3 - q1);
@@ -96,6 +97,7 @@ export function summariseCalibration(
   const spreadMs = Math.round(quantile(kept, 0.75) - quantile(kept, 0.25));
   if (kept.length < cfg.minSamples)
     return { ok: false, reason: 'too-few', samples: kept.length, spreadMs };
-  if (spreadMs > cfg.maxSpreadMs) return { ok: false, reason: 'uneven', samples: kept.length, spreadMs };
+  if (spreadMs > cfg.maxSpreadMs)
+    return { ok: false, reason: 'uneven', samples: kept.length, spreadMs };
   return { ok: true, offsetMs: Math.round(quantile(kept, 0.5)), spreadMs, samples: kept.length };
 }
