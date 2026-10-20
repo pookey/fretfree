@@ -5,9 +5,9 @@ import { chromaOf, midiAt, stringCount, type Tuning } from '../theory';
 /**
  * Chooses the drill that serves each item (design §6). An item can be served
  * by any drill its skill lists that can test it, in the skill's preference
- * order. When several can, the picker moves away from the drill that served
- * the item last, so a fact is met in more than one context (research/02
- * rule 12). A drill that needs the mic is a candidate only while mic mode
+ * order. When several can, the picker moves on from the drill that served
+ * the item last to the next in that order, round the list, so a fact is met
+ * in every context its skill offers (research/02 rule 12). A drill that needs the mic is a candidate only while mic mode
  * is on (design §9), so a learner without one never meets it.
  */
 
@@ -40,8 +40,11 @@ export function createDrillPicker(
     candidates,
     canServe: (item) => candidates(item).length > 0,
     pick(item, last) {
+      // The next candidate after the last one, round the list, so every
+      // drill the skill lists takes its turn (not only the first two).
       const options = candidates(item);
-      return options.find((d) => d.id !== last) ?? options[0];
+      const i = options.findIndex((d) => d.id === last);
+      return options[(i + 1) % options.length];
     },
   };
 }

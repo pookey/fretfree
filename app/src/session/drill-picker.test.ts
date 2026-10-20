@@ -44,9 +44,22 @@ describe('createDrillPicker', () => {
     expect(picker.pick(note)?.id).toBe('name-the-note');
     expect(picker.pick(note, 'name-the-note')?.id).toBe('echo');
     expect(picker.pick(note, 'echo')?.id).toBe('name-the-note');
+    // A drill no longer offered (or none yet) starts the list again.
+    expect(picker.pick(note, 'retired-drill')?.id).toBe('name-the-note');
     // With one candidate there is nothing to vary.
     const single = createDrillPicker([skill(['name-the-note'])], [d1, echo]);
     expect(single.pick(note, 'name-the-note')?.id).toBe('name-the-note');
+  });
+
+  it('takes every candidate in turn, round the list', () => {
+    const third: AnyDrillType = { ...d1, id: 'third' };
+    const picker = createDrillPicker(
+      [skill(['name-the-note', 'echo', 'third'])],
+      [d1, echo, third],
+    );
+    expect(picker.pick(note, 'name-the-note')?.id).toBe('echo');
+    expect(picker.pick(note, 'echo')?.id).toBe('third');
+    expect(picker.pick(note, 'third')?.id).toBe('name-the-note');
   });
 
   describe('a drill that needs the mic', () => {
