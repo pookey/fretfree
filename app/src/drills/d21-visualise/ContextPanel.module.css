@@ -1,0 +1,24 @@
+/* D21's context panel: the method in three short steps, then a chord diagram
+   (the open shape at level 3, the answer once it's given). It fits beside
+   the prompt on an iPad mini in landscape. */
+.panel h2 {
+  margin: 0 0 var(--space-2);
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.steps li + li {
+  margin-top: var(--space-1);
+}
+
+.diagram {
+  display: block;
+  width: 100%;
+  max-width: 8rem;
+  margin: var(--space-2) auto 0;
+}

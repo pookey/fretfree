@@ -51,7 +51,7 @@ describe('C6 skills', () => {
     for (const s of skills) {
       expect(s.topic).toBe('C6');
       expect(s.drillTypes).toEqual(
-        s.id.endsWith('-cores') ? ['build-caged'] : ['build-caged', 'which-shape'],
+        s.id.endsWith('-cores') ? ['build-caged'] : ['build-caged', 'which-shape', 'visualise'],
       );
     }
     const orders = skills.map((s) => s.order);

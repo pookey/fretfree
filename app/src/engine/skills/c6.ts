@@ -18,8 +18,11 @@ import { itemsOf, memo } from './helpers';
  */
 
 const DRILLS = ['build-caged'];
-/** Whole shapes are also named by choice (D10); a triad core alone doesn't name its shape. */
-const SHAPE_DRILLS = [...DRILLS, 'which-shape'];
+/**
+ * Whole shapes are also named by choice (D10) and pictured at a position (D21);
+ * a triad core alone doesn't name its shape.
+ */
+const SHAPE_DRILLS = [...DRILLS, 'which-shape', 'visualise'];
 
 interface Group {
   id: string;
