@@ -1,0 +1,330 @@
+/* The metronome (design §7 Tools). iPad first: the beat light and tempo on
+   the left, the click settings beside them; one column on compact. */
+.metronome {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.metronome[data-layout='split'] {
+  gap: var(--space-5);
+  grid-template-columns: minmax(0, 3fr) minmax(20rem, 2fr);
+  align-items: start;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-l);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.metronome[data-layout='split'] .panel {
+  padding: var(--space-5);
+}
+
+.panel[data-area='beat'] {
+  align-items: center;
+  text-align: center;
+}
+
+.label {
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.muted {
+  display: block;
+  margin: 0;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* --- Beat light --- */
+
+.beats {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.beats p {
+  margin: 0;
+}
+
+.countLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.count {
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.metronome[data-layout='split'] .count {
+  font-size: 7rem;
+}
+
+.cells {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 3.5rem;
+}
+
+.cell {
+  --size: 1.25rem;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  border: 2px solid var(--text-muted);
+  background: transparent;
+  transition:
+    transform 80ms ease-out,
+    background-color 80ms ease-out;
+}
+
+.metronome[data-layout='split'] .cell {
+  --size: 1.5rem;
+}
+
+/* A felt beat starts a new group: a wider gap before it. */
+.cell[data-group-start='true'] {
+  margin-left: var(--space-4);
+}
+
+/* The downbeat: a large disc. */
+.cell[data-accent='bar'] {
+  width: calc(var(--size) * 2);
+  height: calc(var(--size) * 2);
+  border-width: 3px;
+  border-color: var(--text);
+}
+
+/* Each later felt beat: a diamond. */
+.cell[data-accent='group'] {
+  width: calc(var(--size) * 1.4);
+  height: calc(var(--size) * 1.4);
+  border-radius: 0.2rem;
+  border-color: var(--text);
+  transform: rotate(45deg);
+}
+
+.cell[data-lit='on'] {
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  transform: scale(1.2);
+}
+
+.cell[data-accent='group'][data-lit='on'] {
+  transform: rotate(45deg) scale(1.2);
+}
+
+/* The count-in lights as a thick outline, not a fill. */
+.cell[data-lit='count-in'] {
+  border-color: var(--accent);
+  border-width: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The light moves from cell to cell without growing or fading. */
+  .cell {
+    transition: none;
+  }
+
+  .cell[data-lit='on'] {
+    transform: none;
+  }
+
+  .cell[data-accent='group'][data-lit='on'] {
+    transform: rotate(45deg);
+  }
+}
+
+/* --- Tempo --- */
+
+.bpm {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.bpm output {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.metronome[data-layout='split'] .bpm output {
+  font-size: 3.5rem;
+}
+
+.bpmUnit {
+  color: var(--text-muted);
+}
+
+.tempo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 36rem;
+}
+
+.slider {
+  width: 100%;
+  min-height: var(--tap);
+  accent-color: var(--accent-fill);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.step,
+.tap,
+.primary {
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.step,
+.tap {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.step {
+  font-variant-numeric: tabular-nums;
+}
+
+.step:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 36rem;
+}
+
+.primary {
+  border: none;
+  background: var(--accent-fill);
+  color: var(--accent-text);
+  font-size: 1.125rem;
+}
+
+.metronome[data-layout='split'] .primary,
+.metronome[data-layout='split'] .tap {
+  min-height: 4rem;
+  font-size: 1.25rem;
+}
+
+/* --- Settings --- */
+
+.choices {
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+}
+
+/* The radio stays in the accessibility tree and takes focus; the chip draws it. */
+.chip input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.chip span {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  min-width: var(--tap);
+  justify-content: center;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-variant-numeric: tabular-nums;
+}
+
+.chip input:checked + span {
+  border: 2px solid var(--accent);
+  font-weight: 700;
+}
+
+/* A tick, so the choice isn't shown by colour alone. */
+.chip input:checked + span::before {
+  content: '✓';
+  margin-right: var(--space-1);
+}
+
+.chip input:focus-visible + span {
+  outline: 3px solid var(--tone);
+  outline-offset: 2px;
+}
+
+.pin {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  cursor: pointer;
+}
+
+.pin input {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0.6rem 0 0;
+  accent-color: var(--accent-fill);
+}
+
+.pin > span {
+  padding-top: 0.6rem;
+  font-weight: 600;
+}

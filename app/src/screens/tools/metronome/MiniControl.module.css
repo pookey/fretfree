@@ -1,0 +1,40 @@
+/* The metronome's stand-in while its view is closed: a chip in the corner,
+   above the compact tab bar. */
+.mini {
+  position: fixed;
+  right: calc(var(--safe-right) + var(--space-4));
+  bottom: calc(var(--safe-bottom) + var(--space-4));
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: var(--radius-l);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.35);
+}
+
+/* Compact (size-class.ts): clear the 3.25rem tab bar. */
+@media (max-width: 743.98px), (max-height: 499.98px) {
+  .mini {
+    bottom: calc(var(--safe-bottom) + 3.25rem + var(--space-3));
+  }
+}
+
+.text {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stop {
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-m);
+  background: var(--accent-fill);
+  color: var(--accent-text);
+  font-weight: 700;
+  cursor: pointer;
+}
