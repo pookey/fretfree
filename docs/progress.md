@@ -339,6 +339,77 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
 
 **Not findings:** the walk's seeding masters the F2 skills, so "String 6 master" and "String 5 master" unlock on Progress, and the seeded CAGED reviews count as learning there while the summary says 0. The yellow 5th triangles are `--chord-fifth` (Okabe–Ito #f0e442), not the sunflower brand colour.
 
+## M5 definition of done (M5-08 QA, 2026-10-20)
+
+**M5 is done for its §11 scope, in software. Real-guitar tuning is still open.** Design §11 gives M5 no separate definition of done, so this checks its scope: "Tuner, D16 and D17, mic onboarding". Every M5 package (M5-01 to M5-07) is live. The pass ran on `origin/main` at e17426d, and production served `index-iGD_NodS.js`. Everything here was checked with a fake mic: a fake pitch source, or a sine wave fed to the shipped worklet. No real guitar or real iPad microphone was used. The hardware checks are listed after the table.
+
+The evidence is `app/e2e/m5-08.spec.ts`. Its four walks are tagged `@smoke`, so they run on all four Playwright profiles, both locally and against https://fretfree.app (16 of 16 passed on production). The walks cover:
+- **Mic setup:** the welcome screen, then the onboarding mic step. Here a 110 Hz sine runs through the shipped pitch worklet ("Mic is working. Heard A2."), and the same check runs again from Settings.
+- **The tuner:** the Tools list, then the tuner idle, flat (A2 −18 cents) and in tune (E2 +2).
+- **A refused mic:** the explanations on the onboarding step and in the tuner.
+- **The mic drills:**
+  - a day whose quests include "Play 3 answers on your guitar";
+  - D16's prompt, listening state and wrong-note feedback;
+  - D17's G major scale: the prompt, a partial run, and a wrong third note;
+  - the quest at 2 of 3 on Today, then Progress and its achievements.
+
+Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep @screens`, the walks also save each screen in dark and light: 168 shots from production. The command is in the spec header. Four reviewers went through the shots, one per profile, and I checked the main findings myself.
+
+| §11 scope | Status | Evidence |
+|---|---|---|
+| Pitch input: `PitchSource` contract, notes stable for ≥80ms, a fake source | ✅ | `mic/index.test.ts` (glitches, dropouts, serialised starts, `lost`) |
+| AudioWorklet detector (pitchy); the mic is asked for only on the learner's tap | ✅ | `detector.test.ts` (synthetic signals, octave errors, start timeout); `m5-02` |
+| Tuner, which doubles as the mic check (§7 Tools, §9) | ✅ | `tuner/logic.test.ts`, `Tuner.test.tsx`; `m5-03`, `m5-08` |
+| Mic onboarding step and Settings card | ✅ | `mic.test.tsx`; `m5-04`, `m5-08` (but see findings 6 and 7) |
+| D16 "Play the note": any position, region, or pitch class | ✅ | `d16-play-note/*.test.ts*`; `m5-05`, `m5-08` (but see findings 1, 2 and 4) |
+| D17 "Play the interval, arpeggio or scale" | ✅ | `d17-play-sequence/*.test.ts*`; `m5-06`, `m5-08` (but see finding 3) |
+| Mic drills served only in mic mode (`requiresMic`) | ✅ | `drill-picker` tests; `m5-05`, `m5-06` ("never served without mic mode") |
+| Mic quest and badges, earned by accuracy rather than volume | ✅ | `try-mic.test.ts`, badge tests; `m5-07`, `m5-08` |
+| Tuned against a real guitar and a real iPad mic | ⏳ pending | Needs the user's hardware; see below |
+| I2 arpeggios in D17 | ⏳ pending | No I2 skill yet (M6) |
+
+**Checks the brief asked for:**
+- **D17 "Show me" against the mic quest: fixed.** Commit 8a866bc leaves give-ups out (`isGiveUp`), and `m5-07`'s "a D17 'Show me' … doesn't move the quest" tests it.
+- **Toggling mic mode mid-day: still open, but bounded.** The day's draw isn't stored. `drawQuests` re-runs whenever `settings.micEnabled` changes, so `try-mic` joins or leaves and displaces at most one other quest. That quest's progress vanishes from Today while mic mode is on. `completeQuests` pays each quest id once per day. The only setting-dependent template is `try-mic`, so toggling exposes at most one extra bonus: 4 bonuses a day, not 3. Getting the 4th means either playing 3 answers into the mic, or completing the displaced quest after switching mic mode off. A 15 XP ceiling can't be farmed by repeating it. The `QuestSnapshot` comment now states this correctly. Freezing each day's draw in `dailyProgress` (an M5-07 follow-up) would close it.
+- **"8 quick questions… under 3 minutes": not true for everyone.** Without the install step there are 8 steps. Three of them aren't quick questions:
+  - calibration: 16 lit dots, about 20 s;
+  - the mic check;
+  - the placement test, which on its own has a 3-minute budget (`placement.budgetMs` 180 000).
+
+  A beginner who skips placement finishes in well under 3 minutes. A player who takes the test needs about 4. The same sentence also says "change them later in **Progress**"; it should say Settings (the M5-04 follow-up, `OnboardingFlow.tsx`).
+- **Cross-drill audio: still open.** D16 and D17 each ignore only their own miss playback (`quiet()`, `d17Accepts`). Another drill's multi-note feedback that is still sounding when a mic prompt appears can be heard as an answer. The fix proposed in M5-06 still applies: a shared "audio busy until" signal from `audio/audio.ts`.
+
+**Still to check on a real iPad and guitar.** These are all fake-tested only, and they are for the user's device pass:
+- `micLatencyMs` (150) and `playAllowanceMs` (1000) against real response times;
+- the `minRms` gate (0.002);
+- octave forgiveness. Pitch-class mode forgives an octave and region mode doesn't. At D17 scope 1, the first wrong note ends the attempt, so a brushed string grades Again at once, which may feel punitive;
+- the "Still hearing… Mute the strings" prompt as the string decays;
+- iOS's sample-rate quirk;
+- backgrounding: the app should go to `lost`, then Try again should work;
+- on iPhone, whether an open mic routes the tuner's reference tones to the earpiece.
+
+**Findings** (production screenshots, four profiles, plus code reading). None blocks M5. Fix 1–3 first:
+1. **D16's feedback hides its own answer on iPad Pro landscape and iPad mini.** D16's view is taller than the screen: the page is 933pt on an 834pt iPad Pro and 851pt on a 768pt mini, with empty space under the neck. D16 draws about 77pt per string, against about 65pt in D17. When a miss is shown, the fixed feedback bar sits right over string 6. That cuts the green A circle at fret 5, the vermillion B diamond at fret 7 and the string's label in half, and those markers are the whole "right against wrong" feedback. Fit the D16 neck to the screen, as D17 does, and keep the answer markers above the bar. D17 also scrolls on the mini (775–811pt).
+2. **The light-theme root marker fails contrast on every neck.** The neck tokens have no light values (`tokens.css`), so the wood stays dark brown. `--root` does switch to `#965800` in light mode, and the fretboard fills root markers with it (`Fretboard.module.css:96`). On the wood that is about 2:1, and the dark label on the fill is about 2.8:1, which fails WCAG AA. D17's root square shows it clearly (09/09c light). This isn't specific to M5: every root marker in light theme is affected. Give neck markers their own token that doesn't change with the theme. It stays Okabe–Ito orange, not the brand colour.
+3. **D17's feedback doesn't show the wrong note against the right one.** After G, A, A♯, slot 3 shows "✗ A♯" but never the B that was due. The neck draws the whole G major fingering in green, with no marker for the A♯ played and nothing to set the missed B apart. The explanation text does say "After A comes B". D16 gets this right: a diamond for the note played and a circle for the target. D17 should mark the missed degree on the neck and in its slot.
+4. **D16 contradicts itself, and has no way out when the mic fails.**
+   - In pitch-class mode (scope 0), the prompt says "Play A on string 6" and then "Any A counts, in any octave". The mic can't tell which string was played, so the prompt shouldn't name one in that mode (or should say "for example on string 6").
+   - D16 has no "Show me" or skip. If the mic is refused, lost or unsupported, only "Try again" shows; for `unsupported`, nothing does. A learner with mic mode on whose permission was revoked is stuck on every D16 item until they quit the session. D17 offers "Show me". D16 should too, and it should also give design §10 a keyboard path.
+   - The mic stops whenever a D16 or D17 view unmounts, so a mixed session asks for "Start listening" each time a mic drill comes back. A mic owned by the session while mic mode is on would fix it (M5-06 follow-up).
+5. **"That was A." reads as what the learner played.** The wrong-answer bar for both mic drills says "That was A. You'll see it again shortly." right after "You played B2". D17 says "That was G A B C D E F♯ G", which repeats the explanation line above it. In a play drill, "The answer was A" would be clearer.
+6. **Mic copy disagrees across screens:**
+   - **Refusal help:** onboarding says "Settings › Apps › Safari › Microphone (on an iPad)", which is wrong on an iPhone. The tuner says "the page settings button in the address bar, then Website Settings". `MIC_ERROR_COPY` (onboarding), D16, D17 and the tuner each have their own error strings, such as "can't listen for pitch / for notes / to your guitar". One shared copy module would fix it (the M5-04 follow-up).
+   - **Privacy line:** D16 says "listens through the microphone and records nothing", above its button. D17 says "listens through the mic; nothing is recorded or sent", below its button.
+   - **Apostrophes:** straight and curly are mixed ("You'll", "won't" and "today's" against "can’t").
+7. **Settings and onboarding mic controls are cramped.**
+   - In the Settings mic card, "Open the tuner" touches "Check the microphone" (or "Stop listening") with about 1pt between them. On the mini both wrap to two lines.
+   - On the mini, the Daily goal select is truncated ("Regular: 10 minutes a").
+   - The onboarding mic step shows "Not now", "Skip this step" and "Skip setup" at once, and the first two do the same thing.
+8. **D16 and D17 show the generic "Musical alphabet" panel.** Neither drill declares a `contextPanel`, the same pattern as M3 finding 3. D16 could show the note's positions per string. D17 could show the interval or scale formula without giving away the next note.
+9. **Phone (best effort):** the tuner's note and cents readout sits below the fold under the needle, and on a sideways phone the reading is the main thing a learner needs. On Today, the page itself scrolls past the tab bar (1737px captures).
+
+**Not findings:** the walk seeds one review the day before and a month-old D7 history, so Today's "Due reviews" tile and Progress's counts reflect that seeding. The mastery map's yellow "90 days or more" band is a Progress legend colour, not the sunflower brand colour on a drill's neck. The 12th-fret double inlay and string letters on session necks, against a single inlay and string numbers on the mastery map, are long-standing differences between the two components.
+
 ## Fan-out incidents and fixes (2026-10-18)
 
 - **Stale Vitest module cache (fixed, a53c400).** Vitest 5's `fsModuleCache` reused a cached `import.meta.glob` expansion in the long-lived main checkout, so `pnpm verify` on main lost M1-03's new skill files while fresh worktrees passed. The quality gate now runs with `fsModuleCache: false`.
