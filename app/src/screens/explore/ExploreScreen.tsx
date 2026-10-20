@@ -63,7 +63,11 @@ class LoadFailed extends Component<{ title: string; children: ReactNode }, { fai
     return (
       <div role="alert">
         <p>Couldn’t load {this.props.title}. Check your connection, then reload.</p>
-        <button type="button" onClick={() => window.location.reload()}>
+        <button
+          type="button"
+          className={styles.secondaryButton}
+          onClick={() => window.location.reload()}
+        >
           Reload
         </button>
       </div>
