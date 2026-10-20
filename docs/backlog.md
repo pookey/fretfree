@@ -905,7 +905,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Diatonic chords per key, Roman and Nashville numerals, a progression catalogue (research/03 C9, including rotations), capo and transposition maths, and the circle of fifths.
 
 ### M4-02 · C8 skills plus D11 "Roman numeral ↔ chord"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-01
 - **Owns:** `app/src/engine/skills/c8.ts`, `app/src/drills/d11-numerals/**`, `app/e2e/m4-02.spec.ts`
 
