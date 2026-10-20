@@ -41,7 +41,9 @@ export const EAR_FIND_SKILL = 'I6.ear-find';
 
 export const skills: Skill[] = [
   {
-    id: EAR_FIND_SKILL,
+    // A literal, not EAR_FIND_SKILL: e2e/helpers/skills.ts reads skill IDs
+    // from the sources, so the seeds can master this skill.
+    id: 'I6.ear-find',
     topic: 'I6',
     // With the other I6 skills: the Ear module's place in the goal profile
     // decides when it is offered (engine/frontier).
