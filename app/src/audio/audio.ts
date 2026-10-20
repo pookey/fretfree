@@ -47,6 +47,14 @@ export function loadTone(): Promise<ToneModule> {
   }));
 }
 
+/**
+ * Tone, if it has loaded, whoever loaded it; `null` before. Its
+ * `getContext()` is the live context, the gesture's one once adopted.
+ */
+export function loadedTone(): ToneModule | null {
+  return toneModule;
+}
+
 export function isAudioUnlocked(): boolean {
   return unlocked;
 }

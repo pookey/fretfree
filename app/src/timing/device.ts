@@ -1,9 +1,12 @@
 /**
  * The timing engine's links to the device: the audio clock taps are mapped
- * onto, and the output latency to take off onsets, both read from Tone's
- * context once Tone has loaded (it loads lazily, on the first sound).
+ * onto, and the output latency to take off onsets, both read live from Tone's
+ * context whenever Tone has loaded, whoever loaded it (the metronome, the
+ * mic, the guitar). After M4-13 that may be the context the first tap made,
+ * which Tone adopts, so it is always read through `getContext()`, never kept.
+ * Nothing here loads Tone: only an unlock inside a gesture should.
  */
-import { loadTone } from '../audio/audio';
+import { loadedTone } from '../audio/audio';
 import type { TimingOffsets } from '../engine/model';
 import { createAudioClock, type AudioClock } from './clock';
 import {
@@ -15,29 +18,19 @@ import {
 } from './latency';
 import { createTapOnsetSource, type TapSource } from './onsets';
 
-type ToneModule = typeof import('tone');
-
-let tone: ToneModule | null = null;
-
 function rawContext(): (LatencyReport & { currentTime: number }) | null {
-  return tone
-    ? (tone.getContext().rawContext as unknown as LatencyReport & { currentTime: number })
+  const Tone = loadedTone();
+  return Tone
+    ? (Tone.getContext().rawContext as unknown as LatencyReport & { currentTime: number })
     : null;
 }
 
-/** The audio clock: Tone's context, against `performance.now()`. Null until Tone loads. */
+/** The audio clock: Tone's live context, against `performance.now()`. Null until Tone loads. */
 export function createToneClock(): AudioClock {
-  const clock = createAudioClock({
+  return createAudioClock({
     contextSeconds: () => rawContext()?.currentTime ?? null,
     pageMs: () => performance.now(),
   });
-  return {
-    ...clock,
-    start() {
-      void loadTone().then((Tone) => (tone = Tone));
-      clock.start();
-    },
-  };
 }
 
 /** Taps on the audio clock the metronome runs on. */
