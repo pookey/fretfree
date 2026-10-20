@@ -36,7 +36,10 @@ import type { Engraving } from './render';
 import styles from './Staff.module.css';
 
 export interface StaffTap {
-  /** The note whose column is nearest the tap, if there are notes. */
+  /**
+   * The note whose column is nearest a pointer tap, if there are notes.
+   * Keyboard and VoiceOver picks name a position, not a column, so leave it out.
+   */
   nearestNote?: number;
 }
 
@@ -289,8 +292,11 @@ function Overlay({
   const [ghost, setGhost] = useState<Ghost | null>(null);
   const [focus, setFocus] = useState<StaffPosition>(() => clamp(4, g.range));
   const pressing = useRef(false);
-  // A pointer pick is followed by a click; only a click on its own (VoiceOver) picks.
-  const pickedByPointer = useRef(false);
+  // A pointer pick is usually followed by a click, which must not pick again.
+  // iOS sends none after a press that slid, so the guard only covers a click
+  // that arrives promptly (by event time); a later lone click (VoiceOver,
+  // Switch Control) still picks.
+  const pointerPickedAt = useRef<number | null>(null);
 
   const positions: StaffPosition[] = [];
   for (let p = g.range[1]; p >= g.range[0]; p--) positions.push(p);
@@ -307,7 +313,7 @@ function Overlay({
   const onPointerDown = (e: PointerEvent<SVGSVGElement>) => {
     if (!interactive || e.button > 0) return;
     pressing.current = true;
-    pickedByPointer.current = false;
+    pointerPickedAt.current = null;
     e.currentTarget.setPointerCapture?.(e.pointerId);
     setGhost(ghostAt(e));
   };
@@ -320,7 +326,7 @@ function Overlay({
     const picked = ghostAt(e) ?? ghost;
     setGhost(null);
     if (!picked) return;
-    pickedByPointer.current = true;
+    pointerPickedAt.current = e.timeStamp;
     setFocus(picked.position);
     onPick(picked.position, { nearestNote: picked.nearestNote });
   };
@@ -331,7 +337,7 @@ function Overlay({
 
   const pickBand = (p: StaffPosition) => {
     setFocus(p);
-    onPick(p, { nearestNote: nearestNote(ghostX(undefined)) });
+    onPick(p, {});
   };
   // Bands delegate to the svg, so one handler serves them all.
   const bandOf = (e: { target: EventTarget }) => {
@@ -340,10 +346,9 @@ function Overlay({
   };
   const onClick = (e: MouseEvent<SVGSVGElement>) => {
     const p = bandOf(e);
-    if (pickedByPointer.current) {
-      pickedByPointer.current = false;
-      return;
-    }
+    const pickedAt = pointerPickedAt.current;
+    pointerPickedAt.current = null;
+    if (pickedAt !== null && e.timeStamp - pickedAt < CLICK_AFTER_POINTER_MS) return;
     if (p !== undefined) pickBand(p);
   };
   const onKeyDown = (e: KeyboardEvent<SVGSVGElement>) => {
@@ -470,6 +475,9 @@ function Halo({ style, x, y }: { style: StaffNoteStyle; x: number; y: number }) 
   }
   return <circle className={cls} cx={x} cy={y} r={style === 'correct' ? 10 : 9} />;
 }
+
+/** How soon after a pointer pick its own click arrives. */
+const CLICK_AFTER_POINTER_MS = 1000;
 
 function clamp(p: StaffPosition, range: PositionRange): StaffPosition {
   return Math.min(range[1], Math.max(range[0], p));

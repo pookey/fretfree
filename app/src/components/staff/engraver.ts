@@ -25,19 +25,28 @@ export function loadEngraver(): Promise<Engraver> {
   ));
 }
 
-/** The engraver, or `null` while it downloads (and if it fails to). */
+/**
+ * The engraver, or `null` while it downloads. A failed download (offline
+ * before the precache) is retried when the device comes back online.
+ */
 export function useEngraver(): Engraver | null {
   const [engraver, setEngraver] = useState(loaded ?? null);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (engraver) return;
     let live = true;
+    const retry = () => live && setAttempt((a) => a + 1);
     loadEngraver().then(
       (e) => live && setEngraver(e),
-      (e: unknown) => console.error('Loading the notation renderer failed', e),
+      (e: unknown) => {
+        console.error('Loading the notation renderer failed', e);
+        if (live) window.addEventListener('online', retry, { once: true });
+      },
     );
     return () => {
       live = false;
+      window.removeEventListener('online', retry);
     };
-  }, [engraver]);
+  }, [engraver, attempt]);
   return engraver;
 }

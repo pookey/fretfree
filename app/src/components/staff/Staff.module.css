@@ -99,7 +99,7 @@
 
 .halo.target,
 .halo.current {
-  fill: rgb(86 180 233 / 0.18);
+  fill: color-mix(in srgb, var(--tone) 18%, transparent);
   stroke: var(--tone);
   stroke-width: 2;
 }
@@ -195,7 +195,7 @@
 }
 
 .hit:focus-visible {
-  fill: rgb(86 180 233 / 0.18);
+  fill: color-mix(in srgb, var(--tone) 18%, transparent);
   stroke: var(--tone);
   stroke-width: 1;
 }

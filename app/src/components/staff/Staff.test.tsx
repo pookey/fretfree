@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { createEvent, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Element as VexElement } from 'vexflow/bravura';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -314,9 +314,9 @@ describe('<Staff> hit-testing', () => {
     await user.keyboard('{PageDown}');
     expect(document.activeElement).toHaveAccessibleName('line 1');
     await user.keyboard('{Enter}');
-    expect(onTap).toHaveBeenLastCalledWith(0, { nearestNote: undefined });
+    expect(onTap).toHaveBeenLastCalledWith(0, {});
     await user.keyboard('{ArrowUp} ');
-    expect(onTap).toHaveBeenLastCalledWith(1, { nearestNote: undefined });
+    expect(onTap).toHaveBeenLastCalledWith(1, {});
     expect(within(staff).getByRole('button', { name: 'space 1' })).toHaveAttribute('tabindex', '0');
   });
 
@@ -324,7 +324,35 @@ describe('<Staff> hit-testing', () => {
     const onTap = vi.fn();
     const { staff } = await renderStaff({ onTapPosition: onTap });
     fireEvent.click(within(staff).getByRole('button', { name: 'space 4' }));
-    expect(onTap).toHaveBeenCalledWith(7, { nearestNote: undefined });
+    expect(onTap).toHaveBeenCalledWith(7, {});
+  });
+
+  it('still picks from a lone click long after a slid press that sent no click', async () => {
+    const onTap = vi.fn();
+    const { staff } = await renderStaff({ onTapPosition: onTap });
+    const overlay = sizeOverlay(staff);
+    const at = <E extends Event>(event: E, timeStamp: number) => {
+      Object.defineProperty(event, 'timeStamp', { value: timeStamp });
+      return event;
+    };
+    fireEvent.pointerDown(overlay, { clientX: 60, clientY: 40, pointerId: 1 });
+    fireEvent(overlay, at(createEvent.pointerUp(overlay, { clientX: 60, clientY: 40 }), 1000));
+    expect(onTap).toHaveBeenCalledTimes(1);
+    // iOS sent no click after the slide; VoiceOver activates a band later.
+    const band = within(staff).getByRole('button', { name: 'space 4' });
+    fireEvent(band, at(createEvent.click(band), 6000));
+    expect(onTap).toHaveBeenLastCalledWith(7, {});
+    expect(onTap).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports no nearest note for a keyboard pick', async () => {
+    const onTap = vi.fn();
+    const user = userEvent.setup();
+    const { staff } = await renderStaff({ notes: PHRASE.slice(0, 3), onTapPosition: onTap });
+    within(staff).getByRole('button', { name: 'line 3' }).focus();
+    await user.keyboard('{Enter}');
+    expect(onTap).toHaveBeenLastCalledWith(4, {});
+    expect(onTap.mock.lastCall?.[1]).not.toHaveProperty('nearestNote');
   });
 
   it('lets the caller name positions', async () => {
