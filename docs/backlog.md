@@ -785,7 +785,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Unit tests for the item model and grading, plus an e2e test on the iPad projects with the happy path tagged `@smoke`.
 
 ### M3-14 · D37 "Chord tones across the neck" (multi-target)
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-03, M2-03, M3-18
 - **Design:** §6 D37, §7 (iPad multi-target drills), research/03 C7/I2
 - **Owns:** `app/src/drills/d37-chord-tones-neck/**`, `app/src/engine/skills/c5-tones.ts`, `app/e2e/m3-14.spec.ts`
