@@ -71,7 +71,8 @@ export function createStartHandler(deps: StartDeps): (event: HttpEvent) => Promi
       );
     } catch (error) {
       // Nothing was sent, so drop the issue: no cooldown, and a retry can send.
-      await deps.store.consume(key, record.salt);
+      // The send error is the one to report, so a failed cleanup can't hide it.
+      await deps.store.consume(key, record.salt).catch(() => false);
       throw error;
     }
     return json(202, { ok: true, expiresIn: SIGN_IN.ttlSeconds });

@@ -116,6 +116,15 @@ describe('POST /auth/start', () => {
     expect(await r.answer('ada@example.com', r.lastEmail().code)).toBe(true);
   });
 
+  it('reports the send error even when dropping the issue fails too', async () => {
+    const r = rig();
+    r.mail.failNext = true;
+    r.store.consume = async () => {
+      throw new Error('DynamoDB is down');
+    };
+    await expect(r.request({ email: 'ada@example.com' })).rejects.toThrow('SES is down');
+  });
+
   it('limits emails per address per window', async () => {
     const r = rig();
     const statuses: number[] = [];
