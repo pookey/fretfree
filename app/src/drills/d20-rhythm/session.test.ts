@@ -76,6 +76,22 @@ describe('D20 in a session', () => {
     });
   });
 
+  it('isn’t served with sound off: the click is the prompt', async () => {
+    const r = await SessionRunner.start({
+      db,
+      scheduler: createScheduler({ enableFuzz: false }),
+      settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 500, soundOn: false },
+      skills: SKILLS,
+      drills: DRILLS,
+      now: () => clock,
+      rng: () => 0,
+      maxItems: 4,
+      focus: { skillIds: ['F4.pulse'], itemIds: [] },
+    });
+    expect(getDrill(D20_ID)?.requiresSound).toBe(true);
+    expect(r.isEmpty).toBe(true);
+  });
+
   it('rates an unguided take from its timing, and a take out of time Again', async () => {
     const scheduler = createScheduler({ enableFuzz: false });
     await db.cards.bulkPut(

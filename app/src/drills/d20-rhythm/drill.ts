@@ -25,6 +25,8 @@ const tapStrumRhythm: DrillType<D20Prompt, D20Answer> = {
   skills: SKILLS.filter((s) => s.drillTypes.includes(D20_ID)).map((s) => s.id),
   // The pad (pointer, Space or Enter), or a real guitar in mic mode.
   inputModes: ['tap', 'keyboard', 'mic'],
+  // The click is the prompt: with sound off it is silent, so nothing can be timed.
+  requiresSound: true,
   scope: D20_SCOPE,
   // The hit-by-hit marks are the feedback: keep a right answer's on screen.
   feedbackHoldMs: ENGINE_CONFIG.rhythm.feedbackHoldMs,
