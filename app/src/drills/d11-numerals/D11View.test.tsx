@@ -45,10 +45,10 @@ const fb = (p: D11Prompt, answer: D11Answer) => ({ answer, result: d11Check(p, a
 const choices = () => within(screen.getByRole('group')).getAllByRole('button');
 
 describe('<D11View>', () => {
-  it('is registered as the numerals drill for both C8 skills', async () => {
+  it('is registered as the numerals drill for C8 and I4’s minor keys', async () => {
     const drill = getDrill('numerals');
     expect(await resolveView(drill!.render)).toBe(D11View);
-    expect(drill?.skills).toEqual(['C8.numerals-major', 'C8.nashville']);
+    expect(drill?.skills).toEqual(['C8.numerals-major', 'C8.nashville', 'I4.minor-numerals']);
     expect(drill?.inputModes).toEqual(['choice', 'keyboard']);
   });
 

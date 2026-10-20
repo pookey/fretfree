@@ -1,0 +1,230 @@
+/* The function drill: no neck, so the card sits in the upper band with the
+   context panel beside it. */
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  align-items: center;
+}
+
+.question {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.key {
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  border: 2px solid var(--root);
+  border-radius: var(--radius-m);
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.cue {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.cueNote {
+  margin: 0;
+  color: var(--text-muted);
+  font-weight: 650;
+}
+
+.prompt {
+  margin: 0;
+  max-width: 44rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  max-width: 44rem;
+}
+
+.choice {
+  min-width: 6rem;
+  min-height: 4rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.625rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+/* Words and chord runs: wider buttons in smaller type. */
+.choices[data-wide] .choice {
+  min-width: 12rem;
+  font-size: 1.125rem;
+}
+
+/* A progression reads left to right, so its chords stay on one line on iPad. */
+.choices[data-progression] {
+  flex-wrap: nowrap;
+}
+
+.choice:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .choice:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.choice:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+
+.choice:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.choice[data-state='correct'] {
+  background: var(--correct);
+  border-color: var(--correct);
+  color: #fff;
+  opacity: 1;
+}
+
+.choice[data-state='wrong'] {
+  background: var(--wrong);
+  border-color: var(--wrong);
+  color: #fff;
+  opacity: 1;
+}
+
+/* The answer missed: a dashed edge, so it reads without colour. */
+.choice[data-state='expected'] {
+  border-color: var(--correct);
+  border-style: dashed;
+  opacity: 1;
+}
+
+.feedback {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 44rem;
+}
+
+.explanation {
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-6);
+  border-left: 3px solid var(--wrong);
+  background: var(--bg-raised);
+  border-radius: var(--radius-s);
+  line-height: 1.45;
+}
+
+.explanation li + li {
+  margin-top: var(--space-2);
+}
+
+.fact {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .choice {
+    transition:
+      background 0.12s,
+      transform 0.08s;
+  }
+}
+
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .top {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .cue {
+  font-size: 2.5rem;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1rem;
+}
+
+.drill[data-size-class='compact'] .choices {
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.drill[data-size-class='compact'] .choice {
+  min-width: 4.5rem;
+  min-height: 2.75rem;
+  padding: 0 var(--space-2);
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .choices[data-wide] .choice {
+  min-width: 0;
+  flex: 1 1 100%;
+  font-size: 1rem;
+}
+
+/* A phone has no room for six chords in a row: let the progression wrap. */
+.drill[data-size-class='compact'] .choices[data-progression] {
+  flex-wrap: wrap;
+}
+
+.drill[data-size-class='compact'] .feedback {
+  font-size: 0.875rem;
+}
+
+.drill[data-size-class='compact'] .explanation {
+  padding-left: var(--space-5);
+}
+
+.drill[data-size-class='compact'] .fact {
+  font-size: 0.9375rem;
+}
