@@ -1,5 +1,5 @@
 import { SIGN_IN } from './config';
-import { answerMatches, emailKey, normaliseEmail } from './secrets';
+import { answerMatches, emailKey, isCodeAnswer, normaliseEmail } from './secrets';
 import type { SignInStore } from './store';
 
 /** The parts of the Cognito custom-auth trigger events the handler reads and writes. */
@@ -62,9 +62,14 @@ export async function verifyAnswer(
   if (!email || !answer) return false;
   const key = emailKey(email);
   const now = Math.floor(deps.now() / 1000);
-  // Count the attempt first, atomically, so parallel guesses can't exceed the limit.
-  const pending = await deps.store.useAttempt(key, now, SIGN_IN.maxAttempts);
-  if (!pending || !answerMatches(pending, answer)) return false;
+  // A code is guessable, so each code answer is counted first, atomically, and
+  // parallel guesses can't exceed the limit. A link token (256 random bits)
+  // isn't, so it spends no attempt: wrong codes sent by someone who only knows
+  // the address can't stop the link from working.
+  const pending = isCodeAnswer(answer)
+    ? await deps.store.useAttempt(key, now, SIGN_IN.maxAttempts)
+    : await deps.store.get(key);
+  if (!pending || pending.expiresAt <= now || !answerMatches(pending, answer)) return false;
   // Single use: only one answer can delete this issue.
   return deps.store.consume(key, pending.salt);
 }

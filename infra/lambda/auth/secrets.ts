@@ -54,12 +54,15 @@ export function issue(
 }
 
 const CODE = new RegExp(`^\\d{${SIGN_IN.codeDigits}}$`);
+const compact = (answer: string): string => answer.replace(/\s+/g, '');
+
+/** True when `answer` has the shape of a code (spaces allowed), not a link token. */
+export const isCodeAnswer = (answer: string): boolean => CODE.test(compact(answer));
 
 /** True when `answer` is this issue's code (spaces allowed) or its link token. */
 export function answerMatches(record: PendingSignIn, answer: string): boolean {
-  const compact = answer.replace(/\s+/g, '');
-  const expected = CODE.test(compact) ? record.codeHash : record.linkHash;
-  const actual = hashSecret(record.salt, compact);
+  const expected = isCodeAnswer(answer) ? record.codeHash : record.linkHash;
+  const actual = hashSecret(record.salt, compact(answer));
   return timingSafeEqual(Buffer.from(actual, 'hex'), Buffer.from(expected, 'hex'));
 }
 

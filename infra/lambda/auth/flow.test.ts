@@ -12,13 +12,20 @@ function rig() {
   const clock = { ms: 1_700_000_000_000 };
   const sent: { to: string; message: SignInEmail }[] = [];
   const users = new Set<string>();
+  const mail = { failNext: false };
   const start = createStartHandler({
     store,
     now: () => clock.ms,
     siteUrl: 'https://fretfree.app',
     brand: 'Fret Free',
     ensureUser: async (email) => void users.add(email),
-    sendEmail: async (to, message) => void sent.push({ to, message }),
+    sendEmail: async (to, message) => {
+      if (mail.failNext) {
+        mail.failNext = false;
+        throw new Error('SES is down');
+      }
+      sent.push({ to, message });
+    },
   });
   const triggers = createTriggerHandler({ store, now: () => clock.ms });
   const request = (body: unknown, ip = '203.0.113.9') =>
@@ -44,7 +51,7 @@ function rig() {
     return { code, token, link };
   };
   const advance = (seconds: number) => (clock.ms += seconds * 1000);
-  return { store, sent, users, request, answer, lastEmail, advance, triggers };
+  return { store, sent, users, mail, request, answer, lastEmail, advance, triggers };
 }
 
 describe('POST /auth/start', () => {
@@ -86,6 +93,27 @@ describe('POST /auth/start', () => {
     expect(res.statusCode).toBe(429);
     expect(res.headers['retry-after']).toBe(String(SIGN_IN.resendCooldownSeconds - 10));
     expect(r.sent).toHaveLength(1);
+  });
+
+  it('sends one email when two requests race, and makes the other wait', async () => {
+    const r = rig();
+    const [a, b] = await Promise.all([
+      r.request({ email: 'ada@example.com' }),
+      r.request({ email: 'ada@example.com' }),
+    ]);
+    expect([a.statusCode, b.statusCode].sort()).toEqual([202, 429]);
+    expect(r.sent).toHaveLength(1);
+    // The stored issue is the one that was emailed.
+    expect(await r.answer('ada@example.com', r.lastEmail().code)).toBe(true);
+  });
+
+  it('starts no cooldown when the email fails to send', async () => {
+    const r = rig();
+    r.mail.failNext = true;
+    await expect(r.request({ email: 'ada@example.com' })).rejects.toThrow('SES is down');
+    expect(r.store.records.size).toBe(0);
+    expect((await r.request({ email: 'ada@example.com' })).statusCode).toBe(202);
+    expect(await r.answer('ada@example.com', r.lastEmail().code)).toBe(true);
   });
 
   it('limits emails per address per window', async () => {
@@ -144,6 +172,35 @@ describe('verifying an answer', () => {
       expect(await r.answer('ada@example.com', '000000')).toBe(false);
     }
     expect(await r.answer('ada@example.com', code)).toBe(false);
+  });
+
+  it('keeps the link working after the code attempts run out', async () => {
+    const r = rig();
+    await r.request({ email: 'ada@example.com' });
+    const { token } = r.lastEmail();
+    // Someone who knows only the address sends wrong codes until the code is dead.
+    for (let i = 0; i < SIGN_IN.maxAttempts + 3; i++) {
+      expect(await r.answer('ada@example.com', '000000')).toBe(false);
+    }
+    expect(await r.answer('ada@example.com', token)).toBe(true);
+  });
+
+  it("doesn't spend code attempts on wrong link tokens", async () => {
+    const r = rig();
+    await r.request({ email: 'ada@example.com' });
+    const { code } = r.lastEmail();
+    for (let i = 0; i < SIGN_IN.maxAttempts + 3; i++) {
+      expect(await r.answer('ada@example.com', `not-the-token-${i}`)).toBe(false);
+    }
+    expect(await r.answer('ada@example.com', code)).toBe(true);
+  });
+
+  it('expires the link too', async () => {
+    const r = rig();
+    await r.request({ email: 'ada@example.com' });
+    const { token } = r.lastEmail();
+    r.advance(SIGN_IN.ttlSeconds);
+    expect(await r.answer('ada@example.com', token)).toBe(false);
   });
 
   it('only accepts the newest email', async () => {

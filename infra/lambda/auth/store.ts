@@ -4,8 +4,12 @@ import type { PendingSignIn } from './secrets';
 /** Pending sign-ins and rate-limit counters. Times are epoch seconds. */
 export interface SignInStore {
   get(key: string): Promise<PendingSignIn | undefined>;
-  /** Replaces any earlier issue for the key, so only the newest email works. */
-  put(key: string, record: PendingSignIn): Promise<void>;
+  /**
+   * Replaces any earlier issue for the key, so only the newest email works, unless
+   * that issue was sent after `sentBefore`. False then: the resend cooldown holds,
+   * even for two requests racing each other.
+   */
+  putUnlessRecent(key: string, record: PendingSignIn, sentBefore: number): Promise<boolean>;
   /**
    * Counts one answer against the pending sign-in and returns it, or undefined
    * when there is none, it has expired, or it has no attempts left.
@@ -58,8 +62,19 @@ export function dynamoStore(call: AwsCall, tableName: string): SignInStore {
       };
       return out.Item ? fromItem(out.Item) : undefined;
     },
-    async put(key, record) {
-      await call('PutItem', { TableName: tableName, Item: toItem(key, record) });
+    async putUnlessRecent(key, record, sentBefore) {
+      try {
+        await call('PutItem', {
+          TableName: tableName,
+          Item: toItem(key, record),
+          ConditionExpression: 'attribute_not_exists(pk) OR sentAt <= :before',
+          ExpressionAttributeValues: { ':before': { N: String(sentBefore) } },
+        });
+        return true;
+      } catch (error) {
+        if (conditionFailed(error)) return false;
+        throw error;
+      }
     },
     async useAttempt(key, now, maxAttempts) {
       try {
@@ -118,8 +133,11 @@ export function memoryStore(): SignInStore & { records: Map<string, PendingSignI
       const r = records.get(key);
       return r && { ...r };
     },
-    async put(key, record) {
+    async putUnlessRecent(key, record, sentBefore) {
+      const current = records.get(key);
+      if (current && current.sentAt > sentBefore) return false;
       records.set(key, { ...record });
+      return true;
     },
     async useAttempt(key, now, maxAttempts) {
       const r = records.get(key);

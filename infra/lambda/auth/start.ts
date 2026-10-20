@@ -6,7 +6,7 @@ import type { SignInStore } from './store';
 
 export interface StartDeps {
   store: SignInStore;
-  /** Creates the Cognito user for `email` if there isn't one. */
+  /** Creates the Cognito user for `email` if there isn't one, ready to sign in. */
   ensureUser(email: string): Promise<void>;
   sendEmail(to: string, message: SignInEmail): Promise<void>;
   /** Epoch milliseconds. */
@@ -54,16 +54,26 @@ export function createStartHandler(deps: StartDeps): (event: HttpEvent) => Promi
 
     await deps.ensureUser(email);
     const { code, token, record } = issue(now, deps.secrets);
-    await deps.store.put(key, record);
-    await deps.sendEmail(
-      email,
-      signInEmail({
-        brand: deps.brand,
-        code,
-        link: signInLink(deps.siteUrl, email, token),
-        minutes: Math.round(SIGN_IN.ttlSeconds / 60),
-      }),
-    );
+    // The check above gives the common case its exact wait. This conditional
+    // write closes the race: of two requests at once, one sends and one waits.
+    if (!(await deps.store.putUnlessRecent(key, record, now - SIGN_IN.resendCooldownSeconds))) {
+      return limited(SIGN_IN.resendCooldownSeconds);
+    }
+    try {
+      await deps.sendEmail(
+        email,
+        signInEmail({
+          brand: deps.brand,
+          code,
+          link: signInLink(deps.siteUrl, email, token),
+          minutes: Math.round(SIGN_IN.ttlSeconds / 60),
+        }),
+      );
+    } catch (error) {
+      // Nothing was sent, so drop the issue: no cooldown, and a retry can send.
+      await deps.store.consume(key, record.salt);
+      throw error;
+    }
     return json(202, { ok: true, expiresIn: SIGN_IN.ttlSeconds });
   };
 }

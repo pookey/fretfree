@@ -1,7 +1,7 @@
-import { randomBytes } from 'node:crypto';
-import { errorName, sdkCall } from '../shared/aws';
+import { sdkCall } from '../shared/aws';
 import { createStartHandler } from './start';
 import { dynamoStore } from './store';
+import { createEnsureUser } from './users';
 
 // The POST /auth/start Lambda: the pure handler wired to the runtime's AWS SDK.
 // Config comes from the environment the stack sets (lib/sync-stack.ts).
@@ -24,31 +24,7 @@ export const handler = (() => {
     now: Date.now,
     siteUrl: env('SITE_URL'),
     brand: env('BRAND_NAME'),
-    async ensureUser(email) {
-      try {
-        await cognito('AdminCreateUser', {
-          UserPoolId: userPoolId,
-          Username: email,
-          UserAttributes: [
-            { Name: 'email', Value: email },
-            // Signing in proves the address: only its inbox gets the code.
-            { Name: 'email_verified', Value: 'true' },
-          ],
-          MessageAction: 'SUPPRESS',
-        });
-      } catch (error) {
-        if (errorName(error) === 'UsernameExistsException') return;
-        throw error;
-      }
-      // A new user starts in FORCE_CHANGE_PASSWORD. A permanent random password
-      // confirms it; the app client allows no password flow, so it's never used.
-      await cognito('AdminSetUserPassword', {
-        UserPoolId: userPoolId,
-        Username: email,
-        Password: `${randomBytes(48).toString('base64url')}Aa1!`,
-        Permanent: true,
-      });
-    },
+    ensureUser: createEnsureUser(cognito, userPoolId),
     async sendEmail(to, message) {
       await ses('SendEmail', {
         FromEmailAddress: fromHeader(env('EMAIL_FROM_NAME'), env('EMAIL_FROM')),

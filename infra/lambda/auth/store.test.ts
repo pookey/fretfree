@@ -43,8 +43,21 @@ describe('dynamoStore', () => {
       'GetItem',
       { TableName: 'SignIn', Key: { pk: { S: 'k' } }, ConsistentRead: true },
     ]);
-    await store.put('k', record);
-    expect(calls[1]).toEqual(['PutItem', { TableName: 'SignIn', Item: item }]);
+  });
+
+  it('writes a new issue only when the last one is older than the cooldown', async () => {
+    const { calls, store } = fake(() => ({}));
+    expect(await store.putUnlessRecent('k', record, 1050)).toBe(true);
+    expect(calls[0]).toEqual([
+      'PutItem',
+      {
+        TableName: 'SignIn',
+        Item: item,
+        ConditionExpression: 'attribute_not_exists(pk) OR sentAt <= :before',
+        ExpressionAttributeValues: { ':before': { N: '1050' } },
+      },
+    ]);
+    expect(await fake(conditionFailed).store.putUnlessRecent('k', record, 1050)).toBe(false);
   });
 
   it('returns undefined for a missing record', async () => {
@@ -79,6 +92,7 @@ describe('dynamoStore', () => {
     });
     await expect(store.useAttempt('k', 1, 1)).rejects.toThrow('throttled');
     await expect(store.consume('k', 's')).rejects.toThrow('throttled');
+    await expect(store.putUnlessRecent('k', record, 1)).rejects.toThrow('throttled');
   });
 
   it('increments a counter that keeps its first expiry', async () => {
