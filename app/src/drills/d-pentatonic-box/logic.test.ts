@@ -217,6 +217,16 @@ describe('overlay prompts (penta-box)', () => {
     ]);
   });
 
+  it('has no box below one in open position', () => {
+    // rng 4/12 at scope 1 picks E; E minor box 1's lowest placement is frets 0–3.
+    const open = make('penta-box:1@minor', { scopeLevel: 1, rng: () => 4 / 12 });
+    expect(open.root).toBe('E');
+    expect(open.span).toEqual({ from: 0, to: 3 });
+    expect(open.neighbours.map((n) => n.box)).toEqual([2]);
+    // String 1, fret 10 is in box 5 an octave up, not next to this box: no confusion.
+    expect(dpbConfusedWith(open, at(1, 10))).toBeUndefined();
+  });
+
   it('wraps the box’s CAGED shape for every box number', () => {
     for (const box of BOX_NUMBERS) {
       for (const quality of ['minor', 'major'] as const) {

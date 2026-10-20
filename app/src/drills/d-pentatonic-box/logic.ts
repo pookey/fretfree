@@ -230,13 +230,15 @@ function neighboursOf(
   tuning: Tuning,
 ): DpbPrompt['neighbours'] {
   const own = placement.notes;
-  const near = (b: BoxNumber, minFret: number) => {
+  const near = (b: BoxNumber, minFret: number, below: boolean) => {
     let placed;
     try {
       placed = pentatonicBox(root, quality, b, { minFret });
     } catch {
       return []; // No room for it at the top of the neck.
     }
+    // In open position there is no room below: the placement is the box an octave up.
+    if (below && placed.span.from >= placement.from) return [];
     const notes = retune(placed.notes, tuning)
       .filter((n) => n.fret >= 0 && !has(own, n))
       .map((n) => ({ string: n.string, fret: n.fret }));
@@ -244,8 +246,8 @@ function neighboursOf(
   };
   // The box below starts up to three frets lower; the one above starts higher.
   return [
-    ...near(previousBox(box), Math.max(0, placement.from - 3)),
-    ...near(nextBox(box), placement.from + 1),
+    ...near(previousBox(box), Math.max(0, placement.from - 3), true),
+    ...near(nextBox(box), placement.from + 1, false),
   ];
 }
 
