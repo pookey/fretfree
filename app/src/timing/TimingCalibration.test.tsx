@@ -7,7 +7,12 @@ import { getDb, getSettings } from '../storage';
 import type { AudioClock } from './clock';
 import { createFakeMetronome, type FakeMetronome } from './fake-metronome';
 import { createFakeOnsetSource, createTapOnsetSource, type FakeOnsetSource } from './onsets';
-import { TimingCalibration, TimingCalibrationSetting, describeOffset } from './TimingCalibration';
+import {
+  TimingCalibration,
+  TimingCalibrationSetting,
+  describeOffset,
+  errorCopy,
+} from './TimingCalibration';
 
 const CFG = ENGINE_CONFIG.timing.calibration;
 
@@ -42,7 +47,46 @@ describe('describeOffset', () => {
   });
 });
 
+describe('errorCopy', () => {
+  it('names the input and the reason', () => {
+    expect(errorCopy('tap', 'failed')).toMatch(/Tapping/);
+    expect(errorCopy('mic', 'denied')).toMatch(/isn’t allowed/);
+    expect(errorCopy('mic', 'unsupported')).toMatch(/can’t listen/);
+    expect(errorCopy('mic', 'no-device')).toMatch(/No microphone was found/);
+    expect(errorCopy('mic', 'lost')).toMatch(/stopped during the run/);
+    expect(errorCopy('mic', 'failed')).toMatch(/didn’t start/);
+  });
+});
+
 describe('<TimingCalibration>', () => {
+  it('keeps an offset the other input saved during the run', async () => {
+    const metronome = createFakeMetronome();
+    const source = createFakeOnsetSource('tap');
+    render(<TimingCalibration kind="tap" metronome={metronome} createSource={() => source} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    await flush();
+    // Meanwhile, another tab (or an import) saves a guitar offset.
+    await act(() => useAppStore.getState().update({ timingOffsets: { tap: null, mic: 70 } }));
+    playAlong(metronome, source, () => 20);
+    await screen.findByTestId('timing-calibration-result');
+    await waitFor(async () =>
+      expect((await getSettings(getDb())).timingOffsets).toEqual({ tap: 20, mic: 70 }),
+    );
+  });
+
+  it('says so when the mic is lost mid-run, rather than starting over silently', async () => {
+    const metronome = createFakeMetronome();
+    const mic = createFakeOnsetSource('mic');
+    render(<TimingCalibration kind="mic" metronome={metronome} createSource={() => mic} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    await flush();
+    act(() => mic.loseInput());
+    expect(await screen.findByTestId('timing-calibration-result')).toHaveTextContent(
+      /stopped during the run/,
+    );
+    expect(metronome.running).toBe(false);
+  });
+
   it('counts in, runs the clicks, then saves and shows the offset', async () => {
     const metronome = createFakeMetronome();
     const source = createFakeOnsetSource('tap');
@@ -180,7 +224,7 @@ describe('<TimingCalibration>', () => {
     render(<TimingCalibration kind="mic" metronome={metronome} createSource={() => denied} />);
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     expect(await screen.findByTestId('timing-calibration-result')).toHaveTextContent(
-      /microphone didn.t start/,
+      /isn’t allowed to use the microphone/,
     );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });

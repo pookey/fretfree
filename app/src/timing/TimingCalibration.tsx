@@ -8,7 +8,12 @@ import { fakeOnsetsForE2E } from './e2e-hook';
 import type { CalibrationResult, OnsetKind } from './latency';
 import { createMicOnsetSource } from './mic-onsets';
 import { getMetronome, type Click, type Metronome } from './metronome';
-import type { OnsetSource, TapSource } from './onsets';
+import {
+  OnsetSourceError,
+  type OnsetSource,
+  type OnsetSourceErrorReason,
+  type TapSource,
+} from './onsets';
 import styles from './TimingCalibration.module.css';
 
 const CFG = ENGINE_CONFIG.timing.calibration;
@@ -37,7 +42,7 @@ type Phase =
   | { name: 'ready' }
   | { name: 'running'; progress: CalibrationProgress }
   | { name: 'done'; result: CalibrationResult }
-  | { name: 'error' };
+  | { name: 'error'; reason: OnsetSourceErrorReason };
 
 const COPY: Record<OnsetKind, { label: string; how: string; verb: string }> = {
   tap: {
@@ -51,6 +56,23 @@ const COPY: Record<OnsetKind, { label: string; how: string; verb: string }> = {
     verb: 'notes',
   },
 };
+
+/** Why a run couldn't start or stopped early, for this input. */
+export function errorCopy(kind: OnsetKind, reason: OnsetSourceErrorReason): string {
+  if (kind === 'tap') return 'Tapping stopped working. Try again.';
+  switch (reason) {
+    case 'denied':
+      return 'FretFree isn’t allowed to use the microphone. Allow it in your browser’s settings, then try again.';
+    case 'unsupported':
+      return 'This browser can’t listen to the microphone, so the guitar can’t be timed here.';
+    case 'no-device':
+      return 'No microphone was found. Connect one, then try again.';
+    case 'lost':
+      return 'The microphone stopped during the run. Try again.';
+    case 'failed':
+      return 'The microphone didn’t start. Try again.';
+  }
+}
 
 export interface TimingCalibrationProps {
   kind: OnsetKind;
@@ -74,7 +96,6 @@ export function TimingCalibration({
   createSource = defaultSource,
 }: TimingCalibrationProps) {
   const sizeClass = useSizeClass();
-  const offsets = useAppStore((s) => s.settings.timingOffsets);
   const update = useAppStore((s) => s.update);
   const [phase, setPhase] = useState<Phase>({ name: 'ready' });
   const [beat, setBeat] = useState<Click | null>(null);
@@ -122,15 +143,25 @@ export function TimingCalibration({
         if (run.current !== r) return;
         run.current = null;
         setSource(null);
-        if (!result) return setPhase({ name: 'ready' });
+        if (!result) {
+          // Cancelled goes back to the start; an input lost mid-run says so.
+          const lost = next.state === 'error' ? next.error : null;
+          return setPhase(lost ? { name: 'error', reason: lost.reason } : { name: 'ready' });
+        }
         setPhase({ name: 'done', result });
-        if (result.ok) await update({ timingOffsets: { ...offsets, [kind]: result.offsetMs } });
+        // The other input's offset as it is now, not as it was when the run began.
+        const { timingOffsets } = useAppStore.getState().settings;
+        if (result.ok)
+          await update({ timingOffsets: { ...timingOffsets, [kind]: result.offsetMs } });
       },
-      () => {
+      (err: unknown) => {
         if (run.current !== r) return;
         run.current = null;
         setSource(null);
-        setPhase({ name: 'error' });
+        setPhase({
+          name: 'error',
+          reason: err instanceof OnsetSourceError ? err.reason : 'failed',
+        });
       },
     );
   };
@@ -176,9 +207,7 @@ export function TimingCalibration({
           </p>
         )}
         {phase.name === 'error' && (
-          <p data-testid="timing-calibration-result">
-            The microphone didn&apos;t start. Check that FretFree may use it, then try again.
-          </p>
+          <p data-testid="timing-calibration-result">{errorCopy(kind, phase.reason)}</p>
         )}
       </div>
 
