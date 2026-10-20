@@ -56,6 +56,8 @@ describe('achievement registry', () => {
       'string-6-master',
       'string-5-master',
       'whole-neck',
+      'mic-notes',
+      'mic-sequences',
       'speed-demon',
       'streak-7',
       'streak-30',
