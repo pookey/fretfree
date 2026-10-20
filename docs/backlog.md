@@ -1017,7 +1017,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/onboarding/steps/mic.tsx`, `app/src/screens/progress/panels/mic.tsx`
 
 ### M5-05 · D16 "Play the note"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M5-01
 - **Design:** §6 mic constraint
 - **Owns:** `app/src/drills/d16-play-note/**`, `app/e2e/m5-05.spec.ts`
