@@ -169,22 +169,29 @@ describe('drill views', () => {
  */
 const IMPORT = /^\s*(?:import|export)\s+(type\s+)?(?:[^'";]*?\sfrom\s*)?'(\.\.?\/[^']+)'/gm;
 
-/** The files of a drill folder that loading its `drill.ts` loads too. */
+/**
+ * The drill-folder files that loading a drill's `drill.ts` loads too, as
+ * `<folder>/<file>`: its own folder's, and any sibling drill's it reaches
+ * (`../d4-octave-finder/meta`).
+ */
 function eagerFiles(folder: string, sources: Record<string, string>): string[] {
   const seen = new Set<string>();
   const queue = [`./${folder}/drill.ts`];
   for (let file = queue.shift(); file !== undefined; file = queue.shift()) {
     if (seen.has(file)) continue;
     seen.add(file);
+    const dir = file.slice(0, file.lastIndexOf('/'));
     for (const [, typeOnly, spec] of (sources[file] ?? '').matchAll(IMPORT)) {
+      if (typeOnly || spec === undefined) continue;
+      const sibling = /^\.\.\/[^./][^/]*\//.test(spec);
       // Shared modules (`../lazy-view`, `../../theory`) are first-load by design.
-      if (typeOnly || !spec?.startsWith('./')) continue;
-      const base = `./${folder}/${spec.slice(2)}`;
+      if (!spec.startsWith('./') && !sibling) continue;
+      const base = sibling ? `./${spec.slice(3)}` : `${dir}/${spec.slice(2)}`;
       const found = [`${base}.ts`, `${base}.tsx`, base].find((f) => f in sources);
       if (found) queue.push(found);
     }
   }
-  return [...seen].map((f) => f.slice(folder.length + 3)).sort();
+  return [...seen].map((f) => f.slice(2)).sort();
 }
 
 const SOURCES = import.meta.glob<string>(['./*/*.ts', './*/*.tsx', '!./*/*.test.*'], {
@@ -194,7 +201,7 @@ const SOURCES = import.meta.glob<string>(['./*/*.ts', './*/*.tsx', '!./*/*.test.
 });
 
 describe('first-load drill code', () => {
-  it('follows static imports within the folder, but not type-only ones', () => {
+  it('follows static imports within the folder and into sibling drills, but not type-only ones', () => {
     const sources = {
       './dx/drill.ts': [
         "import { lazyLogic } from '../lazy-view';",
@@ -205,28 +212,34 @@ describe('first-load drill code', () => {
         '  xCanTest,',
         "} from './meta';",
       ].join('\n'),
-      './dx/meta.ts': "import { type Shape } from './shapes';\nexport const X_ID = 'x';",
+      './dx/meta.ts': [
+        "import { type Shape } from './shapes';",
+        "import { yConcept } from '../dy/meta';",
+        "import { parse } from '../../engine/model';",
+      ].join('\n'),
       './dx/shapes.ts': "export * from './logic';",
       './dx/logic.ts': "import { XView } from './XView';",
       './dx/XView.tsx': '',
+      './dy/meta.ts': "export { yLabel } from '../dy/logic';",
+      './dy/logic.ts': '',
     };
     expect(eagerFiles('dx', sources)).toEqual([
-      'XView.tsx',
-      'drill.ts',
-      'logic.ts',
-      'meta.ts',
-      'shapes.ts',
+      'dx/XView.tsx',
+      'dx/drill.ts',
+      'dx/logic.ts',
+      'dx/meta.ts',
+      'dx/shapes.ts',
+      'dy/logic.ts',
+      'dy/meta.ts',
     ]);
   });
 
   it.each(FOLDERS.map(([folder]) => folder))(
-    '%s keeps its logic.ts and views out of drill.ts’s imports',
+    '%s keeps every drill’s logic.ts and views out of drill.ts’s imports',
     (folder) => {
       const eager = eagerFiles(folder, SOURCES);
-      expect(eager).toContain('drill.ts');
-      expect(eager).not.toContain('logic.ts');
-      expect(eager).not.toContain('views.ts');
-      expect(eager.filter((f) => f.endsWith('.tsx'))).toEqual([]);
+      expect(eager).toContain(`${folder}/drill.ts`);
+      expect(eager.filter((f) => /\/(logic|views)\.ts$|\.tsx$/.test(f))).toEqual([]);
     },
   );
 });
