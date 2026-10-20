@@ -999,7 +999,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Synthetic-signal tests for accuracy and octave errors. Permission is requested only when the learner enables mic mode.
 
 ### M5-03 · Tools: tuner
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request, 2026-10-19: prioritise the path to the tuner)
 - **Deps:** M5-02, M4-12
 - **Design:** §Tools, §9
