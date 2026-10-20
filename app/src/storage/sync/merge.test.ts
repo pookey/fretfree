@@ -85,7 +85,8 @@ describe('mergeRecordSets', () => {
       same(mergeRecordSets(mergeRecordSets(x, y), z), mergeRecordSets(x, mergeRecordSets(y, z)));
       same(mergeRecordSets(mergeRecordSets(...sets), x), mergeRecordSets(...sets));
     }
-  });
+    // 400 seeds of five merges each: quick alone, but over 20 s under coverage in a loaded verify.
+  }, 90_000);
 
   it('never loses a review log, event or session log', () => {
     for (let seed = 1; seed <= RUNS; seed++) {
