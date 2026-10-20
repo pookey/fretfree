@@ -1071,7 +1071,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/engine/skills/c7.ts`, `app/src/drills/d-pentatonic-box/**`
 
 ### M6-03 · I1 skills plus D18 "Triad inversions on a string set"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M6-01
 - **Owns:** `app/src/engine/skills/i1.ts`, `app/src/drills/d18-inversions/**`
 
@@ -1091,7 +1091,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/engine/skills/i4.ts`, `app/src/engine/skills/i5.ts`, `app/src/drills/d-function/**`
 
 ### M6-07 · I7 major scale in 5 positions
-- **Status:** todo
+- **Status:** done
 - **Deps:** M6-01
 - **Owns:** `app/src/engine/skills/i7.ts`, `app/src/drills/d-pentatonic-box/**`, `app/src/engine/items/scale-position.ts`, `app/src/engine/items/scale-position.test.ts`, `app/e2e/m6-07.spec.ts` (widened by the PM, 2026-10-20: no other drill could serve I7 cards)
 
