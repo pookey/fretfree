@@ -97,6 +97,16 @@ export interface Reading {
 
 export type Goal = 'songs' | 'improvise' | 'jazz' | 'general';
 
+/**
+ * The learner's tap-to-click calibration per input, in ms (+ late), taken off
+ * every onset after the device's output latency (timing/latency.ts, M8-01).
+ * `null` until that input is calibrated.
+ */
+export interface TimingOffsets {
+  tap: number | null;
+  mic: number | null;
+}
+
 export interface Settings {
   handedness: Handedness;
   tuning: string;
@@ -114,6 +124,7 @@ export interface Settings {
   blindMode: boolean;
   /** Per-user FSRS weights, refit after ~1,000 reviews (engine/refit.ts); `null` = defaults. */
   fsrsParams: FittedFsrsParams | null;
+  timingOffsets: TimingOffsets;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -130,6 +141,7 @@ export const DEFAULT_SETTINGS: Settings = {
   onboardedAt: null,
   blindMode: false,
   fsrsParams: null,
+  timingOffsets: { tap: null, mic: null },
 };
 
 // --- Item IDs -------------------------------------------------------------
