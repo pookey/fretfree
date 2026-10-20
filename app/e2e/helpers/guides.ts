@@ -56,6 +56,8 @@ const OTHER_SKILLS = [
   'I1.major-low-sets',
   'I1.minor-top-sets',
   'I1.minor-low-sets',
+  'I1.voice-leading-top-sets',
+  'I1.voice-leading-low-sets',
 ];
 
 /**
