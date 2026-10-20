@@ -17,6 +17,9 @@ import styles from './Metronome.module.css';
 
 const { minBpm, maxBpm, steps } = METRONOME_CONFIG;
 
+/** A click this soon (ms) after a pointer down on Tap tempo is that press, already counted. */
+const POINTER_CLICK_MS = 1000;
+
 const UNIT_NAMES: Record<number, string> = {
   2: 'half',
   4: 'quarter',
@@ -41,7 +44,7 @@ export function Metronome({ controller: given }: MetronomeProps) {
   const soundOn = useAppStore((s) => s.settings.soundOn);
   const layout = useSizeClass() === 'compact' ? 'stack' : 'split';
   const cells = useMemo(() => beatCells(state.meter, state.accent), [state.meter, state.accent]);
-  const fromPointer = useRef(false);
+  const pointerAt = useRef<number | null>(null);
 
   useEffect(() => controller.openView(), [controller]);
 
@@ -98,14 +101,21 @@ export function Metronome({ controller: given }: MetronomeProps) {
             type="button"
             className={styles.tap}
             // Pointer taps count on the way down, where the beat is; keys and
-            // assistive tech arrive as a click.
+            // assistive tech arrive as a click. A click is that pointer's own
+            // only if it follows soon after, so a cancelled press (a scroll,
+            // a drag off) never swallows the next key press.
             onPointerDown={(e) => {
-              fromPointer.current = true;
+              pointerAt.current = e.timeStamp;
               controller.tap(e.timeStamp);
             }}
+            onPointerCancel={() => {
+              pointerAt.current = null;
+            }}
             onClick={(e) => {
-              if (fromPointer.current) fromPointer.current = false;
-              else controller.tap(e.timeStamp);
+              const down = pointerAt.current;
+              pointerAt.current = null;
+              if (down === null || e.timeStamp - down > POINTER_CLICK_MS)
+                controller.tap(e.timeStamp);
             }}
           >
             Tap tempo

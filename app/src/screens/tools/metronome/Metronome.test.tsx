@@ -138,6 +138,23 @@ describe('<Metronome>', () => {
     expect(bpm()).toHaveTextContent('80');
   });
 
+  it('counts a key press after a cancelled pointer press', () => {
+    render(<Metronome controller={controller} />);
+    const tap = screen.getByRole('button', { name: 'Tap tempo' });
+    fireAt(tap, 'pointerDown', 1000);
+    fireEvent.pointerCancel(tap);
+    fireAt(tap, 'click', 1500);
+    expect(bpm()).toHaveTextContent('120');
+  });
+
+  it('counts a click long after a stray pointer press', () => {
+    render(<Metronome controller={controller} />);
+    const tap = screen.getByRole('button', { name: 'Tap tempo' });
+    fireAt(tap, 'pointerDown', 1000);
+    fireAt(tap, 'click', 2200);
+    expect(bpm()).toHaveTextContent('50');
+  });
+
   it('offers every meter preset, odd groupings included, and its accents', () => {
     render(<Metronome controller={controller} />);
     const meter = screen.getByRole('group', { name: 'Meter' });
