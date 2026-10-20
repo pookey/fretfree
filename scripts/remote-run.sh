@@ -20,13 +20,25 @@
 #
 # Sharing the box: runs share the runner's CPU and e2e slots (cpu-slot.sh,
 # e2e-slot.sh) through flock(1) on a mounted lock dir, so concurrent worktrees
-# queue for REMOTE_CPU_SLOTS (default 2) static runs and REMOTE_E2E_SLOTS
-# (default 1) Playwright runs of REMOTE_PW_WORKERS (default 20) workers. One
-# e2e run at 20 workers already keeps about 27 of the 48 cores busy: two at
-# once took 6.7 min each instead of 3.8 and timed out racy specs, so a second
-# run queues instead. Each container has its own network namespace, so preview
-# ports never clash. A host-side semaphore caps live containers at REMOTE_RUNS
-# (default 8).
+# queue for REMOTE_CPU_SLOTS (default 1) static runs and REMOTE_E2E_SLOTS
+# (default 1) Playwright runs of REMOTE_PW_WORKERS (default 20) workers. Each
+# container has its own network namespace, so preview ports never clash. A
+# host-side semaphore caps live containers at REMOTE_RUNS (default 8).
+#
+# Static gates and Playwright are pinned to separate physical cores (the box
+# has 24 cores, 48 SMT threads; CPU n and n+24 are siblings): a static run
+# bursts across every core and slowed an e2e run beside it. A WebKit worker
+# keeps about 1.3 threads busy, so 20 workers fit their 16 cores. Measured,
+# full e2e of all four projects: 20 workers 3.8 min, 12 workers 5.7 min; two
+# e2e runs at once were no faster in total and failed more, so they queue.
+#
+# Retries: the box is about half as fast per thread as the Mac, which widens
+# a few spec races (a key press before React's effect attaches its listener,
+# a Skip click that lands on the next onboarding step) enough that roughly
+# one full run in two hits one, at 12 workers as at 20. Those are spec bugs
+# to fix; until then the runner retries a failed test once (REMOTE_RETRIES,
+# default 1) and Playwright lists it as flaky. Rerun one on the Mac for its
+# trace.
 #
 # What made WebKit fast and stable there (2026-10-20):
 #  - --pids-limit=-1: Podman's default cap of 2048 tasks per container was the
@@ -74,10 +86,12 @@ dir="fretwork-runs/$run"
 
 # Slots are shared by every run on the runner (see the top); the lane gets
 # priority in them and more unit-test workers.
-slots="CPU_SLOTS=${REMOTE_CPU_SLOTS:-2} E2E_SLOTS=${REMOTE_E2E_SLOTS:-1} FRETWORK_SLOT_FLOCK=1 FRETWORK_LOCK_DIR=/locks"
-pw="PW_WORKERS=${REMOTE_PW_WORKERS:-20} E2E_QUIET_WORKERS=2 PW_TRACE=off LP_NUM_THREADS=0 GST_PLUGIN_FEATURE_RANK=fakeaudiosink:MAX${PW_RETRIES:+ PW_RETRIES=$PW_RETRIES}"
+slots="CPU_SLOTS=${REMOTE_CPU_SLOTS:-1} E2E_SLOTS=${REMOTE_E2E_SLOTS:-1} FRETWORK_SLOT_FLOCK=1 FRETWORK_LOCK_DIR=/locks"
+# Separate cores for static gates and Playwright (see the top).
+slots="$slots CPU_SLOT_CPUSET=${REMOTE_CPU_CPUSET:-16-23,40-47} E2E_SLOT_CPUSET=${REMOTE_E2E_CPUSET:-0-15,24-39}"
+pw="PW_WORKERS=${REMOTE_PW_WORKERS:-20} E2E_RETRIES=${REMOTE_RETRIES:-1} E2E_QUIET_WORKERS=2 PW_TRACE=off LP_NUM_THREADS=0 GST_PLUGIN_FEATURE_RANK=fakeaudiosink:MAX"
 if [[ "${FRETWORK_LANE:-}" == 1 ]]; then
-  workers="FRETWORK_LANE=1 VITEST_MAX_WORKERS=16 $pw"
+  workers="FRETWORK_LANE=1 VITEST_MAX_WORKERS=12 $pw"
 else
   workers="VITEST_MAX_WORKERS=8 $pw"
 fi
