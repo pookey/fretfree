@@ -1101,7 +1101,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/engine/skills/i2.ts`
 
 ### M6-06 · I4 and I5 minor-harmony and function skills, plus choice drills
-- **Status:** todo
+- **Status:** done
 - **Deps:** M6-01, M4-01
 - **Owns:** `app/src/engine/skills/i4.ts`, `app/src/engine/skills/i5.ts`, `app/src/drills/d-function/**`
 
