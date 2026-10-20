@@ -961,7 +961,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/engine/skills/i6.ts`, `app/src/drills/d14-ear-identify/**`, `app/e2e/m4-07.spec.ts`
 
 ### M4-08 · D15 "Hear it → find it on the neck"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-06, M1-04
 - **Owns:** `app/src/drills/d15-ear-find/**`, `app/e2e/m4-08.spec.ts`
 
