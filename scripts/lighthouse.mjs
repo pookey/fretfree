@@ -36,6 +36,7 @@ const ROUTES = [
   '/settings',
   '/privacy',
   '/about',
+  '/account/verify',
   '/session',
 ];
 const IPAD = { width: 1194, height: 834, deviceScaleFactor: 2 };
