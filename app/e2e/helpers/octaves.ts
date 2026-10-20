@@ -1,44 +1,8 @@
 import type { Page } from '@playwright/test';
+import { ALL_SKILL_IDS } from './skills';
 
 /** Every skill, so a seeded session serves only the cards it is given. */
-const ALL_SKILLS = [
-  'F1.alphabet',
-  'F1.b-c-e-f',
-  'F1.half-steps',
-  'F1.whole-steps',
-  'F2.string6-naturals',
-  'F2.string5-naturals',
-  'F3.markers',
-  'F3.repeat-12',
-  'C1.octaves',
-  'C1.octaves-gb-shift',
-  'C1.double-octaves',
-  'C1.every-octave',
-  'C2.all-notes',
-  'C3.thirds',
-  'C3.fourths-fifths',
-  'C3.sevenths',
-  'C3.sixths',
-  'C3.seconds',
-  'C4.sharp-keys',
-  'C4.flat-keys',
-  'C4.sharp-key-degrees',
-  'C4.flat-key-degrees',
-  'C5.triads',
-  'C5.sevenths',
-  'C5.sus-add',
-  'C6.triad-cores',
-  'C6.major-shapes',
-  'C6.minor-cores',
-  'C6.minor-shapes',
-  'C6.dominant7-shapes',
-  'C7.minor-boxes',
-  'C7.major-boxes',
-  'C7.relative',
-  'I7.positions',
-  'I7.root-runs',
-  'I7.degree-runs',
-];
+const ALL_SKILLS = ALL_SKILL_IDS;
 
 /**
  * Seed a learner whose only work is the given C1 items, due now and known
