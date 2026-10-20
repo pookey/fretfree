@@ -1,6 +1,6 @@
 import { parseChordToneItemId, type Item } from '../../engine/model';
 import type { ChordDegree } from '../../theory';
-import { isD8Kind } from './voicings';
+import { isD8Kind, templatesFor } from './voicings';
 
 /**
  * D8's eager half (design §6, §10): what the session planner needs before
@@ -31,9 +31,15 @@ export const INTERVAL: Partial<Record<ChordDegree, string>> = {
   '7': 'M7',
 };
 
+/** A D8 kind and degree, with a shape that holds the degree (the C-shape 7 has no 5th). */
 export function d8CanTest(item: Item): boolean {
   const ref = parseChordToneItemId(item.id);
-  return ref !== null && isD8Kind(ref.chord) && ref.degree in INTERVAL;
+  return (
+    ref !== null &&
+    isD8Kind(ref.chord) &&
+    ref.degree in INTERVAL &&
+    templatesFor(ref.chord).some((t) => t.notes.some((n) => n.degree === ref.degree))
+  );
 }
 
 export function d8ConceptOf(item: Item): string | null {
