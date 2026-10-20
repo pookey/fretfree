@@ -40,8 +40,8 @@ const REGULAR: FretRange = { from: 0, to: 12 };
 
 /**
  * D15 view: the open string sounds, then the note, and the learner taps the
- * note on that string (design §6 D15). By ear, nothing names the note until
- * feedback; at the `named` scope, or with sound off, the prompt names it.
+ * note on that string (design §6 D15). The prompt names the note while the
+ * guides are up (or with sound off); by ear, nothing names it until feedback.
  */
 export function D15View({
   prompt,
@@ -79,7 +79,7 @@ export function D15View({
     setState(view);
   }
 
-  const named = d15Named(prompt, soundOn);
+  const named = guided || d15Named(guideLevel, soundOn);
   const play = () => void playNotes(d15PromptNotes(prompt), { muted: !soundOn, volume });
 
   // Each prompt plays once as it appears (once, under StrictMode too).
@@ -103,7 +103,7 @@ export function D15View({
 
   const tap = (pos: Position) => {
     if (feedback || !d15IsLive(prompt, pos)) return;
-    onAnswer(pos);
+    onAnswer({ string: pos.string, fret: pos.fret, byEar: !named });
   };
 
   useEffect(() => {
@@ -114,12 +114,12 @@ export function D15View({
         // A focused cell handles its own Enter; this covers focus left on the page.
         if (e.target instanceof Element && e.target.closest('button, a, input')) return;
         e.preventDefault();
-        if (d15IsLive(prompt, view.focus)) onAnswer(view.focus);
+        if (d15IsLive(prompt, view.focus)) onAnswer({ ...view.focus, byEar: !named });
         return;
       }
       const from = view.focus ?? { string: prompt.string, fret: navRange.from };
       const next = view.focus
-        ? d2MoveFocus(from, e.key, { strings: [prompt.string], range: navRange }, handedness)
+        ? d2MoveFocus(from, e.key, { strings: prompt.liveStrings, range: navRange }, handedness)
         : e.key.startsWith('Arrow')
           ? from
           : null;
@@ -134,7 +134,7 @@ export function D15View({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [feedback, onAnswer, prompt, view.focus, navRange, handedness, compact]);
+  }, [feedback, onAnswer, named, prompt, view.focus, navRange, handedness, compact]);
 
   // Move DOM focus to the focus cell once it is rendered (the compact window may have slid).
   useEffect(() => {
@@ -149,8 +149,7 @@ export function D15View({
   const pcAt = (p: Position) => noteAt(p, tuning, prompt.accidentalPref).pc;
   const openPc = pcAt(prompt.reference);
   // By ear, an open string an octave below the note would name it.
-  const labelReference =
-    named || guided || Boolean(feedback) || chromaOf(openPc) !== chromaOf(prompt.pc);
+  const labelReference = named || Boolean(feedback) || chromaOf(openPc) !== chromaOf(prompt.pc);
   const reference: FretMarker = {
     ...prompt.reference,
     style: 'root',
@@ -257,7 +256,11 @@ export function D15View({
       </div>
       <div className={styles.neckRow}>
         {compact && (handedness === 'left' ? higher : lower)}
-        <div ref={neckRef} className={styles.neckArea} data-live-string={prompt.string}>
+        <div
+          ref={neckRef}
+          className={styles.neckArea}
+          data-live-string={prompt.scope === 'string' ? prompt.string : undefined}
+        >
           <Fretboard
             tuning={tuning}
             fretRange={visible}

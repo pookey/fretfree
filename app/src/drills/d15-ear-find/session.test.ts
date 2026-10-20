@@ -53,22 +53,24 @@ describe('D15 in a session', () => {
     const cur = r.currentPrompt()!;
     expect(cur.drill.id).toBe(D15_ID);
     const p = cur.prompt as D15Prompt;
-    expect(p.scope).toBe('named');
-    const res = await r.answer(p.target, 900);
+    expect(p.scope).toBe('string');
+    const res = await r.answer({ ...p.target, byEar: true }, 1900);
     expect(res.result).toMatchObject({ correct: true, expected: p.pc });
     expect(res.sounds.given).toBeUndefined();
     r.next();
 
     const next = r.currentPrompt()!.prompt as D15Prompt;
     const wrong = { string: next.string, fret: next.target.fret - 1 };
-    const miss = await r.answer(wrong, 1200);
+    const miss = await r.answer({ ...wrong, byEar: false }, 1200);
     expect(miss.result.correct).toBe(false);
     expect(miss.sounds.given).toHaveLength(1);
     expect(await db.confusions.count()).toBe(1);
 
     const log = await db.reviewLogs.toArray();
     expect(log.every((l) => l.drillType === D15_ID)).toBe(true);
+    // By ear, the listening allowance comes off before grading and logging.
     expect(log[0]).toMatchObject({ correct: true, responseMs: 900 });
+    expect(log[1]).toMatchObject({ correct: false, responseMs: 1200 });
     expect(log[1]?.answerGiven).toBe(`s${wrong.string}f${wrong.fret}`);
   });
 
@@ -86,7 +88,9 @@ describe('D15 in a session', () => {
       const { drill, prompt } = r.currentPrompt()!;
       served.push(drill.id);
       await r.answer(
-        drill.id === D15_ID ? (prompt as D15Prompt).target : (prompt as D2Prompt).targets[0],
+        drill.id === D15_ID
+          ? { ...(prompt as D15Prompt).target, byEar: true }
+          : (prompt as D2Prompt).targets[0],
         900,
       );
       r.next();

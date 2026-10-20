@@ -8,6 +8,7 @@ import {
   inRange,
   intervalFromSemitones,
   intervalInfo,
+  midiAt,
   noteAt,
   samePosition,
   stringCount,
@@ -42,12 +43,16 @@ export interface D15Prompt {
   /** The open string, played first as the reference. */
   reference: Position;
   activeRange: FretRange;
+  /** Strings that accept taps. */
+  liveStrings: number[];
   tuning: Tuning;
   accidentalPref: AccidentalPref;
 }
 
-/** The answer is the tapped cell. */
-export type D15Answer = Position;
+/** The tapped cell, and whether the prompt held the note's name back. */
+export interface D15Answer extends Position {
+  byEar: boolean;
+}
 
 export function d15ScopeFor(level: number): D15Scope {
   const i = Math.max(0, Math.min(D15_SCOPES.length - 1, Math.round(level)));
@@ -64,27 +69,34 @@ export function d15MakePrompt(item: Item, ctx: DrillContext): D15Prompt {
   // The note above the open string, never the open string itself: unison with
   // the reference would give it away, and the name sits on that cell.
   const fret = (chromaOf(ref.pc) - open + 12) % 12 || 12;
+  const scope = d15ScopeFor(ctx.scopeLevel);
   return {
     itemId: item.id,
     pc: chromaToPc(chromaOf(ref.pc), ctx.accidentalPref),
     string: ref.string,
-    scope: d15ScopeFor(ctx.scopeLevel),
+    scope,
     target: { string: ref.string, fret },
     reference,
     activeRange: D15_REGION,
+    liveStrings: scope === 'string' ? [ref.string] : allStrings(ctx.tuning),
     tuning: ctx.tuning,
     accidentalPref: ctx.accidentalPref,
   };
 }
 
-/** Whether the prompt shows the note's name: at scope `named`, or when nothing can be heard. */
-export function d15Named(prompt: D15Prompt, soundOn: boolean): boolean {
-  return prompt.scope === 'named' || !soundOn;
+/**
+ * Whether the prompt names the note. The name is a guide (design §3.5): it
+ * shows while the neck still highlights roots (level 2+), so new reps pair
+ * the sound with a name, and fades with the skill. With sound off there is
+ * nothing to hear, so it always shows.
+ */
+export function d15Named(guideLevel: GuideLevel, soundOn: boolean): boolean {
+  return guideLevel >= 2 || !soundOn;
 }
 
-/** True if a tap on this cell is an answer (the other strings and frets are inert). */
+/** True if a tap on this cell is an answer (dimmed cells are inert). */
 export function d15IsLive(prompt: D15Prompt, pos: Position): boolean {
-  return pos.string === prompt.string && inRange(pos.fret, prompt.activeRange);
+  return prompt.liveStrings.includes(pos.string) && inRange(pos.fret, prompt.activeRange);
 }
 
 function nameAt(prompt: D15Prompt, pos: Position): string {
@@ -100,16 +112,16 @@ export function d15PromptNotes(prompt: D15Prompt): string[] {
   return [nameAt(prompt, prompt.reference), nameAt(prompt, prompt.target)];
 }
 
-export function d15Check(prompt: D15Prompt, answer: D15Answer): DrillCheck {
+export function d15Check(prompt: D15Prompt, answer: Position): DrillCheck {
   if (samePosition(answer, prompt.target)) return { correct: true, expected: prompt.pc };
   const given = d15IsLive(prompt, answer) ? pcAt(prompt, answer) : null;
-  // The open string for its own octave is a range error, not a note confusion.
+  // The note on another string, or an octave off, is a place error, not a note confusion.
   return given && chromaOf(given) !== chromaOf(prompt.pc)
     ? { correct: false, expected: prompt.pc, confusedWith: given }
     : { correct: false, expected: prompt.pc };
 }
 
-export function d15DescribeAnswer(answer: D15Answer): string {
+export function d15DescribeAnswer(answer: Position): string {
   return `s${answer.string}f${answer.fret}`;
 }
 
@@ -119,25 +131,26 @@ export function d15DescribeAnswer(answer: D15Answer): string {
  * named note is graded like D2.
  */
 export function d15GradedResponseMs(
-  prompt: D15Prompt,
-  _answer: D15Answer,
+  _prompt: D15Prompt,
+  answer: D15Answer,
   elapsedMs: number,
 ): number {
-  if (prompt.scope === 'named') return elapsedMs;
+  if (!answer.byEar) return elapsedMs;
   return Math.max(0, elapsedMs - ENGINE_CONFIG.earFind.listenAllowanceMs);
 }
 
 /** Correct: the note again. Wrong: the note, then the one tapped, so the gap is heard. */
-export function d15Sounds(prompt: D15Prompt, fb: DrillFeedback<D15Answer>): DrillSounds {
+export function d15Sounds(prompt: D15Prompt, fb: DrillFeedback<Position>): DrillSounds {
   const expected = [nameAt(prompt, prompt.target)];
   return fb.result.correct ? { expected } : { expected, given: [nameAt(prompt, fb.answer)] };
 }
 
 export function d15FeedbackPositions(
   prompt: D15Prompt,
-  fb: DrillFeedback<D15Answer>,
+  fb: DrillFeedback<Position>,
 ): { expected: Position[]; given: Position[] } {
-  return { expected: [prompt.target], given: fb.result.correct ? [] : [fb.answer] };
+  const { string, fret } = fb.answer;
+  return { expected: [prompt.target], given: fb.result.correct ? [] : [{ string, fret }] };
 }
 
 /** "a minor 7th above the open A": how the note sits over the reference. */
@@ -149,13 +162,19 @@ export function d15Above(prompt: D15Prompt): string {
 const frets = (n: number) => `${n} ${n === 1 ? 'fret' : 'frets'}`;
 
 /** One line of feedback: where the note is and how it sits over the open string. */
-export function d15Explain(prompt: D15Prompt, fb: DrillFeedback<D15Answer>): string {
+export function d15Explain(prompt: D15Prompt, fb: DrillFeedback<Position>): string {
   const where = `${prompt.pc} is at fret ${prompt.target.fret} on string ${prompt.string}, a ${d15Above(prompt)}.`;
   if (fb.result.correct) return where;
-  const { fret } = fb.answer;
+  const { string, fret } = fb.answer;
+  const tapped = pcAt(prompt, fb.answer);
+  if (string !== prompt.string) {
+    const same = midiAt(fb.answer, prompt.tuning) === midiAt(prompt.target, prompt.tuning);
+    const what = same ? 'the same note, on another string' : `string ${string}, fret ${fret}`;
+    return `You tapped ${tapped} (${what}). ${where}`;
+  }
   const off = fret - prompt.target.fret;
   const how = off < 0 ? `${frets(-off)} too low` : `${frets(off)} too high`;
-  return `You tapped ${pcAt(prompt, fb.answer)} (fret ${fret}), ${how}. ${where}`;
+  return `You tapped ${tapped} (fret ${fret}), ${how}. ${where}`;
 }
 
 /**

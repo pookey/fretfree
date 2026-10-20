@@ -12,19 +12,20 @@ import type { DrillContext } from '../types';
 export const D15_ID = 'hear-it-find-it';
 
 /**
- * Adaptive scope (design §3.3 step 4, research/02 rule 5), easiest first.
- * Both play the open string, then the note, and the learner taps the note
- * on that string:
+ * Adaptive scope (design §3.3 step 4, research/02 rule 5), narrowest first,
+ * as D2's:
  *
- * - `named` (0): the prompt names the note too, so the sound is paired with
- *   a name and a place the learner can already find (rule 10).
- * - `by-ear` (1): the name is held back until feedback. The learner hears
- *   how far above the open string the note is and finds the fret
- *   (rule 13: hear it, find it).
+ * - `string` (0): only the named string is live; the other strings are dimmed.
+ * - `region` (1): every string is live within frets 0–12, so the learner must
+ *   also keep to the named string. The same note on another string is wrong.
+ *
+ * Whether the prompt names the note is a guide, not scope: it fades with the
+ * skill's guide level (rule 9), so the learner moves from hearing a named
+ * note to finding it by ear alone (rule 13).
  */
-export type D15Scope = 'named' | 'by-ear';
+export type D15Scope = 'string' | 'region';
 
-export const D15_SCOPES: readonly D15Scope[] = ['named', 'by-ear'];
+export const D15_SCOPES: readonly D15Scope[] = ['string', 'region'];
 export const D15_SCOPE = { minLevel: 0, maxLevel: D15_SCOPES.length - 1 };
 
 export function d15CanTest(item: Item): boolean {

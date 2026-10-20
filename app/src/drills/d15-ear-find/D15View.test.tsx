@@ -9,11 +9,11 @@ import type { SizeClass } from '../../shell/size-class';
 import { STANDARD_TUNING, type Position } from '../../theory';
 import type { DrillFeedback } from '../types';
 import { D15View } from './D15View';
-import { d15Check, d15MakePrompt, type D15Prompt } from './logic';
+import { d15Check, d15MakePrompt, type D15Answer, type D15Prompt } from './logic';
 
 vi.mock('../../audio/audio', () => ({ playNotes: vi.fn(() => Promise.resolve()) }));
 
-const prompt = (id: string, scopeLevel = 1) =>
+const prompt = (id: string, scopeLevel = 0) =>
   d15MakePrompt(
     { id, skillId: 'C2.all-notes' },
     { tuning: STANDARD_TUNING, accidentalPref: 'sharp', scopeLevel, rng: () => 0 },
@@ -27,13 +27,13 @@ function view(
     sizeClass?: SizeClass;
     compactFrets?: number;
     handedness?: Handedness;
-    feedback?: DrillFeedback<Position> | null;
+    feedback?: DrillFeedback<D15Answer> | null;
   } = {},
 ) {
   const onAnswer = vi.fn();
   const props = {
     prompt: p,
-    guideLevel: over.guideLevel ?? 3,
+    guideLevel: over.guideLevel ?? 1,
     guided: over.guided ?? false,
     handedness: over.handedness ?? 'right',
     sizeClass: over.sizeClass ?? 'regular-wide',
@@ -49,8 +49,8 @@ function view(
 const neck = () => screen.getByRole('group', { name: /find the note you hear on string/ });
 const cell = (string: number, fret: number) =>
   neck().querySelector(`[data-cell="s${string}f${fret}"]`) as SVGElement;
-const fb = (p: D15Prompt, answer: Position): DrillFeedback<Position> => ({
-  answer,
+const fb = (p: D15Prompt, answer: Position): DrillFeedback<D15Answer> => ({
+  answer: { ...answer, byEar: true },
   result: d15Check(p, answer),
 });
 
@@ -70,7 +70,7 @@ describe('<D15View>', () => {
     expect(playNotes).toHaveBeenCalledTimes(1);
     expect(playNotes).toHaveBeenCalledWith(['A2', 'G3'], { muted: false, volume: 0.8 });
     fireEvent.pointerDown(cell(5, 10));
-    expect(onAnswer).toHaveBeenCalledWith({ string: 5, fret: 10 });
+    expect(onAnswer).toHaveBeenCalledWith({ string: 5, fret: 10, byEar: true });
   });
 
   it('plays each prompt once under StrictMode, and again on request', () => {
@@ -109,9 +109,11 @@ describe('<D15View>', () => {
     expect(playNotes).toHaveBeenLastCalledWith(['D3', 'C4'], { muted: false, volume: 0.8 });
   });
 
-  it('names the note at the named scope', () => {
-    view(prompt('find:G@s5', 0));
+  it('names the note while the guides are up, and says the answer was not by ear', () => {
+    const { onAnswer } = view(prompt('find:G@s5'), { guideLevel: 2 });
     expect(screen.getByTestId('d15-prompt')).toHaveTextContent('Find the G you hear on string 5');
+    fireEvent.pointerDown(cell(5, 10));
+    expect(onAnswer).toHaveBeenCalledWith({ string: 5, fret: 10, byEar: false });
   });
 
   it('names the note with sound off, and says why', () => {
@@ -138,11 +140,11 @@ describe('<D15View>', () => {
     expect(container.querySelector('[data-live-string="5"]')).not.toBeNull();
   });
 
-  it('never shows the note before an unguided answer by ear, even at guide level 3', () => {
+  it('never shows the note before an unguided answer by ear', () => {
     // Includes notes that name an open string (A at fret 12 of string 5) and accidentals.
     for (const id of ['find:A@s5', 'find:G@s5', 'find:C@s5', 'find:F#@s3', 'find:E@s1']) {
       const p = prompt(id);
-      const { container, unmount } = view(p, { guideLevel: 3 });
+      const { container, unmount } = view(p);
       const svg = container.querySelector('svg[data-fret-from]') as SVGElement;
       const texts = [...svg.querySelectorAll('text')].map((t) => t.textContent);
       expect(texts, id).not.toContain(p.pc);
@@ -165,6 +167,27 @@ describe('<D15View>', () => {
   it('labels the open string as the reference unless it would name the note', () => {
     view(prompt('find:G@s5'));
     expect(screen.getByTestId('marker-root')).toHaveTextContent('A');
+  });
+
+  it('keeps the note off the neck while the prompt names it', () => {
+    for (const id of ['find:A@s5', 'find:G@s5', 'find:E@s1']) {
+      const p = prompt(id);
+      const { container, unmount } = view(p, { guideLevel: 3 });
+      const svg = container.querySelector('svg[data-fret-from]') as SVGElement;
+      expect(svg.querySelectorAll('[data-testid="marker-target"]'), id).toHaveLength(0);
+      const strings = [...svg.querySelectorAll('[data-testid="string-name"]')].map(
+        (t) => t.textContent,
+      );
+      expect(strings, id).not.toContain(p.pc);
+      unmount();
+    }
+  });
+
+  it('lets every string answer at the wider scope', () => {
+    const { container, onAnswer } = view(prompt('find:G@s5', 1));
+    expect(container.querySelector('[data-live-string]')).toBeNull();
+    fireEvent.pointerDown(cell(4, 5));
+    expect(onAnswer).toHaveBeenCalledWith({ string: 4, fret: 5, byEar: true });
   });
 
   it('shows the note on a guided worked example', () => {
@@ -204,7 +227,7 @@ describe('<D15View>', () => {
     fireEvent.keyDown(window, { key: 'ArrowDown', metaKey: true });
     (document.activeElement as SVGElement).blur();
     fireEvent.keyDown(window, { key: 'Enter' });
-    expect(onAnswer).toHaveBeenCalledWith({ string: 5, fret: 10 });
+    expect(onAnswer).toHaveBeenCalledWith({ string: 5, fret: 10, byEar: true });
   });
 
   it('ignores Enter on other controls and keys once answered', () => {
