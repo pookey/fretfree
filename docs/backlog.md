@@ -874,7 +874,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Document in CLAUDE.md "Conventions": a new item kind means a new file in `engine/items/`.
   - Coordinate through the PM: drills in flight rebase onto it once (their kinds move into files), and after that they stop colliding.
 ### M1-44 · [contract] Win back first-load JS headroom for the next drills
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (main is at 249.0 of 250 KB; M6-06 measures 251.9 KB, and every drill in flight adds 1–3 KB of eager metadata)
 - **Deps:** none
 - **Design:** §6, §10 (first-load budget)
