@@ -873,6 +873,19 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Make the other two append points file-local: the skills-order test derives its expectations from the skill files instead of a hand-kept list, and placement skips come from a field on each skill rather than a central `skipSkills` array. Behaviour doesn't change.
   - Document in CLAUDE.md "Conventions": a new item kind means a new file in `engine/items/`.
   - Coordinate through the PM: drills in flight rebase onto it once (their kinds move into files), and after that they stop colliding.
+### M1-44 · [contract] Win back first-load JS headroom for the next drills
+- **Status:** todo
+- **Priority:** high (main is at 249.0 of 250 KB; M6-06 measures 251.9 KB, and every drill in flight adds 1–3 KB of eager metadata)
+- **Deps:** none
+- **Design:** §6, §10 (first-load budget)
+- **Owns:** `app/vite.config.ts`, `scripts/check-bundle.mjs`, `app/src/engine/model.ts` (only how item kinds are collected), `app/src/engine/skills/index.ts` (only how skills are collected), `app/src/theory/index.ts`, `app/e2e/m1-44.spec.ts`
+- **Acceptance:**
+  - Found by the PM, 2026-10-20, from M6-06's preflight: after M1-42 the eager cost of a drill package is its `meta.ts`/`drill.ts`, its skill file, its `engine/items/<family>.ts`, and any `theory/*` function that its lazy logic uses. That last one lands on first load because the whole `theory` chunk is eager. M6-06 added 2.9 KB: items +0.8, skills/meta +0.5, theory +0.6 (`secondaryDominants`, `tritoneSubstitute`, unused on first load), plus D8's voicing table split into its own eager chunk (+0.9).
+  - Keep theory code that only lazy drill logic uses out of first-load JS (for example: stop forcing all of `src/theory/**` into one eager chunk, so each lazy chunk pulls what it uses), and fix chunking so moved code like the voicing table doesn't come back as a new eager chunk.
+  - Measure before and after on main and on `wp/M6-06` (in the report). Target: at least 8 KB of headroom under 250 KB on main, so the next few drills fit. If item-kind or skill collection is the larger cost, make it lazier without changing behaviour (the planner and placement still see every skill).
+  - `BUDGET_KB` stays 250. No behaviour change: the full e2e suite passes unchanged.
+  - Coordinate through the PM: drills over budget (M6-06 first) rebase onto it and re-run `pnpm verify:quick --preflight`.
+
 ### M3-18 · Lazy-load drill views and the onboarding and placement routes
 - **Status:** done
 - **Deps:** M3-16
