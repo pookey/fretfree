@@ -12,6 +12,7 @@ import {
   type ProgressionTiming,
 } from './progression';
 import { strumHits, type StrumOptions } from './strum';
+import { claimTransport } from './transport';
 import { createGuitar, type Guitar } from './voice';
 
 export type { ProgressionChord, StrumPattern, StrumPatternName } from './progression';
@@ -285,6 +286,8 @@ export async function playProgression(
   let finished = false;
   let resolve!: () => void;
   const done = new Promise<void>((r) => (resolve = r));
+  // The metronome (timing/) claiming the Transport stops this progression.
+  const lease = claimTransport('progression', () => playback.stop());
   transport.stop();
   transport.position = 0;
   transport.bpm.value = bpm;
@@ -323,6 +326,7 @@ export async function playProgression(
     // Damping cancels the resonance of strokes the Transport has already queued
     // ahead of the audio clock, so nothing rings on after a stop.
     if (damp) g.damp(Tone.now());
+    lease.release();
     if (current === playback) current = null;
     resolve();
     return true;

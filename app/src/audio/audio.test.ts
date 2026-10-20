@@ -431,6 +431,23 @@ describe('playProgression', () => {
     expect(fake.transport.events.size).toBe(0);
   });
 
+  it('holds the Transport while it plays, and stops when the metronome claims it', async () => {
+    const audio = await unlocked();
+    const { claimTransport, transportOwner } = await import('./transport');
+    const onEnd = vi.fn();
+    const playback = await audio.playProgression([G, C], { loop: true, onEnd });
+    expect(transportOwner()).toBe('progression');
+    const lease = claimTransport('metronome', () => undefined);
+    await playback.done;
+    expect(onEnd).toHaveBeenCalledTimes(1);
+    expect(fake.transport.events.size).toBe(0);
+    expect(transportOwner()).toBe('metronome');
+    lease.release();
+    const ended = await audio.playProgression([G]);
+    ended.stop();
+    expect(transportOwner()).toBeNull();
+  });
+
   it('drops a chord cue still waiting for its frame when stopped', async () => {
     const audio = await unlocked();
     const onChord = vi.fn();
