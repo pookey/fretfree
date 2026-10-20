@@ -1,4 +1,3 @@
-import { createRequire } from 'node:module';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -21,6 +20,7 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import type { Construct } from 'constructs';
+import { buildSync } from 'esbuild';
 
 /** The SES identity the FretworkEmail stack (lib/email-stack.ts) provisions. */
 export interface SyncEmailConfig {
@@ -53,17 +53,6 @@ const LAMBDA_DIR = fileURLToPath(new URL('../lambda', import.meta.url));
 /** Attribute names M7-03's handlers rely on (docs/design/sync.md §5, Server notes). */
 export const SYNC_TABLE_KEYS = { partition: 'userId', sort: 'sk', seq: 'seq', seqIndex: 'bySeq' };
 
-interface Esbuild {
-  buildSync(options: Record<string, unknown>): unknown;
-}
-
-// esbuild comes with tsx, an infra devDependency, so bundling needs no Docker
-// and no extra dependency. Loaded only when a bundle is actually built.
-function esbuild(): Esbuild {
-  const fromInfra = createRequire(import.meta.url);
-  return createRequire(fromInfra.resolve('tsx/package.json'))('esbuild') as Esbuild;
-}
-
 /** One ESM bundle (`index.mjs`) from a TypeScript entry under lambda/. The SDK is the runtime's. */
 function bundle(entry: string): lambda.Code {
   return lambda.Code.fromAsset(LAMBDA_DIR, {
@@ -75,7 +64,7 @@ function bundle(entry: string): lambda.Code {
       image: lambda.Runtime.NODEJS_24_X.bundlingImage,
       local: {
         tryBundle(outputDir) {
-          esbuild().buildSync({
+          buildSync({
             entryPoints: [path.join(LAMBDA_DIR, entry)],
             outfile: path.join(outputDir, 'index.mjs'),
             bundle: true,
