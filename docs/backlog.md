@@ -1051,7 +1051,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Pentatonic boxes ↔ CAGED, arpeggio shapes, 5-position major scale, minor harmony (harmonic-minor V) and chord function / substitutions.
 
 ### M6-02 · C7 pentatonic skills and box-overlay drill
-- **Status:** todo
+- **Status:** done
 - **Deps:** M6-01
 - **Owns:** `app/src/engine/skills/c7.ts`, `app/src/drills/d-pentatonic-box/**`
 
