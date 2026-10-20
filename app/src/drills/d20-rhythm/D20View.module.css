@@ -1,0 +1,317 @@
+/* D20 (design §7, iPad first): the prompt and the rhythm grid beside the
+   context panel, then a big pad to tap on below. */
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.prompt {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.prompt strong {
+  color: var(--tone);
+}
+
+.tempo {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.explain {
+  margin: 0;
+  min-height: 1.5em;
+  max-width: 40rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* One bar: eight boxes, a beat's two eighths grouped by a wider gap. */
+.results {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(8, 3.5rem);
+  column-gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cell {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+}
+
+.cell[data-beat='true']:not(:first-child) {
+  margin-left: var(--space-3);
+}
+
+.box {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-s);
+  border: 2px dashed var(--border);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cell[data-hit='true'] .box {
+  border: 2px solid var(--tone);
+  background: color-mix(in srgb, var(--tone) 25%, transparent);
+}
+
+/* The playhead: a thicker outline as well as the fill, not colour alone. */
+.cell[aria-current='step'] .box {
+  outline: 4px solid var(--text);
+  outline-offset: 2px;
+}
+
+.cell[data-verdict='on'] .box {
+  border-color: var(--correct);
+  background: color-mix(in srgb, var(--correct) 25%, transparent);
+  color: var(--correct);
+}
+
+.cell[data-verdict='early'] .box,
+.cell[data-verdict='late'] .box,
+.cell[data-verdict='miss'] .box {
+  border-color: var(--wrong);
+  background: color-mix(in srgb, var(--wrong) 20%, transparent);
+  color: var(--text);
+}
+
+.count {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell[data-beat='true'] .count {
+  color: var(--text);
+}
+
+.inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.inputs legend {
+  float: left;
+  margin-right: var(--space-2);
+  line-height: var(--tap);
+  color: var(--text-muted);
+}
+
+.inputs label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.inputs input {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--tone);
+}
+
+.note {
+  margin: 0;
+  max-width: 40rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.calibrate {
+  width: 100%;
+  max-width: 40rem;
+}
+
+.link {
+  min-height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.play {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 48rem;
+  align-self: center;
+}
+
+.status {
+  min-height: 1.5em;
+  text-align: center;
+  font-weight: 650;
+}
+
+.status p {
+  margin: 0;
+}
+
+/* The message is the signal, not just its colour: it is also an alert. */
+.error {
+  color: var(--text);
+  border-left: 0.25rem solid var(--wrong);
+  padding-left: var(--space-3);
+  text-align: left;
+  font-weight: 400;
+}
+
+/* The pad: big enough to hit without looking, iPad first. */
+.pad {
+  display: grid;
+  place-items: center;
+  gap: var(--space-3);
+  min-height: 14rem;
+  padding: var(--space-4);
+  border-radius: var(--radius-l);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+
+.pad:focus-visible {
+  outline: 3px solid var(--tone);
+  outline-offset: 2px;
+}
+
+/* The beat light: a ring, filled on each click; the bar's first click is bigger.
+   Shape and size carry the accent, not colour alone. */
+.light {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 3px solid var(--tone);
+  transition:
+    background-color 80ms ease-out,
+    transform 80ms ease-out;
+}
+
+.light[data-on='true'] {
+  background: var(--tone);
+}
+
+.light[data-accent='bar'] {
+  transform: scale(1.4);
+}
+
+.light[data-accent='sub'] {
+  transform: scale(0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .light {
+    transition: none;
+  }
+
+  .light[data-accent='bar'],
+  .light[data-accent='sub'] {
+    transform: none;
+  }
+
+  .light[data-accent='bar'] {
+    border-width: 5px;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.button,
+.primary {
+  min-height: var(--tap);
+  min-width: 8rem;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary {
+  border-color: transparent;
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+/* Narrower screens: the grid shrinks to fit 8 boxes at 375pt. */
+.drill[data-size-class='compact'] .grid {
+  grid-template-columns: repeat(8, 2.25rem);
+}
+
+.drill[data-size-class='compact'] .cell[data-beat='true']:not(:first-child) {
+  margin-left: var(--space-2);
+}
+
+.drill[data-size-class='compact'] .pad {
+  min-height: 9rem;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.25rem;
+}
