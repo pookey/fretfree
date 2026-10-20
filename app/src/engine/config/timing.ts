@@ -61,8 +61,8 @@ export const timing = {
     maxHz: 5000,
     /** Frames quieter than this RMS (full scale = 1, about −54 dBFS) never start an onset. */
     minRms: 0.002,
-    /** Flux must exceed the median of the recent flux by this factor… */
-    thresholdRatio: 1.5,
+    /** Flux must exceed this multiple of the recent median flux… (1.5 let loud room noise through) */
+    thresholdRatio: 2,
     /** …and by this much absolutely (normalised flux), so silence plus a cough isn't a strum. */
     thresholdFloor: 0.02,
     /** The median runs over this many past frames (~80ms). */
