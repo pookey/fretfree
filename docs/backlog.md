@@ -1012,7 +1012,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Unit tests for cents and string mapping. E2E with a fake pitch source.
 
 ### M5-04 · Mic onboarding and settings
-- **Status:** todo
+- **Status:** done
 - **Deps:** M5-02, M1-06
 - **Owns:** `app/src/onboarding/steps/mic.tsx`, `app/src/screens/progress/panels/mic.tsx`
 
