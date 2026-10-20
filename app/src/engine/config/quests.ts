@@ -22,6 +22,8 @@ export const quests = {
   'mix-it-up': { target: 3, bonusXp: 20 },
   'weak-strings': { target: 10, bonusXp: 20 },
   'weak-skill': { target: 8, bonusXp: 20 },
+  /** Mic mode only: answers played into the mic, right or wrong (design §3.7 "try a mic drill"). */
+  'try-mic': { target: 3, bonusXp: 15 },
 } as const;
 
 declare module './index' {

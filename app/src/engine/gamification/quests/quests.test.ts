@@ -80,6 +80,7 @@ function ctx(answers: QuestAnswer[], over: Partial<QuestDayContext> = {}): Quest
 const snap = (priorReviews: ReviewLogRecord[] = [], date = DATE): QuestSnapshot => ({
   date,
   priorReviews,
+  micEnabled: true,
 });
 
 function drawn(template: QuestTemplate, snapshot: QuestSnapshot = snap([review()])): DailyQuest {
@@ -107,6 +108,7 @@ describe('the quest registry', () => {
       'fluent',
       'mix-it-up',
       'new-ground',
+      'try-mic',
       'weak-skill',
       'weak-strings',
     ]);
@@ -402,6 +404,7 @@ describe('the guardrail: no quest pays for drilling stable cards early', () => {
     const pick = <T>(xs: readonly T[]): T => xs[Math.floor(rng() * xs.length)]!;
     const items = ['note@s3f2', 'note@s4f5', 'find:G@s3', 'note@s6f1', 'step:+2@E'];
     const skills = ['C2.all-notes', 'F2.string6-naturals', 'F1.alphabet'];
+    const drills = ['find-the-note', 'play-the-note', 'play-sequence'];
     const quests = QUEST_TEMPLATES.map((t) => t.draw(snap(richHistory()))!);
     for (let run = 0; run < 200; run++) {
       const base = Array.from({ length: Math.floor(rng() * 12) }, () => {
@@ -413,10 +416,16 @@ describe('the guardrail: no quest pays for drilling stable cards early', () => {
           rating,
           correct: rating !== Rating.Again,
           guided: rng() < 0.2,
+          drillType: pick(drills),
         });
       });
       const grind = Array.from({ length: 20 }, () =>
-        answer({ itemId: pick(items), skillId: pick(skills), kind: 'not-due' }),
+        answer({
+          itemId: pick(items),
+          skillId: pick(skills),
+          kind: 'not-due',
+          drillType: pick(drills),
+        }),
       );
       // Interleave the grind at random, keeping the base answers in order.
       const mixed: QuestAnswer[] = [];

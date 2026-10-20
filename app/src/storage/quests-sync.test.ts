@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Rating, State } from 'ts-fsrs';
+import { ENGINE_CONFIG } from '../engine/config';
 import { createScheduler } from '../engine/scheduler';
 import type { ReviewLogRecord } from '../engine/model';
 import clearDue from '../engine/gamification/quests/clear-due';
 import fluent from '../engine/gamification/quests/fluent';
 import newGround from '../engine/gamification/quests/new-ground';
+import tryMic from '../engine/gamification/quests/try-mic';
 import type { CardKind } from '../engine/gamification/types';
 import { FretworkDB } from './db';
 import { getDailyProgress, getEvents, logEvent, saveGamification } from './gamification-repo';
@@ -15,7 +17,7 @@ import {
   loadQuestSnapshot,
   syncQuests,
 } from './quests-sync';
-import { getGamification } from './repository';
+import { getGamification, saveSettings } from './repository';
 
 const DATE = '2026-10-18';
 const now = new Date(2026, 9, 18, 18, 0);
@@ -79,6 +81,12 @@ describe('loadQuestSnapshot', () => {
     expect(s.date).toBe(DATE);
     expect(s.priorReviews.map((r) => r.at)).toEqual([at(4, 0), at(17, 20)]);
   });
+
+  it('carries whether mic mode is on', async () => {
+    expect((await loadQuestSnapshot(db, DATE)).micEnabled).toBe(false);
+    await saveSettings(db, { micEnabled: true });
+    expect((await loadQuestSnapshot(db, DATE)).micEnabled).toBe(true);
+  });
 });
 
 describe('dueReviews', () => {
@@ -114,6 +122,42 @@ describe('loadQuestDay', () => {
     expect(ctx.todaysReviews).toHaveLength(3);
     expect(ctx.dueRemaining).toBe(0);
     expect(ctx.date).toBe(DATE);
+  });
+
+  it('names the drill that asked each answer', async () => {
+    await answered(at(18, 9), 'due', { itemId: 'a', drillType: 'play-the-note' });
+    await answered(at(18, 9, 1), 'due', { itemId: 'b' });
+    const ctx = await loadQuestDay(db, DATE, now);
+    expect(ctx.answers.map((a) => a.drillType)).toEqual(['play-the-note', 'name-the-note']);
+  });
+});
+
+describe('the mic quest', () => {
+  const played = (min: number) =>
+    answered(at(18, 9, min), 'due', { itemId: `find:A@s${min + 1}`, drillType: 'play-the-note' });
+
+  it('is drawn in mic mode only, and completes on answers played into the mic', async () => {
+    await db.reviewLogs.add(log(at(17, 9)));
+    expect((await syncQuests(db, [tryMic], now)).statuses).toEqual([]);
+
+    await saveSettings(db, { micEnabled: true });
+    await played(0);
+    await played(1);
+    const partway = await syncQuests(db, [tryMic], now);
+    expect(partway.statuses.map((x) => [x.quest.id, x.progress, x.done])).toEqual([
+      ['try-mic', 2, false],
+    ]);
+
+    await played(2);
+    const done = await syncQuests(db, [tryMic], now);
+    expect(done.fresh).toEqual([
+      {
+        type: 'quest-completed',
+        date: DATE,
+        questId: 'try-mic',
+        xp: ENGINE_CONFIG.quests['try-mic'].bonusXp,
+      },
+    ]);
   });
 });
 
