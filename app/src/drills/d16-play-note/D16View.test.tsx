@@ -187,6 +187,19 @@ describe('<D16View>', () => {
     expect(screen.getByTestId('d16-mic')).toHaveAttribute('data-state', 'running');
   });
 
+  it('says when the mic stops mid-drill, and listens again on a tap', async () => {
+    const { onAnswer } = view(prompt(findItemId('A', 6)));
+    await startListening();
+    act(() => mic.loseInput());
+    expect(screen.getByRole('alert')).toHaveTextContent(/The mic stopped/);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    });
+    expect(screen.getByTestId('d16-mic')).toHaveAttribute('data-state', 'running');
+    play('A2');
+    expect(onAnswer).toHaveBeenCalledTimes(1);
+  });
+
   it('offers no retry where the browser cannot listen', async () => {
     view(prompt(findItemId('A', 6)));
     mic.failNextStart('unsupported');

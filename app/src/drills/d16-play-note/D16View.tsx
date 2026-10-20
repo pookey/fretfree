@@ -33,6 +33,7 @@ const ERRORS: Record<PitchSourceErrorReason, string> = {
   'no-device': 'No microphone was found. Connect one, then try again.',
   unsupported: "This browser can't listen for notes.",
   failed: "The microphone didn't start. Try again.",
+  lost: 'The mic stopped: it was unplugged, another app took it, or FretFree went to the background. Try again.',
 };
 
 interface Live {
