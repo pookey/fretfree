@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { freshStart } from './helpers';
 import { audioContexts, audioLevel, refuseAudioWorklets, tapAudioOutput } from './helpers/audio';
+import { expectControlled, serviceWorkerActivated } from './helpers/sw';
 
 // M4-13: sound on iPhone and iPad. The plucked guitar plays rendered buffers
 // on native nodes, with no AudioWorklet (iOS Safari can refuse the blob URL a
@@ -13,12 +14,9 @@ async function openSettingsOffline(page: Page) {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await tapAudioOutput(page);
+  await serviceWorkerActivated(page);
   await freshStart(page, '/settings');
-  await page.evaluate(() => navigator.serviceWorker.ready);
-  await page.reload();
-  await expect
-    .poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)))
-    .toBe(true);
+  await expectControlled(page);
   await expect(sound(page)).toBeVisible();
   return errors;
 }
