@@ -131,6 +131,13 @@ describe('SyncStack: sign-in', () => {
     });
   });
 
+  it('lets signed-in users change no sign-in attribute, and verifies any address change', () => {
+    t.hasResourceProperties('AWS::Cognito::UserPoolClient', { WriteAttributes: ['locale'] });
+    t.hasResourceProperties('AWS::Cognito::UserPool', {
+      UserAttributeUpdateSettings: { AttributesRequireVerificationBeforeUpdate: ['email'] },
+    });
+  });
+
   it('creates the stage only after the route its settings name', () => {
     const routes = t.findResources('AWS::ApiGatewayV2::Route', {
       Properties: { RouteKey: 'POST /auth/start' },

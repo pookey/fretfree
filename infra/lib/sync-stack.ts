@@ -150,6 +150,8 @@ export class SyncStack extends Stack {
       signInAliases: { email: true },
       signInCaseSensitive: false,
       standardAttributes: { email: { required: true, mutable: true } },
+      // An address change only takes effect once the new address is verified.
+      keepOriginal: { email: true },
       // A random password nobody knows confirms each user; no client may use it.
       passwordPolicy: {
         minLength: 32,
@@ -185,6 +187,11 @@ export class SyncStack extends Stack {
       generateSecret: false,
       preventUserExistenceErrors: true,
       enableTokenRevocation: true,
+      // Signed-in users can't change their email (the sign-in key) or make
+      // Cognito mail other addresses. Leaving the list unset makes every
+      // attribute writable, and an empty one risks reading as unset, so it
+      // names one harmless attribute.
+      writeAttributes: new cognito.ClientAttributes().withStandardAttributes({ locale: true }),
       authSessionValidity: Duration.minutes(15),
       accessTokenValidity: Duration.hours(1),
       idTokenValidity: Duration.hours(1),
