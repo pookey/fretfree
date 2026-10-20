@@ -329,7 +329,7 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
 5. **iPad portrait: D9, D37 and D38 centre the neck in a tall empty band.** The context panel is pinned at the bottom. This is the same pattern M2-20 fixed for D5 and D6.
 6. **D10 at guide level 1** shows no fret numbers or string names. Its 5ths are drawn as circles, the same as the 3rd, until feedback turns them into triangles. Yet the explanation talks about frets and "back toward the nut". On a sideways phone the explanation doesn't appear at all, only the bar's "That was the A shape of A".
 7. **Copy:**
-   - D10: "Both root on string 5" should read "Both have the root on string 5".
+   - D9 and D10: "Both root on string 5" should read "Both have the root on string 5". D9's wrong-shape explanation (`d9-build-caged/logic.ts`) builds the same sentence as D10's, and both drills' logic tests pin it, so fix them together.
    - The summary says "Those notes come back sooner" after a chord or CAGED session; it should say "items". It also says "come back tomorrow" twice.
    - The "Already know this? Test out" offer runs skill titles together: "a short test of Interval shapes: 3rds, Interval shapes: 4ths, 5ths and the tritone, Spell the sharp keys and Spell the flat keys". M1-38 fixed the prerequisite list, but not this sentence.
    - D7 and D37 repeat their hint word for word under the prompt and in the panel.
