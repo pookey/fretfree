@@ -1050,7 +1050,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/engine/gamification/quests/try-mic.ts`, `app/src/engine/gamification/achievements/mic-*.ts`
 
 ### M5-08 · M5 milestone QA
-- **Status:** todo
+- **Status:** done
 - **Deps:** M5-01, M5-02, M5-03, M5-04, M5-05, M5-06, M5-07
 - **Owns:** `docs/progress.md`
 
@@ -1104,7 +1104,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - D20 covers tap and strum timing against a click (±30 ms target, configurable).
 
 ### M6-09 · D21 "Visualise it" (mental practice)
-- **Status:** todo
+- **Status:** done
 - **Deps:** M3-05
 - **Owns:** `app/src/drills/d21-visualise/**`
 
