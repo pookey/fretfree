@@ -12,6 +12,8 @@ export interface QuestSnapshot {
   date: LocalDate;
   /** Reviews from the lookback window before `date`, oldest first. */
   priorReviews: readonly ReviewLogRecord[];
+  /** `settings.micEnabled`: sessions serve mic drills, so a mic quest can be met. */
+  micEnabled?: boolean;
 }
 
 /** One answer on the quest's date: its review log joined with its XP kind. */
@@ -24,6 +26,8 @@ export interface QuestAnswer {
   /** A guided rep (the answer was shown): a worked example, not recall. */
   guided: boolean;
   at: Date;
+  /** The drill that asked it (`reviewLogs.drillType`), e.g. to spot a mic drill. */
+  drillType?: string;
 }
 
 /** What a drawn quest measures progress against. */

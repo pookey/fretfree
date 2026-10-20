@@ -19,7 +19,7 @@ import {
 import type { AnswerEvent, QuestCompletedEvent } from '../engine/gamification/types';
 import type { FretworkDB } from './db';
 import { commitGamification, getDailyProgress } from './gamification-repo';
-import { getGamification, getSkillStates } from './repository';
+import { getGamification, getSettings, getSkillStates } from './repository';
 
 /**
  * Glue between the stored data and the pure quest functions (design §3.7
@@ -32,14 +32,21 @@ async function reviewsBetween(db: FretworkDB, from: Date, to: Date) {
   return db.reviewLogs.where('at').between(from, to, true, false).sortBy('at');
 }
 
-/** The history a date's quests are drawn from: the lookback days before it. */
+/**
+ * The history a date's quests are drawn from: the lookback days before it,
+ * and whether mic mode is on (a mic quest is drawn only then).
+ */
 export async function loadQuestSnapshot(
   db: FretworkDB,
   date: LocalDate,
   lookbackDays: number = ENGINE_CONFIG.quests.lookbackDays,
 ): Promise<QuestSnapshot> {
   const from = startOfLocalDay(addDays(date, -lookbackDays));
-  return { date, priorReviews: await reviewsBetween(db, from, startOfLocalDay(date)) };
+  const [priorReviews, settings] = await Promise.all([
+    reviewsBetween(db, from, startOfLocalDay(date)),
+    getSettings(db),
+  ]);
+  return { date, priorReviews, micEnabled: settings.micEnabled };
 }
 
 /**
@@ -92,6 +99,7 @@ export async function loadQuestDay(
     kind: kinds.get(`${r.itemId}@${r.at.getTime()}`) ?? 'not-due',
     guided: r.hintUsed,
     at: r.at,
+    drillType: r.drillType,
   }));
   return { date, todaysReviews, dueRemaining, skillStates, answers };
 }
