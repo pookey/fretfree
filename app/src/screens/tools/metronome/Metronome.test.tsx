@@ -5,7 +5,7 @@ import { DEFAULT_SETTINGS } from '../../../engine/model';
 import { createFakeMetronome, type FakeMetronome } from '../../../timing/fake-metronome';
 import { createMetronomeController, type MetronomeController } from './controller';
 import { Metronome } from './Metronome';
-import { installMiniControl, MiniControl } from './MiniControl';
+import { installMiniControl, mountMiniControl } from './MiniControl';
 
 const size = { w: window.innerWidth, h: window.innerHeight };
 function resize(w: number, h: number) {
@@ -218,27 +218,31 @@ describe('<Metronome>', () => {
   });
 });
 
-describe('<MiniControl>', () => {
+describe('the mini control', () => {
   it('shows only while the click runs with the view closed, and stops it', async () => {
-    render(<MiniControl controller={controller} />);
+    const unmount = mountMiniControl(controller);
     expect(screen.queryByRole('region', { name: 'Metronome' })).toBeNull();
     const close = controller.openView();
-    await act(() => controller.start());
+    await controller.start();
     expect(screen.queryByRole('region', { name: 'Metronome' })).toBeNull();
-    act(close);
+    close();
     const mini = screen.getByRole('region', { name: 'Metronome' });
     expect(mini).toHaveTextContent('100 BPM');
+    controller.set({ bpm: 120 });
+    expect(mini).toHaveTextContent('120 BPM');
     fireEvent.click(within(mini).getByRole('button', { name: 'Stop metronome' }));
     expect(metronome.running).toBe(false);
     expect(screen.queryByRole('region', { name: 'Metronome' })).toBeNull();
+    await controller.start();
+    unmount();
+    expect(screen.queryByRole('region', { name: 'Metronome' })).toBeNull();
   });
 
-  it('installs once, beside the app', async () => {
+  it('installs once', async () => {
     installMiniControl(controller);
     installMiniControl(controller);
-    expect(document.querySelectorAll('[data-metronome-mini]')).toHaveLength(1);
     path = '/tools';
-    await act(() => controller.start());
-    expect(await screen.findByRole('region', { name: 'Metronome' })).toBeInTheDocument();
+    await controller.start();
+    expect(screen.getAllByRole('region', { name: 'Metronome' })).toHaveLength(1);
   });
 });
