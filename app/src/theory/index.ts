@@ -8,3 +8,4 @@ export * from './chords';
 export * from './pentatonic';
 export * from './arpeggios';
 export * from './function';
+export * from './staff';
