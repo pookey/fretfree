@@ -131,6 +131,16 @@ describe('SyncStack: sign-in', () => {
     });
   });
 
+  it('creates the stage only after the route its settings name', () => {
+    const routes = t.findResources('AWS::ApiGatewayV2::Route', {
+      Properties: { RouteKey: 'POST /auth/start' },
+    });
+    const [routeId] = Object.keys(routes);
+    expect(routeId).toBeDefined();
+    const [stage] = Object.values(t.findResources('AWS::ApiGatewayV2::Stage'));
+    expect((stage as { DependsOn?: string[] }).DependsOn).toContain(routeId);
+  });
+
   it('throttles the public mail-sending route harder than the rest', () => {
     t.hasResourceProperties('AWS::ApiGatewayV2::Stage', {
       StageName: '$default',

@@ -311,11 +311,14 @@ export class SyncStack extends Stack {
       methods: [apigwv2.HttpMethod.GET],
       integration: publicIntegration,
     });
-    api.addRoutes({
+    const startRoutes = api.addRoutes({
       path: '/auth/start',
       methods: [apigwv2.HttpMethod.POST],
       integration: integration('AuthStartIntegration', startFn),
     });
+    // The stage's RouteSettings name this route, and API Gateway rejects a stage
+    // whose settings name a route that doesn't exist yet.
+    stage.node.addDependency(...startRoutes);
 
     const authorizer = new HttpUserPoolAuthorizer('Jwt', userPool, {
       userPoolClients: [appClient],
