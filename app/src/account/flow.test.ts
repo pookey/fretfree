@@ -254,6 +254,29 @@ describe('a signed-in account', () => {
     });
   });
 
+  it('signs out locally when Cognito refuses the refresh', async () => {
+    const { signIn, server } = await signedIn();
+    vi.mocked(server.cognito.refresh).mockRejectedValueOnce(
+      new AccountApiError('NotAuthorizedException'),
+    );
+    expect(await signIn.accessToken()).toBeNull();
+    expect(loadAccount()).toBeNull();
+  });
+
+  it('stays signed in through network trouble on a refresh', async () => {
+    const { signIn, server } = await signedIn();
+    vi.mocked(server.cognito.refresh).mockRejectedValueOnce(new AccountApiError('network'));
+    await expect(signIn.accessToken()).rejects.toThrow('network');
+    expect(loadAccount()?.email).toBe('a@b.co');
+  });
+
+  it('shares one refresh between callers that arrive together', async () => {
+    const { signIn, server } = await signedIn();
+    const tokens = await Promise.all([signIn.accessToken(), signIn.accessToken()]);
+    expect(tokens).toEqual(['access2', 'access2']);
+    expect(server.cognito.refresh).toHaveBeenCalledTimes(1);
+  });
+
   it('drops a refresh that finishes after signing out', async () => {
     const { signIn, server } = await signedIn();
     vi.mocked(server.cognito.refresh).mockImplementationOnce(async () => {

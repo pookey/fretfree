@@ -105,6 +105,28 @@ export function createSignIn(deps: SignInDeps): SignIn {
     return account;
   };
 
+  let refreshing: Promise<string | null> | null = null;
+
+  async function refresh(account: Account): Promise<string | null> {
+    const cognito = await deps.cognito();
+    let fresh;
+    try {
+      fresh = await cognito.refresh(account.tokens.refreshToken);
+    } catch (error) {
+      // The refresh token expired or was revoked (signed out elsewhere): this
+      // device is signed out too, so the panel offers to sign in again.
+      if (error instanceof AccountApiError && error.message === 'NotAuthorizedException') {
+        if (loadAccount()?.email === account.email) saveAccount(null);
+        return null;
+      }
+      throw error;
+    }
+    // Signed out (or in as someone else) while the refresh was in flight: keep that.
+    if (loadAccount()?.email !== account.email) return null;
+    saveAccount({ ...account, tokens: { ...account.tokens, ...fresh } });
+    return fresh.accessToken;
+  }
+
   async function openSession(cognito: Cognito, email: string) {
     const fresh =
       live &&
@@ -202,12 +224,9 @@ export function createSignIn(deps: SignInDeps): SignIn {
       if (!account) return null;
       if (account.tokens.expiresAt - REFRESH_EARLY_MS > deps.now())
         return account.tokens.accessToken;
-      const cognito = await deps.cognito();
-      const fresh = await cognito.refresh(account.tokens.refreshToken);
-      // Signed out (or in as someone else) while the refresh was in flight: keep that.
-      if (loadAccount()?.email !== account.email) return null;
-      saveAccount({ ...account, tokens: { ...account.tokens, ...fresh } });
-      return fresh.accessToken;
+      // Callers that arrive together (start, focus, reconnect) share one refresh.
+      refreshing ??= refresh(account).finally(() => (refreshing = null));
+      return refreshing;
     },
   };
 }
