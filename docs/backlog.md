@@ -849,7 +849,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 
 ### M1-42 · [contract] Keep drill logic out of first-load JS
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (first-load JS is at about 240 of 250 KB, and every new drill adds 2–3 KB)
 - **Deps:** none
 - **Design:** §6, §10 (first-load budget)
