@@ -162,7 +162,9 @@ export function d8MakePrompt(item: Item, ctx: DrillContext): D8Prompt {
   }
   const scope = d8ScopeFor(ctx.scopeLevel);
   const kind = ref.chord;
-  const t = pick(templatesFor(kind), ctx.rng) as VoicingTemplate;
+  // A shape that holds the degree: the C-shape 7 (x3231x) has no 5th.
+  const shapes = templatesFor(kind).filter((v) => v.notes.some((n) => n.degree === ref.degree));
+  const t = pick(shapes, ctx.rng) as VoicingTemplate;
   const chromas = scope === 'naturals' ? NATURAL_PCS.map(chromaOf) : [...Array(12).keys()];
   const roots = chromas
     .map((c) => d8SpellRoot(c, kind, accidentalPref))
