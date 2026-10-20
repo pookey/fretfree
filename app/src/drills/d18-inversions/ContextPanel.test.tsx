@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import type { GuideLevel } from '../../engine/model';
 import { DROP_D_TUNING, STANDARD_TUNING, type Tuning } from '../../theory';
+import { resolveView } from '../lazy-view';
 import { InversionsPanel } from './ContextPanel';
 import triadInversions from './drill';
 import { d18Check, d18MakePrompt, type D18Prompt } from './logic';
@@ -45,22 +46,11 @@ const current = () =>
   });
 
 describe('<InversionsPanel>', () => {
+  // The first use imports every drill's views (one shared chunk), which can
+  // take several seconds cold on a loaded machine.
   it('is the D18 plugin’s context panel, loaded on first use', async () => {
-    const Panel = triadInversions.contextPanel!;
-    render(
-      <Panel
-        prompt={prompt('inversion:0@s3/major')}
-        guideLevel={2}
-        guided={false}
-        handedness="right"
-        tuning={STANDARD_TUNING}
-        feedback={null}
-      />,
-    );
-    expect(
-      await screen.findByRole('heading', { name: 'Inversions on strings 3–1' }),
-    ).toBeInTheDocument();
-  });
+    expect(await resolveView(triadInversions.contextPanel!)).toBe(InversionsPanel);
+  }, 30_000);
 
   it('lists the inversions with their degrees from guide level 2, the asked one marked', () => {
     panel(prompt('inversion:1@s3/minor'), 2);

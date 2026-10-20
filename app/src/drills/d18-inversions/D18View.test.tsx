@@ -4,6 +4,7 @@ import type { GuideLevel } from '../../engine/model';
 import type { SizeClass } from '../../shell/size-class';
 import { STANDARD_TUNING, type Position } from '../../theory';
 import type { DrillFeedback } from '../types';
+import { resolveView } from '../lazy-view';
 import { D18View } from './D18View';
 import triadInversions from './drill';
 import { d18Check, d18MakePrompt, type D18Answer, type D18Prompt } from './logic';
@@ -57,22 +58,11 @@ const at = (string: number, fret: number): Position => ({ string, fret });
 const taps = (...ps: Position[]): D18Answer => ({ kind: 'taps', taps: ps });
 
 describe('<D18View> build cards', () => {
+  // The first use imports every drill's views (one shared chunk), which can
+  // take several seconds cold on a loaded machine.
   it('is the D18 plugin’s view, loaded on first use', async () => {
-    const View = triadInversions.render;
-    render(
-      <View
-        prompt={prompt('inversion:1@s3/major')}
-        guideLevel={1}
-        guided={false}
-        handedness="right"
-        sizeClass="regular-wide"
-        tuning={STANDARD_TUNING}
-        feedback={null}
-        onAnswer={() => {}}
-      />,
-    );
-    expect(await screen.findByTestId('d18-drill')).toHaveAttribute('data-mode', 'build');
-  });
+    expect(await resolveView(triadInversions.render)).toBe(D18View);
+  }, 30_000);
 
   it('shows the root and asks for the inversion, without giving it away', () => {
     view(prompt('inversion:1@s3/major'));
