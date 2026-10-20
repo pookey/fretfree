@@ -910,7 +910,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/engine/skills/c8.ts`, `app/src/drills/d11-numerals/**`, `app/e2e/m4-02.spec.ts`
 
 ### M4-03 · C9 skills plus D12 "Progression builder"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-01
 - **Owns:** `app/src/engine/skills/c9.ts`, `app/src/drills/d12-progression-builder/**`, `app/e2e/m4-03.spec.ts`
 - **Acceptance:**
