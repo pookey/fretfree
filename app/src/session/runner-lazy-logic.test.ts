@@ -56,4 +56,24 @@ describe('SessionRunner with lazy drill logic', () => {
     expect(cur.prompt).toBeUndefined();
     await expect(r.answer('C', 500)).rejects.toThrow('not loaded');
   });
+
+  it('builds a prompt the failed download left unbuilt once a retry loads the logic', async () => {
+    let ready = false;
+    const logic: AnyDrillType['logic'] = {
+      preload: () => Promise.reject(new Error('offline')),
+      ready: () => ready,
+      get: () => D1.logic.get(),
+    };
+    await D1.logic.preload();
+    const r = await start({ ...D1, logic });
+    const unbuilt = r.currentPrompt()!;
+    expect(unbuilt.prompt).toBeUndefined();
+    expect(r.currentPrompt()).toBe(unbuilt);
+    // `preloadDrill` retried the download (SessionScreen does), and it loaded.
+    ready = true;
+    const built = r.currentPrompt()!;
+    expect(built.entry).toEqual(unbuilt.entry);
+    expect(built.prompt).toMatchObject({ itemId: unbuilt.entry.itemId });
+    expect(r.currentPrompt()).toBe(built);
+  });
 });

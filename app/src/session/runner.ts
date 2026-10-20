@@ -375,7 +375,10 @@ export class SessionRunner {
 
   currentPrompt(): CurrentPrompt | null {
     if (this.isOver) return null;
-    if (this.current && this.current.index === this.index) return this.current;
+    const cur = this.current;
+    // A prompt left unbuilt by a failed logic download is built once a retry has loaded it.
+    const stale = cur !== null && cur.prompt === undefined && cur.drill.logic.ready();
+    if (cur && cur.index === this.index && !stale) return cur;
     const entry = this.queue[this.index] as SessionEntry;
     const drill = this.drillFor(entry);
     const prompt = drill.logic.ready()
