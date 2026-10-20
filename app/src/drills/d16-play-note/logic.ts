@@ -17,8 +17,10 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
-import { d4ConceptOf } from '../d4-octave-finder/logic';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D16_SCOPES, type D16Mode } from './meta';
+
+export { D16_ID, D16_SCOPE, D16_SCOPES, d16CanTest, d16ConceptOf, type D16Mode } from './meta';
 
 /**
  * D16 "Play the note" (design §6): the learner plays the note on a real
@@ -37,14 +39,6 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  *   pitch, and every position that sounds it counts: the prompt names the
  *   shape's string, but the mic can't hear strings.
  */
-
-export const D16_ID = 'play-the-note';
-
-export type D16Mode = 'pitch-class' | 'region' | 'any-position';
-
-/** Adaptive scope for find items (design §3.3 step 4), most forgiving first. */
-export const D16_SCOPES = ['pitch-class', 'region'] as const satisfies readonly D16Mode[];
-export const D16_SCOPE = { minLevel: 0, maxLevel: D16_SCOPES.length - 1 };
 
 export const D16_REGION: FretRange = { from: 0, to: 12 };
 
@@ -86,10 +80,6 @@ export function d16ModeFor(level: number): D16Mode {
 
 export function d16MatchMode(mode: D16Mode): PitchMatchMode {
   return mode === 'pitch-class' ? 'pitch-class' : 'exact';
-}
-
-export function d16CanTest(item: Item): boolean {
-  return parseFindItemId(item.id) !== null || parseOctaveItemId(item.id) !== null;
 }
 
 const uniqueMidis = (positions: readonly Position[], tuning: Tuning) =>
@@ -252,16 +242,6 @@ export function d16ModeHint(prompt: D16Prompt): string {
     case 'any-position':
       return 'The mic hears the pitch, so the same note on another string counts too.';
   }
-}
-
-export function d16ConceptOf(
-  item: Item,
-  ctx: Pick<DrillContext, 'tuning' | 'accidentalPref'>,
-): string | null {
-  const find = parseFindItemId(item.id);
-  if (find) return chromaToPc(chromaOf(find.pc), ctx.accidentalPref);
-  // Keyed as D4 keys it, so both drills share the shape's confusions.
-  return d4ConceptOf(item, ctx);
 }
 
 /**

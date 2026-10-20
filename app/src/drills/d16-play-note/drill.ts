@@ -1,24 +1,21 @@
 import { SKILLS } from '../../engine/skills';
-import { lazyParts } from '../lazy-view';
+import { lazyLogic, lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as logic from './logic';
+import type { D16Answer, D16Prompt } from './logic';
 import type * as views from './views';
-import {
-  D16_ID,
-  D16_SCOPE,
-  d16CanTest,
-  d16Check,
-  d16ConceptOf,
-  d16DescribeAnswer,
-  d16FeedbackPositions,
-  d16GradedResponseMs,
-  d16MakePrompt,
-  d16Sounds,
-  type D16Answer,
-  type D16Prompt,
-} from './logic';
+import { D16_ID, D16_SCOPE, d16CanTest, d16ConceptOf } from './meta';
 
-// Lazy: the views stay out of first-load JS (design §10).
-const parts = lazyParts<typeof views>('d16-play-note');
+// Lazy: the logic and views stay out of first-load JS (design §10).
+const lazy = lazyLogic('d16-play-note', (l: typeof logic) => ({
+  makePrompt: l.d16MakePrompt,
+  check: l.d16Check,
+  describeAnswer: l.d16DescribeAnswer,
+  sounds: l.d16Sounds,
+  feedbackPositions: l.d16FeedbackPositions,
+  gradedResponseMs: l.d16GradedResponseMs,
+}));
+const parts = lazyParts<typeof views>('d16-play-note', lazy);
 
 const playTheNote: DrillType<D16Prompt, D16Answer> = {
   id: D16_ID,
@@ -30,13 +27,8 @@ const playTheNote: DrillType<D16Prompt, D16Answer> = {
   requiresMic: true,
   scope: D16_SCOPE,
   canTest: d16CanTest,
-  makePrompt: d16MakePrompt,
-  check: d16Check,
-  describeAnswer: d16DescribeAnswer,
-  sounds: d16Sounds,
-  feedbackPositions: d16FeedbackPositions,
-  gradedResponseMs: d16GradedResponseMs,
   conceptOf: d16ConceptOf,
+  logic: lazy,
   render: parts.render,
 };
 
