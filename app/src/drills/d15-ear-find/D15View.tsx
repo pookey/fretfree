@@ -242,7 +242,9 @@ export function D15View({
           <div className={styles.listen}>
             {!soundOn && prompt.byEar && !feedback ? (
               // An ear card can't be answered unheard, and naming the note would
-              // grade it on another fact, so ask for sound instead.
+              // grade it on another fact, so ask for sound instead. The session
+              // times the answer from when the prompt appeared, so this first
+              // rep's time includes turning sound on: it may grade Hard once.
               <button
                 type="button"
                 className={styles.primary}

@@ -5,7 +5,7 @@ import { skills as f2Skills } from './f2';
 
 /**
  * C2: all notes on all strings, including accidentals (research/03), in both
- * directions (research/02 rule 1), and found by ear (D15, rule 13). The F2
+ * directions (research/02 rule 1), and found with its sound (D15, rule 10). The F2
  * naturals on strings 6 and 5 stay F2's items, so every item ID belongs to
  * exactly one skill.
  */

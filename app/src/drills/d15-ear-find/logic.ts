@@ -185,10 +185,12 @@ export function d15Explain(prompt: D15Prompt, fb: DrillFeedback<Position>): stri
 
 /**
  * The guide level the neck is drawn at. Guides fade as usual (design §3.5),
- * but the answer never shows as text before it is given: guide level 2+
- * names the open strings, so when one of those names is the note, the neck
- * drops to inlays only (level 1), as D2's does. Guided reps (worked
- * examples) and feedback show everything.
+ * but on a named card the answer never shows as text before it is given:
+ * guide level 2+ names the open strings, so when one of those names is the
+ * note, the neck drops to inlays only (level 1), as D2's does. An ear card
+ * keeps its guides: its note has no name to give away, and dropping them
+ * would itself say the note is an open string's (rule 4). Guided reps
+ * (worked examples) and feedback show everything.
  */
 export function d15NeckGuideLevel(
   prompt: D15Prompt,
@@ -196,7 +198,7 @@ export function d15NeckGuideLevel(
   opts: { guided: boolean; answered: boolean },
 ): GuideLevel {
   if (opts.guided) return 3;
-  if (opts.answered || guideLevel < 2) return guideLevel;
+  if (opts.answered || prompt.byEar || guideLevel < 2) return guideLevel;
   const target = chromaOf(prompt.pc);
   const named = allStrings(prompt.tuning).some(
     (string) => noteAt({ string, fret: 0 }, prompt.tuning).chroma === target,

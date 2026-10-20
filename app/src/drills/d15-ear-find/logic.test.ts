@@ -229,6 +229,13 @@ describe('D15 neck guides', () => {
     expect(d15NeckGuideLevel(g, 0, { guided: true, answered: false })).toBe(3);
   });
 
+  it('keeps an ear card at its guide level, whatever the note', () => {
+    const open = { guided: false, answered: false };
+    // G is string 3's open note, but by ear there is no name to give away.
+    expect(d15NeckGuideLevel(prompt('ear-find:G@s5'), 3, open)).toBe(3);
+    expect(d15NeckGuideLevel(prompt('ear-find:F@s5'), 2, open)).toBe(2);
+  });
+
   it('opens the compact window at the nut, or on the note for a worked example', () => {
     const p = prompt('find:G@s5');
     expect(d15InitialWindow(p, false)).toEqual({ from: 0, to: 4 });

@@ -166,10 +166,8 @@ describe('<D15View>', () => {
       const p = prompt(id);
       const { container, unmount } = view(p, { guideLevel: 3 });
       const svg = container.querySelector('svg[data-fret-from]') as SVGElement;
-      const strings = [...svg.querySelectorAll('[data-testid="string-name"]')].map(
-        (t) => t.textContent,
-      );
-      expect(strings, id).not.toContain(p.pc);
+      // The guides stay up: dropping them would say the note is an open string's.
+      expect(svg, id).toHaveAttribute('data-guide-level', '3');
       expect(screen.getByTestId('d15-prompt'), id).not.toHaveTextContent(
         new RegExp(`\\b${p.pc}\\b`),
       );

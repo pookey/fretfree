@@ -20,7 +20,7 @@ const parts = lazyParts<typeof views>('d15-ear-find', lazy);
 const hearItFindIt: DrillType<D15Prompt, D15Answer> = {
   id: D15_ID,
   title: 'Hear it, find it',
-  // Every skill that names this drill (C2's find cards).
+  // Every skill that names this drill (C2's find cards and I6's ear-find cards).
   skills: SKILLS.filter((s) => s.drillTypes.includes(D15_ID)).map((s) => s.id),
   inputModes: ['tap', 'keyboard'],
   scope: D15_SCOPE,
