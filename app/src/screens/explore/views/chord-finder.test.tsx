@@ -430,7 +430,9 @@ describe('"Quiz me on this"', () => {
   it('finds the C5 skills, and those that drill one kind', () => {
     const all = chordSkillIds(SKILLS, null);
     expect(all.length).toBeGreaterThan(0);
-    expect(all.every((id) => id.startsWith('C5.'))).toBe(true);
+    // C5's, and I2's arpeggio tones, which drill chord tones too.
+    expect(all.every((id) => /^(C5|I2)\./.test(id))).toBe(true);
+    expect(all.some((id) => id.startsWith('C5.'))).toBe(true);
     const m7 = chordSkillIds(SKILLS, 'm7');
     expect(m7.length).toBeGreaterThan(0);
     expect(m7.length).toBeLessThan(all.length);
