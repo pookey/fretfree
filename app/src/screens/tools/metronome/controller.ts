@@ -163,9 +163,10 @@ export function createMetronomeController(deps: ControllerDeps): MetronomeContro
     own = false;
     clearBeats();
     update({ running: true, beat: null });
+    const bpm = state.bpm;
     const ok = await metronome.start({
       meter: clickMeter(state.meter, state.accent),
-      bpm: state.bpm,
+      bpm,
       subdivide: state.subdivide,
       countInBars,
     });
@@ -175,6 +176,8 @@ export function createMetronomeController(deps: ControllerDeps): MetronomeContro
       return false;
     }
     own = true;
+    // A tempo set while audio was unlocking couldn't reach the click then.
+    if (state.bpm !== bpm) metronome.setTempo(state.bpm);
     rewatch();
     return true;
   };

@@ -88,6 +88,13 @@ describe('the metronome tool controller', () => {
     expect(metronome.running).toBe(false);
   });
 
+  it('applies a tempo set while the start was pending', async () => {
+    const pending = controller.start();
+    controller.set({ bpm: 150 });
+    expect(await pending).toBe(true);
+    expect(metronome.tempo.at(-1)!.bpm).toBe(150);
+  });
+
   it('lights each pulse once it is heard, not when it is scheduled', async () => {
     latency = 40;
     controller.set({ countInBars: 1, meter: '3/4' });
