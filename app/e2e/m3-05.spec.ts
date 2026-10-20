@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart, masterSkills } from './helpers';
 import { focusSession } from './helpers/focus';
+import { answerVisualise } from './helpers/visualise';
 import { answerWhichShape } from './helpers/which-shape';
 
 // M3-05: C6 CAGED skills and D9 "Build the shape at a root". Triad cores come
@@ -248,7 +249,9 @@ test.describe('M3-05 D9 builds the CAGED shape at a root', () => {
     await expect(page.getByTestId('d9-count')).toHaveText('Found 0 of 4');
     let recalled = 0;
     for (let i = 0; i < 20 && recalled < 1; i++) {
-      // D10 names the whole shapes D9 builds, and the picker alternates them.
+      // D10 names the whole shapes D9 builds and D21 pictures them; the picker
+      // takes each in turn.
+      if (await answerVisualise(page)) continue;
       if (await answerWhichShape(page)) continue;
       const task = await build(page);
       if (!task.guided) recalled++;
