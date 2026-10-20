@@ -2,6 +2,11 @@
 
 ## Current status
 
+**Pipeline changes (2026-10-20, between the fifth and sixth PM shifts).** The user found delivery had stalled: 8 Playwright runs were queued on 2 slots, the load average sat at 45–80 on 10 cores, and a single load timeout (`page.evaluate` at 30 s) failed a 5-WP lane batch, which then re-ran every WP one at a time. Measured from the lane log: the whole matrix is 988 test runs (303 tests × 3 iPad projects + 65 phone smoke), about 1,700 s of test time per iPad project, 25–35 min wall under that load; unit tests 431 s. Each WP ran the whole matrix up to three times (report, preflight, lane). The fixes:
+- **Only the lane runs the whole matrix.** `pnpm verify:quick` now has three levels: own specs (every project), `e2e:fast` (`ipad-landscape` + `iphone-smoke`, a third of the matrix) when the change reaches shared code or adds a drill, and `--full` on request. `--preflight` (after the post-review rebase) drops to own specs when `origin/main` hasn't moved since the worktree's last passing fast run.
+- **The lane retries a failed test once** (`PW_RETRIES`, default 1 under `FRETWORK_LANE=1`), and `integrate.sh` appends tests that passed on retry to `.orchestrator/flaky.log` with a `flaky` event, so flakes get fixed instead of costing batches.
+- The orchestrator skill, briefs and `CLAUDE.md` say so. The three-project iPad matrix itself was kept: layout assertions (overflow, bounding boxes, size-class branches) are spread through most specs, so the overlap was in how often the matrix ran, not in the specs.
+
 **Fourth shift report (2026-10-19 07:55 → 2026-10-20 handover, PM session guitar-nosync-45). 96 work packages done, 19 shipped this shift. Every package in flight was drained to production before the handover. Production at https://fretfree.app is healthy: smoke passed after every ship.**
 
 Shipped this shift:
