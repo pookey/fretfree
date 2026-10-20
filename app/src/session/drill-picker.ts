@@ -7,8 +7,11 @@ import { chromaOf, midiAt, stringCount, type Tuning } from '../theory';
  * by any drill its skill lists that can test it, in the skill's preference
  * order. When several can, the picker moves on from the drill that served
  * the item last to the next in that order, round the list, so a fact is met
- * in every context its skill offers (research/02 rule 12). A drill that needs the mic is a candidate only while mic mode
- * is on (design §9), so a learner without one never meets it.
+ * in every context its skill offers (research/02 rule 12). A drill that
+ * needs the mic is a candidate only while mic mode is on (design §9), so a
+ * learner without one never meets it, and a drill whose prompt is a sound
+ * only while sound is on, so no guess at a sound the learner couldn't hear
+ * is graded.
  */
 
 export interface DrillPicker {
@@ -22,6 +25,8 @@ export interface DrillPicker {
 export interface DrillPickerOptions {
   /** `settings.micEnabled`: serve drills that need the mic. Off by default. */
   micEnabled?: boolean;
+  /** `settings.soundOn`: serve drills whose prompt is a sound. On by default. */
+  soundOn?: boolean;
 }
 
 export function createDrillPicker(
@@ -30,7 +35,10 @@ export function createDrillPicker(
   options: DrillPickerOptions = {},
 ): DrillPicker {
   const byId = new Map(skills.map((s) => [s.id, s]));
-  const usable = options.micEnabled ? drills : drills.filter((d) => !d.requiresMic);
+  const usable = drills.filter(
+    (d) =>
+      (options.micEnabled || !d.requiresMic) && (options.soundOn !== false || !d.requiresSound),
+  );
   const candidates = (item: Item) => {
     const skill = byId.get(item.skillId);
     if (!skill) return [];

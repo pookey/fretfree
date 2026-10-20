@@ -150,6 +150,19 @@ test.describe('M4-07 D14 hear it → identify', () => {
     expect(errors).toEqual([]);
   });
 
+  test('is not served with sound off, so no unheard guess is graded', async ({ page }) => {
+    await freshStart(page, '/settings');
+    const sound = page.getByRole('main').getByRole('group', { name: 'Sound' });
+    await sound.getByRole('checkbox', { name: 'Sound' }).click();
+    await expect(sound.getByRole('checkbox', { name: 'Sound' })).not.toBeChecked();
+    await masterSkills(page, ['F1.alphabet']);
+
+    await page.goto('/session?skill=I6.intervals-fourths-fifths');
+    await expect(page.getByTestId('session-empty')).toBeVisible({ timeout: 15_000 });
+    await expect(drill(page)).toHaveCount(0);
+    expect(await reviewLog(page)).toEqual([]);
+  });
+
   test('names chord qualities, major or minor first', async ({ page }) => {
     await freshStart(page);
     await masterSkills(page, ['F1.alphabet']);

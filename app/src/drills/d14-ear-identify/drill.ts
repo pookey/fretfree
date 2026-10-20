@@ -22,6 +22,8 @@ const earIdentify: DrillType<D14Prompt, D14Answer> = {
   // Every skill that names this drill (I6), without editing this file.
   skills: SKILLS.filter((s) => s.drillTypes.includes(D14_ID)).map((s) => s.id),
   inputModes: ['choice', 'keyboard'],
+  // The prompt is the sound: nothing to answer with sound off.
+  requiresSound: true,
   scope: D14_SCOPE,
   canTest: d14CanTest,
   conceptOf: d14ConceptOf,

@@ -242,6 +242,7 @@ export class SessionRunner {
     // Skills may list items whose drill isn't built yet; plan only what a drill can test.
     const picker = createDrillPicker(deps.skills, deps.drills, {
       micEnabled: deps.settings.micEnabled,
+      soundOn: deps.settings.soundOn,
     });
     const inFocus = focusFilter(deps.focus);
     const serves = (item: Item) => inFocus(item) && picker.canServe(item);

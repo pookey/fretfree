@@ -123,6 +123,11 @@ export interface DrillType<P = unknown, A = unknown> {
    * §9), so it is served only once the learner has enabled mic mode.
    */
   requiresMic?: boolean;
+  /**
+   * The prompt is a sound (D14 ear drills), so it is not served while the
+   * learner has sound off: a guess at an unheard sound would go to FSRS.
+   */
+  requiresSound?: boolean;
   scope: { minLevel: number; maxLevel: number };
   canTest(item: Item): boolean;
   /** The concept an item is keyed by in the confusion matrix (e.g. its pitch class). */

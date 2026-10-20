@@ -89,6 +89,34 @@ describe('createDrillPicker', () => {
   });
 });
 
+describe('a drill whose prompt is a sound', () => {
+  const ear: AnyDrillType = { ...d1, id: 'ear-echo', requiresSound: true };
+  const skills = [skill(['name-the-note', 'ear-echo'])];
+
+  it('is not served with sound off, so no unheard guess is graded', () => {
+    const picker = createDrillPicker(skills, [d1, ear], { soundOn: false });
+    expect(picker.candidates(note).map((d) => d.id)).toEqual(['name-the-note']);
+    expect(picker.pick(note, 'name-the-note')?.id).toBe('name-the-note');
+    const earOnly = createDrillPicker([skill(['ear-echo'])], [ear], { soundOn: false });
+    expect(earOnly.canServe(note)).toBe(false);
+  });
+
+  it('is served with sound on, which is the default', () => {
+    for (const picker of [
+      createDrillPicker(skills, [d1, ear]),
+      createDrillPicker(skills, [d1, ear], { soundOn: true }),
+    ]) {
+      expect(picker.candidates(note).map((d) => d.id)).toEqual(['name-the-note', 'ear-echo']);
+    }
+  });
+
+  it('is D14, which the mic setting leaves alone', () => {
+    expect(getDrill('ear-identify')?.requiresSound).toBe(true);
+    const picker = createDrillPicker(skills, [d1, ear], { micEnabled: true, soundOn: false });
+    expect(picker.candidates(note).map((d) => d.id)).toEqual(['name-the-note']);
+  });
+});
+
 describe('factOf', () => {
   const standard = getTuning('standard');
 
