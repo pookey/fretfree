@@ -1,14 +1,30 @@
-import { parseKeyFactItemId, parseSignatureKeyItemId, type Item } from '../../engine/model';
-import {
-  CIRCLE_OF_FIFTHS,
-  chromaOf,
-  chromaToPc,
-  keySignature,
-  majorKey,
-  majorScale,
-  relativeMinor,
-} from '../../theory';
+import type { Item } from '../../engine/model';
+import { chromaOf, chromaToPc, majorScale, relativeMinor } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import {
+  D40_KEYS,
+  D40_KEY_OF_ALTERATION as KEY_OF_ALTERATION,
+  D40_SCOPE,
+  alterationOf,
+  d40CanTest,
+  d40Concept as concept,
+  d40Parse as parse,
+  dominantOf,
+  keyWith,
+  type D40Kind,
+} from './meta';
+
+export {
+  D40_ID,
+  D40_KEYS,
+  D40_SCOPE,
+  alterationOf,
+  d40CanTest,
+  d40ConceptOf,
+  dominantOf,
+  keyWith,
+  type D40Kind,
+} from './meta';
 
 /**
  * D40 "Key-signature cards" (design §6 D40): I3's facts about a major key as
@@ -38,10 +54,6 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * `text.ts`, which only the lazy view loads.
  */
 
-export const D40_ID = 'key-signature';
-
-export type D40Kind = 'key-signature' | 'signature-key' | 'relative-minor' | 'dominant';
-
 export interface D40Prompt {
   itemId: string;
   kind: D40Kind;
@@ -58,22 +70,7 @@ export interface D40Prompt {
 /** A choice: a signature code (`3b`), or a tonic. */
 export type D40Answer = string;
 
-/**
- * Scope levels (research/02 rule 5, distractors): a run of 2, 3 or 4
- * signature counts or letters, each in two spellings: 4, 6 or 8 buttons
- * (one fewer when the run holds no sharps or flats).
- */
-export const D40_SCOPE = { minLevel: 0, maxLevel: 2 };
-
 const RUNS = [2, 3, 4];
-
-/** The keys D40 asks about: C4's fifteen, each with a real signature. */
-export const D40_KEYS = CIRCLE_OF_FIFTHS.flatMap((e) => [
-  e.major,
-  ...(e.enharmonic ? [e.enharmonic.major] : []),
-]);
-
-const KEY_OF_ALTERATION = new Map(D40_KEYS.map((k) => [alterationOf(k), k]));
 
 const LETTERS = 'ABCDEFG';
 const ACCIDENTAL_ORDER = ['b', '', '#'];
@@ -94,21 +91,6 @@ function byLetter(names: readonly string[]): Map<string, string[]> {
 const MAJORS_BY_LETTER = byLetter(D40_KEYS);
 const MINORS_BY_LETTER = byLetter(D40_KEYS.map(relativeMinor));
 
-export function alterationOf(tonic: string): number {
-  return keySignature(majorKey(tonic)).alteration;
-}
-
-export function keyWith(alteration: number): string {
-  const key = KEY_OF_ALTERATION.get(alteration);
-  if (key === undefined) throw new RangeError(`No major key has alteration ${alteration}`);
-  return key;
-}
-
-/** The V of a major key: its 5th degree (B♭ for E♭). */
-export function dominantOf(tonic: string): string {
-  return majorScale(tonic)[4] as string;
-}
-
 /** The IV of a major key: its 4th degree (A♭ for E♭). */
 export function subdominantOf(tonic: string): string {
   return majorScale(tonic)[3] as string;
@@ -125,20 +107,6 @@ export function parseSignatureCode(code: string): number | null {
   const m = /^([1-7])([#b])$/.exec(code);
   if (!m) return null;
   return m[2] === '#' ? Number(m[1]) : -Number(m[1]);
-}
-
-function parse(item: Item): { kind: D40Kind; tonic: string } | null {
-  const fact = parseKeyFactItemId(item.id);
-  if (fact) return D40_KEYS.includes(fact.tonic) ? fact : null;
-  const sig = parseSignatureKeyItemId(item.id);
-  if (sig) return { kind: 'signature-key', tonic: keyWith(sig.alteration) };
-  return null;
-}
-
-export function d40CanTest(item: Item): boolean {
-  const ref = parse(item);
-  // C♯'s V is G♯ major, a key with a double sharp: no card.
-  return ref !== null && !(ref.kind === 'dominant' && !D40_KEYS.includes(dominantOf(ref.tonic)));
 }
 
 /** A uniform pick of `0 … n-1`, safe against an rng that returns 1. */
@@ -245,23 +213,6 @@ export function d40MakePrompt(item: Item, ctx: DrillContext): D40Prompt {
   };
 }
 
-/**
- * The confusion-matrix concept: the key a card is about, for each kind of
- * fact, so `key-signature:Eb` and `signature-key:3b` share `signature:Eb`.
- * A wrong choice is keyed by the key whose fact it is: picking 3♯ for E♭
- * major confuses it with A major.
- */
-const CONCEPT: Record<D40Kind, string> = {
-  'key-signature': 'signature',
-  'signature-key': 'signature',
-  'relative-minor': 'relative-minor',
-  dominant: 'dominant',
-};
-
-function concept(kind: D40Kind, tonic: string): string {
-  return `${CONCEPT[kind]}:${tonic}`;
-}
-
 /** The key whose fact a choice is, or null for a choice no card answers. */
 export function keyOfChoice(kind: D40Kind, choice: string): string | null {
   switch (kind) {
@@ -289,11 +240,6 @@ export function d40Check(prompt: D40Prompt, answer: D40Answer): DrillCheck {
     concept: key,
     ...(other === null ? {} : { confusedWith: concept(prompt.kind, other) }),
   };
-}
-
-export function d40ConceptOf(item: Item): string | null {
-  const ref = parse(item);
-  return ref ? concept(ref.kind, ref.tonic) : null;
 }
 
 /** Stored as `answerGiven`. */
