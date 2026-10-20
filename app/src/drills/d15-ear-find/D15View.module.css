@@ -1,0 +1,156 @@
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+  justify-content: space-between;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.prompt {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.prompt strong {
+  color: var(--tone);
+}
+
+.listen {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+.again {
+  min-height: var(--tap);
+  min-width: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.again:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+@media (hover: hover) {
+  .again:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.explain {
+  margin: 0;
+  min-height: 1.5em;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.neckRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.neckArea {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+/* Only the named string is live; the others are dimmed and inert (design §7).
+   The neck's hit cells tile each string's row, so filling them dims the row. */
+.neckArea[data-live-string='1'] :global(rect[data-cell]:not([data-cell^='s1f'])),
+.neckArea[data-live-string='2'] :global(rect[data-cell]:not([data-cell^='s2f'])),
+.neckArea[data-live-string='3'] :global(rect[data-cell]:not([data-cell^='s3f'])),
+.neckArea[data-live-string='4'] :global(rect[data-cell]:not([data-cell^='s4f'])),
+.neckArea[data-live-string='5'] :global(rect[data-cell]:not([data-cell^='s5f'])),
+.neckArea[data-live-string='6'] :global(rect[data-cell]:not([data-cell^='s6f'])) {
+  fill: var(--dim);
+  cursor: default;
+}
+
+.slide {
+  flex: 0 0 auto;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.slide:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+@media (hover: hover) {
+  .slide:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.windowCaption {
+  margin: 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* iPad portrait (M1-40, as M2-20): one column from the top (prompt, answers,
+   neck, then help), not the neck centred in a tall empty band with help pinned
+   below. */
+.drill[data-size-class='regular'] {
+  justify-content: flex-start;
+}
+
+/* Help (the session's context panel) spans the neck's width below it, so its
+   rows spread out, not down. */
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-2);
+  justify-content: flex-start;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+/* Best-effort iPhone: keep the zoomed neck within short landscape viewports. */
+.drill[data-size-class='compact'] .neckArea svg {
+  max-height: calc(100dvh - 9rem);
+}
