@@ -9,7 +9,13 @@ const sound = (page: Page) => page.getByRole('main').getByRole('group', { name: 
 
 async function openSettings(page: Page) {
   const errors: string[] = [];
-  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('pageerror', (e) => {
+    // WebKit on iPad mini sometimes reports a spurious access-control error for
+    // a blob URL it made itself, truncated to "ttp://<host>/<uuid> due to access
+    // control checks.". It isn't ours, so it doesn't count.
+    if (/\/[0-9a-f-]{36} due to access control checks/.test(e.message)) return;
+    errors.push(e.message);
+  });
   await tapAudioOutput(page);
   await freshStart(page, '/settings');
   await expect(sound(page)).toBeVisible();
