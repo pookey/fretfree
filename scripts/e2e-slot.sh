@@ -9,6 +9,9 @@
 # a `playwright test …`, runs twice: every spec but the quiet ones (those that
 # measure audio output, see app/playwright.config.ts) at PW_WORKERS, then the
 # quiet ones on E2E_QUIET_WORKERS workers. It fails if either pass fails.
+# With E2E_SLOT_CPUSET, Playwright and its browsers are pinned to those CPUs.
+# With E2E_RETRIES, Playwright retries a failed test that many times (it
+# reports a test that passed on retry as flaky).
 # Usage: e2e-slot.sh <command...>
 set -euo pipefail
 source "$(dirname "$0")/slot-lib.sh"
@@ -28,6 +31,8 @@ for pid in $(lsof -nP -t -iTCP:"$E2E_PORT" -sTCP:LISTEN 2>/dev/null || true); do
     exit 1
   fi
 done
+if [[ -n "${E2E_SLOT_CPUSET:-}" ]]; then set -- taskset -c "$E2E_SLOT_CPUSET" "$@"; fi
+if [[ -n "${E2E_RETRIES:-}" ]]; then set -- "$@" --retries="$E2E_RETRIES"; fi
 if [[ -z "${E2E_QUIET_WORKERS:-}" ]]; then
   "$@"
   exit
