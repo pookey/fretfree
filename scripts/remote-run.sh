@@ -1,32 +1,47 @@
 #!/usr/bin/env bash
-# EXPERIMENTAL, and off unless configured. Status (2026-10-20): unit tests and
-# builds are fine on the runner, but Playwright's WebKit crashes there under
-# load (kernel 7.0 / Ubuntu 26.04 host, even inside the noble image). At 4
-# workers a 48-test sample gave 46 passed and 2 failed; the 2 aren't diagnosed
-# yet. A full remote e2e at that rate is slower than the Mac. See
-# docs/handoff/06-pm-handoff.md before enabling it.
-#
 # Run a command on the remote test runner instead of this Mac, when one is
 # configured and reachable. Otherwise run it here.
 #
-# The runner is a big Linux box (an unprivileged account, no sudo) that takes
-# the CPU-heavy checks (`pnpm verify`, `pnpm verify:quick`) off the Mac, where
-# test load used to cap the number of agents.
+# The runner is a big Linux box (48 cores, an unprivileged account, no sudo)
+# that takes the CPU-heavy checks (`pnpm verify`, `verify:quick`, `e2e`) off
+# the Mac. A full e2e (all four projects) takes about 4 minutes there.
 #
 # What is sent: exactly the files this worktree's own checks would see, i.e.
 # tracked plus untracked-but-not-ignored files, so uncommitted work is
 # included, and ignored files (.env, node_modules, dist, credentials) never
 # leave the machine. Deploy, smoke and the secret scan always stay local.
 #
-# Each run gets a fresh directory on the runner and runs in Playwright's own
-# Ubuntu 24.04 image (rootless Podman; the runner's newer Ubuntu crashes
-# Playwright's WebKit), with the runner's Node 22 mounted so it matches the Mac.
-# It installs from a warm, shared pnpm store, runs the command with the remote
-# disabled (so it runs there), streams the output back and exits with the
-# command's status. One run per container (its own slots), and a host-side
-# semaphore caps concurrent runs at REMOTE_RUNS (default 3): sharing slot locks
-# across containers needed --pid=host, which made WebKit crash.
-# A local interrupt removes the container. Stale run directories are swept.
+# Each run gets a fresh directory and its own container on the runner, in
+# Playwright's Ubuntu 24.04 image (rootless Podman), with the runner's Node 22
+# mounted so it matches the Mac. It installs from a warm, shared pnpm store,
+# runs the command with the remote disabled (so it runs there), streams the
+# output back and exits with the command's status. A local interrupt removes
+# the container; stale run directories are swept.
+#
+# Sharing the box: runs share the runner's CPU and e2e slots (cpu-slot.sh,
+# e2e-slot.sh) through flock(1) on a mounted lock dir, so concurrent worktrees
+# queue for REMOTE_CPU_SLOTS (default 2) static runs and REMOTE_E2E_SLOTS
+# (default 1) Playwright runs of REMOTE_PW_WORKERS (default 20) workers. One
+# e2e run at 20 workers already keeps about 27 of the 48 cores busy: two at
+# once took 6.7 min each instead of 3.8 and timed out racy specs, so a second
+# run queues instead. Each container has its own network namespace, so preview
+# ports never clash. A host-side semaphore caps live containers at REMOTE_RUNS
+# (default 8).
+#
+# What made WebKit fast and stable there (2026-10-20):
+#  - --pids-limit=-1: Podman's default cap of 2048 tasks per container was the
+#    "Page crashed" cause. WebKit processes run many threads each, and every
+#    refused clone() killed a page (pids.events counted hundreds per run).
+#  - PW_TRACE=off: recording traces (screencast frames of a 2x iPad screen)
+#    tripled WebKit's CPU time and pushed long specs past 30 s. Remote traces
+#    never come back anyway; rerun a failure on the Mac for its trace.
+#  - LP_NUM_THREADS=0: Mesa's software GL otherwise starts 32 threads per
+#    WebKit page on a 48-core box; single-threaded it costs 30% less CPU.
+#  - fakeaudiosink: there is no sound device, so GStreamer would probe six
+#    audio sinks per AudioContext; a clocked null sink behaves like a speaker.
+#  - specs that measure audio output run in a second, low-parallelism pass
+#    (E2E_QUIET_WORKERS, see e2e-slot.sh): under full load their notes can
+#    stay silent.
 #
 # Configuration (never committed: the repo is public):
 #   FRETWORK_REMOTE=user@host, or the first line of
@@ -57,13 +72,14 @@ cd "$root"
 run="run-$(date +%s)-$$-$RANDOM"
 dir="fretwork-runs/$run"
 
-# Defaults sized for the runner (48 cores): 6 concurrent static runs and 6
-# Playwright runs, 8 workers each. The lane gets priority and more workers.
-slots="CPU_SLOTS=1 E2E_SLOTS=1"
+# Slots are shared by every run on the runner (see the top); the lane gets
+# priority in them and more unit-test workers.
+slots="CPU_SLOTS=${REMOTE_CPU_SLOTS:-2} E2E_SLOTS=${REMOTE_E2E_SLOTS:-1} FRETWORK_SLOT_FLOCK=1 FRETWORK_LOCK_DIR=/locks"
+pw="PW_WORKERS=${REMOTE_PW_WORKERS:-20} E2E_QUIET_WORKERS=2 PW_TRACE=off LP_NUM_THREADS=0 GST_PLUGIN_FEATURE_RANK=fakeaudiosink:MAX${PW_RETRIES:+ PW_RETRIES=$PW_RETRIES}"
 if [[ "${FRETWORK_LANE:-}" == 1 ]]; then
-  workers="FRETWORK_LANE=1 VITEST_MAX_WORKERS=16 PW_WORKERS=${REMOTE_PW_WORKERS:-4}"
+  workers="FRETWORK_LANE=1 VITEST_MAX_WORKERS=16 $pw"
 else
-  workers="VITEST_MAX_WORKERS=8 PW_WORKERS=${REMOTE_PW_WORKERS:-4}"
+  workers="VITEST_MAX_WORKERS=8 $pw"
 fi
 
 echo "remote-run: $(basename "$root") → $remote:$dir" >&2
@@ -92,10 +108,10 @@ ssh -n "${ssh_opts[@]}" "$remote" "
   mkdir -p ~/.cache/pnpm-store ~/.cache/corepack ~/fretwork-locks
   echo '$cmd64' | base64 -d > '$dir/.cmd'
   cd ~/'$dir' && FRETWORK_LOCK_DIR=~/fretwork-locks FRETWORK_LANE=${FRETWORK_LANE:-} \\
-    exec bash -c 'source scripts/slot-lib.sh && acquire_slot runs ${REMOTE_RUNS:-3} && \"\$@\"' _ \\
-  podman run --rm --name '$run' --ipc=host \\
+    exec bash -c 'source scripts/slot-lib.sh && acquire_slot runs ${REMOTE_RUNS:-8} && \"\$@\"' _ \\
+  podman run --rm --name '$run' --ipc=host --pids-limit=-1 \\
     -v /opt/node:/opt/node:ro -v ~/'$dir':/work -v ~/.cache/pnpm-store:/pnpm-store \\
-    -v ~/.cache/corepack:/corepack -w /work \\
+    -v ~/.cache/corepack:/corepack -v ~/fretwork-locks:/locks -w /work \\
     -e PATH=$path -e COREPACK_ENABLE_DOWNLOAD_PROMPT=0 -e COREPACK_HOME=/corepack \\
     -e npm_config_store_dir=/pnpm-store -e FRETWORK_REMOTE=off \\
     $(printf -- '-e %s ' $slots $workers) '$image' timeout 2h bash -c '
