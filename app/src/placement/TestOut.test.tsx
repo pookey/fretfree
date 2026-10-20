@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { useAppStore } from '../app-store';
-import { getDrill } from '../drills/registry';
+import { getDrill, preloadDrill } from '../drills/registry';
 import {
   DEFAULT_SETTINGS,
   createScheduler,
@@ -52,6 +52,10 @@ let db: FretworkDB;
 let n = 0;
 let t: number;
 
+// The dialog waits on the drill's lazily loaded logic and views. Cold, under a
+// loaded verify, transforming them took longer than any per-test wait.
+beforeAll(() => preloadDrill(DRILLS[0]!), 60_000);
+
 beforeEach(() => {
   db = new FretworkDB(`test-out-ui-${n++}`);
   t = 0;
@@ -92,14 +96,14 @@ const dialog = () => screen.getByRole('dialog', { name: 'Test out' });
 /** Tap "Test out": the probes start once the learner's cards are read. */
 async function startTestOut() {
   fireEvent.click(screen.getByRole('button', { name: 'Test out' }));
-  await screen.findByRole('dialog', { name: 'Test out' });
+  await screen.findByRole('dialog', { name: 'Test out' }, { timeout: 3000 });
 }
 
 async function answerRight() {
   const id = screen.getByTestId('placement-probe').dataset.item!;
   const group = within(dialog()).getByRole('group', { name: 'Name the highlighted note' });
   fireEvent.click(within(group).getByRole('button', { name: noteAt(parseNoteItemId(id)!).pc }));
-  expect(await screen.findByTestId('feedback-correct')).toBeInTheDocument();
+  expect(await screen.findByTestId('feedback-correct', {}, { timeout: 3000 })).toBeInTheDocument();
 }
 
 async function nextProbe(id: string) {
