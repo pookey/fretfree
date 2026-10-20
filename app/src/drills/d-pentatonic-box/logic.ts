@@ -30,6 +30,9 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { DPB_SCOPES, type DpbScope } from './meta';
+
+export { DPB_ID, DPB_SCOPE, DPB_SCOPES, dpbCanTest, dpbConceptOf, type DpbScope } from './meta';
 
 /**
  * The pentatonic-box drill (C7, research/03 "overlay a box on its shape;
@@ -58,18 +61,6 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * Boxes are standard tuning. In another tuning each note keeps its pitch
  * and moves along its string, as D9's shapes do.
  */
-
-export const DPB_ID = 'pentatonic-box';
-
-/**
- * Adaptive scope (design §3.3 step 4, research/02 rule 5): the roots a prompt
- * may use. `naturals` (0) roots on natural notes only; `all` (1) on any of
- * the 12 pitch classes, so the box lands at every position.
- */
-export type DpbScope = 'naturals' | 'all';
-
-export const DPB_SCOPES: readonly DpbScope[] = ['naturals', 'all'];
-export const DPB_SCOPE = { minLevel: 0, maxLevel: DPB_SCOPES.length - 1 };
 
 /** Boxes sit within frets 0–15, the whole neck the iPad shows. */
 export const DPB_REGION: FretRange = { from: 0, to: 15 };
@@ -125,10 +116,6 @@ export type DpbAnswer = readonly Position[];
 export function dpbScopeFor(level: number): DpbScope {
   const i = Math.max(0, Math.min(DPB_SCOPES.length - 1, Math.round(level)));
   return DPB_SCOPES[i] as DpbScope;
-}
-
-export function dpbCanTest(item: Item): boolean {
-  return parsePentaItemId(item.id) !== null;
 }
 
 /** Display form: `F#` → `F♯`, `b3` → `♭3`, the root degree `1` → `R`. */
@@ -430,11 +417,6 @@ export function dpbFeedbackPositions(
   fb: DrillFeedback<DpbAnswer>,
 ): { expected: Position[]; given: Position[] } {
   return { expected: prompt.targets, given: dpbWrongTaps(prompt, fb.answer) };
-}
-
-/** The item's own ID: confusions pair one card with another (see the header). */
-export function dpbConceptOf(item: Item): string | null {
-  return dpbCanTest(item) ? item.id : null;
 }
 
 /** The degrees, low string first: "R ♭3 4 5 ♭7 R …". */

@@ -1,23 +1,20 @@
-import { lazyParts } from '../lazy-view';
+import { lazyLogic, lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
+import type * as logic from './logic';
+import type { DpbAnswer, DpbPrompt } from './logic';
 import type * as views from './views';
-import {
-  DPB_ID,
-  DPB_SCOPE,
-  dpbCanTest,
-  dpbCheck,
-  dpbConceptOf,
-  dpbDescribeAnswer,
-  dpbFeedbackPositions,
-  dpbGradedResponseMs,
-  dpbMakePrompt,
-  dpbSounds,
-  type DpbAnswer,
-  type DpbPrompt,
-} from './logic';
+import { DPB_ID, DPB_SCOPE, dpbCanTest, dpbConceptOf } from './meta';
 
-// Lazy: the views stay out of first-load JS (design §10).
-const parts = lazyParts<typeof views>('d-pentatonic-box');
+// Lazy: the logic and views stay out of first-load JS (design §10).
+const lazy = lazyLogic('d-pentatonic-box', (l: typeof logic) => ({
+  makePrompt: l.dpbMakePrompt,
+  check: l.dpbCheck,
+  describeAnswer: l.dpbDescribeAnswer,
+  gradedResponseMs: l.dpbGradedResponseMs,
+  sounds: l.dpbSounds,
+  feedbackPositions: l.dpbFeedbackPositions,
+}));
+const parts = lazyParts<typeof views>('d-pentatonic-box', lazy);
 
 const pentatonicBox: DrillType<DpbPrompt, DpbAnswer> = {
   id: DPB_ID,
@@ -26,13 +23,8 @@ const pentatonicBox: DrillType<DpbPrompt, DpbAnswer> = {
   inputModes: ['tap'],
   scope: DPB_SCOPE,
   canTest: dpbCanTest,
-  makePrompt: dpbMakePrompt,
-  check: dpbCheck,
-  describeAnswer: dpbDescribeAnswer,
-  gradedResponseMs: dpbGradedResponseMs,
-  sounds: dpbSounds,
-  feedbackPositions: dpbFeedbackPositions,
   conceptOf: dpbConceptOf,
+  logic: lazy,
   render: parts.render,
   contextPanel: parts.contextPanel,
 };
