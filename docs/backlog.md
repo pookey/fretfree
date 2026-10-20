@@ -981,7 +981,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 ---
 
 ### M4-13 · Fix: silent audio on iPhone and iPad since the plucked guitar
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user report, 2026-10-20: "Play a test note" and other sounds stopped on the user's iPhone and iPad after M4-06)
 - **Deps:** none
 - **Design:** §9
