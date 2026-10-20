@@ -980,6 +980,21 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ---
 
+### M4-13 · Fix: silent audio on iPhone and iPad since the plucked guitar
+- **Status:** todo
+- **Priority:** high (user report, 2026-10-20: "Play a test note" and other sounds stopped on the user's iPhone and iPad after M4-06)
+- **Deps:** none
+- **Design:** §9
+- **Owns:** `app/src/audio/**`, `app/e2e/m4-06.spec.ts`, `app/e2e/m4-13.spec.ts`, `app/e2e/helpers/audio.ts`
+- **Acceptance:**
+  - User report (2026-10-20): since audio engine v2 (M4-06) shipped, nothing sounds on the user's real iPhone and iPad (Safari and the installed PWA) when they tap Settings → Sound → "Play a test note". It worked before M4-06.
+  - PM diagnosis, to confirm or refute first: before M4-06 the voice was `Tone.PolySynth(Tone.Synth)`, which uses native oscillators only. M4-06's `voice.ts` uses `Tone.PluckSynth`, whose `LowpassCombFilter` → `FeedbackCombFilter` is an **AudioWorklet** that Tone loads with `audioWorklet.addModule(URL.createObjectURL(blob))` (`tone/build/esm/core/worklet/ToneAudioWorklet.js`). WebKit sometimes refuses that blob: the lane's iPad-mini WebKit run logged a pageerror `"…ttp://127.0.0.1:4310/<uuid> due to access control checks."` (the blob URL, truncated). If the worklet never loads, the pluck is silent. Two other suspects to check: the service worker intercepting the blob or the worklet fetch, and the very first tap calling `Tone.start()` after an `await import('tone')`, outside the gesture (see `unlockAudio` in `audio.ts`).
+  - Fix it so that iOS and iPadOS Safari play every sound: the test note, single notes, strums and progressions. The guitar should still sound plucked (design §9). The preferred route needs no AudioWorklet and no blob URL: for example, Karplus–Strong rendered in pure TS into `AudioBuffer`s per note (cached), played through `AudioBufferSourceNode` or `Tone.Player`/`Sampler`, or a native-node voice. Put the pure synthesis in a tested module. Keep Tone lazy and first-load under budget.
+  - If a worklet ever fails to load, the app must still make sound (a native fallback voice), never stay silent.
+  - Also make the first-ever tap reliably unlock audio on iOS: resume or create the context synchronously inside the gesture, not after the dynamic import resolves.
+  - Remove the blob "access control checks" filter that 81dd35e added to `app/e2e/m4-06.spec.ts`: once nothing loads a blob worklet, that error is a real failure again. Add a WebKit e2e test (all iPad profiles plus `@smoke` for iPhone) that plays the test note and asserts output level > 0 with **no** pageerrors, with the service worker active (as in production).
+  - Report what you confirmed as the root cause. The user tests on real devices after the ship.
+
 ## M5: Mic mode
 
 ### M5-01 · [contract] Pitch-input API
