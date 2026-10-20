@@ -40,6 +40,8 @@ Status values: `todo` · `in-progress` · `review` · `done` · `blocked`. Only 
 
 **M9 (tab reading)** was added from user feedback (2026-10-18). It's a small track, so a learner who picks "I'd like to learn to read tab" gets real lessons. It has no `After` and runs in normal priority order (after ready M1–M6 work, ahead of the deferred M8).
 
+**M10 (learning-path fixes)** comes from the learning-path review of 2026-10-20 (`docs/review/2026-10-20-learning-path-review.md`, verified against main in `docs/review/2026-10-20-verification.md`). Its first six WPs are `Priority: high` in the review's order: the songs on-ramp (M10-01, M10-02), session lanes (M10-03), concept intros (M10-04) and teaching feedback (M10-05, M10-06).
+
 **M8 (future: reading and meter)** has its own section at the end. Its timing-engine contract (M8-01) is shared with M6-08 and scheduled early. The rest follows M6 via soft `After` ordering.
 
 Milestones group features; they are **not** release gates. Every merged WP ships (`pnpm ship`). Packages from later milestones may start as soon as their dependencies are `done`.
@@ -1189,6 +1191,7 @@ Notes for whoever picks this up:
   - After that, sync runs on app start, focus, reconnect and after each session, from a Dexie outbox. Everything stays offline-first, and the UI never waits on the network.
   - Two-device tests against a fake server: diverged offline progress on both devices converges to the same state after sync, review logs are complete, and streaks and stats match.
   - A sync status line (last synced, offline, error) in the account panel.
+  - From the 2026-10-20 review's verification: M10-02 and M10-12 move rows to new skill IDs with a schema migration (the `storage/migrations/c5-tone-stages.ts` pattern). Rows pulled from a device on an older schema are restaged the same way before they are merged.
 
 ### M7-06 · Account management and privacy
 - **Status:** todo
@@ -1487,3 +1490,239 @@ A short track for learners who want to read tab. Tab maps straight onto skills F
 - **Acceptance:**
   - An end-to-end test: onboarding with "learn tab" → a tab session using D33, D34 and D35 → mastery progress on Learn.
   - A production screenshot pass on the iPad profiles and iPhone, plus a progress update.
+
+---
+
+## M10: Learning-path fixes
+
+From the learning-path review of 2026-10-20 (`docs/review/2026-10-20-learning-path-review.md` and its two copy audits), checked finding by finding against main at `1249751c` and the in-flight branches in `docs/review/2026-10-20-verification.md`. The engine follows the evidence rules, but the curriculum around it doesn't yet do what the design promises a beginner: harmony and progressions sit behind months of mastery gates, the frontier is one queue that starves the parallel tracks, a first session brings in about 21 new items, and most skills are never explained before they are tested. Copy is mostly honest, but the first drills a beginner meets mark a wrong answer without saying why.
+
+The first six WPs are `Priority: high`, in the review's order (adjusted where verification changed it). M10-01 and M10-02 keep research/02 rule 7 intact: CAGED stays gated on mastered F2 notes, and progressions on mastered chord construction, so the review's "soft on practising" gates are expressed as per-prerequisite soft gates, not whole-skill soft unlocks.
+
+### M10-01 · [contract] Soft prerequisites per skill, so a gate can mix "mastered" and "practising"
+- **Status:** todo
+- **Priority:** high (blocks M10-02, the songs on-ramp: the review's top finding)
+- **Deps:** none
+- **Design:** §3.1, §5 (soft unlocking); research/02 rule 7
+- **Owns:** `app/src/engine/model.ts` (only the `Skill` interface), `app/src/engine/mastery.ts`, `app/src/engine/mastery.test.ts`, `app/src/placement/test-out.ts`, `app/src/placement/test-out.test.ts`, `app/src/screens/learn/SkillDetail.tsx` (only the unlock sentence), `app/src/screens/learn/SkillDetail.test.tsx`
+- **Acceptance:**
+  - From the 2026-10-20 review (§1.1) and its verification. Today `softUnlock` applies to all of a skill's prerequisites (`engine/mastery.ts:50-53`, `placement/test-out.ts:33`), so a gate can't say "C3.thirds mastered, C4.sharp-keys practising". Softening a whole skill would also soften a rule-7 gate (F2 → CAGED, chord construction → progressions).
+  - Add an optional `softPrerequisites?: readonly string[]` to `Skill`: prerequisites that need only be practising. `prerequisites` keeps its meaning (mastered, unless `softUnlock`). `deriveStatus` and test-out's `meets` read both lists. `softUnlock: true` behaves exactly as today. Test-out probes only the unmet hard prerequisites of a locked entry skill, plus any soft one that isn't practising yet.
+  - The skill detail's unlock sentence names both kinds in plain words ("It joins your sessions once you've mastered X and are practising Y").
+  - No skill changes its gates in this WP. Unit tests cover mixed gates in `deriveStatus` and test-out. The registry test asserts that every `softPrerequisites` ID exists.
+
+### M10-02 · Songs on-ramp: stage C8 by key group and shorten the chord, harmony and capo gates
+- **Status:** todo
+- **Priority:** high (review finding 1: a songs learner reaches a Roman numeral after six to ten weeks and a progression after two to three months)
+- **Deps:** M10-01
+- **Design:** §5 (M-Harmony and M-Progressions "open early, in parallel"); research/02 rule 7; research/03 order
+- **Owns:** `app/src/engine/skills/c5.ts`, `app/src/engine/skills/c5.test.ts`, `app/src/engine/skills/c6.ts`, `app/src/engine/skills/c6.test.ts`, `app/src/engine/skills/c7.ts`, `app/src/engine/skills/c7.test.ts`, `app/src/engine/skills/c8.ts`, `app/src/engine/skills/c8.test.ts`, `app/src/engine/skills/c9.ts`, `app/src/engine/skills/c9.test.ts`, `app/src/engine/skills/c10.ts`, `app/src/engine/skills/c10.test.ts`, `app/src/engine/skills/registry.test.ts`, `app/src/storage/db.ts` (hotspot: append one version), `app/src/storage/export-import.ts`, `app/src/storage/migrations/c8-stages.ts`, `app/src/storage/migrations/c8-stages.test.ts`, `docs/progress.md`, `app/e2e/m10-02.spec.ts`
+- **Acceptance:**
+  - Verified on main: `C5.triads` needs `C3.thirds`, `C3.fourths-fifths`, `C4.sharp-keys` and `C4.flat-keys` mastered (`c5.ts:111`). `C8.numerals-major` (144 items) needs `C4.flat-key-degrees` and `C5.triads` mastered (`c8.ts:72`). `C9.pop` needs it mastered (`c9.ts:37`). `C10.capo-g-c-d` needs `C4.sharp-keys` and `C5.triads` mastered (`c10.ts:46`). M4-07's progression-ear skills open with `C9.pop`, so they wait behind the same chain.
+  - **C8 in three key groups.** Split `C8.numerals-major` into: stage 1 (C, G, D); stage 2 (A, E, F); stage 3 (B, F♯, B♭, E♭, A♭, D♭). Keep the ID `C8.numerals-major` for stage 1, so `C9.pop`, M4-07's I6 skills, the D11 tests and the existing e2e fixtures stay valid. Give the later stages new IDs. Stage 1 is hard on `C5.triads` and soft on `C4.sharp-key-degrees` (`softPrerequisites`, M10-01). Stage 2 is soft on stage 1. Stage 3 is soft on stage 2 and hard on `C4.flat-key-degrees`, which is where that gate belongs. Nashville stays soft on stage 1, scoped to its keys or split the same way (worker's choice, explained in the report).
+  - **C5.triads:** hard on `C3.thirds` (a triad is two stacked 3rds, so rule 7's intervals → chord construction gate holds), soft on `C4.sharp-keys`. `C5.sevenths` keeps its `C3.sevenths` gate.
+  - **C9.pop:** hard on `C5.triads` (rule 7: chord construction → progressions), soft on C8 stage 1.
+  - **C10.capo-g-c-d:** soft on `C4.sharp-keys` and `C5.triads`. A capo question needs "which key sounds", not mastered spelling.
+  - **C7.minor-boxes:** soft on `C6.minor-cores` instead of hard on `C6.minor-shapes`. CAGED's F2 gate still holds through `C6.triad-cores`.
+  - **C6.triad-cores:** keeps F2 ×2 mastered (rule 7). See the decision line for `C5.triads`.
+  - Migration (schema version, the `migrations/c5-tone-stages.ts` pattern, frozen): cards, review-log rows and skill states for C8 items in the stage-2 and stage-3 keys move to their new skill. A mastered `C8.numerals-major` carries to every stage. JSON import restages old exports the same way. Migration test against fake-indexeddb.
+  - Only stage 1 is probed in placement. The later stages set `skipPlacement` with a reason. Test-out scopes follow from the gates (M10-01). Unit tests cover the new gates.
+  - The gate rationale comments in `c5.ts`, `c8.ts`, `c9.ts` and `c10.ts` say what changed and why. `docs/progress.md` records the change from the old gates and why rule 7 still holds.
+  - A unit test (or a short scripted simulation in `c8.test.ts`) shows the first C8 card is reachable once `C3.thirds` is mastered and C4 sharp keys are practising, with no flat-key mastery.
+  - E2E: a seeded songs learner with `C3.thirds` mastered sees Chords and Harmony open on Learn, and a session serves a D11 numeral in C, G or D.
+  - Needs user decision: whether `C6.triad-cores` should still need `C5.triads` *mastered* (today), or only practising (hard on F2 ×2, soft on `C5.triads`). The review asks for practising; rule 7 is satisfied either way.
+  - Needs user decision: the stage-1 keys. The review proposes C, G, D. An alternative is the five open-chord keys C, G, D, A, E.
+
+### M10-03 · Session lanes and a new-item cap, so parallel tracks get a turn
+- **Status:** todo
+- **Priority:** high (review findings 2 and 4; I6 ear (M4-07) and F4 rhythm (M6-08) both open on day one, and the one-queue frontier starves them)
+- **Deps:** none
+- **After:** M4-07, M6-08
+- **Design:** §3.3, §5 ("open early, in parallel"; Ear and Rhythm "from day one"); research/02 rules 6, 11, 13
+- **Owns:** `app/src/engine/session.ts` (hotspot), `app/src/engine/session.test.ts`, `app/src/engine/config/session.ts`, `app/src/engine/frontier.ts` (only `orderFrontier`, a new `frontierLanes`, and the I3 module placement), `app/src/engine/frontier.test.ts`, `app/src/session/runner.ts` (hotspot: only how the frontier is passed to `buildSession`), `app/e2e/m10-03.spec.ts`
+- **Acceptance:**
+  - Verified on main: `orderFrontier` (`frontier.ts:239-247`) sorts by goal-promoted module, then `order`. `buildSession` (`session.ts:257-270`) fills every free slot with new blocks front to back, with no cap. A 10-minute day-one session plans 84 entries: 21 new items from 2 skills (F1.alphabet, F2 string 6). For "general", C1 and C2 (about 300 items) come before any C3 or C4 item. With M4-07 and M6-08, the Ear and Rhythm skills are open on day one, but they sit behind every core module.
+  - `engine/config/session.ts` gains `maxNewPerSession` (8 at 10 minutes, scaled by minutes; the adaptive band may raise it while accuracy is above its top) and `lanes` (a 2:1:1 ratio: the first open goal-promoted module; the first open core neck module; one parallel track, Ear or Rhythm, once it has open skills).
+  - `buildSession` takes lanes (ordered item lists) and draws new blocks round-robin by the ratio, up to the cap. A block never mixes lanes. Per-lane order is today's order. A goal with no promoted modules ("general") uses the default module order for its primary lane. The very first session stays Neck basics, as M4-07's I6 comment and onboarding expect.
+  - The runner builds the lanes from the frontier skills. Stretch top-up (`gamification-bridge.ts`) is unchanged.
+  - Unit tests, for each goal: a 10-minute day-one session has at most `maxNewPerSession` new items; once two modules are open, a session draws from both; once Ear or Rhythm is open, it appears within the first three sessions; due reviews still come first (rule 16).
+  - Move I3 (key signatures) out of the first slice of the Keys lane: either its own module after Progressions, or kept in Keys but ordered after C8 stage 1. M10-07 owns the Learn copy for whichever is chosen.
+  - Needs user decision: what fills the rest of a session once the new-item cap is reached and nothing is due (on day one, 8 new items is about 32 prompts, about 4 minutes). Options: end the session early and say why (rule 11 allows it); add a second spaced pass over today's new items; or offer a quick drill. Also whether that short session counts as meeting the daily goal.
+  - Needs user decision: I3 as its own "Key signatures" module, or reordered inside Keys.
+
+### M10-04 · Concept intros: a registry, a session card, and the first ten
+- **Status:** todo
+- **Priority:** high (review finding 3, rule 8: a new learner is asked to recall facts they have never been told)
+- **Deps:** none
+- **After:** M6-08
+- **Design:** §3.3, §6 (worked example on first exposure); research/02 rules 4, 8
+- **Owns:** `app/src/learn/intros/**`, `app/src/session/ConceptCard.tsx`, `app/src/session/ConceptCard.module.css`, `app/src/session/ConceptCard.test.tsx`, `app/src/session/intro-gate.ts`, `app/src/session/intro-gate.test.ts`, `app/src/session/SessionScreen.tsx`, `app/e2e/m10-04.spec.ts`
+- **Acceptance:**
+  - Verified on main: `Skill` has a title and no description (`engine/model.ts:15-33`). No intro or concept registry exists. Sessions show no explanation before a skill's first guided rep. `WorkedExample` is used only on the Learn skill detail (`screens/learn/SkillDetail.tsx`).
+  - `learn/intros/<topic>-<slug>.ts(x)`, auto-registered and lazy like `learn/worked-examples` (matched by skill ID, else topic). Each intro is at most 40 words plus at most one small diagram (neck or note wheel), in plain words with no undefined terms. It is not first-load JS: the bundle check must not grow by more than 0.3 KB.
+  - The session shows a skill's intro as a dismissible card before the first guided rep of its first new item, when the skill had no cards at session start (`intro-gate.ts`, from existing repository reads; no schema change). It is not shown in review-only sessions, and never twice for one skill. The card is focusable, dismissed by tap, Enter or Space, and doesn't count toward timing or grading.
+  - Write ten intros: `F1.alphabet`, `F1.b-c-e-f`, `F1.half-steps`, `F1.whole-steps`, `F2.string6-naturals`, `F2.string5-naturals`, `F3.markers`, `F3.repeat-12`, `C1.octaves`, `C3.thirds`. Source them from research/03's "Learner can DO" column and its misconceptions. If M4-07 and M6-08 have merged, also add `F4.pulse` and the first I6 interval and chord sets.
+  - RTL tests for the card and the gate. E2E: a fresh learner's first session opens with the alphabet intro, then the guided rep; a second session doesn't show it again.
+
+### M10-05 · Teach on a miss: D1 and D3, with ♯/♭ and a fading note wheel
+- **Status:** todo
+- **Priority:** high (review finding G: the first drills a beginner meets only say "That was D.")
+- **Deps:** none
+- **Design:** §6 D1, D3, §8; research/02 rules 3, 9; research/03 F1/F2 misconceptions
+- **Owns:** `app/src/theory/pitch-display.ts`, `app/src/theory/pitch-display.test.ts`, `app/src/drills/d1-name-the-note/**`, `app/src/drills/d3-note-wheel/**`, `app/e2e/m10-05.spec.ts`
+- **Acceptance:**
+  - Verified on main: D1 and D3 have no `dNExplain` function, so a wrong answer shows only the shared bar `That was {expected}. You'll see it again shortly.` (`session/SessionScreen.tsx:297-298`). D1 and D3 print ASCII `F#`/`Bb` (from `chromaToPc`, `theory/fretboard.ts:57-58`). Thirteen later drills each have their own ♯/♭ prettifier. D3's `NoteWheel.tsx:86-87` names the seven naturals at every guide level it is shown (1–3), so for letter questions the wheel is the answer.
+  - `theory/pitch-display.ts`: `displayPc('F#') → 'F♯'` (and chord and key names), tested. Import it by path, not through `theory/index.ts`, to avoid colliding with M1-44. Replacing the other drills' copies is optional.
+  - D1 and D3 show ♯/♭ on buttons, prompts, the worked rep, neck labels and their `expected` value (so the feedback bar shows `That was F♯.`). Item IDs and answer values stay ASCII.
+  - `d1Explain` and `d3Explain` in `logic.ts`, rendered under the prompt as D6 does (`D6View.tsx:101-102`), naming the misconception: D1 "You said G. G is one fret lower, at fret 3. Count up from the open E: E F F♯ G G♯."; D3 "The alphabet runs A B C D E F G, then A again" and "There's no sharp between E and F: a half step above E is F." The copy audit (`docs/review/2026-10-20-copy-audit-drills.md` §4 items 1 and 3) has the proposed strings. A correct answer gets one short confirming line. Unit tests per misconception.
+  - D3's note wheel at guide levels 1–2 shows the twelve positions and the ½ marks without the natural names (only the start note is named). Level 3 is unchanged.
+  - E2E: a wrong D1 answer shows the explanation, and D3 at guide level 1 hides the wheel's names.
+
+### M10-06 · Teach on a miss: D5 intervals and D39 fret landmarks
+- **Status:** todo
+- **Priority:** high (review finding G, second half)
+- **Deps:** none
+- **Design:** §6 D5, D39; research/02 rule 3; research/03 C3/F3 misconceptions
+- **Owns:** `app/src/drills/d5-interval-name/**`, `app/src/drills/d39-fret-landmarks/**`, `app/e2e/m10-06.spec.ts`
+- **Acceptance:**
+  - Verified on main: neither drill has an explain function. D5's hint is hidden once answered (`D5View.tsx:109`), its buttons are `M3`/`m3`/`P5`/`TT` (`:132`), and only its worked rep spells the names out. D39 shows the bar only, e.g. `That was fret 0 (open).` (`logic.ts:65`).
+  - `d5Explain`: "You chose m3 (a minor 3rd, 3 half steps). From C up to E is 4 half steps: a major 3rd, M3." D5 buttons keep the short names, with the full name in their accessible name and in the feedback.
+  - `d39Explain`: "Count the dots from the nut: 3, 5, 7." for marker questions; for repeat-12 questions, the worked-example sentence ("the neck repeats every 12 frets"). D39's bar says "the open strings" instead of "fret 0 (open)".
+  - Unit tests per misconception, and an e2e test for one wrong answer in each drill.
+
+### M10-07 · Say what each skill and module is for, in plain words on Learn
+- **Status:** todo
+- **Deps:** M10-01
+- **After:** M10-03
+- **Design:** §5, §7 (Learn); research/02 rule 15; research/03 "Learner can DO"
+- **Owns:** `app/src/learn/outcomes/**`, `app/src/engine/frontier.ts` (only module `summary`, `unlocksAfter` and `misconception` strings), `app/src/screens/learn/SkillDetail.tsx`, `app/src/screens/learn/SkillDetail.module.css`, `app/src/screens/learn/SkillDetail.test.tsx`, `app/src/screens/learn/map-model.ts`, `app/src/screens/learn/map-model.test.ts`, `app/e2e/m10-07.spec.ts`
+- **Acceptance:**
+  - Verified on main: skill rows show the raw topic code (`SkillDetail.tsx:67`). Module summaries read as tables of contents ("Interval shapes from m2 to P8…", `frontier.ts:52`). Builds-on strings leak engineering: "(and, softly, octaves)" (`:50`). Misconception callouts are about the learner, not to them (`:44`, `:105`, `:156`), with none for Keys, Harmony, Arpeggios, Scales or Ear. "Locked: preview" (`map-model.ts:146,151`) previews only a title for 45 of 67 skills.
+  - One-line outcomes for every registered skill in a lazy `learn/outcomes/` registry (not on `Skill`, which is first-load), shown under the skill title. Source them from research/03's "Learner can DO" column. A registry test fails when a skill has no outcome.
+  - Module summaries rewritten as outcomes (the screens audit's Top 10 item 3 has examples). `unlocksAfter` in plain words. Misconceptions in the second person, plus new ones for Keys and Harmony (screens audit item 8). Use `♭7`, not `b7` (`frontier.ts:70`).
+  - Drop the topic code from the skill row. "Locked: preview" stays only when there is an outcome, intro or worked example to show, otherwise "Locked".
+  - Modules with no skills ("Coming soon") are grouped after the open and locked ones on the map. After M4-07, M6-06 and M6-08, only Advanced, Meter and Reading are left.
+  - RTL tests, plus an e2e test that a locked skill shows its outcome.
+
+### M10-08 · One vocabulary in the drills: ♯/♭, ♭3/♭7, whole and half steps, one mic voice
+- **Status:** todo
+- **Deps:** M10-05
+- **Design:** §6; copy audit (drills) §2 items 1–6, 10
+- **Owns:** `app/src/drills/d2-find-the-note/**`, `app/src/drills/d4-octave-finder/**`, `app/src/drills/d6-interval-tap/**`, `app/src/drills/d7-spell-it/**`, `app/src/drills/d16-play-note/**`, `app/src/drills/d17-play-sequence/**`, `app/e2e/m10-08.spec.ts`
+- **Acceptance:**
+  - Verified on main (copy audit, drills, all STILL TRUE): ASCII pitch names in D2, D4 and D16; ASCII `b3`/`b7` in D6 labels and feedback (from `theory/intervals.ts` degree IDs) and in D7's formula (`ContextPanel.tsx:27`, `logic.ts:366`); `W W H` never expanded in D7 (`ContextPanel.tsx:32`, `logic.ts:364`); mic copy differs between D16 and D17 in every message.
+  - D2, D4 and D16 show pitch names through `displayPc` (M10-05). D6 and D7 show `♭3`/`♭7` (display only; theory IDs unchanged). D7 expands W and H once ("whole, whole, half… A whole step is two frets, a half step one"), as D17 already does.
+  - D16 and D17 share one set of mic strings, using D17's wording: it names the fix, and says nothing is sent.
+  - D4's prompt says how a multi-target round ends ("Tap them in any order. A wrong tap ends the round; tap Done if you can't find the rest."). D4's `2 strings up` says which way. D17's `Show me` becomes `Show me the answer`.
+  - Existing tests updated, plus unit tests for each changed string.
+
+### M10-09 · One vocabulary on the screens: "items", one learning/stable legend, Learn's names in Progress
+- **Status:** todo
+- **Deps:** M10-07
+- **Design:** §7; copy audit (screens) §9 items 1–3, Top 10 items 4, 5, 10
+- **Owns:** `app/src/components/learning-legend/**`, `app/src/screens/learn/LearnScreen.tsx`, `app/src/screens/learn/ModuleDetail.tsx`, `app/src/session/summary/SessionSummary.tsx`, `app/src/session/summary/copy.ts`, `app/src/session/summary/copy.test.ts`, `app/src/screens/progress/panels/topics.tsx`, `app/src/screens/progress/panels/topics.test.tsx`, `app/src/screens/progress/panels/stats.tsx`, `app/src/screens/today/cards/stats.tsx`, `app/src/components/heatmap/RetentionForecast.tsx`, `app/src/placement/PlacementTest.tsx`, `app/e2e/m10-09.spec.ts`
+- **Acceptance:**
+  - Verified on main: the unit is a "note" (`today/cards/stats.tsx:50`, "New notes waiting"), an "item", a "fact" (`RetentionForecast.tsx:26`, `PlacementTest.tsx:451`) or "in rotation" (`progress/panels/stats.tsx:32`). "Learning" and "stable" are defined only at the foot of a module's detail (`ModuleDetail.tsx:94-100`). Progress topic titles don't match Learn's module titles (the verification note lists ten mismatches).
+  - One word for the unit everywhere a learner reads it (see the decision line).
+  - A small `<LearningLegend>` (learning, stable, mastered in one line each) where the numbers first appear: the Learn module card or map header, the session-summary tiles, and Progress topics. "ModuleDetail" keeps or links to it.
+  - Progress topic rows are grouped and titled by Learn's modules (`MODULES` titles), with topic rows under them if needed.
+  - "Its skills start feeding your sessions once you've made progress…" (`ModuleDetail.tsx:67-68`) is rewritten in learner words.
+  - RTL tests for the legend and the topic titles.
+  - Needs user decision: the learner-facing word for one fact you learn ("item" as the review proposes, or "note"/"fact"/"card"), and whether Learn's skill rows should say "lesson".
+
+### M10-10 · Copy fixes: onboarding, Today, Progress and Settings
+- **Status:** todo
+- **Deps:** none
+- **Design:** copy audit (screens) §1, §4, §6, §7, "smaller fixes"
+- **Owns:** `app/src/onboarding/OnboardingFlow.tsx`, `app/src/onboarding/options.ts`, `app/src/onboarding/steps/placement.tsx`, `app/src/onboarding/steps/notation.tsx`, `app/src/screens/today/cards/streak-repair.tsx`, `app/src/screens/today/cards/streak-repair.test.tsx`, `app/src/components/heatmap/HeatmapLegend.tsx`, `app/src/components/heatmap/CellDetail.tsx`, `app/src/screens/privacy/PrivacyScreen.tsx`, `app/src/onboarding/calibration/CalibrationSetting.tsx`, `app/e2e/m10-10.spec.ts`
+- **Acceptance:**
+  - All verified STILL TRUE on main. The welcome screen says "change them later in Progress" (`OnboardingFlow.tsx:103-104`): make it "in Settings". "Fretting hand on the left" (`options.ts:13`) becomes "You fret with your left hand" (and the mirrored line for left-handed). "anything you don't know is skipped" (`steps/placement.tsx:15`) becomes "it stops asking about anything you don't know yet".
+  - "Your streak will be restored shortly." (`streak-repair.tsx:173`) says when.
+  - The heatmap legend (`HeatmapLegend.tsx:20`) and cell detail ("Answers from recall" → "Answers without a hint"; "Stable for" → "Remembered for", `CellDetail.tsx:39,62`) use learner words.
+  - "add to home screen" → "Add to Home Screen" (`PrivacyScreen.tsx:46-47`). The calibration "Tap time" row gets a one-line hint (`CalibrationSetting.tsx:14-18`).
+  - The notation step promises "its reading track moved up" (`steps/notation.tsx:22`) for a track that shows "Coming soon". Add "(the reading track is coming later)" until M8-21 promotes Track R. M8-21 also owns this file, but it is far from ready.
+  - Tests updated, plus an e2e test of the welcome copy.
+
+### M10-11 · Copy fixes: the later drills' prompts and notices
+- **Status:** todo
+- **Deps:** none
+- **Design:** copy audit (drills) §3, §4 items 6–9, runners-up
+- **Owns:** `app/src/drills/d9-build-caged/**`, `app/src/drills/d13-capo/**`, `app/src/drills/d36-name-the-chord/**`, `app/src/drills/d37-chord-tones-neck/**`, `app/src/drills/d38-build-the-chord/**`, `app/src/drills/d40-key-signature/**`, `app/src/drills/d-pentatonic-box/**`, `app/e2e/m10-11.spec.ts`
+- **Acceptance:**
+  - All verified STILL TRUE on main. D40's terse prompts gloss their terms ("Which minor key shares its key signature (its relative minor)?", "Which key is its V, a 5th up?", "Which major key has this key signature?"; `text.ts:84-88`).
+  - D36 says "type" for "quality" in its entry hints ("Tap its root (the lowest note), then its type", `D36View.tsx:125-126`).
+  - D38: "Fret 9 is out of reach." gives the reason (`D38View.tsx:86`). "one voicing" becomes "one way to play" (`:159`). The span panel reads as a sentence (`ContextPanel.tsx:66`).
+  - Multi-target rounds (D9, D37, the pentatonic box) say on every prompt how a round ends and what Done does. Today only D37's hint-less state does (`D37View.tsx:214`).
+  - Typographic apostrophes in D13 and the pentatonic box match the rest of the app.
+  - Tests updated for each changed string.
+
+### M10-12 · Split C2 by string, with a milestone per string
+- **Status:** todo
+- **Deps:** M4-08
+- **After:** M10-02, M10-05, M10-08
+- **Design:** §3.7 (achievements), §5; research/03 C2 (weak-cell targeting); research/02 rule 15
+- **Owns:** `app/src/engine/skills/c2.ts`, `app/src/engine/skills/c2.test.ts`, `app/src/engine/skills/registry.test.ts`, `app/src/storage/db.ts` (hotspot: append one version), `app/src/storage/export-import.ts`, `app/src/storage/migrations/c2-strings.ts`, `app/src/storage/migrations/c2-strings.test.ts`, `app/src/engine/gamification/achievements/whole-neck.ts`, `app/src/engine/gamification/achievements/helpers.ts`, `app/src/engine/gamification/achievements/string-4-master.ts`, `app/src/engine/gamification/achievements/string-3-master.ts`, `app/src/engine/gamification/achievements/string-2-master.ts`, `app/src/engine/gamification/achievements/string-1-master.ts`, `app/src/engine/gamification/achievements/achievements.test.ts`, `app/src/drills/d1-name-the-note/drill.ts`, `app/src/drills/d2-find-the-note/drill.ts`, `app/e2e/m10-12.spec.ts`
+- **Acceptance:**
+  - Verified on main: `C2.all-notes` is one 120-item skill (`c2.ts:16`). Mastery needs 108 of them stable, so its ring reads 0% for weeks, and "Whole neck" is its only milestone.
+  - Split it into string stages in teaching order: naturals on strings 4, 3, 2 and 1 (soft on F2 practising, in turn), then accidentals on 6–5, then accidentals on 4–1. Keep the ID `C2.all-notes` for the last stage, so drill skill lists, fixtures and specs that seed it stay valid. Item IDs are unchanged.
+  - Migration (schema version, the `c5-tone-stages` pattern, frozen) moves cards, logs and states to the stage that owns each item. A mastered `C2.all-notes` carries to every stage. JSON import restages too.
+  - "String 4/3/2/1 master" achievements (mastery-tied). "Whole neck" needs every C2 stage mastered (`helpers.ts` takes a list of skills).
+  - M4-08 adds `hear-it-find-it` to C2's drill types: keep it on every stage.
+  - Needs user decision: the stage order (strings 4 → 1 first, or 1 and 2 first because string 1 repeats string 6's names).
+
+### M10-13 · Worked examples for Neck basics: F1, F2 string 5 and F3
+- **Status:** todo
+- **Deps:** none
+- **Design:** §6 (worked example on first exposure); research/02 rule 8
+- **Owns:** `app/src/learn/worked-examples/f1-alphabet.tsx`, `app/src/learn/worked-examples/f1-steps.tsx`, `app/src/learn/worked-examples/f2-string5.ts`, `app/src/learn/worked-examples/f3-markers.tsx`, `app/src/learn/worked-examples/f1-f3.test.tsx`, `app/e2e/m10-13.spec.ts`
+- **Acceptance:**
+  - Verified on main: 9 example files cover 22 of 67 skills. None of the first module's F1 skills, `F2.string5-naturals` or F3 has one.
+  - One example each for `F1.alphabet`, `F1.b-c-e-f` (the trap: no sharp between E–F and B–C), `F1.half-steps` and `F1.whole-steps` (they may share one file), `F2.string5-naturals` (landmarks, like `f2-landmarks.ts`), and `F3.markers` and `F3.repeat-12`. Follow the `c5-root-first.tsx` pattern: an idea line, three fading steps and one trap.
+  - The registry test lists the skills covered.
+
+### M10-14 · Worked examples for intervals, harmony, progressions, capo and boxes
+- **Status:** todo
+- **Deps:** none
+- **After:** M10-02
+- **Design:** §6; research/02 rule 8
+- **Owns:** `app/src/learn/worked-examples/c3-fourths-fifths.tsx`, `app/src/learn/worked-examples/c8-numerals.tsx`, `app/src/learn/worked-examples/c9-rotation.tsx`, `app/src/learn/worked-examples/c10-capo.tsx`, `app/src/learn/worked-examples/c7-box-1.tsx`, `app/src/learn/worked-examples/c3-c10.test.tsx`
+- **Acceptance:**
+  - Verified on main: `c3-gb-thirds` covers only `C3.thirds`. Nothing covers the 4ths/5ths G–B shift, C7, C8, C9 or C10.
+  - Examples for `C3.fourths-fifths` (the G–B "one fret up" rule), C8 stage 1 (I IV V in C), `C9.pop` (I–V–vi–IV and its rotation), C10 (capo: count up) and `C7.minor-boxes` (box 1 around the E shape).
+  - Use the stage IDs from M10-02 when it has landed, otherwise topic matches.
+
+### M10-15 · Today: a first-day line, and streak freezes explained
+- **Status:** todo
+- **Deps:** none
+- **Design:** §3.7, §7 (Today); research/02 rule 15
+- **Owns:** `app/src/screens/today/cards/hero.tsx`, `app/src/screens/today/cards/hero.test.tsx`, `app/src/components/goal-ring/progress.ts`, `app/e2e/m10-15.spec.ts`
+- **Acceptance:**
+  - Verified on main: the hero's only cue is the button (`hero.tsx:11-14`), and "No streak freezes held" shows from day one (`goal-ring/progress.ts:31`) with no explanation.
+  - A learner with no cards sees one line: "Your first session takes about N minutes and starts with the notes on the low E string." (N from their session length; the starting topic from the frontier, not hard-coded).
+  - The freezes line is hidden until a freeze is held. The first time one is shown, one line explains it ("It covers a missed day automatically; you earn one every 7 days", from gamification config).
+  - RTL tests, and an e2e test for a fresh profile.
+
+### M10-16 · Placement probes for octave shapes and triad cores, and test-out from the Learn map
+- **Status:** todo
+- **Deps:** M10-01
+- **After:** M10-09
+- **Design:** §3.4 (placement, test-out)
+- **Owns:** `app/src/engine/config/placement.ts`, `app/src/engine/skills/c1.ts`, `app/src/engine/skills/c1-every-octave.ts`, `app/src/placement/algorithm.test.ts`, `app/src/screens/learn/LearnScreen.tsx`, `app/e2e/m10-16.spec.ts`
+- **Acceptance:**
+  - Verified on main: placement probes F1, F2, C2, C3, C4, C5 and C8 (`engine/config/placement.ts:8`). C1, F3, C6, C7, C10 and I3 are never probed. Test-out is offered only on a locked module's detail (`ModuleDetail.tsx:72-78`).
+  - Add C1 (`C1.octaves` and `C1.octaves-gb-shift`; the others `skipPlacement` with a reason) and C6's `C6.triad-cores` to the probed topics, within the 3-minute budget. Show the expert run's timing in the report.
+  - The Learn map header offers "Test out" for the first locked module in the goal's order, which opens the existing test-out flow.
+  - Unit tests for the probe set; an e2e test for the header entry.
+
+### M10-17 · Achievements for chords, CAGED, harmony and progressions, and a fair speed demon
+- **Status:** todo
+- **Deps:** M6-08
+- **After:** M10-02
+- **Design:** §3.7 achievements; research/02 rule 15
+- **Owns:** `app/src/engine/gamification/achievements/chords-*.ts`, `app/src/engine/gamification/achievements/caged-*.ts`, `app/src/engine/gamification/achievements/harmony-*.ts`, `app/src/engine/gamification/achievements/progressions-*.ts`, `app/src/engine/gamification/achievements/speed-demon.ts`, `app/src/engine/config/gamification.ts`
+- **Acceptance:**
+  - Verified on main: 10 achievements exist (notes, streaks, two mic milestones). None is for chords, CAGED, harmony or progressions. Speed demon is a fixed 1.2 s median (`config/gamification.ts:27`), while About says answers are timed against the learner's own tap time.
+  - Mastery-tied achievements (`masteryAchievement`): for example, "Triads spelled" (C5.triads), "All five CAGED shapes" (C6.major-shapes), "Three-chord songs in any key" (C8 stage 1 or all stages), "Pop progressions" (C9.pop).
+  - Speed demon measures against the learner's calibrated tap time (M6-08 already excludes timing drills), or its copy says "1.2 seconds flat".
+  - Unit tests for each.
+  - Needs user decision: the milestone list and names. Also, speed demon relative to the learner's tap time, or a fixed 1.2 s with honest copy.
