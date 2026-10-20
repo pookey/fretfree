@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  collectItemKinds,
   findItemId,
   findMarkerItemId,
   intervalItemId,
@@ -31,8 +32,11 @@ import {
   repeatItemId,
   signatureKeyItemId,
   stepItemId,
+  ITEM_KINDS,
+  type ItemKind,
   type ItemRef,
 } from './model';
+import { SKILLS } from './skills';
 
 describe('item IDs', () => {
   it('formats each kind canonically', () => {
@@ -219,5 +223,109 @@ describe('numeral item IDs', () => {
     expect(() => numeralItemId('nashville', 'vi', 'C')).toThrow(RangeError);
     expect(() => numeralItemId('numeral', 'vi', 'D major')).toThrow(RangeError);
     expect(() => numeralItemId('numeral', 'vi', 'Q')).toThrow(RangeError);
+  });
+});
+
+describe('item kind registry', () => {
+  // IDs as stored before item kinds moved into `items/` (M1-43), one or more
+  // per kind. Cards and review logs are keyed by these, so they must not change.
+  const STORED: readonly (readonly [id: string, kind: string])[] = [
+    ['note@s6f0', 'note'],
+    ['find:C#@s3', 'find'],
+    ['step:+1@E', 'step'],
+    ['step:-2@C', 'step'],
+    ['letter:+1@C', 'letter'],
+    ['marker:f3', 'marker'],
+    ['find-marker:f12', 'find-marker'],
+    ['repeat:-12@f15', 'repeat'],
+    ['octave:s6f0→s4', 'octave'],
+    ['octaves:F#', 'octaves'],
+    ['interval:m3@s6→s5', 'interval'],
+    ['interval-name:TT@s3→s1', 'interval-name'],
+    ['spell-key:Gb', 'spell-key'],
+    ['spell-chord:m7b5@F#', 'spell-chord'],
+    ['degree:6@Eb', 'degree'],
+    ['degree-of:2@C#', 'degree-of'],
+    ['caged:C-shape@dominant7', 'caged'],
+    ['caged-core:A-shape@minor', 'caged-core'],
+    ['chord-tone:b3@m7', 'chord-tone'],
+    ['chord-tone-name:1@major', 'chord-tone-name'],
+    ['chord-name:E-shape@major', 'chord-name'],
+    ['build-chord:m7@s5', 'build-chord'],
+    ['capo-sound:G', 'capo-sound'],
+    ['capo-shape:Am', 'capo-shape'],
+    ['capo-fret:G', 'capo-fret'],
+    ['numeral:bVII@key=Am', 'numeral'],
+    ['numeral-of:vii°@key=Bb', 'numeral-of'],
+    ['nashville:6m@key=F#', 'nashville'],
+    ['prog:I-IV-V:build', 'progression'],
+    ['chord-tones:C', 'chord-tones'],
+    ['chord-tones:b7@Cm7', 'chord-tones'],
+    ['key-signature:Cb', 'key-signature'],
+    ['relative-minor:Eb', 'relative-minor'],
+    ['dominant:F#', 'dominant'],
+    ['signature-key:7b', 'signature-key'],
+    ['penta-box:1@minor', 'penta-box'],
+    ['penta-relative:5@major', 'penta-relative'],
+  ];
+
+  it.each(STORED)('keeps the stored ID %j (%s)', (id, kind) => {
+    const ref = parseItemId(id);
+    expect(ref?.kind).toBe(kind);
+    expect(itemId(ref!)).toBe(id);
+  });
+
+  const skillItems = SKILLS.flatMap((s) => s.items().map((i) => i.id));
+
+  it('round-trips every kind, through the items the skills hold', () => {
+    const used = new Set<string>();
+    for (const id of skillItems) {
+      const ref = parseItemId(id);
+      expect(ref, id).not.toBeNull();
+      expect(itemId(ref!)).toBe(id);
+      used.add(ref!.kind);
+    }
+    // A kind no skill holds is never scheduled: a dead file, or a skill not yet added.
+    expect([...used].sort()).toEqual([...ITEM_KINDS].sort());
+  });
+
+  it('parses each ID in exactly one kind family', () => {
+    const families = [
+      ...new Set(
+        Object.values(
+          import.meta.glob<{ default: ItemKind }>(
+            ['./items/*.ts', '!./items/helpers.ts', '!./items/*.test.ts'],
+            { eager: true },
+          ),
+        ).map((m) => m.default),
+      ),
+    ];
+    for (const id of [...skillItems, ...STORED.map(([id]) => id)]) {
+      expect(
+        families.filter((f) => f.parse(id) !== null),
+        id,
+      ).toHaveLength(1);
+    }
+  });
+
+  it('refuses a kind no file defines', () => {
+    expect(() => itemId({ kind: 'nope' } as unknown as ItemRef)).toThrow(RangeError);
+  });
+
+  it('collects kinds by file, and fails on a missing export or a kind defined twice', () => {
+    const a: ItemKind = { kinds: ['a', 'b'], id: () => 'a', parse: () => null };
+    const c: ItemKind = { kinds: ['c'], id: () => 'c', parse: () => null };
+    const kinds = collectItemKinds({
+      './items/a.ts': { default: a },
+      './items/c.ts': { default: c },
+    });
+    expect([...kinds.keys()]).toEqual(['a', 'b', 'c']);
+    expect(kinds.get('b')).toBe(a);
+    expect(() => collectItemKinds({ './items/x.ts': {} })).toThrow(
+      /items\/x\.ts must default-export/,
+    );
+    expect(() =>
+      collectItemKinds({ './items/a.ts': { default: a }, './items/b.ts': { default: a } }),
+    ).toThrow(/kind a is defined twice/);
   });
 });
