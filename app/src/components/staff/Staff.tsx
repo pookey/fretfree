@@ -218,9 +218,9 @@ export function Staff({
               <rect
                 key={`n${i}`}
                 className={styles.note}
-                x={at.left - 2}
+                x={at.x - 2 * STEP}
                 y={top}
-                width={Math.max(at.right - at.left, 2 * STEP) + 4}
+                width={4 * STEP}
                 height={bottom - top}
                 role="img"
                 aria-label={noteLabel(n, {

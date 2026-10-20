@@ -44,9 +44,6 @@ export interface EngravedNote {
   /** Notehead centre x, and each notehead's y (one for a rest). */
   x: number;
   ys: number[];
-  /** Horizontal extent of the note, accidentals included. */
-  left: number;
-  right: number;
 }
 
 export interface Engraving {
@@ -197,15 +194,10 @@ export function engrave(host: HTMLElement, spec: EngraveSpec): Engraving {
     width,
     noteStartX,
     noteEndX: noteStartX + areaW,
-    notes: staveNotes.map((note) => {
-      const box = note.getBoundingBox();
-      return {
-        x: (note.getNoteHeadBeginX() + note.getNoteHeadEndX()) / 2,
-        ys: note.getYs(),
-        left: Math.min(box.getX(), note.getNoteHeadBeginX()),
-        right: Math.max(box.getX() + box.getW(), note.getNoteHeadEndX()),
-      };
-    }),
+    notes: staveNotes.map((note) => ({
+      x: (note.getNoteHeadBeginX() + note.getNoteHeadEndX()) / 2,
+      ys: note.getYs(),
+    })),
   };
 }
 

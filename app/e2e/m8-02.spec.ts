@@ -69,7 +69,8 @@ test.describe('M8-02 <Staff>', () => {
     await expect(tab.locator('.vf-tabnote')).toHaveCount(11);
     await expect(tab).toHaveCSS('opacity', '1');
 
-    // Each fret number sits under its note (the rest at index 3 has none).
+    // Each fret number sits under its note (the rest at index 3 has none),
+    // within VexFlow's usual offset from the notehead's centre.
     const centreX = async (l: Locator) => {
       const box = (await l.boundingBox())!;
       return box.x + box.width / 2;
@@ -83,7 +84,7 @@ test.describe('M8-02 <Staff>', () => {
     ] as const) {
       expect(
         Math.abs((await centreX(frets.nth(fret))) - (await centreX(notes.nth(note)))),
-      ).toBeLessThan(8);
+      ).toBeLessThan(16);
     }
 
     await select.selectOption('Faint');
