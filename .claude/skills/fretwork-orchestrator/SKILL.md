@@ -144,7 +144,7 @@ Stop spawning, finish or park in-flight work, and write the situation to `docs/p
 
 ## 7. Safety
 
-- Never touch DNS records other than the site's own names (`fretfree.app`, `www.fretfree.app`) and their ACM validation records, which CDK manages. The `fretfree.app` zone also holds the FretworkEmail and FretworkBrand records; leave them to those stacks.
+- Never touch DNS records other than the site's own names (`fretfree.app`, `www.fretfree.app`), the sync API's `api.fretfree.app` (FretworkSync, approved by the user on 2026-10-20) and their ACM validation records, which CDK manages. The `fretfree.app` zone also holds the FretworkEmail and FretworkBrand records; leave them to those stacks.
 - Never delete AWS resources this project didn't create. Never commit AWS account IDs, zone IDs, ARNs or secrets: the lane runs `scripts/secret-scan.sh` and so does the pre-push hook.
 - Push only `main` to `origin`, never force-push, and create no other remotes, repos, GitHub Actions or GitHub secrets.
 - Never close panes or tabs you didn't create. Never run `herdr server stop`.
