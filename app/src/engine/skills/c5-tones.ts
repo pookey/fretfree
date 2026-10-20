@@ -20,8 +20,8 @@ import { itemsOf, memo } from './helpers';
  *
  * The stage is gated on spelling the chords (C5) and on finding every
  * octave of a note (C1), the two halves of the task (rule 7). The placement
- * test skips these skills (`placement.skipSkills`): a whole-neck round is
- * practice, not a probe.
+ * test skips these skills: a whole-neck round is practice, and far longer
+ * than a probe (M3-14).
  */
 
 const DRILLS = ['chord-tones-neck'];
@@ -85,6 +85,7 @@ export const skills: Skill[] = GROUPS.map((g, i) => ({
   order: 1597.5 + i * 0.2,
   title: g.title,
   prerequisites: g.prerequisites,
+  skipPlacement: true,
   drillTypes: DRILLS,
   items: memo(() => itemsOf(g.id, cardIds(g.cards))),
 }));

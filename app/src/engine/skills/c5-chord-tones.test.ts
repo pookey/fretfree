@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ENGINE_CONFIG } from '../config';
 import { deriveStatus } from '../mastery';
 import { parseChordToneItemId, type SkillStatus } from '../model';
 import { skills } from './c5-chord-tones';
@@ -100,6 +99,6 @@ describe('C5 chord-tone stages', () => {
   });
 
   it('keeps every stage out of the placement test', () => {
-    for (const id of STAGES) expect(ENGINE_CONFIG.placement.skipSkills).toContain(id);
+    for (const id of STAGES) expect(getSkill(id)!.skipPlacement).toBe(true);
   });
 });

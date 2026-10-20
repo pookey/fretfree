@@ -20,7 +20,7 @@ import { itemsOf, memo } from './helpers';
  * Building a chord places its tones by degree, so each stage is gated on
  * finding those tones in a shape (D8's skills) and on spelling the chords
  * (rule 7). Like D8's skills these apply C5 on the neck, so the placement
- * test leaves them out (`placement.skipSkills`).
+ * test leaves them out (M3-15).
  */
 
 const DRILLS = ['build-the-chord'];
@@ -69,6 +69,7 @@ export const skills: Skill[] = GROUPS.map((g, i) => ({
   order: 1593 + i * 2,
   title: g.title,
   prerequisites: g.prerequisites,
+  skipPlacement: true,
   drillTypes: DRILLS,
   items: memo(() => itemsOf(g.id, buildChordIds(g.kinds))),
 }));

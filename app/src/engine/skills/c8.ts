@@ -58,6 +58,7 @@ interface Group {
   title: string;
   prerequisites: readonly string[];
   softUnlock?: boolean;
+  skipPlacement?: boolean;
   ids: () => string[];
 }
 
@@ -75,6 +76,9 @@ const GROUPS: readonly Group[] = [
     title: 'Nashville numbers',
     prerequisites: ['C8.numerals-major'],
     softUnlock: true,
+    // The placement budget has room for one C8 group: Roman numerals are
+    // probed, and Nashville opens softly from them (M4-02).
+    skipPlacement: true,
     ids: nashvilleIds,
   },
 ];
@@ -87,6 +91,7 @@ export const skills: Skill[] = GROUPS.map((g, i) => ({
   title: g.title,
   prerequisites: g.prerequisites,
   ...(g.softUnlock ? { softUnlock: true } : {}),
+  ...(g.skipPlacement ? { skipPlacement: true } : {}),
   drillTypes: DRILLS,
   items: memo(() => itemsOf(g.id, g.ids())),
 }));

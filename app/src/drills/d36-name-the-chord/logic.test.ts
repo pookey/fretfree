@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ENGINE_CONFIG } from '../../engine/config';
 import { SEED_CONFUSIONS } from '../../engine/confusions';
 import {
   chordNameItemId,
@@ -163,7 +162,7 @@ describe('C5 naming skills', () => {
     expect(getSkill('C5.name-sus')!.prerequisites).toContain('C5.sus-add');
     for (const id of SKILL_IDS) {
       expect(getSkill(id)!.topic).toBe('C5');
-      expect(ENGINE_CONFIG.placement.skipSkills).toContain(id);
+      expect(getSkill(id)!.skipPlacement).toBe(true);
     }
   });
 });

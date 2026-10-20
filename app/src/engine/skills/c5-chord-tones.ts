@@ -20,8 +20,9 @@ import { itemsOf, memo } from './helpers';
  *
  * The root stage is gated on the natural notes of strings 6 and 5, where the
  * shapes root (rule 7), and on spelling triads (C5); the 7th stage also on
- * spelling 7th chords. None soft-unlocks. The placement test skips these
- * skills (`placement.skipSkills`) to stay within its budget.
+ * spelling 7th chords. None soft-unlocks. They apply C5 spelling on the
+ * neck: practice, not a gate, and past where the placement test's budget
+ * stops a realistic expert, so the test skips them (PM decision, M3-04).
  *
  * Until M3-17 the root, 3rd and 5th were one skill, `C5.tones-triads`, with
  * the same item IDs; `storage/migrations/c5-tone-stages.ts` moves its cards,
@@ -98,6 +99,7 @@ export const skills: Skill[] = GROUPS.map((g, i) => ({
   order: 1530 + i * 10,
   title: g.title,
   prerequisites: g.prerequisites,
+  skipPlacement: true,
   drillTypes: DRILLS,
   items: memo(() => itemsOf(g.id, toneIds(g.tones))),
 }));

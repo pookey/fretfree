@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ENGINE_CONFIG } from '../../engine/config';
 import {
   buildChordItemId,
   itemId,
@@ -154,9 +153,9 @@ describe('the C5 build skills', () => {
     expect(skill('C5.build-triads').prerequisites).toEqual(['C5.tones-fifths']);
     expect(skill('C5.build-sevenths').prerequisites).toContain('C5.tones-sevenths');
     expect(skill('C5.build-sus').prerequisites).toContain('C5.sus-add');
-    expect(ENGINE_CONFIG.placement.skipSkills).toEqual(
-      expect.arrayContaining(['C5.build-triads', 'C5.build-sevenths', 'C5.build-sus']),
-    );
+    for (const id of ['C5.build-triads', 'C5.build-sevenths', 'C5.build-sus']) {
+      expect(skill(id).skipPlacement).toBe(true);
+    }
   });
 });
 

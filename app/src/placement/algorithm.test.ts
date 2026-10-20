@@ -212,8 +212,13 @@ describe('placementGroups', () => {
   });
 
   it('leaves out skipped skills, and so drops them as prerequisites', () => {
-    const skills = [skill('C5.a', 'C5'), skill('C5.b', 'C5', ['C5.a']), skill('C5.c', 'C5')];
-    const groups = placementGroups(skills, () => true, ['C5'], ['C5.a', 'C5.c']);
+    const skip = (s: Skill): Skill => ({ ...s, skipPlacement: true });
+    const skills = [
+      skip(skill('C5.a', 'C5')),
+      skill('C5.b', 'C5', ['C5.a']),
+      skip(skill('C5.c', 'C5')),
+    ];
+    const groups = placementGroups(skills, () => true, ['C5']);
     expect(groups.map((g) => g.id)).toEqual(['C5.b']);
     expect(groups[0]!.prerequisites).toEqual([]);
     // D8's chord tones apply C5 on the neck: practice, not a gate (M3-04).

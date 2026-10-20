@@ -21,6 +21,12 @@ export interface Skill {
   readonly prerequisites: readonly string[];
   /** Low-risk skills unlock once prerequisites are merely practising. */
   readonly softUnlock?: boolean;
+  /**
+   * Leave the skill out of the onboarding placement test (design §3.4):
+   * practice rather than a gate, or past where its budget stops a realistic
+   * expert. The skill's file says why.
+   */
+  readonly skipPlacement?: boolean;
   /** Drill type IDs that can test this skill, in preference order. */
   readonly drillTypes: readonly string[];
   items(): readonly Item[];

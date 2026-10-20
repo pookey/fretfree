@@ -113,14 +113,13 @@ export function skillGroups(
   return groups.map((g) => ({ ...g, prerequisites: g.prerequisites.filter((p) => ids.has(p)) }));
 }
 
-/** The placement test's groups: every skill of the configured topics, bar the skipped ones. */
+/** The placement test's groups: every skill of the configured topics, bar `skipPlacement` ones. */
 export function placementGroups(
   skills: readonly Skill[],
   canServe: (item: Item) => boolean,
   topics: readonly string[] = ENGINE_CONFIG.placement.topics,
-  skip: readonly string[] = ENGINE_CONFIG.placement.skipSkills,
 ): GroupInput[] {
-  return skillGroups(skills, canServe, (s) => topics.includes(s.topic) && !skip.includes(s.id));
+  return skillGroups(skills, canServe, (s) => topics.includes(s.topic) && !s.skipPlacement);
 }
 
 export function startPlacement(
