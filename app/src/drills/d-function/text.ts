@@ -75,7 +75,9 @@ function keyOf(prompt: DfPrompt): string {
 
 function sourceLabel(prompt: DfPrompt, source: DfSource): string {
   const tonic = tonicOf(prompt);
-  if (source === 'borrowed') return `Borrowed from ${tonic} major`;
+  // Exclusive: V, V7 and vii° are in the parallel major too, so a bare
+  // "borrowed from A major" would be true of them (M6-06 review).
+  if (source === 'borrowed') return `Borrowed from ${tonic} major (in neither minor scale)`;
   return `${tonic} ${source} minor`;
 }
 

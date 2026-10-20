@@ -307,7 +307,7 @@ describe('function drill: words', () => {
     expect(src.choices.map((c) => dfDisplay(src, c))).toEqual([
       'F♯ natural minor',
       'F♯ harmonic minor',
-      'Borrowed from F♯ major',
+      'Borrowed from F♯ major (in neither minor scale)',
     ]);
     expect(dfSpoken(src, 'harmonic')).toBe('F♯ harmonic minor');
     const fn = prompt('function:V@major');

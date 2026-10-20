@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart } from './helpers';
+import { skillsExcept } from './helpers/skills';
 
 // M2-05: D5 "Name the interval from two dots". A choice drill whose
 // distractors scale with the scope level, and whose context panel carries an
@@ -15,25 +16,7 @@ const THIRDS = [6, 5, 4, 3, 2].flatMap((from) =>
 );
 
 /** Every skill but C3.thirds, so a session works on that one skill only. */
-const OTHER_SKILLS = [
-  'F1.alphabet',
-  'F1.b-c-e-f',
-  'F1.half-steps',
-  'F1.whole-steps',
-  'F2.string6-naturals',
-  'F2.string5-naturals',
-  'C2.all-notes',
-  'F3.markers',
-  'F3.repeat-12',
-  'C1.octaves',
-  'C1.octaves-gb-shift',
-  'C1.double-octaves',
-  'C1.every-octave',
-  'C3.fourths-fifths',
-  'C3.sevenths',
-  'C3.sixths',
-  'C3.seconds',
-];
+const OTHER_SKILLS = skillsExcept('C3.thirds');
 
 interface Seed {
   /** Seed the interval-name cards as due reviews at this guide level; omit for new items. */

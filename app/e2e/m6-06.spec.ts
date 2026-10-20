@@ -29,7 +29,7 @@ const A_MINOR_SOURCES: Record<string, string> = {
 const SOURCE_LABEL: Record<string, string> = {
   natural: 'A natural minor',
   harmonic: 'A harmonic minor',
-  borrowed: 'Borrowed from A major',
+  borrowed: 'Borrowed from A major (in neither minor scale)',
 };
 const MAJOR_FUNCTION: Record<string, string> = {
   ii: 'Subdominant',

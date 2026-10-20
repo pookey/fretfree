@@ -74,7 +74,7 @@ describe('<FunctionView>', () => {
     expect(choices().map((b) => b.textContent)).toEqual([
       'A natural minor',
       'A harmonic minor',
-      'Borrowed from A major',
+      'Borrowed from A major (in neither minor scale)',
     ]);
     expect(screen.getByRole('group')).toHaveAttribute('data-wide', 'true');
   });
