@@ -6,6 +6,7 @@ import { SessionRunner } from '../../session/runner';
 import { chromaOf } from '../../theory';
 import { DRILLS } from '../registry';
 import { DPB_ID, type DpbPrompt } from './logic';
+import type { DpsPrompt } from './scale';
 
 /** The pentatonic-box drill through the real session runner (plan → prompt → grade → FSRS → persist). */
 
@@ -112,5 +113,43 @@ describe('pentatonic boxes in a session', () => {
     expect(Math.abs(order.indexOf(ids[0]!) - order.indexOf(ids[2]!))).toBe(1);
     const [confusion] = await db.confusions.toArray();
     expect(confusion?.count).toBe(2);
+  });
+
+  it('serves I7 position 1 first, guided, and logs a wrong start against that run', async () => {
+    await master(skill('I7.positions').prerequisites);
+    const start = (skillIds: string[]) =>
+      SessionRunner.start({
+        db,
+        scheduler: createScheduler({ enableFuzz: false }),
+        settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 500 },
+        skills: SKILLS,
+        drills: DRILLS,
+        now: () => clock,
+        rng: () => 0,
+        maxItems: 4,
+        focus: { skillIds, itemIds: [] },
+      });
+    const r = await start(['I7.positions']);
+    const cur = r.currentPrompt()!;
+    expect(cur.drill.id).toBe(DPB_ID);
+    expect(cur.entry).toMatchObject({ itemId: 'scale-position:1', guided: true });
+    const p = cur.prompt as DpsPrompt;
+    expect(p.mode).toBe('position');
+    const res = await r.answer(p.targets, p.targets.length * 1000);
+    expect(res.result).toEqual({ correct: true, expected: 'C major position 1' });
+    expect(res.rating).toBe(Rating.Hard);
+    expect(res.sounds.expected).toHaveLength(p.notes.length);
+
+    await master(['I7.positions', 'I7.root-runs']);
+    const runs = await start(['I7.degree-runs']);
+    const run = runs.currentPrompt()!;
+    expect(run.entry.itemId).toBe('scale-run:1@2');
+    const q = run.prompt as DpsPrompt;
+    // Start on the lowest root instead of the lowest 2nd.
+    const root = q.notes.find((n) => n.degree === 1)!;
+    const wrong = await runs.answer([root], 900);
+    expect(wrong.result).toMatchObject({ correct: false, confusedWith: 'scale-run:1@1' });
+    const [confusion] = await db.confusions.toArray();
+    expect([confusion?.a, confusion?.b].sort()).toEqual(['scale-run:1@1', 'scale-run:1@2']);
   });
 });

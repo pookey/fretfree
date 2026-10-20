@@ -28,10 +28,26 @@ import {
   type Tuning,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
-import type { DpbScope } from './meta';
+import { dpsCanTest, type DpbScope } from './meta';
+import {
+  dpsCheck,
+  dpsFeedbackPositions,
+  dpsMakePrompt,
+  dpsSounds,
+  type DpsAnswer,
+  type DpsPrompt,
+} from './scale';
 import { DPB_REGION, byPitch, dpbDisplay, dpbScopeFor, has, pick, retune, where } from './shared';
 
-export { DPB_ID, DPB_SCOPE, DPB_SCOPES, dpbCanTest, dpbConceptOf, type DpbScope } from './meta';
+export {
+  DPB_ID,
+  DPB_SCOPE,
+  DPB_SCOPES,
+  dpbCanTest,
+  dpbConceptOf,
+  dpsCanTest,
+  type DpbScope,
+} from './meta';
 export {
   DPB_REGION,
   DPB_REGULAR_SPAN,
@@ -67,6 +83,11 @@ export {
  *
  * Boxes are standard tuning. In another tuning each note keeps its pitch
  * and moves along its string, as D9's shapes do.
+ *
+ * The same drill serves I7's major-scale positions (`scale.ts`): a position
+ * is its major box with the gaps filled in, so it is built around the box
+ * as a box is built around its chord. The `penta*` functions at the end
+ * route a prompt to its half; the session uses those.
  */
 
 export type DpbMode = 'overlay' | 'relative';
@@ -272,7 +293,7 @@ export function dpbMakePrompt(item: Item, ctx: DrillContext): DpbPrompt {
   };
 }
 
-export function dpbIsLive(prompt: DpbPrompt, pos: Position): boolean {
+export function dpbIsLive(prompt: { activeRange: FretRange }, pos: Position): boolean {
   return inRange(pos.fret, prompt.activeRange);
 }
 
@@ -444,4 +465,43 @@ export function dpbShowsCount(guideLevel: GuideLevel, guided: boolean): boolean 
 /** Whether the prompt names the shape or the relative key (rule 9: hints fade). */
 export function dpbShowsHint(guideLevel: GuideLevel, guided: boolean): boolean {
   return guided || guideLevel >= ENGINE_CONFIG.pentatonicBox.hintGuideLevel;
+}
+
+// --- Boxes and scale positions ---------------------------------------------
+
+/** A prompt of either half: a box (C7) or a major-scale position (I7). */
+export type PentaPrompt = DpbPrompt | DpsPrompt;
+
+export function isScalePrompt(prompt: PentaPrompt): prompt is DpsPrompt {
+  return prompt.mode === 'position' || prompt.mode === 'run';
+}
+
+export function pentaMakePrompt(item: Item, ctx: DrillContext): PentaPrompt {
+  return dpsCanTest(item) ? dpsMakePrompt(item, ctx) : dpbMakePrompt(item, ctx);
+}
+
+export function pentaCheck(prompt: PentaPrompt, taps: DpbAnswer | DpsAnswer): DrillCheck {
+  return isScalePrompt(prompt) ? dpsCheck(prompt, taps) : dpbCheck(prompt, taps);
+}
+
+export function pentaSounds(prompt: PentaPrompt, fb: DrillFeedback<DpbAnswer>): DrillSounds {
+  return isScalePrompt(prompt) ? dpsSounds(prompt, fb) : dpbSounds(prompt, fb);
+}
+
+export function pentaFeedbackPositions(
+  prompt: PentaPrompt,
+  fb: DrillFeedback<DpbAnswer>,
+): { expected: Position[]; given: Position[] } {
+  return isScalePrompt(prompt)
+    ? dpsFeedbackPositions(prompt, fb)
+    : dpbFeedbackPositions(prompt, fb);
+}
+
+/** Completion time per note, for both halves (design §3.2). */
+export function pentaGradedResponseMs(
+  prompt: PentaPrompt,
+  _taps: DpbAnswer,
+  elapsedMs: number,
+): number {
+  return elapsedMs / Math.max(1, prompt.targets.length);
 }

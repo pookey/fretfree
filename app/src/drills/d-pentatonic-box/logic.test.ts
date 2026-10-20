@@ -78,9 +78,10 @@ const SCALE: Record<PentatonicQuality, number[]> = {
 const SHAPE_OF_BOX = { 1: 'E', 2: 'D', 3: 'C', 4: 'A', 5: 'G' } as const;
 
 describe('pentatonic-box basics', () => {
-  it('tests only C7 cards', () => {
+  it('tests only C7 and I7 cards', () => {
     expect(dpbCanTest({ id: 'penta-box:1@minor', skillId: 'C7.minor-boxes' })).toBe(true);
     expect(dpbCanTest({ id: 'penta-relative:5@major', skillId: 'C7.relative' })).toBe(true);
+    expect(dpbCanTest({ id: 'scale-run:2@5', skillId: 'I7.degree-runs' })).toBe(true);
     expect(dpbCanTest({ id: 'caged:E-shape@minor', skillId: 'C6.minor-shapes' })).toBe(false);
     expect(dpbConceptOf({ id: 'penta-box:2@major', skillId: 'C7.major-boxes' })).toBe(
       'penta-box:2@major',
@@ -112,10 +113,17 @@ describe('pentatonic-box basics', () => {
     expect(dpbChordSymbol('C', 'major')).toBe('C');
   });
 
-  it('is registered for every C7 skill, and every C7 card is one it can test', () => {
+  it('is registered for every C7 and I7 skill, and every card of theirs is one it can test', () => {
     expect(drill.id).toBe(DPB_ID);
     expect(drill.inputModes).toEqual(['tap']);
-    expect(drill.skills).toEqual(['C7.minor-boxes', 'C7.major-boxes', 'C7.relative']);
+    expect(drill.skills).toEqual([
+      'C7.minor-boxes',
+      'C7.major-boxes',
+      'C7.relative',
+      'I7.positions',
+      'I7.root-runs',
+      'I7.degree-runs',
+    ]);
     for (const id of drill.skills) {
       const skill = getSkill(id)!;
       expect(skill.drillTypes).toContain(DPB_ID);
