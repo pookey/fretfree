@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { noteAt } from '../../theory';
-import { itemId, parseItemId, parseNoteItemId } from '../model';
+import { itemId, parseItemId, parseNoteItemId, type Skill } from '../model';
 import { SKILLS, getSkill, itemsForSkills } from './index';
 
 const ids = (skillId: string) =>
@@ -9,68 +9,34 @@ const ids = (skillId: string) =>
     .map((i) => i.id);
 
 describe('skill registry', () => {
-  it('loads every topic file, ordered', () => {
-    expect(SKILLS.map((s) => s.id)).toEqual([
-      'F1.alphabet',
-      'F1.b-c-e-f',
-      'F1.half-steps',
-      'F1.whole-steps',
-      'F2.string6-naturals',
-      'F2.string5-naturals',
-      'F3.markers',
-      'F3.repeat-12',
-      'C1.octaves',
-      'C1.octaves-gb-shift',
-      'C1.double-octaves',
-      'C1.every-octave',
-      'C2.all-notes',
-      'C3.thirds',
-      'C3.fourths-fifths',
-      'C3.sevenths',
-      'C3.sixths',
-      'C3.seconds',
-      'C4.sharp-keys',
-      'C4.flat-keys',
-      'C4.sharp-key-degrees',
-      'C4.flat-key-degrees',
-      'I3.sharp-signatures',
-      'I3.flat-signatures',
-      'I3.dominants',
-      'I3.relative-minors',
-      'C5.triads',
-      'C5.sevenths',
-      'C5.sus-add',
-      'C5.tones-roots',
-      'C5.tones-thirds',
-      'C5.tones-fifths',
-      'C5.tones-sevenths',
-      'C5.name-triads',
-      'C5.name-sevenths',
-      'C5.name-sus',
-      'C5.build-triads',
-      'C5.build-sevenths',
-      'C5.build-sus',
-      'C5.neck-triads',
-      'C5.neck-sevenths',
-      'C8.numerals-major',
-      'C8.nashville',
-      'C9.pop',
-      'C9.ii-V-I',
-      'C9.blues',
-      'C9.minor',
-      'C6.triad-cores',
-      'C6.major-shapes',
-      'C6.minor-cores',
-      'C6.minor-shapes',
-      'C6.dominant7-shapes',
-      'C7.minor-boxes',
-      'C7.major-boxes',
-      'C7.relative',
-      'C10.capo-g-c-d',
-      'C10.capo-a-e',
-      'C10.capo-minor',
-    ]);
+  // The topic files, found the way the registry finds them.
+  const files = import.meta.glob<{ skills?: Skill[] }>(
+    ['./*.ts', '!./index.ts', '!./helpers.ts', '!./*.test.ts'],
+    { eager: true },
+  );
+
+  it('loads every skill of every topic file, named for its topic', () => {
+    const fromFiles = Object.entries(files).flatMap(([path, m]) => {
+      expect(m.skills?.length, `${path} exports no skills`).toBeGreaterThan(0);
+      // `c5-tones.ts` holds C5 skills, `i3.ts` I3's.
+      const topic = /^\.\/([a-z]\d+)/.exec(path)?.[1]?.toUpperCase();
+      for (const s of m.skills ?? []) {
+        expect(s.topic, path).toBe(topic);
+        expect(s.id.startsWith(`${s.topic}.`), s.id).toBe(true);
+      }
+      return m.skills ?? [];
+    });
+    expect(SKILLS).toHaveLength(fromFiles.length);
+    expect(new Set(SKILLS)).toEqual(new Set(fromFiles));
     expect(getSkill('nope')).toBeUndefined();
+  });
+
+  it('orders skills by `order`, then ID', () => {
+    for (let i = 1; i < SKILLS.length; i++) {
+      const [a, b] = [SKILLS[i - 1]!, SKILLS[i]!];
+      const inOrder = a.order - b.order || a.id.localeCompare(b.id);
+      expect(inOrder, `${a.id} before ${b.id}`).toBeLessThan(0);
+    }
   });
 
   it('has unique skill IDs whose prerequisites exist', () => {
