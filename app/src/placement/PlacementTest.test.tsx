@@ -23,7 +23,8 @@ const SKILLS = [getSkill('F2.string6-naturals') as Skill];
 const DRILLS = [getDrill('name-the-note')!];
 
 // The component preloads its drills' views on mount; these tests tap Start at once.
-beforeAll(() => preloadDrill(DRILLS[0]!));
+// Loading the chunks can pass the 10 s hook default under a loaded verify.
+beforeAll(() => preloadDrill(DRILLS[0]!), 60_000);
 
 let db: FretworkDB;
 let n = 0;

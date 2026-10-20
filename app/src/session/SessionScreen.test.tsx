@@ -55,7 +55,12 @@ function renderSession() {
 }
 
 async function choice(name: string): Promise<HTMLElement> {
-  const group = await screen.findByRole('group', { name: 'Name the highlighted note' });
+  // The first test also loads D1's lazy chunks, which can take seconds under a loaded verify.
+  const group = await screen.findByRole(
+    'group',
+    { name: 'Name the highlighted note' },
+    { timeout: 10_000 },
+  );
   return within(group).getByRole('button', { name });
 }
 
