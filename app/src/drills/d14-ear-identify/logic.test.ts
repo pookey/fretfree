@@ -51,11 +51,14 @@ const KINDS: readonly D14Kind[] = ['interval', 'chord', 'progression'];
 describe('D14 prompts', () => {
   it('serves every I6 item, and only those', () => {
     const drill = getDrill('ear-identify')!;
-    const items = SKILLS.filter((s) => s.topic === 'I6').flatMap((s) => s.items());
+    // I6.ear-find's cards are found on the neck by D15, not named by D14.
+    const i6 = SKILLS.filter((s) => s.topic === 'I6' && s.id !== 'I6.ear-find');
+    const items = i6.flatMap((s) => s.items());
     expect(items.length).toBeGreaterThan(40);
     for (const item of items) expect(drill.canTest(item), item.id).toBe(true);
     expect(drill.canTest({ id: 'prog:I-V-vi-IV:build', skillId: 'C9.pop' })).toBe(false);
-    expect(drill.skills).toEqual(SKILLS.filter((s) => s.topic === 'I6').map((s) => s.id));
+    expect(drill.canTest({ id: 'ear-find:A@s6', skillId: 'I6.ear-find' })).toBe(false);
+    expect(drill.skills).toEqual(i6.map((s) => s.id));
     expect(() => prompt('note@s6f5')).toThrow(/cannot test/);
   });
 

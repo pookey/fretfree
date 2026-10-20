@@ -1,4 +1,5 @@
 import { allStrings, chromaToPc, intervalSemitones, noteAt, type IntervalName } from '../../theory';
+import { I6_INTERVAL_GROUPS } from '../items/ear';
 import { earFindItemId } from '../items/ear-find';
 import type { Skill } from '../model';
 import { itemsOf, memo } from './helpers';
@@ -22,20 +23,8 @@ import { itemsOf, memo } from './helpers';
  * path (design §4), not the ear.
  */
 
-export const EAR_FIND_ORDER: readonly IntervalName[] = [
-  'P4',
-  'P5',
-  'P8',
-  'm3',
-  'M3',
-  'm2',
-  'M2',
-  'm6',
-  'M6',
-  'TT',
-  'm7',
-  'M7',
-];
+/** Intervals over the open string, in I6's teaching order (D14's sets), so the tracks stay in step. */
+export const EAR_FIND_ORDER: readonly IntervalName[] = I6_INTERVAL_GROUPS.flatMap((g) => g.members);
 
 export const EAR_FIND_SKILL = 'I6.ear-find';
 

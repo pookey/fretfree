@@ -9,7 +9,10 @@ const ids = (skillId: string) =>
     .items()
     .map((i) => i.id);
 
-const I6 = SKILLS.filter((s) => s.topic === 'I6');
+// I6.ear-find (i6-ear-find.ts) is I6's ear → fretboard skill, drilled by D15
+// on the neck; every other I6 skill is this file's, drilled by D14.
+const EAR_FIND = 'I6.ear-find';
+const I6 = SKILLS.filter((s) => s.topic === 'I6' && s.id !== EAR_FIND);
 
 describe('I6 skills', () => {
   it('teaches rising intervals set by set, then falling and together', () => {
@@ -70,6 +73,11 @@ describe('I6 skills', () => {
       expect(s.skipPlacement).toBeUndefined();
     }
     expect(I6_CHORD_GROUPS.flatMap((g) => g.members)).toHaveLength(8);
+    // The one I6 skill outside this file is D15's, and only D15 drills it.
+    expect(SKILLS.filter((s) => s.topic === 'I6' && !I6.includes(s)).map((s) => s.id)).toEqual([
+      EAR_FIND,
+    ]);
+    expect(getSkill(EAR_FIND)!.drillTypes).toEqual(['hear-it-find-it']);
   });
 
   it('writes each skill ID out, for the e2e seed helpers that read this file', () => {
