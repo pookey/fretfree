@@ -1163,7 +1163,7 @@ Notes for whoever picks this up:
   - CDK assertion tests. `pnpm ship` deploys both stacks, and smoke checks the API's health route.
 
 ### M7-03 · Sync API handlers
-- **Status:** todo
+- **Status:** done
 - **Deps:** M7-01, M7-02
 - **Owns:** `infra/lambda/sync/**`
 - **Acceptance:**
