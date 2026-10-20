@@ -1392,7 +1392,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - Tap a note on the staff to see it on the neck, and vice versa. Staff above neck on iPad. Includes "Quiz me on this".
 
 ### M8-20 · Tools: metronome
-- **Status:** todo
+- **Status:** done
 - **Deps:** M8-01, M4-12
 - **Owns:** `app/src/screens/tools/metronome/**`, `app/e2e/m8-20.spec.ts`
 - **Acceptance:**
