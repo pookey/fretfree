@@ -89,9 +89,9 @@ export function useMicCheck(source: PitchSource = getPitchSource()): MicCheck {
     const offNote = source.onNote(setHeard);
     const offState = source.onStateChange((state) => {
       // Stopped elsewhere (say, by the tuner taking over): show it as off.
-      if (state === 'idle' && owns.current) {
+      if (state === 'idle') {
         owns.current = false;
-        setPhase('idle');
+        setPhase((p) => (p === 'listening' ? 'idle' : p));
       }
     });
     return () => {
@@ -103,9 +103,12 @@ export function useMicCheck(source: PitchSource = getPitchSource()): MicCheck {
   }, [source]);
 
   const listen = async () => {
+    // Already running for someone else (a drill, the tuner): listen along, but
+    // leave stopping it to them.
+    const shared = source.state === 'running';
     // First, inside the tap: no await may come before it.
     const started = source.start();
-    owns.current = true;
+    owns.current = !shared;
     setHeard(null);
     setReason(null);
     setPhase('starting');

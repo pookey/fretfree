@@ -113,6 +113,28 @@ describe('the mic onboarding step', () => {
     expect(source.state).toBe('running');
   });
 
+  it('listens along to a mic someone else started, and leaves it running', async () => {
+    await source.start();
+    const { unmount } = renderStep();
+    fireEvent.click(screen.getByRole('button', { name: 'Turn on mic mode' }));
+    await waitFor(() => expect(status()).toHaveAttribute('data-phase', 'listening'));
+    expect(source.startCalls).toBe(1);
+    act(() => source.play('E2'));
+    expect(status()).toHaveTextContent('Heard E2.');
+    unmount();
+    expect(source.state).toBe('running');
+  });
+
+  it('Continue leaves a mic someone else started running', async () => {
+    await source.start();
+    const { onNext } = renderStep();
+    fireEvent.click(screen.getByRole('button', { name: 'Turn on mic mode' }));
+    await waitFor(() => expect(status()).toHaveAttribute('data-phase', 'listening'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(onNext).toHaveBeenCalledOnce();
+    expect(source.state).toBe('running');
+  });
+
   it('shows as stopped when something else stops the mic', async () => {
     renderStep();
     fireEvent.click(screen.getByRole('button', { name: 'Turn on mic mode' }));
