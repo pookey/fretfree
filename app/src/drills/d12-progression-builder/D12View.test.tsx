@@ -84,7 +84,7 @@ describe('<D12View>', () => {
     const drill = getDrill('progression-builder');
     expect(await resolveView(drill!.render)).toBe(D12View);
     expect(drill?.skills).toEqual(['C9.pop', 'C9.ii-V-I', 'C9.blues', 'C9.minor']);
-    expect(drill?.gradedResponseMs).toBeDefined();
+    expect(drill?.logic.get().gradedResponseMs).toBeDefined();
     expect(drill?.contextPanel).toBeDefined();
   });
 

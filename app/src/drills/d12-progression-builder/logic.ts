@@ -1,8 +1,7 @@
 import { ENGINE_CONFIG } from '../../engine/config';
-import { parseProgressionItemId, type Item } from '../../engine/model';
+import type { Item } from '../../engine/model';
 import {
   chordFromNumeral,
-  getProgression,
   keyLabel,
   keyName,
   matchProgression,
@@ -18,6 +17,16 @@ import {
   type Progression,
 } from '../../theory';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
+import { D12_SCOPE, d12Parse as parse, progressionConcept, type D12Task } from './meta';
+
+export {
+  D12_ID,
+  D12_SCOPE,
+  d12CanTest,
+  d12ConceptOf,
+  progressionConcept,
+  type D12Task,
+} from './meta';
 
 /**
  * D12 "Progression builder" (design §6 D12, research/03 C9): drag chords
@@ -31,10 +40,6 @@ import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../ty
  * another start", and logged as that confusion when the rotation is in the
  * catalogue, so the pair gets interleaved (rule 6).
  */
-
-export const D12_ID = 'progression-builder';
-
-export type D12Task = 'build' | 'transpose';
 
 export interface D12Tile {
   /** Chord symbol spelled in the key, e.g. `F#m`, `Bb7`. */
@@ -78,13 +83,6 @@ export interface D12Prompt {
 export interface D12Answer {
   chords: string[];
 }
-
-/**
- * Scope levels (research/02 rule 5): more keys and more distractor tiles.
- * Level 0 is the open-chord keys and two distractors; level 2 is every key
- * and the whole palette.
- */
-export const D12_SCOPE = { minLevel: 0, maxLevel: 2 };
 
 const cfg = () => ENGINE_CONFIG.progressionBuilder;
 
@@ -147,16 +145,6 @@ export function d12Palette(p: Progression, key: MusicalKey, scopeLevel: number):
     .sort((a, b) => letterRank(a.symbol) - letterRank(b.symbol));
 }
 
-function parse(item: Item): { progression: Progression; task: D12Task } | null {
-  const ref = parseProgressionItemId(item.id);
-  if (!ref) return null;
-  return { progression: getProgression(ref.progression), task: ref.task };
-}
-
-export function d12CanTest(item: Item): boolean {
-  return parse(item) !== null;
-}
-
 function chart(key: MusicalKey, p: Progression): D12Chart {
   return {
     key: keyLabel(key),
@@ -212,11 +200,6 @@ export function answerNumerals(prompt: D12Prompt, answer: D12Answer): string[] |
   if (answer.chords.length !== prompt.expected.length) return null;
   const key = parseKey(prompt.key);
   return answer.chords.map((c) => romanOf(key, c));
-}
-
-/** The concept a progression is keyed by in the confusion matrix (engine/confusions). */
-export function progressionConcept(progressionId: string): string {
-  return `prog:${progressionId}`;
 }
 
 /**
@@ -294,11 +277,6 @@ export function d12Sounds(prompt: D12Prompt, fb: DrillFeedback<D12Answer>): Dril
   if (fb.result.correct || prompt.expected.length > 4) return { expected };
   if (fb.answer.chords.length !== prompt.expected.length) return { expected };
   return { expected, given: roots(fb.answer.chords) };
-}
-
-export function d12ConceptOf(item: Item): string | null {
-  const ref = parseProgressionItemId(item.id);
-  return ref ? progressionConcept(ref.progression) : null;
 }
 
 /** Stored as `answerGiven`. */
