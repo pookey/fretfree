@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { GuideLevel } from '../../engine/model';
 import { STANDARD_TUNING } from '../../theory';
+import { resolveView } from '../lazy-view';
 import { PicturePanel } from './ContextPanel';
+import { D21View } from './D21View';
 import visualise from './drill';
 import { d21Check, d21MakePrompt, type D21Prompt } from './logic';
 
@@ -34,20 +36,12 @@ const steps = () => screen.getAllByRole('listitem').map((li) => li.textContent);
 const diagram = () => screen.queryByRole('img');
 
 describe('<PicturePanel>', () => {
-  it('is the D21 plugin’s context panel, loaded on first use', async () => {
-    const Panel = visualise.contextPanel!;
-    render(
-      <Panel
-        prompt={prompt()}
-        guideLevel={2}
-        guided={false}
-        handedness="right"
-        tuning={STANDARD_TUNING}
-        feedback={null}
-      />,
-    );
-    expect(await screen.findByRole('heading', { name: 'Picture it' })).toBeInTheDocument();
-  });
+  // The first use imports every drill's views (one shared chunk), which can
+  // take several seconds cold on a loaded machine.
+  it('is the D21 plugin’s view and context panel, loaded on first use', async () => {
+    expect(await resolveView(visualise.render)).toBe(D21View);
+    expect(await resolveView(visualise.contextPanel!)).toBe(PicturePanel);
+  }, 30_000);
 
   it('gives the method without saying where the notes are', () => {
     panel(prompt(), 2);
