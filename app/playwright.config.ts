@@ -1,9 +1,29 @@
+import { readdirSync, readFileSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
 
 // E2E_PORT is set per Playwright slot by scripts/e2e-slot.sh so parallel worktrees don't collide.
 const port = Number(process.env.E2E_PORT ?? 4173);
 const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${port}`;
 const external = Boolean(process.env.E2E_BASE_URL);
+
+// The remote test runner (scripts/e2e-slot.sh with E2E_QUIET_WORKERS) runs in
+// two passes: PW_QUIET_PHASE=main runs every spec but the "quiet" ones at full
+// parallelism, then PW_QUIET_PHASE=quiet runs only those on a few workers.
+// Quiet specs measure real audio output (they import ./helpers/audio): under
+// heavy CPU load WebKit's audio rendering can stay silent for seconds.
+const quietPhase = process.env.PW_QUIET_PHASE;
+const quietSpecs = quietPhase
+  ? readdirSync(new URL('./e2e/', import.meta.url)).filter(
+      (f) =>
+        f.endsWith('.spec.ts') &&
+        /from '\.\/helpers\/audio'/.test(
+          readFileSync(new URL(`./e2e/${f}`, import.meta.url), 'utf8'),
+        ),
+    )
+  : [];
+const quiet = new RegExp(
+  quietSpecs.length ? `/(${quietSpecs.map((f) => f.replace(/\./g, '\\.')).join('|')})$` : '(?!)',
+);
 
 // iPad-first (design §2, §7). All four profiles are WebKit and differ only
 // in viewport, so a test runs at a size only where the size can change it:
@@ -21,7 +41,8 @@ const extraIpad = fullMatrix ? { grepInvert: /@phone/ } : { grep: /@layout/, gre
 export default defineConfig({
   testDir: './e2e',
   // e2e/meta holds Vitest tests about the specs, not Playwright tests.
-  testMatch: '**/*.spec.ts',
+  testMatch: quietPhase === 'quiet' ? quiet : '**/*.spec.ts',
+  ...(quietPhase === 'main' && { testIgnore: quiet }),
   fullyParallel: true,
   // Two e2e slots (plus the lane's) run at once; cap browsers per run so they
   // share the machine. The integration lane raises it.
@@ -35,7 +56,9 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     baseURL,
-    trace: 'retain-on-failure',
+    // The remote runner turns tracing off (PW_TRACE=off): its traces never
+    // come back to the Mac, and recording them tripled WebKit's CPU time there.
+    trace: (process.env.PW_TRACE as 'off' | undefined) ?? 'retain-on-failure',
   },
   projects: [
     { name: 'ipad-landscape', use: { ...devices['iPad Pro 11 landscape'] }, grepInvert: /@phone/ },

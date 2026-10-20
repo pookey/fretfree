@@ -4,12 +4,16 @@
 # running the command, and gives each slot its own preview port (E2E_PORT).
 # The integration lane (FRETWORK_LANE=1) takes the next free slot ahead of
 # everyone else (scripts/slot-lib.sh).
+#
+# With E2E_QUIET_WORKERS set (the remote test runner sets it), the command,
+# a `playwright test …`, runs twice: every spec but the quiet ones (those that
+# measure audio output, see app/playwright.config.ts) at PW_WORKERS, then the
+# quiet ones on E2E_QUIET_WORKERS workers. It fails if either pass fails.
 # Usage: e2e-slot.sh <command...>
 set -euo pipefail
 source "$(dirname "$0")/slot-lib.sh"
 acquire_slot e2e "${E2E_SLOTS:-2}"
 export E2E_PORT="${E2E_PORT:-$((4310 + SLOT_INDEX))}"
-
 
 # A killed Playwright run can leave its `vite preview` behind, reparented to
 # launchd and still holding this slot's port, so every later run on the slot
@@ -24,4 +28,12 @@ for pid in $(lsof -nP -t -iTCP:"$E2E_PORT" -sTCP:LISTEN 2>/dev/null || true); do
     exit 1
   fi
 done
-"$@"
+if [[ -z "${E2E_QUIET_WORKERS:-}" ]]; then
+  "$@"
+  exit
+fi
+rc=0
+PW_QUIET_PHASE=main "$@" --pass-with-no-tests || rc=$?
+echo "e2e-slot: quiet pass (specs that listen to audio output), $E2E_QUIET_WORKERS workers" >&2
+PW_QUIET_PHASE=quiet PW_WORKERS="$E2E_QUIET_WORKERS" "$@" --pass-with-no-tests || rc=$((rc ? rc : $?))
+exit "$rc"
