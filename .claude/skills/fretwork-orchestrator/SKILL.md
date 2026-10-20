@@ -18,9 +18,9 @@ Everything lives under `.claude/skills/fretwork-orchestrator/`:
 | `send-brief.sh <WP> fix\|rebase\|preflight [reason]` | follow-up round to a live worker; caps review rounds and integration failures at 3 each (exit 7). `preflight` (after APPROVE) isn't counted |
 | `poll.sh` | one line per in-flight WP; exit 10 on usage/rate-limit messages |
 | `health.sh` | memory, slot queue (and only extreme load) → suggested ceiling |
-| `integrate.sh <WP>` | **the integration lane**: rebase → ff-merge → mark done → `pnpm ship` → push (exit codes below) |
+| `integrate.sh <WP> [WP…]` | **the integration lane**: rebase each → ff-merge → mark done → one `pnpm ship` for the batch → push (exit codes below) |
 | `cleanup.sh <WP>` | closes the WP's own panes, removes the worktree and merged branch |
-| `lane-next.sh` | ships the first WP in `.orchestrator/lane-queue.txt`, then exits (gates on load, retries EINTR); run in the background, once per ship |
+| `lane-next.sh` | ships the first `LANE_BATCH` (default 4) WPs in `.orchestrator/lane-queue.txt` as one batch, then exits. If the batch fails verify, it re-runs them one at a time. Gates on load and retries EINTR. Run it in the background, once per ship |
 | `watch.sh [secs]` | blocks until a WP needs action (verdict, real `REPORTED`, blocked) or usage limit; run in the background as the wake-up |
 | `refill.sh` | steps the ceiling towards `health.sh` and spawns into free slots |
 
@@ -85,10 +85,10 @@ Repeat until the backlog is done or you must stop (§6):
 **Downstream notes.** Reviewers address issues that belong to later packages under "Downstream notes". `cleanup.sh` copies them to `.orchestrator/notes/<target>.md`, and `spawn.sh` includes them in that worker's brief. Add notes yourself the same way when you learn something a later package needs.
 
 **b. Reviewer finishes** (its agent is idle and `.orchestrator/reports/<WP>.review.md` exists):
-- `VERDICT: APPROVE` → close the reviewer pane (`herdr pane close <reviewer pane>`) and run `$O/send-brief.sh <WP> preflight`: quick should-fixes, rebase onto `origin/main` and the full `pnpm verify`. When it reports, queue it for integration (step c) without re-review if the diff since approval is mechanical.
+- `VERDICT: APPROVE` → close the reviewer pane (`herdr pane close <reviewer pane>`) and run `$O/send-brief.sh <WP> preflight`: quick should-fixes, rebase onto `origin/main` and `pnpm verify:quick`. When it reports, queue it for integration (step c) without re-review if the diff since approval is mechanical.
 - `VERDICT: CHANGES` → close the reviewer pane, then `$O/send-brief.sh <WP> fix`. When the worker reports again, spawn a fresh reviewer. If you get exit 7, see §6.
 
-**c. Integrate.** This is **one WP at a time**. If the lane is busy (exit 2), queue the WP and come back later.
+**c. Integrate.** The lane ships **batches**: every queued WP (up to `LANE_BATCH`, default 4) is rebased and merged in order, then verified and shipped once. A WP that conflicts is skipped (`SKIPPED <WP> rebase-conflict`) and the rest still ship. If a batch fails verify, `lane-next.sh` re-runs its WPs one at a time to find the culprit. If the lane is busy (exit 2), queue the WP and come back later.
 ```bash
 $O/integrate.sh <WP>
 ```
@@ -119,7 +119,7 @@ $O/integrate.sh <WP>
   - The integration lane (`FRETWORK_LANE=1`, set by `integrate.sh`) takes the next free slot ahead of workers (`scripts/slot-lib.sh`), but it gets no extra slot. A reserved third e2e slot made healthy lane tests time out (M1-41, 2026-10-19). It runs 5 Playwright and 6 Vitest workers, against 4 for a worktree check.
   - Vitest and Playwright are capped at 4 workers per run (`VITEST_MAX_WORKERS`, `PW_WORKERS`).
   - If waits dominate, keep the slot counts and let `health.sh` hold the ceiling. Don't raise the slots.
-- **One full verify per branch before the lane.** Workers run `pnpm verify:quick` (`scripts/verify-quick.sh`) for their report and for fix rounds (`--since` the fix brief): every static gate, plus their own e2e specs, or the full suite when the change reaches shared code or registers a new drill. Reviewers run targeted unit tests only. The full `pnpm verify` runs once in the preflight after APPROVE, and again in the lane.
+- **The lane is the only full verify.** Workers run `pnpm verify:quick` (`scripts/verify-quick.sh`) for their report and for fix rounds (`--since` the fix brief): every static gate, plus their own e2e specs, or the full suite when the change reaches shared code or registers a new drill. Reviewers run targeted unit tests only. The preflight after APPROVE rebases and runs `verify:quick`. The full `pnpm verify` runs only in the lane, once per batch (user decision, 2026-10-20: rebasing and re-testing had slowed development to a crawl).
 - Every worktree shares one pnpm store (the default). `pnpm install --frozen-lockfile --prefer-offline` is fast.
 - **Dependency changes:** workers propose them in their reports and don't add them. The user has pre-approved licence-compatible dependencies (MIT/ISC/BSD/Apache-2.0/0BSD), so you can add them without asking. Add them yourself, in a tiny WP-free commit on `main`, shipped through the lane. Then tell in-flight workers to `git rebase main` at their next natural break.
 - The backlog's git status only moves `todo → done` (or `blocked`), committed by the lane. In-flight states (`working`, `reviewing`, `fixing`, `integrating`) live in `state.json`, so `main` stays clean.
