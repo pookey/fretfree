@@ -313,8 +313,10 @@ describe('item kind registry', () => {
   });
 
   it('collects kinds by file, and fails on a missing export or a kind defined twice', () => {
-    const a: ItemKind = { kinds: ['a', 'b'], id: () => 'a', parse: () => null };
-    const c: ItemKind = { kinds: ['c'], id: () => 'c', parse: () => null };
+    // Kinds no file defines, so outside `ItemRef`.
+    const fake = (...kinds: string[]) =>
+      ({ kinds, id: () => kinds[0], parse: () => null }) as unknown as ItemKind;
+    const [a, c] = [fake('a', 'b'), fake('c')];
     const kinds = collectItemKinds({
       './items/a.ts': { default: a },
       './items/c.ts': { default: c },
