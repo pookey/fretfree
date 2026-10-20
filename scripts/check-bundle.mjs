@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // First-load JS budget (design §10): the JS a cold start must download, gzip,
 // stays at or under BUDGET_KB (1 KB = 1000 bytes, as Vite reports it). Lazily loaded chunks (audio, and anything else
-// behind a dynamic import()) don't count, but audio must stay lazy: if Tone.js
-// or its Web Audio dependencies land in the first-load graph, the check fails.
+// behind a dynamic import()) don't count, but audio and VexFlow must stay lazy: if Tone.js,
+// its Web Audio dependencies or VexFlow land in the first-load graph, the check fails.
 //
 // First-load JS is the entry <script> and <link rel="modulepreload"> tags in
 // app/dist/index.html plus every chunk they import statically. Run after
@@ -16,6 +16,8 @@ const BUDGET_KB = 250;
 // Packages whose sources (from the sourcemap) mark a chunk as audio. The small
 // app/src/audio loader is meant to be first-load; it imports Tone lazily.
 const AUDIO_PACKAGES = /\/node_modules\/(?:tone|standardized-audio-context|automation-events)\//;
+// Notation (M8-02): VexFlow and its embedded font load with the first <Staff>.
+const NOTATION_PACKAGES = /\/node_modules\/vexflow\//;
 
 const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'app', 'dist');
 const indexPath = join(dist, 'index.html');
@@ -56,11 +58,11 @@ while (queue.length > 0) {
   }
 }
 
-const audioIn = (file) => {
+const sourcesIn = (file, packages) => {
   const map = join(dist, `${file}.map`);
   if (!existsSync(map)) return [];
   const { sources = [] } = JSON.parse(readFileSync(map, 'utf8'));
-  return sources.filter((s) => AUDIO_PACKAGES.test(s));
+  return sources.filter((s) => packages.test(s));
 };
 
 let total = 0;
@@ -68,9 +70,13 @@ const failures = [];
 const rows = [...seen].sort().map((file) => {
   const gz = gzipSync(readFileSync(join(dist, file))).length;
   total += gz;
-  const audio = audioIn(file);
+  const audio = sourcesIn(file, AUDIO_PACKAGES);
   if (audio.length > 0) {
     failures.push(`${file} is first-load JS but bundles audio code (${audio[0]}, …).`);
+  }
+  const notation = sourcesIn(file, NOTATION_PACKAGES);
+  if (notation.length > 0) {
+    failures.push(`${file} is first-load JS but bundles VexFlow (${notation[0]}, …).`);
   }
   return `  ${(gz / 1000).toFixed(1).padStart(7)} KB  ${file}`;
 });
