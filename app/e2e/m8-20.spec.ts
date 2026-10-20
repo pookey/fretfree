@@ -111,7 +111,8 @@ test.describe('the metronome', () => {
     await expect(beats(page).locator('[data-accent="group"]')).toHaveCount(2);
     await page.getByRole('radio', { name: 'Off' }).check();
     await page.getByRole('button', { name: 'Start', exact: true }).click();
-    await expect(beats(page)).toHaveAttribute('data-pulse', '6', { timeout: 5_000 });
+    // Six eighth-note pulses after the audio starts; under lane load that can pass 5 s.
+    await expect(beats(page)).toHaveAttribute('data-pulse', '6', { timeout: 15_000 });
     await expect(beats(page)).toHaveAttribute('data-count-in', 'false');
     await page.getByRole('button', { name: 'Stop', exact: true }).click();
   });

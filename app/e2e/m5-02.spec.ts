@@ -91,7 +91,9 @@ test.describe('the built pitch worklet', () => {
 
       // 0.6s at a 20ms hop, after the first 2048-sample window.
       expect(frames.length).toBeGreaterThanOrEqual(25);
-      expect(frames[0]!.time).toBeCloseTo(2048 / 48000, 3);
+      // WebKit sometimes starts the worklet one 128-sample render quantum late.
+      const firstSample = Math.round(frames[0]!.time * 48000);
+      expect([2048, 2048 + 128]).toContain(firstSample);
       for (const f of frames) {
         expect(f.clarity).toBeGreaterThan(0.9);
         expect(Math.abs(12 * Math.log2(f.frequency / frequency))).toBeLessThan(0.1);
