@@ -1,5 +1,5 @@
 import type { ItemKind, ItemRefs } from '../model';
-import { STRING_SETS, type StringSetLow } from './inversion';
+import type { StringSetLow } from './inversion';
 
 declare module '../model' {
   interface ItemRefs {
@@ -15,8 +15,6 @@ declare module '../model' {
 
 /** The three primary chords of a major key, as Roman numerals. */
 export type VoiceLeadChord = 'I' | 'IV' | 'V';
-
-export const VOICE_LEAD_CHORDS: readonly VoiceLeadChord[] = ['I', 'IV', 'V'];
 
 /**
  * Every move between two of I, IV and V: the progression I–IV–V–I first,
@@ -44,13 +42,10 @@ export function voiceLeadItemId(
   to: VoiceLeadChord,
   lowString: StringSetLow,
 ): string {
-  if (!VOICE_LEAD_CHORDS.includes(from) || !VOICE_LEAD_CHORDS.includes(to) || from === to) {
-    throw new RangeError(`Invalid voice-leading move: ${String(from)} → ${String(to)}`);
-  }
-  if (!STRING_SETS.includes(lowString)) {
-    throw new RangeError(`No string set starts at string ${String(lowString)}`);
-  }
-  return `voice-lead:${from}-${to}@s${lowString}`;
+  // The canonical form is exactly what parses (a move between two different chords).
+  const id = `voice-lead:${from}-${to}@s${lowString}`;
+  if (!parseVoiceLeadItemId(id)) throw new RangeError(`Invalid voice-leading card: ${id}`);
+  return id;
 }
 
 export function parseVoiceLeadItemId(id: string): ItemRefs['voice-lead'] | null {

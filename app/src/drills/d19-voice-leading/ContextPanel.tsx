@@ -1,9 +1,17 @@
 import { ENGINE_CONFIG } from '../../engine/config';
-import { VOICE_LEAD_CHORDS, type VoiceLeadChord } from '../../engine/items/voice-lead';
+import type { VoiceLeadChord } from '../../engine/items/voice-lead';
 import type { GuideLevel } from '../../engine/model';
 import type { DrillContextPanelProps } from '../types';
 import { d18Display, d18Tone } from '../d18-inversions/logic';
-import { d19Chord, d19MoveLine, d19Moves, d19Rule, type D19Answer, type D19Prompt } from './logic';
+import {
+  D19_CHORDS,
+  d19Chord,
+  d19MoveLine,
+  d19Moves,
+  d19Rule,
+  type D19Answer,
+  type D19Prompt,
+} from './logic';
 import styles from './ContextPanel.module.css';
 
 function spelling(prompt: D19Prompt, chord: VoiceLeadChord): string {
@@ -33,7 +41,7 @@ export function VoiceLeadingPanel({
     <div className={styles.panel}>
       <h2>I–IV–V in {d18Display(prompt.key)}</h2>
       <ol className={styles.chords} aria-label="Chords">
-        {VOICE_LEAD_CHORDS.map((c) => (
+        {D19_CHORDS.map((c) => (
           <li key={c} data-role={role(c)} aria-current={c === prompt.to ? 'step' : undefined}>
             <span className={styles.numeral}>{c}</span>
             <span className={styles.chord}>{d19Chord(prompt, c)}</span>

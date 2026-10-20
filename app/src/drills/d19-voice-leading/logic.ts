@@ -1,7 +1,6 @@
 import { ENGINE_CONFIG } from '../../engine/config';
 import type { StringSetLow } from '../../engine/items/inversion';
 import {
-  VOICE_LEAD_CHORDS,
   parseVoiceLeadItemId,
   voiceLeadItemId,
   type VoiceLeadChord,
@@ -70,6 +69,9 @@ export const D19_REGION: FretRange = D18_REGION;
 
 /** The furthest a voice moves in the nearest voicing, in frets: a whole step. */
 export const D19_MAX_MOVE = 2;
+
+/** The key's three primary chords, in the panel's order. */
+export const D19_CHORDS: readonly VoiceLeadChord[] = ['I', 'IV', 'V'];
 
 const NUMERAL_OF: Record<VoiceLeadChord, string> = { I: 'I', IV: 'IV', V: 'V' };
 
@@ -204,7 +206,7 @@ export function d19MakePrompt(item: Item, ctx: DrillContext): D19Prompt {
   const start = pick(placeable(key, inversion), ctx.rng) as Start;
 
   const roots = d19Roots(key);
-  const other = VOICE_LEAD_CHORDS.find((c) => c !== from && c !== to) as VoiceLeadChord;
+  const other = D19_CHORDS.find((c) => c !== from && c !== to) as VoiceLeadChord;
   const chromas = (c: VoiceLeadChord) =>
     [0, 4, 7].map((semis) => (chromaOf(roots[c]) + semis) % 12);
   const inTriads = new Set([...chromas(from), ...chromas(to)]);
