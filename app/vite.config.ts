@@ -2,11 +2,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { splitDeclarations } from './build/split-declarations.ts';
 
+/** Theory modules, split per declaration so lazy-only functions stay lazy. */
+const THEORY = /[\\/]src[\\/]theory[\\/](?!index\.ts$)[^\\/]+(?<!\.test)\.ts$/;
 const SIDE_EFFECT_FREE = /[\\/]src[\\/]theory[\\/]|[\\/]node_modules[\\/](?:@tonaljs|tonal)[\\/]/;
 
 export default defineConfig({
   plugins: [
+    splitDeclarations(THEORY),
     react(),
     VitePWA({
       registerType: 'prompt',
@@ -76,6 +80,11 @@ export default defineConfig({
       {
         extends: true,
         test: { name: 'node', environment: 'node', include: ['src/**/*.test.ts'] },
+      },
+      {
+        extends: true,
+        // Build plugins (build/), e.g. split-declarations.
+        test: { name: 'build', environment: 'node', include: ['build/**/*.test.ts'] },
       },
     ],
     // Verify runs while several worktrees verify at once (load 40–50 on 10
