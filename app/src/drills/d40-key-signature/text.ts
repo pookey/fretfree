@@ -160,7 +160,10 @@ function order(alteration: number): string {
 export interface D40Guides {
   /** The rule for the kind of card. */
   rule: string | null;
-  /** The orders of sharps and flats. */
+  /**
+   * The orders of sharps and flats. Never for the V: the order of sharps is
+   * the circle by letter, so it would hand over the V's letter.
+   */
   orders: boolean;
   /** Level 2+: the keys in circle order, for counting round (signature cards only). */
   circle: boolean;
@@ -171,7 +174,7 @@ export function d40Guides(kind: D40Kind, guideLevel: GuideLevel): D40Guides {
   const signatures = kind === 'key-signature' || kind === 'signature-key';
   return {
     rule: RULES[kind],
-    orders: signatures || guideLevel >= 2,
+    orders: signatures || (kind === 'relative-minor' && guideLevel >= 2),
     circle: signatures && guideLevel >= 2,
   };
 }

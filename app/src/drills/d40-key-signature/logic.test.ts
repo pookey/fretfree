@@ -467,7 +467,9 @@ describe('D40 text', () => {
     expect(d40Guides('key-signature', 1)).toMatchObject({ orders: true, circle: false });
     expect(d40Guides('signature-key', 2)).toMatchObject({ orders: true, circle: true });
     expect(d40Guides('dominant', 3)).toMatchObject({ circle: false });
-    expect(d40Guides('dominant', 1).orders).toBe(false);
+    // The order of sharps is the circle by letter: the V's panel never shows it.
+    for (const level of [1, 2, 3] as const) expect(d40Guides('dominant', level).orders).toBe(false);
+    expect(d40Guides('relative-minor', 2).orders).toBe(true);
     expect(d40Guides('relative-minor', 1).rule).toContain('6th');
   });
 });

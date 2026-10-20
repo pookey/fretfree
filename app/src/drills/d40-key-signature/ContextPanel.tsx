@@ -7,7 +7,8 @@ import styles from './ContextPanel.module.css';
  * D40's context panel (design §7): the rule for the kind of card, the orders
  * of sharps and flats, and from level 2 the keys in circle order, so the
  * learner can count round. It never names the answer (research/02 rule 4),
- * and the V's panel never lists the keys in order, which would be its answer.
+ * and the V's panel never lists the keys, or the sharps and flats, in order:
+ * either is the circle, and so its answer.
  */
 export function KeySignatureContextPanel({
   prompt,

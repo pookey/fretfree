@@ -162,10 +162,12 @@ describe('<KeySignatureContextPanel>', () => {
     expect(screen.queryByText(/^Sharp keys/)).toBeNull();
   });
 
-  it('never lists the keys in circle order for the V, which would be its answer', () => {
+  it('never lists the keys or the sharps in order for the V, which would be its answer', () => {
+    // Guided: the worked example's full guides (level 3).
     panel(prompt('dominant:Eb'), 1, true);
     expect(screen.getByText(/The V is a 5th up/)).toBeVisible();
     expect(screen.queryByText(/^Sharp keys/)).toBeNull();
+    expect(screen.queryByText('F C G D A E B')).toBeNull();
   });
 
   it('shows only its heading at level 0 (the session hides the panel)', () => {
