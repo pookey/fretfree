@@ -6,7 +6,7 @@ import { readdirSync, readFileSync } from 'node:fs';
  * Playwright. Each skill file writes its IDs as literals (`id: 'C8.nashville'`).
  */
 const SKILLS_DIR = new URL('../../src/engine/skills/', import.meta.url);
-const SKILL_ID = /\bid: '([A-Z]\d+\.[\w-]+)'/g;
+const SKILL_ID = /\bid: '([A-Z]+\d*\.[\w-]+)'/g;
 
 export const ALL_SKILL_IDS: readonly string[] = readdirSync(SKILLS_DIR)
   .filter(

@@ -25,9 +25,6 @@ import { FRETS_0_12, itemsOf, memo } from './helpers';
 
 export const TAB_DRILLS = ['tab-to-neck'];
 
-/** The order strings are introduced in: the outer lines first. */
-export const TAB_STRING_ORDER: readonly number[] = [1, 6, 2, 5, 3, 4];
-
 /**
  * Frets in the order a string's cells are introduced: the open string and the
  * inlay landmarks first, as anchors, then the frets between them.
@@ -37,25 +34,30 @@ export const TAB_FRET_ORDER: readonly number[] = (() => {
   return [...anchors, ...FRETS_0_12.filter((f) => !anchors.includes(f))];
 })();
 
-const NAMES: Readonly<Record<number, string>> = {
-  1: 'the top line (string 1, high e)',
-  2: 'line 2 (string 2, B)',
-  3: 'line 3 (string 3, G)',
-  4: 'line 4 (string 4, D)',
-  5: 'line 5 (string 5, A)',
-  6: 'the bottom line (string 6, low E)',
-};
+/**
+ * One skill per string, in the order they are introduced: the outer lines
+ * first. IDs are literals, which e2e seeds read from this file.
+ */
+const STRINGS = [
+  { id: 'TAB.string1', string: 1, line: 'the top line (string 1, high e)' },
+  { id: 'TAB.string6', string: 6, line: 'the bottom line (string 6, low E)' },
+  { id: 'TAB.string2', string: 2, line: 'line 2 (string 2, B)' },
+  { id: 'TAB.string5', string: 5, line: 'line 5 (string 5, A)' },
+  { id: 'TAB.string3', string: 3, line: 'line 3 (string 3, G)' },
+  { id: 'TAB.string4', string: 4, line: 'line 4 (string 4, D)' },
+] as const;
 
-export const skills: Skill[] = TAB_STRING_ORDER.map((string, i): Skill => {
-  const id = `TAB.string${string}`;
-  const prev = TAB_STRING_ORDER[i - 1];
+export const TAB_STRING_ORDER: readonly number[] = STRINGS.map((s) => s.string);
+
+export const skills: Skill[] = STRINGS.map(({ id, string, line }, i): Skill => {
+  const prev = STRINGS[i - 1];
   return {
     id,
     topic: 'TAB',
     order: 2700 + i * 10,
-    title: `Read tab on ${NAMES[string]}`,
+    title: `Read tab on ${line}`,
     // Finding fret 7 on the neck builds on the fret landmarks (F3).
-    prerequisites: prev === undefined ? ['F3.markers'] : [`TAB.string${prev}`],
+    prerequisites: prev ? [prev.id] : ['F3.markers'],
     softUnlock: true,
     skipPlacement: true,
     drillTypes: TAB_DRILLS,
