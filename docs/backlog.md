@@ -1130,7 +1130,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ### M6-11 · Degree shapes and labelled targets in guided prompts and worked examples
 - **Status:** todo
-- **Priority:** high (M6 QA findings 1 and 2: design §8 "shape as well as colour")
+- **Note:** fix first among the M6 follow-ups (M6 QA findings 1 and 2: design §8 "shape as well as colour")
 - **Deps:** M6-10
 - **Design:** §8 markers; research/02 rules 8 and 10; `docs/progress.md` "M6 definition of done" findings 1 and 2
 - **Owns:** `app/src/drills/d8-chord-tone/**`, `app/src/drills/d18-inversions/**`, `app/src/drills/d19-voice-leading/**`, `app/src/drills/d-pentatonic-box/**`, `app/e2e/m6-11.spec.ts`
@@ -1153,7 +1153,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ### M6-13 · D21 becomes optional mental practice, with clearer feedback
 - **Status:** todo
-- **Priority:** high (research/02 rule 14)
+- **Note:** research/02 rule 14
 - **Deps:** M6-10
 - **Design:** §6 D21; research/02 rules 12 and 14; `docs/progress.md` "M6 definition of done" "For the PM" and finding 6
 - **Owns:** `app/src/drills/d21-visualise/**`, `app/src/drills/types.ts` `mental`, `app/src/session/drill-picker.ts`, `app/src/screens/settings/SettingsGroups.tsx`, `app/src/screens/settings/SettingsGroups.test.tsx`, `app/e2e/m6-13.spec.ts`
