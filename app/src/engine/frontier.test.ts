@@ -32,6 +32,7 @@ describe('module catalogue', () => {
     expect(moduleOfTopic('C2')?.id).toBe('notes-2');
     expect(moduleOfTopic('C8')?.id).toBe('harmony');
     expect(moduleOfTopic('I6')?.id).toBe('ear');
+    expect(moduleOfTopic('C4')?.id).toBe('keys');
     expect(moduleOfTopic('Z9')).toBeUndefined();
   });
 
@@ -134,6 +135,17 @@ describe('orderFrontier', () => {
   it('only reorders: the same skills come out for every goal', () => {
     for (const goal of GOALS) {
       expect(ids(orderFrontier(SKILLS, goal)).sort()).toEqual(ids(SKILLS).sort());
+    }
+  });
+});
+
+describe('key signatures', () => {
+  it('is its own module, after Harmony and out of the Keys lane', () => {
+    const order = MODULES.map((m) => m.id);
+    expect(moduleOfTopic('I3')?.id).toBe('key-signatures');
+    expect(order.indexOf('key-signatures')).toBeGreaterThan(order.indexOf('harmony'));
+    for (const goal of GOALS) {
+      expect(moduleRank('key-signatures', goal)).toBeGreaterThan(moduleRank('harmony', goal));
     }
   });
 });

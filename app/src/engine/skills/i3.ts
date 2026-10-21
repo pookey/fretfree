@@ -73,7 +73,7 @@ const GROUPS: readonly Group[] = [
 export const skills: Skill[] = GROUPS.map((g, i) => ({
   id: g.id,
   topic: 'I3',
-  // Straight after C4, its neighbour in the Keys module.
+  // Its own module, Key signatures (after Harmony), ranks it in the frontier.
   order: 1450 + i * 10,
   title: g.title,
   prerequisites: g.prerequisites,

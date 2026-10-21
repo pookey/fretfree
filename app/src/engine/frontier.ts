@@ -55,10 +55,10 @@ export const MODULES: readonly Module[] = [
   {
     id: 'keys',
     title: 'Keys',
-    topics: ['C4', 'I3'],
+    topics: ['C4'],
     unlocksAfter: 'The musical alphabet',
     track: 'core',
-    summary: 'Major scale construction and degrees, the circle of fifths and key signatures.',
+    summary: 'Major scale construction and the degrees of every key.',
   },
   {
     id: 'chords',
@@ -76,6 +76,17 @@ export const MODULES: readonly Module[] = [
     unlocksAfter: 'Keys and triads',
     track: 'core',
     summary: 'Diatonic chords in any key, Roman and Nashville numerals.',
+  },
+  {
+    // I3 is an intermediate topic (research/03). Its own module, after
+    // Harmony, keeps signatures out of the front of the Keys lane, so they no
+    // longer queue behind every C4 item or come before the first chords.
+    id: 'key-signatures',
+    title: 'Key signatures',
+    topics: ['I3'],
+    unlocksAfter: 'Keys',
+    track: 'core',
+    summary: 'Key signatures and the circle of fifths, each key’s V and its relative minor.',
   },
   {
     id: 'progressions',
