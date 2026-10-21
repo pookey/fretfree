@@ -114,6 +114,10 @@ export interface QuotaOptions {
  * parallel, goal… A lane never gets more than its `sizes`; what it can't
  * take goes to the others. Lanes owed the same go in `rank` order, so a
  * caller can rotate who goes first when units are short.
+ *
+ * A lane gets none, at least `unit`, or its whole pool: never a few items
+ * short of a block. So a lane's block is never one item unless that item is
+ * the last in its pool, and fewer than `count` may be dealt.
  */
 export function laneQuotas(
   sizes: readonly number[],
@@ -134,7 +138,16 @@ export function laneQuotas(
       if (ahead > 0 || (ahead === 0 && rank[i]! < rank[best]!)) best = i;
     }
     credit[best]! -= total;
-    const take = Math.min(unit, sizes[best]! - out[best]!, left);
+    let take = Math.min(unit, sizes[best]! - out[best]!, left);
+    // A remainder too small for a block never opens a lane (it would be one
+    // item repeated back to back), unless it ends that lane's pool. It grows
+    // a lane already dealt instead, or is left for another day.
+    if (take < unit && out[best] === 0 && take < sizes[best]!) {
+      const grow = open.filter((i) => out[i]! > 0).sort((a, b) => rank[a]! - rank[b]!)[0];
+      if (grow === undefined) break;
+      best = grow;
+      take = Math.min(left, sizes[grow]! - out[grow]!);
+    }
     out[best]! += take;
     left -= take;
   }
@@ -339,23 +352,31 @@ export function blockGuideLevel(rep: number, reps: number, skillLevel: GuideLeve
   return Math.round(3 - (3 - skillLevel) * t) as GuideLevel;
 }
 
-/** A lane's first `quota` new items as blocks, a block never longer than the quota. */
+/**
+ * A lane's first `quota` new items as blocks, a block never longer than the
+ * quota. A lone item (a remainder, or a single partner) joins the block
+ * before it, so a block is one item only when the quota is (rules 4 and 6).
+ */
 function laneBlocks(
   items: readonly Item[],
   quota: number,
   cfg: SessionConfig,
   factOf?: (item: Item) => FactRef | null,
 ): SessionEntry[][] {
-  const out: SessionEntry[][] = [];
-  if (quota < 1) return out;
+  const groups: Item[][] = [];
   let left = quota;
-  for (const group of planNewBlocks(items, Math.min(cfg.newBlockSize, quota), factOf)) {
+  for (const group of planNewBlocks(
+    items,
+    Math.max(1, Math.min(cfg.newBlockSize, quota)),
+    factOf,
+  )) {
     if (left < 1) break;
     const take = group.slice(0, left);
-    out.push(newItemBlock(take, cfg.newBlockReps));
     left -= take.length;
+    if (take.length === 1 && groups.length > 0) groups.at(-1)!.push(...take);
+    else groups.push(take);
   }
-  return out;
+  return groups.map((g) => newItemBlock(g, cfg.newBlockReps));
 }
 
 /** Blocks dealt round-robin across lanes, each lane's in order. A block never mixes lanes. */
@@ -457,7 +478,8 @@ export function buildSession(input: SessionPlanInput): SessionEntry[] {
   const slots = total - reviews.length - placed * perItem;
 
   // Top up with further due reviews unless new items were left out for want of time.
-  if (slots > 0 && (placed === fresh || placed >= maxNew) && due.length > reviews.length) {
+  const timeShort = count < maxNew && placed < fresh;
+  if (slots > 0 && !timeShort && due.length > reviews.length) {
     for (const c of due.slice(reviews.length, reviews.length + slots)) {
       reviews.push({ itemId: c.itemId, skillId: c.skillId, kind: 'review', guided: false });
     }

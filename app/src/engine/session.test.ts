@@ -13,6 +13,7 @@ import {
   newItemCap,
   planNewBlocks,
   retrievalPass,
+  type FactRef,
   scheduleRetry,
   sessionLength,
   type SessionEntry,
@@ -250,15 +251,30 @@ describe('buildSession', () => {
       cards,
       frontier: items(10),
       scheduler: s,
-      maxItems: 20,
+      maxItems: 27,
     });
     const reviews = plan.filter((e) => e.kind === 'review');
-    // 14 reviews leave 6 slots: one new item × 4 reps. New material is left, so
-    // the spare 2 slots are not topped up past the cap.
-    expect(reviews).toHaveLength(14);
-    expect(plan.filter((e) => e.kind === 'new')).toHaveLength(4);
+    // 18 reviews leave 9 slots: two new items × 4 reps. New material is left, so
+    // the spare slot is not topped up past the cap.
+    expect(reviews).toHaveLength(18);
+    expect(plan.filter((e) => e.kind === 'new')).toHaveLength(8);
     expect(plan[0]?.kind).toBe('review');
     expect(plan.at(-1)?.kind).toBe('review');
+  });
+
+  it('leaves out a lone new item rather than repeat it back to back', () => {
+    const cards = Array.from({ length: 40 }, (_, i) => dueCard(`r${i}`, 3 + i));
+    // 14 reviews leave 6 slots: room for one new item only.
+    const plan = buildSession({
+      now,
+      minutes: 2,
+      cards,
+      frontier: items(10),
+      scheduler: s,
+      maxItems: 20,
+    });
+    expect(plan.filter((e) => e.kind === 'new')).toHaveLength(0);
+    expect(plan.filter((e) => e.kind === 'review')).toHaveLength(14);
   });
 
   it('tops up with extra reviews when the frontier is empty', () => {
@@ -443,6 +459,55 @@ describe('laneQuotas', () => {
     expect(laneQuotas([1, 20], [1, 1], 4, { unit: 2 })).toEqual([1, 3]);
     expect(laneQuotas([20], [1], 3, { unit: 2 })).toEqual([3]);
   });
+
+  it('grows a dealt lane with an odd remainder rather than open one with a single', () => {
+    const three = [20, 20, 20];
+    const four = [20, 20, 20, 20];
+    const unit = { unit: 2 };
+    expect(laneQuotas(three, [2, 1, 1], 3, unit)).toEqual([3, 0, 0]);
+    expect(laneQuotas(three, [2, 1, 1], 5, unit)).toEqual([3, 2, 0]);
+    expect(laneQuotas(three, [2, 1, 1], 7, unit)).toEqual([3, 2, 2]);
+    expect(laneQuotas(four, [2, 1, 0.5, 0.5], 3, unit)).toEqual([3, 0, 0, 0]);
+    expect(laneQuotas(four, [2, 1, 0.5, 0.5], 5, unit)).toEqual([3, 2, 0, 0]);
+    // Two half shares never win a unit alone; `buildSession` merges a group first.
+    expect(laneQuotas(four, [2, 1, 0.5, 0.5], 7, unit)).toEqual([5, 2, 0, 0]);
+    // A single that ends a lane's pool is fine; one with nowhere to go is left out.
+    expect(laneQuotas([1, 20], [2, 1], 3, unit)).toEqual([1, 2]);
+    expect(laneQuotas([20], [1], 1, unit)).toEqual([0]);
+    expect(laneQuotas([2, 20], [2, 1], 3, unit)).toEqual([2, 0]);
+  });
+
+  it('never deals a lane a single short of a block (exhaustive)', () => {
+    const POOL_SIZES = [1, 2, 3, 5, 30];
+    const SHARES = [
+      [2, 1, 1, 1],
+      [2, 1, 0.5, 0.5],
+    ];
+    const pools = (n: number): number[][] =>
+      n === 0 ? [[]] : pools(n - 1).flatMap((p) => POOL_SIZES.map((size) => [...p, size]));
+    for (let lanes = 1; lanes <= 4; lanes++) {
+      for (const sizes of pools(lanes)) {
+        for (const shares of SHARES.map((sh) => sh.slice(0, lanes))) {
+          for (const rank of [sizes.map((_, i) => i), sizes.map((_, i) => lanes - 1 - i)]) {
+            for (let count = 1; count <= 24; count++) {
+              const out = laneQuotas(sizes, shares, count, { unit: 2, rank });
+              const dealt = out.reduce((n, q) => n + q, 0);
+              const why = JSON.stringify({ sizes, shares, rank, count, out });
+              expect(dealt, why).toBeLessThanOrEqual(count);
+              // At most an odd remainder of one is left for another day.
+              const room = sizes.reduce((n, size) => n + size, 0);
+              expect(dealt, why).toBeGreaterThanOrEqual(Math.min(count, room) - 1);
+              out.forEach((q, i) => {
+                expect(q, why).toBeLessThanOrEqual(sizes[i]!);
+                // None, a full block, or the lane's last item(s).
+                expect(q === 0 || q >= 2 || q === sizes[i], why).toBe(true);
+              });
+            }
+          }
+        }
+      }
+    }
+  });
 });
 
 describe('retrievalPass', () => {
@@ -527,6 +592,88 @@ describe('buildSession lanes', () => {
     expect(plan([at('e0', 3), at('r0', 1)])).toEqual(new Set(['e']));
   });
 
+  /**
+   * A lane of `n` items over facts in both directions, names first and finds
+   * after, as F2's are, so blocks pull in partners of the other direction.
+   */
+  const factLane = (id: string, share: number, n: number, group?: string): SessionLane => {
+    const half = Math.ceil(n / 2);
+    const ids = Array.from({ length: n }, (_, k) =>
+      k < half ? `${id}:name:${k}` : `${id}:find:${k - half}`,
+    );
+    return {
+      id,
+      share,
+      items: ids.map((x) => ({ id: x, skillId: id })),
+      ...(group !== undefined ? { group } : {}),
+    };
+  };
+  const factOfId = (i: Item): FactRef => {
+    const [lane, direction, k] = i.id.split(':');
+    return { fact: `${lane}:${k}`, direction: direction! };
+  };
+
+  /** Each one-item block is its lane's last item: the lane's whole pool was dealt. */
+  function expectNoLoneBlocks(
+    plan: readonly SessionEntry[],
+    lanes: readonly SessionLane[],
+    why: string,
+  ) {
+    const blocks = new Map<string, Set<string>>();
+    for (const e of plan.filter((x) => x.kind === 'new')) {
+      blocks.set(e.block!, (blocks.get(e.block!) ?? new Set()).add(e.itemId));
+    }
+    for (const [block, ids] of blocks) {
+      if (ids.size > 1) continue;
+      const laneId = block.split(':')[0];
+      const pool = lanes.find((l) => l.id === laneId)!.items.length;
+      const dealt = new Set(
+        plan
+          .filter((e) => e.kind === 'new' && e.itemId.startsWith(`${laneId}:`))
+          .map((e) => e.itemId),
+      ).size;
+      expect(dealt, `${why}: lone block ${block}`).toBe(pool);
+    }
+  }
+
+  it.each([3, 5, 7])('makes no one-item block with four lanes and maxNew %i', (maxNew) => {
+    const lanes = fourLanes();
+    const plan = buildSession({ now, minutes: 10, cards: [], lanes, scheduler: s, maxNew });
+    expect(Math.min(...blockSizes(plan))).toBeGreaterThanOrEqual(2);
+    expect(new Set(plan.map((e) => e.itemId)).size).toBeGreaterThanOrEqual(maxNew - 1);
+  });
+
+  it('makes no one-item block for any cap, pool or partner split (exhaustive)', () => {
+    const POOL_SIZES = [1, 2, 3, 30];
+    for (const a of POOL_SIZES)
+      for (const b of POOL_SIZES)
+        for (const c of POOL_SIZES)
+          for (const d of POOL_SIZES) {
+            const lanes = [
+              factLane('g', 2, a),
+              factLane('n', 1, b),
+              factLane('e', 0.5, c, 'parallel'),
+              factLane('r', 0.5, d, 'parallel'),
+            ];
+            for (let maxNew = 1; maxNew <= 24; maxNew++) {
+              const why = JSON.stringify({ pools: [a, b, c, d], maxNew });
+              const plan = buildSession({
+                now,
+                minutes: 15,
+                cards: [],
+                lanes,
+                scheduler: s,
+                maxNew,
+                maxItems: 200,
+                factOf: factOfId,
+              });
+              expectNoLoneBlocks(plan, lanes, why);
+              const fresh = new Set(plan.map((e) => e.itemId)).size;
+              expect(fresh, why).toBeLessThanOrEqual(maxNew);
+            }
+          }
+  });
+
   it('gives both tracks a block when the cap has room', () => {
     const plan = buildSession({
       now,
@@ -550,11 +697,23 @@ describe('buildSession lanes', () => {
       lanes: [lane('g', 2, 20)],
       scheduler: s,
       maxItems: 30,
+      maxNew: 2,
+    });
+    expect(plan.filter((e) => e.kind === 'new')).toHaveLength(8);
+    // 21 reviews fit the 70% share; the cap leaves room for one more.
+    expect(plan.filter((e) => e.kind === 'review')).toHaveLength(22);
+    // A cap of one can't make a block: due reviews fill the session instead.
+    const one = buildSession({
+      now,
+      minutes: 10,
+      cards,
+      lanes: [lane('g', 2, 20)],
+      scheduler: s,
+      maxItems: 30,
       maxNew: 1,
     });
-    expect(plan.filter((e) => e.kind === 'new')).toHaveLength(4);
-    // 21 reviews fit the 70% share; the cap leaves room for the other five.
-    expect(plan.filter((e) => e.kind === 'review')).toHaveLength(26);
+    expect(one.filter((e) => e.kind === 'new')).toHaveLength(0);
+    expect(one.filter((e) => e.kind === 'review')).toHaveLength(30);
     const none = buildSession({
       now,
       minutes: 10,
