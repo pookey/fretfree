@@ -31,9 +31,15 @@ interface ViewState {
 
 const WIDE: FretRange = { from: 0, to: 15 };
 
-/** How the round ends, under every prompt: the learner can't otherwise know a wrong tap ends it. */
-const ROUND_RULE =
-  "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.";
+/**
+ * How the round ends, under every prompt: the learner can't otherwise know a
+ * wrong tap ends it. A worked example draws every target, so it skips Done.
+ */
+function roundRule(guided: boolean): string {
+  return guided
+    ? 'Tap the notes in any order. A wrong tap ends the round.'
+    : "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.";
+}
 
 /** The chord's degrees by shape and colour: the root a square, the 3rd a circle, the 5th a triangle. */
 function chordStyle(degree: BoxNote['degree']): FretMarker['style'] {
@@ -163,7 +169,7 @@ export function BoxView({
   const before =
     `The squares are the roots, ${root}.` +
     (!overlay && hint && !guided ? ` The relative ${prompt.relative.quality} is ${relRoot}.` : '') +
-    ` ${ROUND_RULE}`;
+    ` ${roundRule(guided)}`;
 
   const found = taps.filter((p) => dpbTargetAt(prompt, p)).length;
   return (

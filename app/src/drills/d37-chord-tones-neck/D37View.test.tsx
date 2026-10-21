@@ -137,6 +137,10 @@ describe('<D37View> every note of a chord', () => {
     expect(screen.getByTestId('d37-prompt')).toHaveTextContent(
       'Here is every note of C major, by degree. Tap each one to continue.',
     );
+    // A worked example gives one clear instruction: no Done clause (rule 8).
+    expect(screen.getByTestId('d37-explain')).toHaveTextContent(
+      /^Tap the notes in any order\. A wrong tap ends the round\.$/,
+    );
     expect(markers('target')).toHaveLength(21);
     expect(markers('target')[0]).toEqual({ string: 6, fret: 0, label: '3' });
     tap(at(6, 0));

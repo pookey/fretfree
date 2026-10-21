@@ -31,9 +31,15 @@ interface ViewState {
 
 const WIDE: FretRange = { from: 0, to: 15 };
 
-/** How the round ends, under every prompt: the learner can't otherwise know a wrong tap ends it. */
-const ROUND_RULE =
-  "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.";
+/**
+ * How the round ends, under every prompt: the learner can't otherwise know a
+ * wrong tap ends it. A worked example draws every target, so it skips Done.
+ */
+function roundRule(guided: boolean): string {
+  return guided
+    ? 'Tap the notes in any order. A wrong tap ends the round.'
+    : "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.";
+}
 
 /**
  * D9 view (design §6 D9, §7). The root is drawn as a square on the shape's
@@ -163,7 +169,7 @@ export function D9View({
             <p className={styles.explain} data-testid="d9-explain">
               {feedback
                 ? d9Explain(prompt, feedback)
-                : `The square is the root, ${root}, on string ${prompt.anchor.string}. ${ROUND_RULE}`}
+                : `The square is the root, ${root}, on string ${prompt.anchor.string}. ${roundRule(guided)}`}
             </p>
           )}
           <div className={styles.actions}>

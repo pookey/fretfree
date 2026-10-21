@@ -123,6 +123,10 @@ describe('<D9View>', () => {
     expect(screen.getByTestId('d9-prompt')).toHaveTextContent(
       'This is the A-shape triad of C on strings 3–1. Tap each note to continue.',
     );
+    // A worked example gives one clear instruction: no Done clause (rule 8).
+    expect(screen.getByTestId('d9-explain')).toHaveTextContent(
+      /^The square is the root, C, on string 5\. Tap the notes in any order\. A wrong tap ends the round\.$/,
+    );
   });
 
   it('rings the missed notes and marks the wrong tap in feedback, naming the C shape', () => {

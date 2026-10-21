@@ -131,6 +131,10 @@ describe('<BoxView> overlay', () => {
     expect(screen.getByTestId('dpb-prompt')).toHaveTextContent(
       'This is Cm pentatonic box 1, around the E shape. Tap each note to continue.',
     );
+    // A worked example gives one clear instruction: no Done clause (rule 8).
+    expect(screen.getByTestId('dpb-explain')).toHaveTextContent(
+      /^The squares are the roots, C\. Tap the notes in any order\. A wrong tap ends the round\.$/,
+    );
     expect(cells('target')).toEqual(p.targets.map((t) => `s${t.string}f${t.fret}`));
     expect(screen.getByTestId('dpb-count')).toHaveTextContent('Found 0 of 6');
     // Full guides label the chord's degrees.

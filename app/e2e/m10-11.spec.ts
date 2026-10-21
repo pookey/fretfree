@@ -6,6 +6,8 @@ import { focusSession } from './helpers/focus';
 /** What every multi-target round says under its prompt (D9, D37, the pentatonic box). */
 const ROUND_RULE =
   "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.";
+/** A worked example draws every target, so its rule leaves Done out (rule 8). */
+const GUIDED_RULE = 'Tap the notes in any order. A wrong tap ends the round.';
 
 /**
  * Seed known cards, due now, with their skills mastered at guide level 1 (so
@@ -110,12 +112,14 @@ test.describe('M10-11 the later drills say what they mean', () => {
     );
   });
 
-  test('D9 says how a round ends and what Done does', async ({ page }) => {
+  test('D9 says how a round ends, even on a worked example', async ({ page }) => {
     await freshStart(page);
     await masterSkills(page, ['F2.string6-naturals', 'F2.string5-naturals', 'C5.triads']);
     await focusSession(page, 'C6.triad-cores');
+    // The first card is a worked example: one clear instruction, no Done clause.
+    await expect(prompt(page)).toContainText('Tap each note to continue.');
     await expect(page.getByTestId('d9-explain')).toHaveText(
-      new RegExp(`^The square is the root, \\S+, on string \\d\\. ${escape(ROUND_RULE)}$`),
+      new RegExp(`^The square is the root, \\S+, on string \\d\\. ${escape(GUIDED_RULE)}$`),
     );
     await expect(page.getByRole('button', { name: 'Done' })).toBeVisible();
   });
@@ -128,11 +132,15 @@ test.describe('M10-11 the later drills say what they mean', () => {
     );
   });
 
-  test('the pentatonic box says how a round ends', async ({ page }) => {
+  test('the pentatonic box says how a round ends, even on a worked example', async ({ page }) => {
     await freshStart(page);
     await masterSkills(page, ['C6.minor-shapes']);
     await focusSession(page, 'C7.minor-boxes');
-    await expect(page.getByTestId('dpb-explain')).toContainText(ROUND_RULE);
+    // The first card is a worked example: one clear instruction, no Done clause.
+    await expect(prompt(page)).toContainText('Tap each note to continue.');
+    await expect(page.getByTestId('dpb-explain')).toHaveText(
+      new RegExp(`^The squares are the roots, \\S+\\. ${escape(GUIDED_RULE)}$`),
+    );
     await expect(prompt(page)).toContainText('pentatonic box 1');
   });
 

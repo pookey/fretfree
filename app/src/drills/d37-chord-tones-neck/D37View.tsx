@@ -50,9 +50,15 @@ interface ViewState {
 
 const WIDE: FretRange = { from: 0, to: 15 };
 
-/** How the round ends, under every prompt: the learner can't otherwise know a wrong tap ends it. */
-const ROUND_RULE =
-  "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.";
+/**
+ * How the round ends, under every prompt: the learner can't otherwise know a
+ * wrong tap ends it. A worked example draws every target, so it skips Done.
+ */
+function roundRule(guided: boolean): string {
+  return guided
+    ? 'Tap the notes in any order. A wrong tap ends the round.'
+    : "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.";
+}
 
 /**
  * The markers of the CAGED shape share this group, so feedback outlines it
@@ -215,7 +221,7 @@ export function D37View({
     hints.push(`These frets hold the ${prompt.shape.name} shape of ${d37ChordName(prompt)}.`);
   }
   if (roots.length > 0) hints.push('The squares are its roots. Count up from them.');
-  hints.push(ROUND_RULE);
+  hints.push(roundRule(guided));
   const hint = hints.join(' ');
 
   const outside = feedback ? d37MarkedOutside(prompt, region, taps) : 0;
