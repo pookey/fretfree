@@ -56,7 +56,7 @@ const markers = () =>
     label: m.textContent,
   }));
 const roots = () => within(screen.getByRole('group', { name: 'Root' }));
-const qualities = () => within(screen.getByRole('group', { name: 'Quality' }));
+const qualities = () => within(screen.getByRole('group', { name: 'Chord type' }));
 const fb = (p: D36Prompt, answer: D36Answer): DrillFeedback<D36Answer> => ({
   answer,
   result: d36Check(p, answer),
@@ -89,13 +89,15 @@ describe('<D36View> prompt', () => {
     expect(qualities().getAllByRole('button')).toHaveLength(8);
     const minor = qualities().getByRole('button', { name: 'minor' });
     expect(minor).toBeDisabled();
-    expect(screen.getByTestId('d36-explain')).toHaveTextContent('Name its root, then its quality.');
+    expect(screen.getByTestId('d36-explain')).toHaveTextContent(
+      'Tap its root (the lowest note), then its type.',
+    );
 
     fireEvent.click(roots().getByRole('button', { name: 'C' }));
     fireEvent.click(roots().getByRole('button', { name: 'A' }));
     expect(roots().getByRole('button', { name: 'A' })).toHaveAttribute('aria-pressed', 'true');
     expect(roots().getByRole('button', { name: 'C' })).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByTestId('d36-explain')).toHaveTextContent('Root A: now its quality.');
+    expect(screen.getByTestId('d36-explain')).toHaveTextContent('Root A. Now tap the chord type.');
     expect(minor).toBeEnabled();
     fireEvent.click(minor);
     expect(onAnswer).toHaveBeenCalledWith({ root: 'A', kind: 'minor' });

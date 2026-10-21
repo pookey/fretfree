@@ -122,8 +122,8 @@ export function D36View({
   let explain: string;
   if (feedback) explain = d36Explain(prompt, feedback);
   else if (guided) explain = `${d36RootLine(prompt)} ${d36Deciding(prompt)}`;
-  else if (root) explain = `Root ${d36Display(root)}: now its quality.`;
-  else explain = 'Name its root, then its quality.';
+  else if (root) explain = `Root ${d36Display(root)}. Now tap the chord type.`;
+  else explain = 'Tap its root (the lowest note), then its type.';
 
   const given = feedback?.answer;
   const correct = feedback?.result.correct ?? false;
@@ -177,7 +177,7 @@ export function D36View({
                 </button>
               ))}
             </div>
-            <div className={styles.choices} role="group" aria-label="Quality">
+            <div className={styles.choices} role="group" aria-label="Chord type">
               {D36_QUALITIES.map((k, i) => (
                 <button
                   key={k}

@@ -42,7 +42,7 @@ const drill = (page: Page) => page.getByTestId('d36-drill');
 const neck = (page: Page) => page.locator('svg[data-fret-from]');
 const chart = (page: Page) => drill(page).getByRole('img', { name: /diagram:/ });
 const roots = (page: Page) => drill(page).getByRole('group', { name: 'Root' });
-const qualities = (page: Page) => drill(page).getByRole('group', { name: 'Quality' });
+const qualities = (page: Page) => drill(page).getByRole('group', { name: 'Chord type' });
 
 async function cellsOf(dots: Locator): Promise<Cell[]> {
   const out: Cell[] = [];
