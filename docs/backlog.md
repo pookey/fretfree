@@ -1624,7 +1624,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - E2E: a wrong D1 answer shows the explanation, and D3 at guide level 1 hides the wheel's names.
 
 ### M10-06 · Teach on a miss: D5 intervals and D39 fret landmarks
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (review finding G, second half)
 - **Deps:** none
 - **Design:** §6 D5, D39; research/02 rule 3; research/03 C3/F3 misconceptions
