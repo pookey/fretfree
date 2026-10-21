@@ -160,7 +160,7 @@ test.describe('M2-03 D4 octave finder', () => {
     // Two frets up, as below the G string: one fret short across the G–B shift.
     await cellAt(page, { string: 2, fret: 7 }).click();
     await expect(page.getByTestId('feedback-wrong')).toContainText(
-      'That was 2 strings up, 3 frets higher.',
+      'That was 2 strings up (toward string 1), 3 frets higher.',
     );
     await expect(page.getByTestId('d4-explain')).toContainText('without the G–B shift');
     expect(await markerCells(page, 'correct')).toEqual([{ string: 2, fret: 8 }]);
@@ -169,7 +169,9 @@ test.describe('M2-03 D4 octave finder', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(prompt(page)).toHaveText('Tap the octave of G on string 2');
     await cellAt(page, { string: 2, fret: 8 }).click();
-    await expect(page.getByTestId('feedback-correct')).toHaveText('✓ 2 strings up, 3 frets higher');
+    await expect(page.getByTestId('feedback-correct')).toHaveText(
+      '✓ 2 strings up (toward string 1), 3 frets higher',
+    );
   });
 });
 

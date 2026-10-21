@@ -164,7 +164,8 @@ test.describe('M1-04 D2 "Find the note"', () => {
     // A wrong tap shows both positions and waits for Continue.
     const miss = await ask(page);
     const wrongFret = (miss.frets[0]! + 1) % 12;
-    const wrongPc = noteName(miss.string, wrongFret);
+    // The app prints sharps as ♯.
+    const wrongPc = noteName(miss.string, wrongFret).replace('#', '♯');
     await cell(page, miss.string, wrongFret).click();
     await expect(page.getByTestId('feedback-wrong')).toContainText(`That was ${miss.pc}`);
     await expect(page.getByTestId('marker-wrong')).toHaveAttribute('data-fret', String(wrongFret));

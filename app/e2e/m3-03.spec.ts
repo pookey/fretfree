@@ -70,7 +70,8 @@ async function subject(page: Page): Promise<{ text: string; root: string; suffix
   const text = (await page.getByTestId('d7-subject').innerText()).trim();
   const m = /^([A-G][♯♭]?)(.*)$/.exec(text);
   expect(m, text).not.toBeNull();
-  return { text, root: ascii(m![1]!), suffix: m![2]! };
+  // The suffix is shown with ♭ too (`m7♭5`); the answer key is ASCII.
+  return { text, root: ascii(m![1]!), suffix: m![2]!.replace(/♭/g, 'b') };
 }
 
 /** The notes after the root, in order. */

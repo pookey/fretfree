@@ -136,12 +136,12 @@ test.describe('M2-06 D6 interval tap', () => {
     const target = await markerCell(page, 'target');
     expect(target.string).toBe(5);
     expect(midi(target) - midi(root)).toBe(3);
-    await expect(neck(page).getByTestId('marker-target')).toHaveText('b3');
+    await expect(neck(page).getByTestId('marker-target')).toHaveText('♭3');
     await expectNoHorizontalOverflow(page);
 
     await cellAt(page, target).click();
     await expect(page.getByTestId('feedback-correct')).toHaveText('✓ m3');
-    await expect(neck(page).getByTestId('marker-correct')).toHaveText('b3');
+    await expect(neck(page).getByTestId('marker-correct')).toHaveText('♭3');
   });
 
   test('a forgotten G–B shift is wrong, and named', async ({ page }, info) => {
@@ -180,7 +180,7 @@ test.describe('M2-06 D6 interval tap', () => {
     );
     const wrong = neck(page).getByTestId('marker-wrong');
     await expect(wrong).toHaveAttribute('data-fret', String(slip.fret));
-    await expect(wrong).toHaveText('b3');
+    await expect(wrong).toHaveText('♭3');
     const correct = neck(page).getByTestId('marker-correct');
     await expect(correct).toHaveAttribute('data-string', '2');
     await expect(correct).toHaveAttribute('data-fret', String(answer.fret));
