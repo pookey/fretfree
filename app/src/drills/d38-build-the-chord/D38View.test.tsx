@@ -127,6 +127,15 @@ describe('<D38View>', () => {
     expect(markers('tone')).toEqual([]);
   });
 
+  it('says why a fret outside the drill frets places nothing', () => {
+    view({ ...prompt(), activeRange: { from: 0, to: 8 } });
+    tap(2, 9);
+    expect(markers('tone')).toEqual([]);
+    expect(screen.getByTestId('d38-notice')).toHaveTextContent(
+      'Fret 9 is out of reach: build this chord within frets 0–8.',
+    );
+  });
+
   it('marks a note below the root as wrong in feedback', () => {
     const p = prompt('7', 'B', 6, 7);
     const answer = [at(5, 0), at(4, 7), at(3, 8)];
@@ -149,7 +158,7 @@ describe('<D38View>', () => {
   it('shows a worked example by degree to copy (rule 8)', () => {
     view(prompt(), { guided: true, guideLevel: 0 });
     expect(screen.getByTestId('d38-prompt')).toHaveTextContent(
-      'This is one voicing of Am7 from this root. Tap its notes, then Check.',
+      'This is one way to play Am7 from this root. Tap its notes, then Check.',
     );
     expect(markers('target')).toEqual([
       { string: 4, fret: 2, label: '5' },

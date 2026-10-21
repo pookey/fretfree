@@ -63,7 +63,7 @@ export function BuildChordPanel({
         <li>Every chord tone{prompt.tones.some((t) => !t.required) ? ' (the 5th may go)' : ''}</li>
         <li>No other notes</li>
         <li>
-          Within {prompt.maxSpan} frets, {prompt.maxFingers} fingers
+          Fretted notes fit within {prompt.maxSpan} frets, using {prompt.maxFingers} fingers at most
         </li>
       </ul>
     </div>

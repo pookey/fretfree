@@ -83,7 +83,8 @@ export function D38View({
   const tap = (pos: Position) => {
     if (feedback) return;
     if (!d38IsLive(prompt, pos)) {
-      let notice = `Fret ${pos.fret} is out of reach.`;
+      const { from, to } = prompt.activeRange;
+      let notice = `Fret ${pos.fret} is out of reach: build this chord within frets ${from}–${to}.`;
       if (pos.string === prompt.anchor.string) {
         notice = `String ${pos.string} plays the root, ${root}.`;
       } else if (pos.string > prompt.anchor.string) {
@@ -156,7 +157,7 @@ export function D38View({
   }`;
   const question = guided ? (
     <>
-      This is one voicing of <strong>{chord}</strong> from this root. Tap its notes, then Check.
+      This is one way to play <strong>{chord}</strong> from this root. Tap its notes, then Check.
     </>
   ) : (
     <>

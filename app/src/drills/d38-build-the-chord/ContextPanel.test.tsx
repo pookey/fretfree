@@ -50,7 +50,9 @@ describe('<BuildChordPanel>', () => {
     expect(screen.getByRole('heading', { name: 'Build Am7' })).toBeInTheDocument();
     expect(screen.queryByRole('list', { name: 'Chord tones of Am7' })).toBeNull();
     expect(screen.getByText(/Spell Am7 from its root/)).toBeInTheDocument();
-    expect(screen.getByText('Within 4 frets, 4 fingers')).toBeInTheDocument();
+    expect(
+      screen.getByText('Fretted notes fit within 4 frets, using 4 fingers at most'),
+    ).toBeInTheDocument();
   });
 
   it('shows the formula from level 2, the notes from level 3, and the optional 5th', () => {

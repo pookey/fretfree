@@ -64,7 +64,7 @@ async function readTask(page: Page): Promise<Task> {
   const [root] = await cellsOf(page, 'marker-root');
   expect(root).toBeDefined();
   return {
-    guided: text.startsWith('This is one voicing'),
+    guided: text.startsWith('This is one way to play'),
     quality: chord.endsWith('m') ? 'minor' : 'major',
     root: root!,
   };
