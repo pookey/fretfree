@@ -159,6 +159,28 @@ async function drillReady(page: Page, testId: string): Promise<void> {
   await expect(page.getByTestId('drill-loading')).toBeHidden();
 }
 
+/**
+ * Answer a guided function-drill card wrongly: with the minor chord on the
+ * answer's root (the natural v for the harmonic V) when it is offered, or
+ * else with any other choice. The worked example names its answer as shown
+ * on its button ("Tap E to continue.").
+ */
+async function answerWrongly(page: Page): Promise<void> {
+  const group = page.getByTestId('df-drill').getByRole('group');
+  const choices = group.getByRole('button');
+  const text = await page.locator('#drill-prompt').innerText();
+  const shown = /Tap (.+) to continue\./.exec(text)?.[1];
+  expect(shown, text).toBeDefined();
+  const labels = await choices.evaluateAll((els) =>
+    els.map((e) => ({ text: e.textContent?.trim() ?? '', label: e.getAttribute('aria-label') })),
+  );
+  const answer = labels.find((l) => l.text === shown);
+  const root = answer?.label?.split(' ')[0];
+  const natural = labels.find((l) => l.label === `${root} minor`);
+  const wrong = natural ?? labels.find((l) => l.text !== shown);
+  await group.getByRole('button', { name: wrong!.label ?? wrong!.text, exact: true }).click();
+}
+
 /** End the session from wherever it is, and wait for the summary. */
 async function endSession(page: Page): Promise<void> {
   const summary = page.getByTestId('session-summary');
@@ -197,7 +219,7 @@ test.describe('M6-10 screenshot pass', () => {
     await focusSession(page, 'I4.harmonic-minor');
     await drillReady(page, 'df-drill');
     await shoot(page, info, '20-session-i4-harmonic-minor');
-    await page.getByTestId('df-drill').getByRole('button', { name: 'E minor' }).click();
+    await answerWrongly(page);
     await expect(page.getByTestId('feedback-wrong')).toBeVisible();
     await shoot(page, info, '20b-session-i4-feedback');
 
