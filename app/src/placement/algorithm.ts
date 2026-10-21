@@ -11,7 +11,9 @@ import type { Item, Skill } from '../engine/model';
  * `knownAt` probes are fluent (correct within the speed target) and **not
  * known** once that can no longer happen, so most groups settle in two or
  * three probes. A group whose prerequisite isn't known is skipped unprobed:
- * if the first C3 interval group fails, the later ones are never asked.
+ * if the first C3 interval group fails, the later ones are never asked. Soft
+ * prerequisites only order the groups: `C5.triads` waits for `C4.sharp-keys`
+ * to settle, but is asked whatever its verdict.
  * The test ends when every group is settled or the time budget is spent.
  *
  * A known group's items are seeded as known, except any probe that wasn't
@@ -42,6 +44,13 @@ export interface GroupInput {
   items: readonly Item[];
   /** Prerequisite group IDs; they must come earlier in the group list. */
   prerequisites: readonly string[];
+  /**
+   * Soft prerequisite group IDs (`Skill.softPrerequisites`): they come
+   * earlier too, so they settle before this group is probed, but their
+   * verdict doesn't carry over. A soft prerequisite needs only practising,
+   * so failing it says nothing about this group, nor passing this about it.
+   */
+  softPrerequisites?: readonly string[];
   /**
    * Item IDs that must be probed. They are asked first, and the group asks
    * at least as many probes as there are of them, each extra one needing to
@@ -97,8 +106,8 @@ export function probeTier(
 /**
  * The groups to probe: the skills `include` picks, in the order given (the
  * registry's curriculum order), keeping only items a drill can serve. Skills
- * with nothing to probe are left out, and so are prerequisites outside the
- * probed set.
+ * with nothing to probe are left out, and so are prerequisites, hard and
+ * soft, outside the probed set.
  */
 export function skillGroups(
   skills: readonly Skill[],
@@ -107,10 +116,19 @@ export function skillGroups(
 ): GroupInput[] {
   const groups = skills
     .filter(include)
-    .map((s) => ({ id: s.id, items: s.items().filter(canServe), prerequisites: s.prerequisites }))
+    .map((s) => ({
+      id: s.id,
+      items: s.items().filter(canServe),
+      prerequisites: s.prerequisites,
+      softPrerequisites: s.softPrerequisites ?? [],
+    }))
     .filter((g) => g.items.length > 0);
   const ids = new Set(groups.map((g) => g.id));
-  return groups.map((g) => ({ ...g, prerequisites: g.prerequisites.filter((p) => ids.has(p)) }));
+  return groups.map((g) => ({
+    ...g,
+    prerequisites: g.prerequisites.filter((p) => ids.has(p)),
+    softPrerequisites: g.softPrerequisites.filter((p) => ids.has(p)),
+  }));
 }
 
 /** The placement test's groups: every skill of the configured topics, bar `skipPlacement` ones. */
@@ -129,7 +147,7 @@ export function startPlacement(
 ): PlacementState {
   const seen = new Set<string>();
   for (const g of groups) {
-    const late = g.prerequisites.find((p) => !seen.has(p));
+    const late = [...g.prerequisites, ...(g.softPrerequisites ?? [])].find((p) => !seen.has(p));
     if (late) throw new Error(`Placement group ${g.id} comes before its prerequisite ${late}`);
     seen.add(g.id);
   }
@@ -183,6 +201,8 @@ export function nextProbe(
 ): Probe | null {
   if (elapsedMs >= budgetMs) return null;
   const v = verdicts(state);
+  // The first open group: every prerequisite, hard or soft, comes earlier in
+  // the list, so it has settled already.
   const group = state.groups.find(
     (g) => v.get(g.id) === 'open' && g.prerequisites.every((p) => v.get(p) === 'known'),
   );

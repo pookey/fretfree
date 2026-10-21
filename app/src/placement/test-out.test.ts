@@ -45,7 +45,8 @@ const canServe = picker.canServe;
 const CHORDS = MODULES.find((m) => m.id === 'chords') as Module;
 const INTERVALS = MODULES.find((m) => m.id === 'intervals') as Module;
 const KEYS = MODULES.find((m) => m.id === 'keys') as Module;
-const TRIAD_NEEDS = ['C3.thirds', 'C3.fourths-fifths', 'C4.sharp-keys', 'C4.flat-keys'];
+// M10-02: 3rds mastered (rule 7), the sharp keys practising.
+const TRIAD_NEEDS = ['C3.thirds', 'C4.sharp-keys'];
 
 /** Statuses as Learn derives them from the stored ones (registry order). */
 function derive(stored: ReadonlyMap<string, SkillStatus>): Map<string, SkillStatus> {
@@ -104,22 +105,22 @@ describe('the scope of a test-out', () => {
     expect(groups.map((g) => g.id)).toEqual(TRIAD_NEEDS);
     // Prerequisites outside the scope (F1, C1) can't block a probe.
     expect(groups.find((g) => g.id === 'C3.thirds')!.prerequisites).toEqual([]);
-    expect(groups.find((g) => g.id === 'C4.flat-keys')!.prerequisites).toEqual(['C4.sharp-keys']);
+    expect(groups.find((g) => g.id === 'C4.sharp-keys')!.prerequisites).toEqual([]);
   });
 
   it('leaves out what is already met: mastered for a hard gate, practising for a soft one', () => {
     const partly = derive(
       new Map<string, SkillStatus>([
-        ['C3.thirds', 'mastered'],
+        ['C3.thirds', 'practising'],
         ['C4.sharp-keys', 'practising'],
       ]),
     );
-    // C5.triads is a hard gate, so practising sharp keys isn't enough.
-    expect(unmetPrerequisites(CHORDS, SKILLS, partly)).toEqual([
-      'C3.fourths-fifths',
-      'C4.sharp-keys',
-      'C4.flat-keys',
-    ]);
+    // 3rds are a hard gate for C5.triads, so practising them isn't enough;
+    // the sharp keys are a soft one, so practising them is.
+    expect(unmetPrerequisites(CHORDS, SKILLS, partly)).toEqual(['C3.thirds']);
+    const met = derive(new Map(partly).set('C3.thirds', 'mastered'));
+    expect(met.get('C5.triads')).toBe('unlocked');
+    expect(unmetPrerequisites(CHORDS, SKILLS, met)).toEqual([]);
     // C3.thirds opens softly: practising F1's steps meets it (C1 still doesn't).
     const steps = derive(
       new Map<string, SkillStatus>([
@@ -199,12 +200,12 @@ describe('the scope of a test-out', () => {
   it('holds a test-out to a higher bar than placement: more probes, every one fluent', () => {
     for (const t of ENGINE_CONFIG.placement.testOut.tiers) expect(t.knownAt).toBe(t.probes);
     const { state } = play(testOutGroups(TRIAD_NEEDS, SKILLS, canServe), (g, asked) =>
-      g === 'C3.fourths-fifths' && asked === 5 ? 'slow' : 'fluent',
+      g === 'C3.thirds' && asked === 5 ? 'slow' : 'fluent',
     );
     const v = verdicts(state);
-    expect(v.get('C3.thirds')).toBe('known');
+    expect(v.get('C4.sharp-keys')).toBe('known');
     // One slow answer in six fails the skill, where placement would let it pass.
-    expect(v.get('C3.fourths-fifths')).toBe('unknown');
+    expect(v.get('C3.thirds')).toBe('unknown');
   });
 });
 
@@ -265,11 +266,11 @@ describe('saving a test-out', () => {
     const { summary, statuses } = await save(testOutGroups(TRIAD_NEEDS, SKILLS, canServe), (g) =>
       g.startsWith('C4.') ? 'wrong' : 'fluent',
     );
-    expect(summary.masteredSkills).toEqual(['C3.thirds', 'C3.fourths-fifths']);
-    expect(statuses.get('C3.fourths-fifths')).toBe('mastered');
+    expect(summary.masteredSkills).toEqual(['C3.thirds']);
+    expect(statuses.get('C3.thirds')).toBe('mastered');
     expect(statuses.get('C4.sharp-keys')).not.toBe('mastered');
     // The passed part still unlocks what it can: the next interval group opens.
-    expect(statuses.get('C3.sevenths')).toBe('unlocked');
+    expect(statuses.get('C3.fourths-fifths')).toBe('unlocked');
     expect(statuses.get('C5.triads')).toBe('locked');
     expect(opensAfter(CHORDS, SKILLS, FRESH, summary)).toBe(false);
     expect(testOutReport(summary, SKILLS).map(reportSentence)).toEqual([

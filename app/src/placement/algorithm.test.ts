@@ -137,6 +137,23 @@ describe('the adaptive probe', () => {
     expect(new Set(probedGroups(s))).toEqual(new Set(['thirds', 'other']));
   });
 
+  it('probes past a soft prerequisite that is not known, after it settles', () => {
+    const soft = (id: string, prerequisites: string[], softPrerequisites: string[]) => ({
+      ...group(id, 15, prerequisites),
+      softPrerequisites,
+    });
+    const groups = [group('thirds', 15), group('keys', 15), soft('triads', ['thirds'], ['keys'])];
+    const s = run(startPlacement(groups, lcg()), (g) => (g === 'keys' ? 'wrong' : 'fluent'));
+    // M10-02: a soft prerequisite needs only practising, so failing it skips nothing.
+    expect(Object.fromEntries(verdicts(s))).toEqual({
+      thirds: 'known',
+      keys: 'unknown',
+      triads: 'known',
+    });
+    const order = probedGroups(s);
+    expect(order.lastIndexOf('keys')).toBeLessThan(order.indexOf('triads'));
+  });
+
   it('probes the later groups when the earlier ones are known', () => {
     const groups = [group('thirds', 15), group('fifths', 15, ['thirds'])];
     const s = run(startPlacement(groups, lcg()), () => 'fluent');
@@ -237,6 +254,14 @@ describe('placementGroups', () => {
     const all = placementGroups(SKILLS, () => true);
     expect(all.some((g) => g.id.startsWith('C3.'))).toBe(true);
     expect(all.find((g) => g.id === 'C3.fourths-fifths')!.prerequisites).toEqual(['C3.thirds']);
+    // Soft edges order the groups too (M10-02), but only hard ones skip.
+    const triads = all.find((g) => g.id === 'C5.triads')!;
+    expect(triads.prerequisites).toEqual(['C3.thirds']);
+    expect(triads.softPrerequisites).toEqual(['C4.sharp-keys']);
+    const numerals = all.find((g) => g.id === 'C8.numerals-major')!;
+    expect(numerals.prerequisites).toEqual(['C5.triads']);
+    expect(numerals.softPrerequisites).toEqual(['C4.sharp-key-degrees']);
+    expect(() => startPlacement(all, lcg())).not.toThrow();
   });
 
   it('fits about 3 minutes of probes for a fast expert, and the budget stops a slower one', () => {
@@ -262,6 +287,13 @@ describe('placementGroups', () => {
 describe('startPlacement', () => {
   it('rejects a group listed before its prerequisite', () => {
     expect(() => startPlacement([group('b', 4, ['a']), group('a', 4)], lcg())).toThrow(
+      /b comes before its prerequisite a/,
+    );
+  });
+
+  it('rejects a group listed before its soft prerequisite', () => {
+    const b = { ...group('b', 4), softPrerequisites: ['a'] };
+    expect(() => startPlacement([b, group('a', 4)], lcg())).toThrow(
       /b comes before its prerequisite a/,
     );
   });
