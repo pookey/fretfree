@@ -143,6 +143,11 @@ export function defaultModule(map: readonly ModuleView[]): ModuleView | undefine
   return map.find((m) => m.state === 'open') ?? map.find((m) => m.state !== 'soon') ?? map[0];
 }
 
+/**
+ * A locked module previews its skills' outcomes, and the outcome registry
+ * gives every skill one (`learn/outcomes`), so a locked module always has
+ * something to preview.
+ */
 export const MODULE_STATE_LABEL: Readonly<Record<ModuleState, string>> = {
   open: 'In progress',
   mastered: 'Mastered',
@@ -156,6 +161,14 @@ export const SKILL_STATUS_LABEL: Readonly<Record<SkillStatus, string>> = {
   practising: 'Practising',
   mastered: 'Mastered',
 };
+
+/**
+ * A skill's status label. "Locked: preview" promises something to look at,
+ * so a locked skill with no outcome or worked example reads just "Locked".
+ */
+export function skillStatusLabel(status: SkillStatus, previewable: boolean): string {
+  return status === 'locked' && !previewable ? 'Locked' : SKILL_STATUS_LABEL[status];
+}
 
 /**
  * A 0–1 fraction as a whole, clamped percentage. Any progress shows as at

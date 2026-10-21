@@ -2,7 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { State, createEmptyCard } from 'ts-fsrs';
 import { SKILLS, type CardRecord, type Skill, type SkillStatus } from '../../engine';
 import { MODULES } from '../../engine/frontier';
-import { buildMap, defaultModule, percent, skillRingState, skillStatuses } from './map-model';
+import {
+  MODULE_STATE_LABEL,
+  SKILL_STATUS_LABEL,
+  buildMap,
+  defaultModule,
+  percent,
+  skillRingState,
+  skillStatusLabel,
+  skillStatuses,
+} from './map-model';
 
 const now = new Date('2026-10-18T09:00:00Z');
 
@@ -206,6 +215,33 @@ describe('percent', () => {
     expect(percent(0.004)).toBe(1);
     expect(percent(0.016)).toBe(2);
     expect(percent(0)).toBe(0);
+  });
+});
+
+describe('coming-soon modules', () => {
+  it('group after the open and locked ones, even when the goal promotes them', () => {
+    // Jazz promotes Reading, which has no skills yet.
+    const map = buildMap({ skills: SKILLS, goal: 'jazz', stored: stored(), cards: [] });
+    const states = map.map((m) => m.state);
+    const firstSoon = states.indexOf('soon');
+    expect(firstSoon).toBeGreaterThan(0);
+    expect(states.slice(firstSoon).every((s) => s === 'soon')).toBe(true);
+    expect(map.slice(firstSoon).map((m) => m.module.id)).toEqual(['reading', 'advanced', 'meter']);
+    expect(map[0]?.module.id).toBe('harmony');
+  });
+});
+
+describe('status labels', () => {
+  it('promises a preview only when a locked skill has something to show', () => {
+    expect(skillStatusLabel('locked', true)).toBe('Locked: preview');
+    expect(skillStatusLabel('locked', false)).toBe('Locked');
+    for (const status of ['unlocked', 'practising', 'mastered'] as const)
+      expect(skillStatusLabel(status, false)).toBe(SKILL_STATUS_LABEL[status]);
+  });
+
+  it('keeps the module preview label and says when one is not built', () => {
+    expect(MODULE_STATE_LABEL.locked).toBe('Locked: preview');
+    expect(MODULE_STATE_LABEL.soon).toBe('Coming soon');
   });
 });
 

@@ -1,10 +1,11 @@
 import { Fragment, useId, useState } from 'react';
 import { Link } from 'react-router';
 import { gatesOf, getSkill, isFrontier } from '../../engine';
+import { useOutcomes } from '../../learn/outcomes/lazy';
 import { practiseHref } from '../../learn/worked-examples/focus';
 import { useWorkedExamples } from '../../learn/worked-examples/lazy';
 import { MasteryRing } from './MasteryRing';
-import { SKILL_STATUS_LABEL, skillRingState, type SkillView } from './map-model';
+import { skillRingState, skillStatusLabel, type SkillView } from './map-model';
 import styles from './Learn.module.css';
 import local from './SkillDetail.module.css';
 
@@ -31,7 +32,7 @@ function statusCopy(view: SkillView): Copy[] {
     ];
   if (view.status === 'mastered') return [{ text: 'Mastered. Reviews keep it fresh.', needs: [] }];
   if (isFrontier(view.status))
-    return [{ text: 'Its new items join your daily sessions.', needs: [] }];
+    return [{ text: 'Its new items join your daily sessions, a few each day.', needs: [] }];
   const gates = gatesOf(view.skill);
   const titles = (ids: readonly string[]) => ids.map((id) => getSkill(id)?.title ?? id);
   const [master, practise] = [titles(gates.mastered), titles(gates.practising)];
@@ -58,8 +59,9 @@ function statusCopy(view: SkillView): Copy[] {
 }
 
 /**
- * Skill detail (design §7 Learn): status, a worked example that fades its
- * guides, and "Practise this now" for a focused session. The misconception
+ * Skill detail (design §7 Learn): what the skill lets you do (its outcome,
+ * research/02 rule 15), status, a worked example that fades its guides, and
+ * "Practise this now" for a focused session. The misconception
  * callout is the module's (`ModuleDetail`); examples add their own targeted
  * one when the learner falls for it. Practice is offered on the frontier only:
  * gating stays on (research/02 rule 7), while any example can be previewed.
@@ -69,6 +71,10 @@ export function SkillDetail({ view }: { view: SkillView }) {
   const { skill } = view;
   const examples = useWorkedExamples();
   const example = examples?.exampleFor(skill);
+  const outcomes = useOutcomes();
+  const outcome = outcomes?.(skill.id);
+  // Until both load, assume a preview: every skill has an outcome (its registry test).
+  const previewable = !outcomes || !examples || Boolean(outcome ?? example);
   const [open, setOpen] = useState(false);
   const exampleId = useId();
   // A skill no built drill can test would open an empty session.
@@ -88,8 +94,13 @@ export function SkillDetail({ view }: { view: SkillView }) {
       />
       <div className={local.body}>
         <h4 className={styles.skillTitle}>{skill.title}</h4>
+        {outcome && (
+          <p className={local.outcome} data-testid="skill-outcome">
+            {outcome}
+          </p>
+        )}
         <p className={styles.skillMeta}>
-          <span className={styles.topic}>{skill.topic}</span> {SKILL_STATUS_LABEL[view.status]} ·{' '}
+          {skillStatusLabel(view.status, previewable)} ·{' '}
           <span data-testid="skill-progress">
             {view.learningCount} learning · {view.stableCount} stable of {view.itemCount}
           </span>

@@ -60,3 +60,11 @@
   padding-left: 1.25rem;
   list-style: disc; /* The module's skill list sets none, and it inherits. */
 }
+
+/* What the skill lets you do, right under its title: the line a preview is for. */
+.outcome {
+  margin: var(--space-1) 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--text);
+}

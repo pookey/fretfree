@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { getSkill, type Skill, type SkillStatus } from '../../engine';
+import { loadOutcomes } from '../../learn/outcomes/lazy';
 import { loadWorkedExamples } from '../../learn/worked-examples/lazy';
 import { SkillDetail } from './SkillDetail';
 import type { SkillView } from './map-model';
@@ -34,7 +35,9 @@ function renderSkill(id: string, status: SkillStatus, practisable = true) {
 describe('<SkillDetail>', () => {
   it('opens the worked example and offers focused practice on the frontier', async () => {
     renderSkill('F2.string6-naturals', 'unlocked');
-    expect(screen.getByText('Its new items join your daily sessions.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Its new items join your daily sessions, a few each day.'),
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Practise this now' })).toHaveAttribute(
       'href',
       '/session?skill=F2.string6-naturals',
@@ -88,7 +91,7 @@ describe('<SkillDetail>', () => {
   it('offers no practice for a skill no built drill can test', () => {
     renderSkill('F3.markers', 'unlocked', false);
     expect(screen.getByText(/Coming soon\. Its drill isn't built yet/)).toBeInTheDocument();
-    expect(screen.queryByText('Its new items join your daily sessions.')).toBeNull();
+    expect(screen.queryByText(/Its new items join your daily sessions/)).toBeNull();
     expect(screen.queryByRole('link', { name: 'Practise this now' })).toBeNull();
   });
 
@@ -181,6 +184,53 @@ describe('<SkillDetail>', () => {
           "Preview only. It joins your sessions once you're practising Interval shapes: 3rds.",
         ),
       ).toBeInTheDocument();
+    });
+  });
+
+  describe('outcomes (M10-07)', () => {
+    const renderView = (skill: Skill, status: SkillStatus) =>
+      render(
+        <MemoryRouter>
+          <ul>
+            <SkillDetail view={view(skill, status, true)} />
+          </ul>
+        </MemoryRouter>,
+      );
+
+    it('says what a locked skill lets you do, under its title', async () => {
+      renderSkill('C3.thirds', 'locked');
+      const outcome = await screen.findByTestId('skill-outcome');
+      expect(outcome).toHaveTextContent(/^See a major or minor 3rd as a shape from any root/);
+      // Right under the title, before the status line.
+      expect(
+        screen.getByRole('heading', { name: 'Interval shapes: 3rds' }).nextElementSibling,
+      ).toBe(outcome);
+      expect(screen.getByText(/^Locked: preview ·/)).toBeInTheDocument();
+    });
+
+    it('shows no raw topic code', async () => {
+      renderSkill('F2.string6-naturals', 'practising');
+      await screen.findByTestId('skill-outcome');
+      expect(screen.queryByText('F2')).toBeNull();
+      expect(screen.getByText(/^Practising ·/)).toBeInTheDocument();
+    });
+
+    it('reads just "Locked" when a skill has nothing to preview', async () => {
+      await Promise.all([loadOutcomes(), loadWorkedExamples()]);
+      const bare: Skill = { ...getSkill('F3.markers')!, id: 'X.none', topic: 'X', title: 'Bare' };
+      renderView(bare, 'locked');
+      expect(screen.queryByTestId('skill-outcome')).toBeNull();
+      expect(screen.getByText(/^Locked ·/)).toBeInTheDocument();
+      expect(screen.queryByText(/Locked: preview/)).toBeNull();
+    });
+
+    it('keeps the preview label for a skill with only a worked example', async () => {
+      await Promise.all([loadOutcomes(), loadWorkedExamples()]);
+      // A new C6 skill: no outcome of its own, but C6's topic example covers it.
+      const exampleOnly: Skill = { ...getSkill('C6.major-shapes')!, id: 'C6.new', title: 'New' };
+      renderView(exampleOnly, 'locked');
+      expect(screen.queryByTestId('skill-outcome')).toBeNull();
+      expect(screen.getByText(/^Locked: preview ·/)).toBeInTheDocument();
     });
   });
 
