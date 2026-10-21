@@ -130,6 +130,60 @@ describe('<SkillDetail>', () => {
     ).toBeInTheDocument();
   });
 
+  describe('a gate that mixes mastered and practising (M10-01)', () => {
+    const renderGate = (prerequisites: string[], softPrerequisites: string[]) => {
+      const skill = {
+        ...getSkill('C3.sixths')!,
+        softUnlock: false,
+        prerequisites,
+        softPrerequisites,
+      };
+      return render(
+        <MemoryRouter>
+          <ul>
+            <SkillDetail view={view(skill, 'locked', true)} />
+          </ul>
+        </MemoryRouter>,
+      );
+    };
+    const items = (name: string) =>
+      within(screen.getByRole('list', { name }))
+        .getAllByRole('listitem')
+        .map((li) => li.textContent);
+
+    it('names one of each in a single sentence', () => {
+      renderGate(['C3.thirds'], ['C1.octaves']);
+      expect(
+        screen.getByText(
+          "Preview only. It joins your sessions once you've mastered Interval shapes: 3rds and are practising Octave shapes.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('list', { name: /^Prerequisites/ })).toBeNull();
+    });
+
+    it('lists each kind one per line when either has more than one', () => {
+      renderGate(['C3.thirds', 'C3.fourths-fifths'], ['C1.octaves']);
+      expect(
+        screen.getByText("Preview only. It joins your sessions once you've mastered:"),
+      ).toBeInTheDocument();
+      expect(screen.getByText('and are practising:')).toBeInTheDocument();
+      expect(items('Prerequisites to master')).toEqual([
+        'Interval shapes: 3rds',
+        'Interval shapes: 4ths, 5ths and the tritone',
+      ]);
+      expect(items('Prerequisites to practise')).toEqual(['Octave shapes']);
+    });
+
+    it('reads as a soft gate when every prerequisite is soft', () => {
+      renderGate([], ['C3.thirds']);
+      expect(
+        screen.getByText(
+          "Preview only. It joins your sessions once you're practising Interval shapes: 3rds.",
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
   it('lists no prerequisites outside the locked state', () => {
     renderSkill('C3.thirds', 'unlocked');
     expect(screen.queryByRole('list', { name: 'Prerequisites' })).toBeNull();
