@@ -2,10 +2,11 @@
 
 ## Current status
 
-**Seventh shift progress (2026-10-21 from 01:20, PM session fretfree-pm-7). 13 work packages shipped so far. All six high-priority M10 learning-path fixes are live. Production = origin/main = `d1f29fdb`.**
+**Seventh shift report (2026-10-21 01:20 → ~20:45, PM session fretfree-pm-7). 16 work packages shipped; at the user's request every package in flight was drained to production before stopping. 135 done, 38 todo, none blocked. Production = origin/main = the docs commit after `581ae67d` (M10-12).** Next: M10-09 and M10-15 to M10-20 (all `Priority: high`), then M6-11 to M6-14, M7-05 and M8.
 
 Shipped this shift:
 - **M10, the learning path:** **M10-01** soft prerequisites per skill; **M10-02** the songs on-ramp (C8 in three key groups, looser C5–C10 gates, schema v4 with a restaging migration); **M10-03** session lanes (2:1:1 across open modules, new items dealt in blocks of at least two, a daily new-item cap that ends with one spaced pass and counts toward the goal, I3 as its own "Key signatures" module); **M10-04** concept intros (the first ten, lazy); **M10-05** and **M10-06** teach on a miss in D1, D3, D5 and D39; **M10-08** one vocabulary in the drills (♯/♭, spoken degrees for VoiceOver); **M10-10** and **M10-11** copy fixes.
+- **M10, the drain:** **M10-07** plain-words outcomes for every skill and module on Learn; **M10-12** C2 split into per-string stages (schema v5, a restaging migration); **M10-13** and **M10-14** worked examples (F1–F3, then intervals, harmony, progressions, capo and boxes), each working its misconception on the first stage.
 - **Other:** **M4-10** "Ear only" and "start with sound"; **M9-02** tab skills and D33 "Tab → neck"; **M6-10** the M6 QA (findings filed as M6-11 to M6-14).
 
 The PM's curriculum calls this shift are under "Decisions and deviations".
@@ -16,6 +17,9 @@ Incidents:
 - **Full matrix outside the lane:** the rebase-brief template still said `pnpm verify`, so one worker ran the four-project matrix by itself. The template now says `verify:quick` (18d6efdb).
 - **Load:** fileproviderd (iCloud) at ~90% CPU pushed the load average to 94–107 for about an hour. The ceiling went down to 2–3 and back up. The lasting fix is to move the repo out of `~/Documents`; that is the user's call.
 - **Flakes:** `m4-09.spec.ts:140` passed on retry once; two jsdom unit tests got more time (dc8c6baf, 7e60e932).
+
+- **Budget:** the user raised the first-load JS budget to 300 KB (967c75a3); main was at 249.6 KB of 250. See "Decisions and deviations".
+- **Lane failure, M10-12:** M10-07's outcome registry needed outcomes for M10-12's new C2 skills; fixed and shipped on the next run.
 
 Effective parallelism wasn't sampled this shift; the ceiling moved 8 → 2 → 5 with load.
 
