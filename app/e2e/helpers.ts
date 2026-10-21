@@ -55,6 +55,8 @@ export async function wipeData(page: Page): Promise<void> {
 export async function firstLaunch(page: Page): Promise<void> {
   await page.goto('/');
   await wipeData(page);
+  // Specs start on their drill: concept intros (M10-04) are off unless a spec turns them on.
+  await page.evaluate(() => localStorage.setItem('fretwork.e2e.skipIntros', '1'));
   await page.goto('/');
   await expect(page).toHaveURL(/\/onboarding$/);
 }
