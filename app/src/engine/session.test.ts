@@ -409,11 +409,11 @@ describe('scheduleRetry', () => {
 });
 
 describe('newItemCap', () => {
-  it('is eight at ten minutes, scaled by minutes, never below one', () => {
+  it('is eight at ten minutes, scaled by minutes, never below one block', () => {
     expect(newItemCap(10)).toBe(ENGINE_CONFIG.session.maxNewPerSession);
     expect(newItemCap(5)).toBe(4);
     expect(newItemCap(15)).toBe(12);
-    expect(newItemCap(0.5)).toBe(1);
+    expect(newItemCap(2)).toBe(ENGINE_CONFIG.session.newBlockSize);
   });
 
   it('rises while recent accuracy is above the adaptive band', () => {

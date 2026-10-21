@@ -81,7 +81,8 @@ export function sessionLength(minutes: number, cfg: SessionConfig = ENGINE_CONFI
 /**
  * The most new items a session of `minutes` introduces (research/02 rule 11):
  * `maxNewPerSession` scaled by minutes, raised by `newCapRaise` while recent
- * accuracy is above the adaptive band's top (rule 5). Never below one.
+ * accuracy is above the adaptive band's top (rule 5). Never below one block,
+ * so a short quick drill still introduces a block (rule 6).
  */
 export function newItemCap(
   minutes: number,
@@ -91,7 +92,7 @@ export function newItemCap(
 ): number {
   const base = (cfg.maxNewPerSession * minutes) / cfg.newCapMinutes;
   const raise = recentAccuracy !== null && recentAccuracy > bandTop ? 1 + cfg.newCapRaise : 1;
-  return Math.max(1, Math.round(base * raise));
+  return Math.max(cfg.newBlockSize, Math.round(base * raise));
 }
 
 /**

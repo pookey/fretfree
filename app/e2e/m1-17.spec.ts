@@ -7,6 +7,7 @@ import {
   masterSkills,
   targetNote,
 } from './helpers';
+import { C4_SKILLS, I3_SKILLS } from './helpers/keys';
 
 // M1-17: multi-drill sessions, worked example → faded → independent reps,
 // and the time budget (design §3.3).
@@ -24,8 +25,9 @@ async function nameCorrectly(page: Page): Promise<string> {
 
 async function startNoteSession(page: Page): Promise<void> {
   await freshStart(page);
-  // Skip the F1 note-wheel skills so the session starts on string 6.
-  await masterSkills(page, F1_SKILLS);
+  // Skip the F1 note-wheel skills so the session starts on string 6, and Keys,
+  // which open with F1 and would take the goal lane's share (M10-03).
+  await masterSkills(page, [...F1_SKILLS, ...C4_SKILLS, ...I3_SKILLS]);
   await page.getByTestId('start-session').click();
 }
 

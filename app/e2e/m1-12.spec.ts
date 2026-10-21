@@ -132,7 +132,8 @@ test.describe('M1-12 session celebrations', () => {
     page,
   }) => {
     await freshStart(page);
-    await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS]);
+    // Keys open with F1 and would take the goal lane's share of new items (M10-03).
+    await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS, ...C4_SKILLS, ...I3_SKILLS]);
     await seed(page, { slowHistory: true });
     await page.getByTestId('start-session').click();
 
@@ -224,7 +225,8 @@ test.describe('M1-12 session celebrations', () => {
 
   test('the combo resets quietly after a miss and the summary fits @smoke', async ({ page }) => {
     await freshStart(page);
-    await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS]);
+    // Keys open with F1 and would take the goal lane's share of new items (M10-03).
+    await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS, ...C4_SKILLS, ...I3_SKILLS]);
     await page.getByTestId('start-session').click();
     for (let i = 0; i < 7; i++) await answerCorrectly(page);
     await expect(page.getByTestId('combo')).toHaveText('3 in a row');
