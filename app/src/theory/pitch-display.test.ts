@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { displayPc } from './pitch-display';
+import { displayPc, spokenPc } from './pitch-display';
 
 describe('displayPc', () => {
   it('spells sharps and flats with the music glyphs', () => {
@@ -42,5 +42,21 @@ describe('displayPc', () => {
 
   it('is idempotent', () => {
     for (const s of ['F♯', 'B♭m7♭5', 'C𝄪', '']) expect(displayPc(s)).toBe(s);
+  });
+});
+
+describe('spokenPc', () => {
+  it('says sharps and flats, from either spelling', () => {
+    expect(spokenPc('F#')).toBe('F sharp');
+    expect(spokenPc('F♯')).toBe('F sharp');
+    expect(spokenPc('Bb')).toBe('B flat');
+    expect(spokenPc('C##')).toBe('C double sharp');
+    expect(spokenPc('E𝄫')).toBe('E double flat');
+  });
+
+  it('leaves naturals and anything else alone', () => {
+    expect(spokenPc('E')).toBe('E');
+    expect(spokenPc('Bm')).toBe('Bm');
+    expect(spokenPc('')).toBe('');
   });
 });

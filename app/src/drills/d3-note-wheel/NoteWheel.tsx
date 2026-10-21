@@ -1,6 +1,6 @@
 import type { GuideLevel } from '../../engine/model';
 import { chromaOf, chromaToPc, isNatural, type AccidentalPref } from '../../theory';
-import { displayPc } from '../../theory/pitch-display';
+import { displayPc, spokenPc } from '../../theory/pitch-display';
 import { HALF_STEP_PAIRS } from './logic';
 import styles from './NoteWheel.module.css';
 
@@ -57,7 +57,7 @@ export function NoteWheel({ guideLevel, pref, start, expected, given }: NoteWhee
       aria-label={
         named
           ? 'Note wheel: B–C and E–F are half steps; every other pair of neighbours in the musical alphabet is a whole step'
-          : `Note wheel: the 12 notes${start ? ` from ${displayPc(start)}` : ''}, with ½ marks where two neighbours in the musical alphabet are only a half step apart`
+          : `Note wheel: the 12 notes${start ? ` from ${spokenPc(start)}` : ''}, with ½ marks where two neighbours in the musical alphabet are only a half step apart`
       }
       data-testid="note-wheel"
       data-guide-level={guideLevel}

@@ -18,3 +18,25 @@ export function displayPc(name: string): string {
     .replace(/##/g, '𝄪')
     .replace(/#/g, '♯');
 }
+
+/**
+ * A pitch class as a screen reader should say it, which not every
+ * voice does for the glyphs: `F#` or `F♯` → `F sharp`, `Bb` → `B flat`,
+ * `C##` → `C double sharp`.
+ */
+export function spokenPc(name: string): string {
+  const m = /^([A-G])(##|𝄪|#|♯|bb|𝄫|b|♭)?(.*)$/u.exec(name);
+  if (!m) return name;
+  const [, letter, accidental = '', rest = ''] = m;
+  const said: Record<string, string> = {
+    '##': ' double sharp',
+    '𝄪': ' double sharp',
+    '#': ' sharp',
+    '♯': ' sharp',
+    bb: ' double flat',
+    '𝄫': ' double flat',
+    b: ' flat',
+    '♭': ' flat',
+  };
+  return `${letter}${said[accidental] ?? ''}${rest}`;
+}
