@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import * as audio from '../../../audio/audio';
 import { useAppStore } from '../../../app-store';
-import { SKILLS } from '../../../engine';
+import { SKILLS, deriveStatus, type SkillStatus } from '../../../engine';
 import { getProgression, getTuning, majorKey, minorKey } from '../../../theory';
 import {
   View,
@@ -152,40 +152,68 @@ describe('playerChart', () => {
 describe('playerQuizFocus', () => {
   const ids = (topic: string) => SKILLS.filter((s) => s.topic === topic).map((s) => s.id);
 
+  /** Every skill's status from `seeded`, derived in registry order as the runner does. */
+  function statusesFrom(seeded: Record<string, SkillStatus>): Map<string, SkillStatus> {
+    const out = new Map(Object.entries(seeded));
+    for (const s of SKILLS) out.set(s.id, deriveStatus(s, out, out.get(s.id)));
+    return out;
+  }
+
+  /** The notes, 3rds and the other intervals mastered: C4's sharp keys open. */
+  const BASE: Record<string, SkillStatus> = Object.fromEntries(
+    SKILLS.filter((s) => /^(F\d|C1|C2|C3)$/.test(s.topic)).map((s) => [s.id, 'mastered']),
+  );
+
   it('quizzes the C9 skill that teaches the progression once it is open', () => {
-    expect(playerQuizFocus('vi-IV-I-V', 0, new Set(['C9.pop']))).toEqual({ skillIds: ['C9.pop'] });
-    expect(playerQuizFocus('12-bar-blues', 0, new Set(['C9.blues']))).toEqual({
+    expect(playerQuizFocus('vi-IV-I-V', 0, statusesFrom({ 'C9.pop': 'practising' }))).toEqual({
+      skillIds: ['C9.pop'],
+    });
+    expect(playerQuizFocus('12-bar-blues', 0, statusesFrom({ 'C9.blues': 'practising' }))).toEqual({
       skillIds: ['C9.blues'],
     });
   });
 
   it('adds the capo skills with a capo on', () => {
-    const open = new Set(['C9.pop', ...ids('C10')]);
+    const open = statusesFrom(
+      Object.fromEntries(['C9.pop', ...ids('C10')].map((id) => [id, 'practising'])),
+    );
     expect(playerQuizFocus('I-IV-V', 2, open)).toEqual({ skillIds: ['C9.pop', ...ids('C10')] });
   });
 
-  it('walks the capo skills back on their own while the progression skill is open', () => {
-    // M10-02: walk-backs follow hard prerequisites only. C10's first stage
-    // has none (its keys and triads are soft), so a locked capo walks back to
-    // nothing and the quiz keeps to the progression.
-    const open = new Set(['C9.pop', 'C4.sharp-keys', 'C5.triads']);
-    expect(playerQuizFocus('I-V-vi-IV', 3, open)).toEqual({ skillIds: ['C9.pop'] });
-    // And an open capo skill doesn't hide the progression's walk-back.
-    expect(playerQuizFocus('ii-V-I', 3, new Set(['C10.capo-g-c-d', 'C5.triads']))).toEqual({
-      skillIds: ['C5.triads', 'C10.capo-g-c-d'],
+  it('walks a locked capo back to the gate it waits for, beside an open progression', () => {
+    // M10-02 (PM call): the walk follows unmet gates. C10's first stage is
+    // soft on the sharp keys, which are open but not yet practised.
+    const statuses = statusesFrom({
+      ...BASE,
+      'C4.sharp-key-degrees': 'practising',
+      'C5.triads': 'mastered',
+      'C8.numerals-major': 'practising',
     });
+    expect(statuses.get('C9.pop')).toBe('unlocked');
+    expect(statuses.get('C10.capo-g-c-d')).toBe('locked');
+    expect(playerQuizFocus('I-V-vi-IV', 3, statuses)).toEqual({
+      skillIds: ['C9.pop', 'C4.sharp-keys'],
+    });
+    // An open capo skill doesn't hide the progression's walk-back either.
+    const capoOpen = statusesFrom({ ...BASE, 'C4.sharp-keys': 'practising' });
+    expect(capoOpen.get('C10.capo-g-c-d')).toBe('locked');
+    expect(playerQuizFocus('I-V-vi-IV', 3, capoOpen)).toEqual({ skillIds: ['C5.triads'] });
   });
 
-  it('walks back to the nearest open prerequisite while the skill is locked', () => {
-    // C9.pop is hard on C5.triads (rule 7); C8's numerals are soft.
-    expect(playerQuizFocus('ii-V-I', 0, new Set(['C5.triads', 'C8.numerals-major']))).toEqual({
-      skillIds: ['C5.triads'],
+  it('walks back through soft gates still unmet while the skill is locked', () => {
+    // C9.pop waits only on C8's numerals practising (soft): offer them.
+    const statuses = statusesFrom({
+      ...BASE,
+      'C4.sharp-keys': 'practising',
+      'C4.sharp-key-degrees': 'practising',
+      'C5.triads': 'mastered',
     });
+    expect(playerQuizFocus('ii-V-I', 0, statuses)).toEqual({ skillIds: ['C8.numerals-major'] });
   });
 
   it('falls back to the progression skill when nothing on the way is open', () => {
     expect(playerQuizFocus('I-V-vi-IV', 0)).toEqual({ skillIds: ['C9.pop'] });
-    expect(playerQuizFocus('I-V-vi-IV', 0, new Set(), [])).toEqual({ skillIds: [] });
+    expect(playerQuizFocus('I-V-vi-IV', 0, new Map(), [])).toEqual({ skillIds: [] });
   });
 });
 

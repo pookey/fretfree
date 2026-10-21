@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SKILLS } from '../engine';
+import { SKILLS, type SkillStatus } from '../engine';
 import {
   FOCUS_PARAM,
   ITEM_PARAM,
@@ -90,6 +90,22 @@ describe('nearestOpenSkills', () => {
   it('walks back through prerequisites to the nearest open level', () => {
     expect(nearestOpenSkills(['c', 'd'], new Set(['a']), skills)).toEqual(['a']);
     expect(nearestOpenSkills(['c'], new Set(['a', 'b']), skills)).toEqual(['b']);
+  });
+
+  it('walks the gates still unmet, hard and soft, when given statuses (M10-02)', () => {
+    const gated = [skill('a'), skill('h'), { ...skill('t', ['h']), softPrerequisites: ['a'] }];
+    // `a` (soft) is open but not practised, `h` (hard) practising, not mastered.
+    const statuses = new Map<string, SkillStatus>([
+      ['a', 'unlocked'],
+      ['h', 'practising'],
+      ['t', 'locked'],
+    ]);
+    expect(nearestOpenSkills(['t'], new Set(['a', 'h']), gated, statuses)).toEqual(['h', 'a']);
+    // A gate already met is not offered: the soft one once practising.
+    statuses.set('a', 'practising');
+    expect(nearestOpenSkills(['t'], new Set(['a', 'h']), gated, statuses)).toEqual(['h']);
+    // Without statuses the walk keeps to hard prerequisites.
+    expect(nearestOpenSkills(['t'], new Set(['a']), gated)).toBeNull();
   });
 
   it('is null when nothing on the way is open, or no target is known', () => {

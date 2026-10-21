@@ -8,7 +8,13 @@ import {
   type FretMarker,
   type MarkerStyle,
 } from '../../../components/fretboard/Fretboard';
-import { SKILLS, progressionItemId, type Skill } from '../../../engine';
+import {
+  SKILLS,
+  isFrontier,
+  progressionItemId,
+  type Skill,
+  type SkillStatus,
+} from '../../../engine';
 import { focusHref, nearestOpenSkills, type SessionFocus } from '../../../session/focus';
 import {
   PROGRESSIONS,
@@ -37,7 +43,7 @@ import {
 } from '../../../theory';
 import { placements, templatesFor, type PlacedNote } from '../../../theory/voicings';
 import styles from '../../screens.module.css';
-import { Swatch, useFrontier } from './fretboard-explorer';
+import { Swatch, useSkillStatuses } from './fretboard-explorer';
 import css from './fretboard-explorer.module.css';
 import own from './progression-player.module.css';
 
@@ -245,24 +251,28 @@ export function chordMarkers(
 /**
  * "Quiz me on this" (design §7): the C9 skill that teaches this progression,
  * plus the C10 capo skills when a capo is on. Gating stays on (rule 7), so
- * until those are open the quiz offers the nearest open hard prerequisites
- * of each (triads for C9; C10's first stage has none, M10-02).
+ * until those are open the quiz walks back through the gates each still
+ * waits for (`statuses`, M10-02) and offers the nearest open ones: triads or
+ * C8's numerals for C9, the keys and triads for C10.
  */
 export function playerQuizFocus(
   progressionId: string,
   capo: number,
-  frontier: ReadonlySet<string> = new Set(),
+  statuses: ReadonlyMap<string, SkillStatus> = new Map(),
   skills: readonly Skill[] = SKILLS,
 ): Partial<SessionFocus> {
+  const frontier = new Set(
+    skills.filter((s) => isFrontier(statuses.get(s.id) ?? 'locked')).map((s) => s.id),
+  );
   const item = progressionItemId(progressionId, 'build');
   const c9 = skills
     .filter((s) => s.topic === 'C9' && s.items().some((i) => i.id === item))
     .map((s) => s.id);
   // Each part walks back on its own, so an open C9 skill can't hide C10's
   // prerequisites, nor an open C10 skill C9's.
-  const progression = nearestOpenSkills(c9, frontier, skills) ?? c9;
+  const progression = nearestOpenSkills(c9, frontier, skills, statuses) ?? c9;
   const c10 = skills.filter((s) => s.topic === 'C10').map((s) => s.id);
-  const capoPart = capo > 0 ? (nearestOpenSkills(c10, frontier, skills) ?? []) : [];
+  const capoPart = capo > 0 ? (nearestOpenSkills(c10, frontier, skills, statuses) ?? []) : [];
   return { skillIds: [...new Set([...progression, ...capoPart])] };
 }
 
@@ -289,8 +299,8 @@ export function View() {
   const [current, setCurrent] = useState<number | null>(null);
   const labelGroup = useId();
   const tempoId = useId();
-  const frontier = useFrontier();
-  const quizHref = focusHref(playerQuizFocus(progressionId, capo, frontier));
+  const statuses = useSkillStatuses();
+  const quizHref = focusHref(playerQuizFocus(progressionId, capo, statuses));
 
   const chart = useMemo(
     () => playerChart(progression, key, capo, tuning),

@@ -1,4 +1,4 @@
-import { parseItemId, type Item, type Skill } from '../engine';
+import { parseItemId, unmetGates, type Item, type Skill, type SkillStatus } from '../engine';
 
 /**
  * Focused sessions: "Practise this now" in Learn and "Quiz me on this" in
@@ -83,11 +83,17 @@ export function noteSkillIds(skills: readonly Skill[]): string[] {
  * Null when nothing on the way is open. Explore's "Quiz me on this" uses it
  * so a focus offers what the learner can practise now, with gating left on
  * (research/02 rule 7).
+ *
+ * Given the learner's `statuses`, the walk follows the gates each skill still
+ * waits for (`unmetGates`): a hard prerequisite not yet mastered, or a soft
+ * one not yet practising, which is exactly what to practise next (M10-02).
+ * Without them it follows the hard prerequisites.
  */
 export function nearestOpenSkills(
   targets: readonly string[],
   frontier: ReadonlySet<string>,
   skills: readonly Skill[],
+  statuses?: ReadonlyMap<string, SkillStatus>,
 ): string[] | null {
   const byId = new Map(skills.map((s) => [s.id, s]));
   let level = targets.filter((id) => byId.has(id));
@@ -95,7 +101,8 @@ export function nearestOpenSkills(
   while (level.length > 0) {
     const open = level.filter((id) => frontier.has(id));
     if (open.length > 0) return open;
-    level = [...new Set(level.flatMap((id) => byId.get(id)?.prerequisites ?? []))].filter(
+    const next = (skill: Skill) => (statuses ? unmetGates(skill, statuses) : skill.prerequisites);
+    level = [...new Set(level.flatMap((id) => next(byId.get(id) as Skill)))].filter(
       (id) => byId.has(id) && !seen.has(id),
     );
     for (const id of level) seen.add(id);

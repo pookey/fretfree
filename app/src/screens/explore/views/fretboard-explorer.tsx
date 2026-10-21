@@ -406,6 +406,34 @@ export function useFrontier(): ReadonlySet<string> {
   return frontier;
 }
 
+/**
+ * Every skill's status as the runner derives it, read from storage; empty
+ * until loaded. With the developer switch on, the overlay applies after
+ * derivation, as in `frontierSkillIds`.
+ */
+export function useSkillStatuses(): ReadonlyMap<string, SkillStatus> {
+  const [statuses, setStatuses] = useState<ReadonlyMap<string, SkillStatus>>(() => new Map());
+  const overlay = useOverlay();
+  useEffect(() => {
+    let live = true;
+    void getSkillStates(getDb()).then((states) => {
+      if (!live) return;
+      const derived = new Map([...states.values()].map((s) => [s.skillId, s.status]));
+      for (const skill of SKILLS)
+        derived.set(skill.id, deriveStatus(skill, derived, derived.get(skill.id)));
+      setStatuses(
+        overlay
+          ? new Map([...derived].map(([id, st]) => [id, overlayStatus(st, overlay)]))
+          : derived,
+      );
+    });
+    return () => {
+      live = false;
+    };
+  }, [overlay]);
+  return statuses;
+}
+
 export function View() {
   const { handedness, accidentalPref, tuning: tuningId } = useAppStore((s) => s.settings);
   const [rootChroma, setRootChroma] = useState(0);
