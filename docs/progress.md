@@ -2,6 +2,31 @@
 
 ## Current status
 
+**Sixth shift report (2026-10-20 16:15 → 2026-10-21 handover, PM session guitar-nosync-14). 119 work packages done, 23 shipped this shift. Every package in flight was drained to production before the handover. Production = origin/main = the handoff docs commit after `61738133`.** The next PM starts on **M10**, the learning-path fixes (see below and `docs/handoff/08-pm-handoff.md`).
+
+Shipped this shift:
+- **Sound and Tools (user priorities):**
+  - **M4-13:** sound on iPhone and iPad. The guitar voice is our own pluck renderer, with no AudioWorklet in the audio path, and audio unlocks inside the tap. Still to be confirmed on the user's real devices.
+  - **M8-01:** the timing engine (tap-to-click calibration, metronome core). **M8-20:** the metronome in Tools.
+- **Accounts and sync (M7):** **M7-02** the FretworkSync stack (Cognito, HTTP API with Lambda, DynamoDB) at `api.fretfree.app`; **M7-03** the sync API (push, pull, delete account); **M7-04** the sign-in UI.
+- **Drills and skills:** I1 triad inversions (**M6-03**, D18) and voice leading (**M6-04**, D19); I2 7th-chord arpeggios (**M6-05**); I4/I5 minor harmony and function (**M6-06**, d-function); I6 ear training (**M4-07**, D14 "Hear it → identify"; **M4-08**, D15 "Hear it → find it" with its own `I6.ear-find` skill); I7 major scale in five positions (**M6-07**, on the pentatonic-box drill); F4 rhythm (**M6-08**, D20); D21 visualise (**M6-09**); the progression player (**M4-09**); notation (**M8-02** staff, **M8-03** theory).
+- **Mic and quests:** **M5-07** mic quests and badges; **M5-08** the M5 QA walk (definition of done below).
+- **Contracts and platform:**
+  - **M1-43:** one file per item kind (`engine/items/`), which ended the `model.ts` conflicts between drills.
+  - **M1-44:** first-load JS in one chunk, with theory split per declaration at build time: 249.2 → 238.8 KB on main (budget 250). The bundle check fails if first load splits again.
+  - **M3-12:** the M3 QA. The e2e skill lists are now derived from the skill files (M6-06), so a new skill needs no hand edit in the e2e helpers.
+
+**M10, the learning-path fixes (filed 2026-10-20).** A review session audited FretFree as a learning product (`docs/review/`); every finding was re-checked against main (`docs/handoff/08-review-verification.md`) and filed as M10-01 to M10-17. M10-01 to M10-06 are `Priority: high`: soft prerequisites per skill, the songs on-ramp, session lanes, concept intros, and teaching on a miss in D1, D3, D5 and D39. **The user delegated every curriculum decision to the PM** (see "Decisions and deviations").
+
+Effective parallelism (556 samples): average 7.4 active workers, peak 11 (user-priority and unblocking WPs went over the ceiling), 13% of slots idle; the ceiling moved 6 → 8.
+
+Incidents:
+- **Stop the line, M7-02:** the first FretworkSync deploy failed one smoke check, a TLS name mismatch on `api.fretfree.app` while the new API custom domain propagated. A smoke re-run about 6 minutes later passed; nothing was reverted.
+- **First-load budget:** M6-06 measured 251.9 KB against 250, and three more drills followed. Rather than raise the budget, the PM filed M1-44 (high), which won back 11 KB.
+- **Batch verify failures (2):** two jsdom unit tests timed out under lane load (fixed in a51dd715), and a semantic clash between M4-07's tests and M4-08's new I6 skill (fixed in M4-08). The lane re-ran each batch one WP at a time, as designed.
+- **Flaky tests fixed between ships:** `m3-13.spec.ts:141`, `m3-05.spec.ts:241` (`test.slow()`), `m5-02.spec.ts:94` (one render quantum of slack), `m8-20.spec.ts:96` (15 s).
+- **Usage limit:** one pause, 17:46–18:40; every agent resumed by itself.
+
 **Pipeline changes (2026-10-20, between the fifth and sixth PM shifts).** The user found delivery had stalled: 8 Playwright runs were queued on 2 slots, the load average sat at 45–80 on 10 cores, and a single load timeout (`page.evaluate` at 30 s) failed a 5-WP lane batch, which then re-ran every WP one at a time. Measured from the lane log: the whole matrix is 988 test runs (303 tests × 3 iPad projects + 65 phone smoke), about 1,700 s of test time per iPad project, 25–35 min wall under that load; unit tests 431 s. Each WP ran the whole matrix up to three times (report, preflight, lane). The fixes:
 - **Only the lane runs the whole matrix.** `pnpm verify:quick` now has three levels: own specs (every project), `e2e:fast` (`ipad-landscape` + `iphone-smoke`, a third of the matrix) when the change reaches shared code or adds a drill, and `--full` on request. `--preflight` (after the post-review rebase) drops to own specs when `origin/main` hasn't moved since the worktree's last passing fast run.
 - **The lane retries a failed test once** (`PW_RETRIES`, default 1 under `FRETWORK_LANE=1`), and `integrate.sh` appends tests that passed on retry to `.orchestrator/flaky.log` with a `flaky` event, so flakes get fixed instead of costing batches.
