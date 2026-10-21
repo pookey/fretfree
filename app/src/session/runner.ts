@@ -32,7 +32,7 @@ import {
   type SkillStateRecord,
   type SkillStatus,
 } from '../engine';
-import type { CardKind, GamificationEvent } from '../engine/gamification';
+import { toLocalDate, type CardKind, type GamificationEvent } from '../engine/gamification';
 import { frontierLanes, orderFrontier } from '../engine/frontier';
 import { leadWithSound, startWithSoundSkills } from '../engine/start-with-sound';
 import { overlayStatus, type StatusOverlay } from '../engine/overlay';
@@ -76,7 +76,9 @@ import { focusFilter, type SessionFocus } from './focus';
  * stretch items.
  *
  * New items come from the frontier's lanes (`frontierLanes`), at most
- * `newItemCap` per session. Once the cap is reached and nothing is due, the
+ * `newItemCap` a day: new items an earlier session introduced today count
+ * toward it, placement-seeded cards don't (research/02 rule 11, no
+ * cramming). Once the cap is reached and nothing is due, the
  * session runs one spaced retrieval pass over its new items and then ends,
  * saying why: a session that ends this way meets the daily goal, which
  * rewards doing the plan, never grinding past it.
@@ -168,6 +170,24 @@ type Planner = (
   maxNew?: number,
 ) => SessionEntry[];
 
+/**
+ * New items introduced in a session earlier on the local date of `now`: cards
+ * created today with a session answer today and no placement probe today.
+ * Placement-seeded cards have no session answer, so they never count.
+ */
+async function newToday(db: FretworkDB, cards: readonly CardRecord[], now: Date): Promise<number> {
+  const today = toLocalDate(now);
+  const created = new Set(
+    cards.filter((c) => toLocalDate(c.createdAt) === today).map((c) => c.itemId),
+  );
+  if (created.size === 0) return 0;
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const logs = await db.reviewLogs.where('at').aboveOrEqual(midnight).toArray();
+  const placed = new Set(logs.filter(isPlacementLog).map((l) => l.itemId));
+  const answered = new Set(logs.filter((l) => !isPlacementLog(l)).map((l) => l.itemId));
+  return [...created].filter((id) => answered.has(id) && !placed.has(id)).length;
+}
+
 /** Unguided, non-placement answers in the adaptive window, oldest first. */
 async function recentAnswers(db: FretworkDB): Promise<boolean[]> {
   const logs = await db.reviewLogs.orderBy('at').reverse().limit(200).toArray();
@@ -237,6 +257,8 @@ export class SessionRunner {
     /** Skills on the frontier only through the overlay: their new items aren't stored. */
     private readonly sandbox: ReadonlySet<string>,
     recent: boolean[],
+    /** New items earlier sessions introduced today: they count toward the cap. */
+    private readonly newEarlier: number,
   ) {
     this.cards = new Map(cards.map((c) => [c.itemId, c]));
     this.storedAtStart = new Set(this.cards.keys());
@@ -246,7 +268,7 @@ export class SessionRunner {
     this.recent = recent;
     this.queue = [];
     this.adopt(
-      planner(this.startedAt, this.budgetMinutes, cards, new Set(), deps.maxItems, this.newCap),
+      planner(this.startedAt, this.budgetMinutes, cards, new Set(), deps.maxItems, this.newLeft),
     );
     this.targets = speedTargets(deps.settings.latencyBaselineMs);
     this.guides = new SessionGuides(this.targets);
@@ -312,6 +334,7 @@ export class SessionRunner {
             id: lane.id,
             share: lane.share,
             items: itemsOf(lane.skills),
+            ...(lane.group !== undefined ? { group: lane.group } : {}),
           }));
     const tuning = getTuning(deps.settings.tuning);
     const ctx = { tuning, accidentalPref: deps.settings.accidentalPref };
@@ -366,7 +389,10 @@ export class SessionRunner {
     // chunk, shows its load-failed message instead (`lazyParts`).
     await Promise.all(deps.drills.map((d) => d.logic.preload())).catch(() => undefined);
 
-    const recent = await recentAnswers(deps.db);
+    const [recent, newEarlier] = await Promise.all([
+      recentAnswers(deps.db),
+      newToday(deps.db, cards, now),
+    ]);
     const logId = await startSessionLog(deps.db, now);
     return new SessionRunner(
       deps,
@@ -378,6 +404,7 @@ export class SessionRunner {
       lastDrill,
       sandbox,
       recent,
+      newEarlier,
     );
   }
 
@@ -391,6 +418,16 @@ export class SessionRunner {
     const recent = this.recent.slice(-window);
     const accuracy = recent.length >= minAnswers ? rollingAccuracy(recent) : null;
     return newItemCap(this.budgetMinutes, accuracy);
+  }
+
+  /** New items still allowed today. */
+  private get newLeft(): number {
+    return Math.max(0, this.newCap - this.newEarlier - this.newItems.size);
+  }
+
+  /** Today's new-item cap is spent: no more new material until tomorrow. */
+  get capSpent(): boolean {
+    return !this.deps.reviewOnly && this.newLeft === 0 && this.newEarlier + this.newItems.size > 0;
   }
 
   private now(): Date {
@@ -632,12 +669,11 @@ export class SessionRunner {
     if (this.index >= this.queue.length && this.deps.maxItems === undefined) {
       const minutes = this.remainingMs / 60_000;
       const seen = new Set(this.queue.map((e) => e.itemId));
-      const left = Math.max(0, this.newCap - this.newItems.size);
-      const plan = this.planner(now, minutes, [...this.cards.values()], seen, undefined, left);
-      const capped = left === 0 && this.newItems.size > 0 && !this.deps.reviewOnly;
-      if (!capped || plan.some((e) => e.kind === 'review')) this.adopt(plan);
-      else if (!this.passQueued) {
-        // The cap is reached and nothing is due: recall today's new items once more, then stop.
+      const cards = [...this.cards.values()];
+      const plan = this.planner(now, minutes, cards, seen, undefined, this.newLeft);
+      if (!this.capSpent || plan.some((e) => e.kind === 'review')) this.adopt(plan);
+      else if (!this.passQueued && this.newItems.size > 0) {
+        // The cap is reached and nothing is due: recall this session's new items once more, then stop.
         this.passQueued = true;
         this.adopt(retrievalPass([...this.newItems].map((id) => this.itemOf(id))));
       } else this.enoughNew = true;

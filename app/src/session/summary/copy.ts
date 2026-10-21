@@ -46,11 +46,11 @@ export function personalBestText(pb: { medianMs: number; previousMs: number }): 
   return `Median answer ${formatSeconds(pb.medianMs)}, down from ${formatSeconds(pb.previousMs)}`;
 }
 
-/** Design §3.3 step 5 and research/02 rule 11: explain why spacing works. */
 /** A session that ended at its new-item cap says why (M10-03). */
 export const ENOUGH_NEW_COPY =
   "That's enough new material for today: it sticks better after a sleep.";
 
+/** Design §3.3 step 5 and research/02 rule 11: explain why spacing works. */
 export const SPACING_COPY =
   "Come back tomorrow. Spacing practice out feels harder than cramming, and that's exactly why it sticks: each recall after a gap makes the memory last longer.";
 

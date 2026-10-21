@@ -90,6 +90,36 @@ describe('the new-item cap', () => {
     expect(summary).toMatchObject({ enoughNew: false, goalMet: false });
   });
 
+  it('counts earlier sessions today toward the cap, but not the next day', async () => {
+    await playOut(await SessionRunner.start(deps())).then(() => undefined);
+    // A second session the same day has no new items left: nothing due, so it
+    // has nothing to plan and says why.
+    clock = new Date(clock.getTime() + 60 * 60_000);
+    const again = await SessionRunner.start(deps());
+    expect(again.capSpent).toBe(true);
+    const served = await playOut(again);
+    expect(served.some((c) => c.entry.kind === 'new')).toBe(false);
+
+    // Tomorrow the cap is fresh.
+    clock = new Date(clock.getTime() + 86_400_000);
+    const tomorrow = await SessionRunner.start(deps());
+    expect(tomorrow.capSpent).toBe(false);
+    const next = await playOut(tomorrow);
+    expect(next.some((c) => c.entry.kind === 'new')).toBe(true);
+  });
+
+  it('leaves placement-seeded cards out of the cap', async () => {
+    const scheduler = createScheduler({ enableFuzz: false });
+    // Placement seeded string 6's first few items this morning, with no session answer.
+    const seeded = string6.items().slice(0, 6);
+    await db.cards.bulkPut(seeded.map((i) => scheduler.seedKnownCard(i, clock)));
+    const r = await SessionRunner.start(deps());
+    expect(r.capSpent).toBe(false);
+    const served = await playOut(r);
+    const fresh = new Set(served.filter((c) => c.entry.kind === 'new').map((c) => c.entry.itemId));
+    expect(fresh.size).toBeGreaterThanOrEqual(newItemCap(5));
+  });
+
   it('serves a parallel track in a first session that focuses on it', async () => {
     const r = await SessionRunner.start(
       deps({ skills: [string6, pulse], focus: { skillIds: [pulse.id], itemIds: [] } }),

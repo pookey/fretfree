@@ -174,6 +174,66 @@ describe('<SessionScreen> with nothing to serve', () => {
   });
 });
 
+describe('<SessionScreen> with today’s new-item cap spent', () => {
+  beforeEach(async () => {
+    const db = getDb();
+    await Promise.all(db.tables.map((t) => t.clear()));
+    const now = Date.now();
+    const string6 = SKILLS.find((s) => s.id === 'F2.string6-naturals')!;
+    // Eight items introduced in a session earlier today, already stable and not due.
+    const today = string6.items().slice(0, 8);
+    await db.cards.bulkPut(
+      today.map((i) => ({
+        itemId: i.id,
+        skillId: i.skillId,
+        fsrs: {
+          due: new Date(now + 30 * DAY),
+          stability: 30,
+          difficulty: 5,
+          elapsed_days: 0,
+          scheduled_days: 30,
+          learning_steps: 0,
+          reps: 4,
+          lapses: 0,
+          state: 2,
+          last_review: new Date(now - 60_000),
+        },
+        createdAt: new Date(now - 120_000),
+        lastReviewedAt: new Date(now - 60_000),
+      })),
+    );
+    await db.reviewLogs.bulkAdd(
+      today.map((i) => ({
+        itemId: i.id,
+        skillId: i.skillId,
+        drillType: 'name-the-note',
+        correct: true,
+        responseMs: 900,
+        rating: 3,
+        hintUsed: true,
+        answerGiven: 'E',
+        at: new Date(now - 60_000),
+      })),
+    );
+    await db.skillStates.bulkPut(
+      SKILLS.map((s) => ({
+        skillId: s.id,
+        status: s.id === string6.id ? ('practising' as const) : ('mastered' as const),
+        guideLevel: 0 as const,
+        rollingAccuracy: 1,
+      })),
+    );
+    useAppStore.setState({ loaded: true });
+  });
+
+  it('says it is enough new material for today, not that nothing is left', async () => {
+    renderSession();
+    expect(await screen.findByTestId('session-empty-enough-new')).toHaveTextContent(
+      "That's enough new material for today: it sticks better after a sleep.",
+    );
+  });
+});
+
 describe('<SessionScreen> context panel (M3-11)', () => {
   beforeEach(async () => {
     await seedOneReview();

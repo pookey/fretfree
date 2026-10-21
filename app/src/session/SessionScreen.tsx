@@ -22,6 +22,7 @@ import { refitIfDue } from './refit-bridge';
 import { SessionRunner, type CurrentPrompt } from './runner';
 import type { Celebration } from './summary/celebrations';
 import { ComboCounter } from './summary/ComboCounter';
+import { ENOUGH_NEW_COPY } from './summary/copy';
 import { SessionSummary } from './summary/SessionSummary';
 import { CelebrationTracker } from './summary/tracker';
 import { TimeLeft } from './TimeLeft';
@@ -34,7 +35,7 @@ const useOverlay: () => StatusOverlay | null = import.meta.env.DEV ? useStatusOv
 type Phase =
   | { kind: 'loading' }
   // Nothing to serve: say so rather than finish a session with no answers.
-  | { kind: 'empty' }
+  | { kind: 'empty'; enoughNew: boolean }
   // A new skill's concept intro, before its first worked rep (M10-04).
   | { kind: 'intro'; current: CurrentPrompt; intro: ConceptIntro; Card: FC<ConceptCardProps> }
   | { kind: 'prompt'; current: CurrentPrompt }
@@ -134,7 +135,7 @@ export function SessionScreen() {
       CelebrationTracker.begin({ db, skills: SKILLS }),
     ]).then(([sessionIntros, runner, tracker]) => {
       if (!live) return;
-      if (runner.isEmpty) return setPhase({ kind: 'empty' });
+      if (runner.isEmpty) return setPhase({ kind: 'empty', enoughNew: runner.capSpent });
       intros.current = sessionIntros;
       runnerRef.current = runner;
       trackerRef.current = tracker;
@@ -211,7 +212,7 @@ export function SessionScreen() {
   if (phase.kind === 'summary') {
     return <SessionSummary celebration={phase.celebration} enoughNew={phase.enoughNew} />;
   }
-  if (phase.kind === 'empty') return <EmptySession />;
+  if (phase.kind === 'empty') return <EmptySession enoughNew={phase.enoughNew} />;
 
   const current = phase.kind === 'loading' ? null : phase.current;
   const feedback = phase.kind === 'feedback' ? phase.feedback : null;
@@ -379,15 +380,22 @@ function AlphabetPanel({ guideLevel }: { guideLevel: GuideLevel }) {
  * No item is due or new in what was asked for. Nothing is recorded: an empty
  * session earns no XP and extends no streak.
  */
-function EmptySession() {
+/** `enoughNew`: today's new-item cap is spent and nothing is due, so it says why. */
+function EmptySession({ enoughNew }: { enoughNew: boolean }) {
   return (
     <main className={styles.screen}>
       <div className={styles.empty} data-testid="session-empty">
         <h1>Nothing to practise right now</h1>
-        <p>
-          Nothing here is due for review or new to learn. Come back later, or pick another skill on
-          Learn.
-        </p>
+        {enoughNew ? (
+          <p data-testid="session-empty-enough-new">
+            {ENOUGH_NEW_COPY} Nothing is due yet, so come back tomorrow.
+          </p>
+        ) : (
+          <p>
+            Nothing here is due for review or new to learn. Come back later, or pick another skill
+            on Learn.
+          </p>
+        )}
         <Link to="/" className={styles.primary}>
           Done
         </Link>
