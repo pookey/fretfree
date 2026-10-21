@@ -18,6 +18,7 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { D6_SCOPES, conceptFor, tapRef, type D6Scope } from './meta';
 
@@ -238,10 +239,13 @@ export function d6IntervalName(interval: IntervalName): string {
   return intervalInfo(interval).long;
 }
 
-/** The degree a cell is above the root, as the neck labels it: `R`, `3`, `b7`. */
+/**
+ * The degree a cell is above the root, as the neck labels it: `R`, `3`, `♭7`.
+ * The theory's degree IDs stay ASCII (`b7`); the learner reads the glyph.
+ */
 export function d6DegreeAt(prompt: D6Prompt, pos: Position): string {
   const iv = intervalFromRoot(prompt.root, pos, prompt.tuning);
-  return iv === 'P1' || iv === 'P8' ? 'R' : intervalInfo(iv).degree;
+  return iv === 'P1' || iv === 'P8' ? 'R' : displayPc(intervalInfo(iv).degree);
 }
 
 function frets(n: number): string {

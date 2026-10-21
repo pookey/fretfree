@@ -153,6 +153,16 @@ describe('<D6View>', () => {
     expect(onAnswer).not.toHaveBeenCalled();
   });
 
+  it('labels flat degrees with ♭', () => {
+    const p = prompt('interval:m7@s6→s4');
+    // A minor 3rd above the root: string 5 is a 4th up, so 2 frets back.
+    const m3 = { string: 5, fret: p.root.fret - 2 };
+    view(p, { feedback: fb(p, m3) });
+    expect(markers('correct')).toContainEqual({ ...p.shapeTarget, text: '♭7' });
+    expect(markers('wrong')).toEqual([{ ...m3, text: '♭3' }]);
+    expect(screen.getByTestId('d6-explain')).toHaveTextContent('You tapped the ♭3 (minor 3rd).');
+  });
+
   it('names a forgotten G–B shift', () => {
     const p = prompt('interval:M3@s3→s2');
     view(p, { feedback: fb(p, { string: 2, fret: 4 }) });

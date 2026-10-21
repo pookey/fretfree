@@ -295,7 +295,7 @@ describe('sounds and feedback', () => {
 
   it('labels cells by degree from the root', () => {
     const p = prompt('interval:m7@s6→s4', 0, atFret(5));
-    expect(d6DegreeAt(p, p.shapeTarget)).toBe('b7');
+    expect(d6DegreeAt(p, p.shapeTarget)).toBe('♭7');
     expect(d6DegreeAt(p, p.root)).toBe('R');
     expect(d6DegreeAt(p, { string: 4, fret: 7 })).toBe('R');
     expect(d6DegreeAt(p, { string: 5, fret: 7 })).toBe('5');
@@ -356,6 +356,9 @@ describe('wording', () => {
       'You tapped the 4 (perfect 4th). The major 3rd shape: string 5, 1 fret toward the nut.',
     );
     expect(d6Explain(p, fb(p, p.root))).toMatch(/^You tapped the root\. /);
+    expect(d6Explain(p, fb(p, { string: 5, fret: 3 }))).toBe(
+      'You tapped the ♭3 (minor 3rd). The major 3rd shape: string 5, 1 fret toward the nut.',
+    );
 
     const s = prompt('interval:M3@s3→s2', 0, atFret(5));
     expect(d6Explain(s, fb(s, s.shapeTarget))).toBe(
