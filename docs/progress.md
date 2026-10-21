@@ -5,6 +5,7 @@
 **Sixth shift report (2026-10-20 16:15 → 2026-10-21 handover, PM session guitar-nosync-14). 119 work packages done, 23 shipped this shift. Every package in flight was drained to production before the handover. Production = origin/main = the handoff docs commit after `61738133`.** The next PM starts on **M10**, the learning-path fixes (see below and `docs/handoff/08-pm-handoff.md`).
 
 Shipped this shift:
+
 - **Sound and Tools (user priorities):**
   - **M4-13:** sound on iPhone and iPad. The guitar voice is our own pluck renderer, with no AudioWorklet in the audio path, and audio unlocks inside the tap. Still to be confirmed on the user's real devices.
   - **M8-01:** the timing engine (tap-to-click calibration, metronome core). **M8-20:** the metronome in Tools.
@@ -21,6 +22,7 @@ Shipped this shift:
 Effective parallelism (556 samples): average 7.4 active workers, peak 11 (user-priority and unblocking WPs went over the ceiling), 13% of slots idle; the ceiling moved 6 → 8.
 
 Incidents:
+
 - **Stop the line, M7-02:** the first FretworkSync deploy failed one smoke check, a TLS name mismatch on `api.fretfree.app` while the new API custom domain propagated. A smoke re-run about 6 minutes later passed; nothing was reverted.
 - **First-load budget:** M6-06 measured 251.9 KB against 250, and three more drills followed. Rather than raise the budget, the PM filed M1-44 (high), which won back 11 KB.
 - **Batch verify failures (2):** two jsdom unit tests timed out under lane load (fixed in a51dd715), and a semantic clash between M4-07's tests and M4-08's new I6 skill (fixed in M4-08). The lane re-ran each batch one WP at a time, as designed.
@@ -28,6 +30,7 @@ Incidents:
 - **Usage limit:** one pause, 17:46–18:40; every agent resumed by itself.
 
 **Pipeline changes (2026-10-20, between the fifth and sixth PM shifts).** The user found delivery had stalled: 8 Playwright runs were queued on 2 slots, the load average sat at 45–80 on 10 cores, and a single load timeout (`page.evaluate` at 30 s) failed a 5-WP lane batch, which then re-ran every WP one at a time. Measured from the lane log: the whole matrix is 988 test runs (303 tests × 3 iPad projects + 65 phone smoke), about 1,700 s of test time per iPad project, 25–35 min wall under that load; unit tests 431 s. Each WP ran the whole matrix up to three times (report, preflight, lane). The fixes:
+
 - **Only the lane runs the whole matrix.** `pnpm verify:quick` now has three levels: own specs (every project), `e2e:fast` (`ipad-landscape` + `iphone-smoke`, a third of the matrix) when the change reaches shared code or adds a drill, and `--full` on request. `--preflight` (after the post-review rebase) drops to own specs when `origin/main` hasn't moved since the worktree's last passing fast run.
 - **The lane retries a failed test once** (`PW_RETRIES`, default 1 under `FRETWORK_LANE=1`), and `integrate.sh` appends tests that passed on retry to `.orchestrator/flaky.log` with a `flaky` event, so flakes get fixed instead of costing batches.
 - **Unit tests run in node unless they need the DOM.** Vitest now has two projects: `.test.tsx` files get jsdom, `.test.ts` files run in node, and a `.ts` test that needs the DOM starts with `// @vitest-environment jsdom` (six did). Starting jsdom was 43% of a run; measured in the same worktree at 3 workers under the same load, `vitest run --coverage` went from 592 s to 194 s.
@@ -36,6 +39,7 @@ Incidents:
 **Fourth shift report (2026-10-19 07:55 → 2026-10-20 handover, PM session guitar-nosync-45). 96 work packages done, 19 shipped this shift. Every package in flight was drained to production before the handover. Production at https://fretfree.app is healthy: smoke passed after every ship.**
 
 Shipped this shift:
+
 - **Tools and the tuner (user priority):**
   - **M4-12:** a Tools section (sixth nav section, auto-registered tools).
   - **M5-02:** the AudioWorklet pitch detector.
@@ -61,6 +65,7 @@ Shipped this shift:
 - **M1-42:** drill logic out of first-load JS. First-load fell from 261.3 to 233.5 KB, and the budget is back to 250 KB (it was raised to 280 temporarily; see Decisions).
 
 **Pipeline changes this shift** (the user said rebasing and testing had slowed development to a crawl):
+
 - **Test load is gated by machine-wide slots** (`scripts/cpu-slot.sh`, `e2e-slot.sh`, `slot-lib.sh`). The lane gets priority. The agent count no longer follows load1.
 - **Workers run `pnpm verify:quick`.** It runs the static gates plus their own specs, or the full suite when shared code changes.
 - **The lane ships batches**, one verify per batch, and bisects on failure. Its verify is the only full verify.
@@ -69,6 +74,7 @@ Shipped this shift:
 - **An experimental remote test runner** (`scripts/remote-run.sh`, user-provided box, unprivileged `ipc-freefret` account) is built but **off**: Playwright's WebKit crashes there under load. See `docs/handoff/06-pm-handoff.md`.
 
 **Incidents:**
+
 - **M1-41's first lane run** failed on timeouts caused by a reserved third e2e slot (since removed).
 - **Flakes:** M5-06 (M2-14 on portrait) and M5-04 (M4-06's console-error check on iPad mini) failed in the lane, then passed 3/3 and 5/5 at the merge SHA, and were re-queued.
 - **M4-02 hit the first-load budget** (250.5 KB). See Decisions.
@@ -79,6 +85,7 @@ Shipped this shift:
 **Third shift, overnight report (2026-10-19, 04:10). 69 work packages live. 10 shipped since the 23:40 report. Production at https://fretfree.app is healthy: smoke passed after every ship.**
 
 Shipped overnight:
+
 - **User feedback:**
   - **M2-15:** retake the placement test from Settings. A retake uses the learner's refit FSRS weights and never lowers an existing card (deviation recorded below).
   - **M2-16:** "Already know this? Test out" on a locked module. Weak existing cards are probed first and must be fluent; "Test out again" retries what's left (deviation recorded below).
@@ -95,6 +102,7 @@ Shipped overnight:
 In flight: M2-21 (every drill's help panel on `contextPanel`; in the lane), M3-08 (CAGED visualiser), M3-06 (D10).
 
 **New work filed overnight:**
+
 - **M3-16 (high priority):** lazy-load Explore views. First-load JS is about 245 KB of the 250 KB budget. M3-09 now waits for it.
 - **M3-17:** chord tones in stages (root → 3rd → 5th → 7th), matching the original chord-lesson request.
 - **M2-22:** D5 at its widest scope on iPad mini.
@@ -103,12 +111,14 @@ In flight: M2-21 (every drill's help panel on `contextPanel`; in the lane), M3-0
 **Parallelism (301 samples, 23:40–04:10):** average 3.6 in flight, peak 5. The ceiling ran 1–4, held down by load from concurrent verifies.
 
 **Incidents:** no stop-the-line events and no usage-limit pauses. Two lane verify failures, neither caused by the WP being shipped:
+
 - **M2-19:** M2-03's D4 spec waited 5 s for a prompt under load. The spec now opens a session focused on the seeded item and waits for it to start.
-- **M2-16:** an M2-09 assertion expected one probe per *drill*, which random drill choice breaks about once in a thousand runs; it now asserts coverage per *topic*. Also a session-start race in M1-30's spec.
+- **M2-16:** an M2-09 assertion expected one probe per _drill_, which random drill choice breaks about once in a thousand runs; it now asserts coverage per _topic_. Also a session-start race in M1-30's spec.
 
 The session-start race (a spec stepping the fake clock before the runner has started) also hit M1-24. It is now fixed once in the shared `focusSession` helper, which waits for "Preparing your session…" to clear.
 
 **Process fixes:**
+
 - **Branch base:** `spawn.sh` cut new branches from local `main`, which the lane temporarily fast-forwards to a WP's unshipped commits. Two branches inherited M2-16's old commits, including its backlog done-marker. The reviewer caught it, both were rebased, and branches now come from `origin/main`.
 - **Retake and test-out deviations:** recorded below under "Decisions and deviations".
 
@@ -117,6 +127,7 @@ The session-start race (a spec stepping the fake clock before the runner has sta
 **Third shift, second report (2026-10-18, 23:40). 59 work packages live. 10 shipped since the 20:15 report. Production at https://fretfree.app is healthy: smoke passed after every ship.**
 
 Shipped since 20:15:
+
 - **User feedback:**
   - **M1-34:** Learn rings show learning and stable separately. The centre number is always captioned.
   - **M1-35:** the session summary shows learning and stable, keeps "come back tomorrow" primary, and scopes the review forecast to today's items.
@@ -146,7 +157,7 @@ Shipped since 20:15:
 
 Shipped this shift: M2-09 (placement test), **M1-28** (hotfix, user-reported: feedback and Continue always on screen), M3-02 (C4 key spelling + D7 "Spell it"), **M1-29** (user request: "Add to Home Screen" onboarding step and Today card), M3-03 (C5 chord-construction skills), M3-07 (chord-diagram component), M1-24 (**M1 milestone QA**: a first-week e2e on a mocked clock, a streak-repair e2e, and a 96-shot screenshot pass on production; the M1 definition of done is checked off below) and M3-05 (C6 CAGED skills + D9 "Build the shape at a root"). From the infra session: **guitar.dwellsee.com retired** (alias, certificate SAN and records removed; the certificate was replaced), Settings as its own `/settings` page, and a new `/privacy` page.
 
-In flight: **M1-34** (user feedback: after a full first day every Learn ring read 0%, because the ring counts only items stable for 7+ days). It is approved and in pre-flight. PM decision from its review: the ring's centre shows the *learning* share with a visible "learning" caption, switching to the stable share once anything is stable, so a glance never reads learning as done.
+In flight: **M1-34** (user feedback: after a full first day every Learn ring read 0%, because the ring counts only items stable for 7+ days). It is approved and in pre-flight. PM decision from its review: the ring's centre shows the _learning_ share with a visible "learning" caption, switching to the stable share once anything is stable, so a glance never reads learning as done.
 
 **New work filed this shift:** M1-30 to M1-33 from the M1 QA: a visible streak-repair card, fretboard contrast (light-theme inactive frets and SVG nut labels, which axe doesn't check), the iPad-portrait mastery map clipping fret 12, and the summary's Done below the fold on phones held sideways. From user feedback (filed by another session): M1-34 to M1-36 and M2-15/16 (learning vs stable progress, retaking the placement test, testing out of a locked module, and a dev-only unlock).
 
@@ -181,10 +192,12 @@ Shipped this shift: M2-02 (C1 octave skills), M2-04 (C3 interval-shape skills, w
 In flight: M2-03 (D4 octave finder), M2-05 (D5 name the interval), M2-06 (D6 tap the interval).
 
 **From user feedback (2026-10-18, second shift):**
+
 - **M1-27 (live):** "why 'letter' rather than 'note'?" and "clicking the fretboard should be the same as pressing the letters". F1 prompts now read "The note before C in the musical alphabet?". D3's neck is an answer surface with the same grading path as the buttons.
 - **Chord lessons logged (M3-04 widened, M3-13 to M3-15):** finding the root first, then the 3rd, 5th and 7th, in both directions (D8). Also D36 "What chord is this?", D37 chord tones across the neck (multi-target; "highlight all notes in a C chord"), and D38 "Build the chord". Explore v2 and the C4–C6 worked examples gain matching hooks.
 
 **Process changes:**
+
 - `engine/config.ts` is split into `engine/config/<area>.ts`, auto-collected with `EngineConfig` declaration merging. Workers add an area file instead of appending to a hub.
 - The shared e2e files (`helpers.ts`, `d1-session.spec.ts`, `smoke.spec.ts`) are orchestrator-owned. New helpers go in `e2e/helpers/<topic>.ts`. M2-11 owns the shared specs and will pin them to a skill with `focusSession`.
 - A new `queued` worker status counts as in flight. Without it, `refill.sh` re-planned M9-01 while it waited in the lane and tried to spawn a second worker into its worktree (the agent never started; the pane was closed).
@@ -193,6 +206,7 @@ In flight: M2-03 (D4 octave finder), M2-05 (D5 name the interval), M2-06 (D6 tap
 **Parallelism (107 samples since 12:43):** average 5.5 active workers, peak 7, idle-slot share 0.28. The ceiling ran 2 → 7 → 4. Load from concurrent worktree verifies (load1 35–57, up to 85 Playwright processes) kept `health.sh` stepping it down.
 
 **Incidents:** no stop-the-line events and no usage-limit pauses.
+
 - Two verify failures in the lane were load timeouts in healthy tests (M1-17: heatmap `waitFor`; M1-20: arpeggios, LearnScreen, WorkedExample). `main` was reset each time and nothing broken shipped. Fixed by the timeout change above.
 - Two rebase conflicts (M1-20 in D1View/D3View, M1-17 in `runner.ts`) came after M1-15 and M1-27 landed. Both workers resolved them.
 - One reviewer brief was lost under load (M1-22) and was re-sent.
@@ -205,20 +219,21 @@ In flight: M2-03 (D4 octave finder), M2-05 (D5 name the interval), M2-06 (D6 tap
 
 Shipped by the builder (each through worker, then fresh reviewer, then the integration lane, then `pnpm ship`, then push):
 
-| Milestone | Live |
-|---|---|
-| M1 | M1-03 (F1/F3 skills, bidirectional F2/C2), M1-04 (D2 find the note), M1-05 (D3 note wheel), M1-06 (onboarding shell), M1-07 (latency calibration), M1-08 (XP engine), M1-09, M1-10 (session ↔ gamification bridge), M1-11, M1-12 (session celebrations), M1-13, M1-14 (Progress heatmap), M1-16 (Learn screen), M1-19 (PWA, offline, bundle budget, Lighthouse gate), **M1-25 (hotfix: recall prompts showed their answer)**, **M1-26 (reading question: "can read" / "want to learn")** |
-| M2 | M2-01 (interval and octave theory) |
-| M3 | M3-01 (chord and scale theory) |
-| M4 | M4-01 (harmony theory) |
-| M5 | M5-01 (mic pitch-source contract) |
-| M6 | M6-01 (intermediate contract) |
+| Milestone | Live                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1        | M1-03 (F1/F3 skills, bidirectional F2/C2), M1-04 (D2 find the note), M1-05 (D3 note wheel), M1-06 (onboarding shell), M1-07 (latency calibration), M1-08 (XP engine), M1-09, M1-10 (session ↔ gamification bridge), M1-11, M1-12 (session celebrations), M1-13, M1-14 (Progress heatmap), M1-16 (Learn screen), M1-19 (PWA, offline, bundle budget, Lighthouse gate), **M1-25 (hotfix: recall prompts showed their answer)**, **M1-26 (reading question: "can read" / "want to learn")** |
+| M2        | M2-01 (interval and octave theory)                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| M3        | M3-01 (chord and scale theory)                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| M4        | M4-01 (harmony theory)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| M5        | M5-01 (mic pitch-source contract)                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| M6        | M6-01 (intermediate contract)                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 In flight: none. All work in progress was drained before the handoff.
 
 **Production:** healthy. `scripts/smoke.sh` passes after every ship. The M1-25 and M1-26 specs were also run against production on iPad landscape and pass.
 
 **From user feedback (2026-10-18):**
+
 - **M1-25 (hotfix, live):** at guide level 3, which new learners start at, `<Fretboard>` labelled the queried cell, so "Name the highlighted note" showed the answer. Now a `target` marker is only labelled through `forceLabel` (worked example, feedback). The nut's string name is also hidden for fret-0 and fret-12 targets.
 - **M1-26 (live):** onboarding asks "What can you already read?" and "What would you like to learn to read?" (tab and/or standard, both multi-select). `Settings.notation` became `reading.{reads,learn}.{tab,staff}`, and legacy values are mapped on read.
 - **New milestone M9 (tab reading):** the user chose to back "learn to read tab" with a real track: a tab model and component, D33 (tab to neck), D34 (neck to tab), D35 (read a phrase), frontier promotion and QA. It's in normal priority order, ahead of the deferred M8.
@@ -253,30 +268,32 @@ What exists:
 **M1 is done.** Design §11: "A real learner can do daily sessions on iPad (landscape and portrait), offline, as an installed PWA. The iPhone smoke flow passes." Every M1 package is live, M1-29 (Add to Home Screen) included. The final pass ran on `origin/main` at 57c946d. Production served the same bundle.
 
 The evidence is `app/e2e/m1-24.spec.ts`. It runs on all four Playwright profiles, both locally in `pnpm verify` and against https://fretfree.app (`E2E_BASE_URL=https://fretfree.app ../scripts/e2e-slot.sh playwright test e2e/m1-24.spec.ts`). It covers:
+
 - **The first week**, on a mocked clock (Europe/London, starting Wednesday). Onboarding with a 5-minute goal, then sessions on three days in a row: the streak reaches 3, and the heatmap fills in each answered cell. On Thursday, Today's 2-minute warm-up reviews every due card, and the due count drops to 0. Answers are graded on real (quick) response times, so recall rates Good or Easy. On Friday, Settings switches to a 10-minute goal with the weekend amulet on. Monday opens with the streak still at 3 and no freeze held, and its 10-minute session takes the streak to 4.
 - **Streak repair.** A missed weekday breaks a 2-day streak, and a double session the next day restores it to 3. Until now repair was only unit-tested.
 - **A screen walk.** Every M1 screen (onboarding, Today before and after practice, a session prompt, the summary, Learn, Explore, Progress, Settings, About and Privacy) is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep @screens`, it also saves each screen in dark and light. This is on demand, not part of `pnpm verify`. The command is in the spec header.
 
-| §11 scope or criterion | Status | Evidence |
-|---|---|---|
-| Onboarding: handedness, goals, daily goal, latency calibration | ✅ | `m1-06`, `m1-07`, `m1-26`, `m1-24` |
-| F1, F2 and C2 through D1, D2 and D3 | ✅ | `d1-session`, `m1-04`, `m1-05`, `m1-27` |
-| F3 (fret markers, the 12th-fret repeat) | ❌ | Corrected 2026-10-18: no drill served F3, so its lessons opened to an empty "Session complete". Fixed by M1-37 (D39). |
-| Full session loop (multi-drill, learning steps, time budget) | ✅ | `m1-17`, `m1-24` |
-| Today (hero, quests, quick drills) | ✅ | `m1-11`, `m1-18`, `m2-10` |
-| Progress heatmap | ✅ | `m1-14`, `m1-24` (fills in from real sessions) |
-| Guide fading and blind mode | ✅ | `m1-15`, `m1-25` |
-| Daily goal and XP | ✅ | `m1-10`, `m1-24` |
-| Streak, freezes, weekend amulet, repair | ✅ | `m1-10` (freezes), `m1-24` (amulet, repair) |
-| Session celebrations and first achievements | ✅ | `m1-12`, `m1-13` |
-| Daily sessions on iPad landscape and portrait | ✅ | `m1-24` first week on `ipad-landscape`, `ipad-portrait` and `ipad-mini-landscape`, locally and on production |
-| Offline | ✅ | `m1-19` (a full session offline; every section reopens offline) |
-| Installed PWA | ✅ | the `pnpm lighthouse` installability, manifest and offline checks (all screens at 100 for accessibility, both themes); `m1-19` (install hint, standalone mode); M1-29 (an Add to Home Screen onboarding step and Today card) |
-| iPhone smoke flow | ✅ | the `iphone-smoke` project (every `@smoke` spec, including the `m1-24` first week), locally and on production |
+| §11 scope or criterion                                         | Status | Evidence                                                                                                                                                                                                                     |
+| -------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Onboarding: handedness, goals, daily goal, latency calibration | ✅     | `m1-06`, `m1-07`, `m1-26`, `m1-24`                                                                                                                                                                                           |
+| F1, F2 and C2 through D1, D2 and D3                            | ✅     | `d1-session`, `m1-04`, `m1-05`, `m1-27`                                                                                                                                                                                      |
+| F3 (fret markers, the 12th-fret repeat)                        | ❌     | Corrected 2026-10-18: no drill served F3, so its lessons opened to an empty "Session complete". Fixed by M1-37 (D39).                                                                                                        |
+| Full session loop (multi-drill, learning steps, time budget)   | ✅     | `m1-17`, `m1-24`                                                                                                                                                                                                             |
+| Today (hero, quests, quick drills)                             | ✅     | `m1-11`, `m1-18`, `m2-10`                                                                                                                                                                                                    |
+| Progress heatmap                                               | ✅     | `m1-14`, `m1-24` (fills in from real sessions)                                                                                                                                                                               |
+| Guide fading and blind mode                                    | ✅     | `m1-15`, `m1-25`                                                                                                                                                                                                             |
+| Daily goal and XP                                              | ✅     | `m1-10`, `m1-24`                                                                                                                                                                                                             |
+| Streak, freezes, weekend amulet, repair                        | ✅     | `m1-10` (freezes), `m1-24` (amulet, repair)                                                                                                                                                                                  |
+| Session celebrations and first achievements                    | ✅     | `m1-12`, `m1-13`                                                                                                                                                                                                             |
+| Daily sessions on iPad landscape and portrait                  | ✅     | `m1-24` first week on `ipad-landscape`, `ipad-portrait` and `ipad-mini-landscape`, locally and on production                                                                                                                 |
+| Offline                                                        | ✅     | `m1-19` (a full session offline; every section reopens offline)                                                                                                                                                              |
+| Installed PWA                                                  | ✅     | the `pnpm lighthouse` installability, manifest and offline checks (all screens at 100 for accessibility, both themes); `m1-19` (install hint, standalone mode); M1-29 (an Add to Home Screen onboarding step and Today card) |
+| iPhone smoke flow                                              | ✅     | the `iphone-smoke` project (every `@smoke` spec, including the `m1-24` first week), locally and on production                                                                                                                |
 
 **Not verified:** installing on a physical iPad. The gate uses Chrome's installability check plus emulated WebKit. The design says reminders ship with sync (M7), so they aren't part of M1.
 
 **Screenshot findings** (production, all four profiles). None of these blocks M1:
+
 1. **Streak repair is invisible.** It works, but Today never says a double session would restore a broken streak, so learners can't know to try. Design §3.7 presents repair as something the learner does.
 2. **Light theme, session neck:** the inactive frets (13–15 at regular-wide) get a pale grey wash, where the dark theme darkens them, so they read as highlighted rather than dimmed.
 3. **The nut's string names** (E B G D A E) have low contrast on the wood in both themes, and are nearly invisible in light. Lighthouse passes because the neck is SVG.
@@ -290,27 +307,29 @@ The evidence is `app/e2e/m1-24.spec.ts`. It runs on all four Playwright profiles
 **M2 is done for its §11 scope.** Design §11 gives M2 no separate definition of done, so this checks its scope: "C1, C3 via D4–D6, G–B shift content, confusable pairing, placement test". Every package M2-01 to M2-13 is live. The final pass ran on `origin/main` at e166173, and production served the same bundle (`index-PSh1y10I.js`). M1-37 (D39 fret landmarks and the empty-lesson guard) and M1-34/35 (learning vs stable) landed earlier today, so a fresh learner's first sessions now include F3 before C1 and C3 open.
 
 The evidence is `app/e2e/m2-14.spec.ts`. It runs on all four Playwright profiles, both locally in `pnpm verify` and against https://fretfree.app (`E2E_BASE_URL=https://fretfree.app pnpm e2e:only e2e/m2-14.spec.ts`, run from `app/`; 11 of 11 passed). It covers:
+
 - **A cross-drill session.** Seven due reviews (single octaves with and without the G–B shift, "tap every G", D5 names and D6 taps) run in one session focused on the M2 skills. All three drills serve their own items, mixed in FSRS order rather than grouped by drill, and each item is logged once, under the right drill. On the phone the "every G" item runs region by region. Today's due count then drops to 0.
 - **A G–B shift slip across drills.** On iPad, a D6 major 3rd from G to B tapped one fret short is named as the G–B slip. It comes back three prompts later, after D4 and D5 prompts, and is then right. The logs read `[false, true]` for that item.
 - **A screen walk.** It covers the placement test (intro and first probe), Today with its quests, the Whole neck and Intervals modules with their worked examples, Explore's G7 chord view, the first prompt of each M2 drill, the summary and Progress. Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep @screens`, the walk also saves each screen in dark and light: 104 shots from production, on all four profiles. The command is in the spec header.
 
-| §11 scope | Status | Evidence |
-|---|---|---|
-| C1 octave skills (shapes, G–B shift, double octaves, every octave) | ✅ | `c1.test.ts`, `c1-every-octave.test.ts`; `m2-03`, `m2-14` |
-| C3 interval-shape skills (3rds to 7ths, G–B shift items) | ✅ | `c3.test.ts`; `m2-05`, `m2-06`, `m2-14` |
-| D4 octave finder: whole neck on iPad, region by region on compact | ✅ | `m2-03` (≥44pt cells, per-target feedback, a phone in portrait), `m2-14` (all four profiles) |
-| D5 names the interval from two dots | ✅ | `m2-05` (distractors by scope, a legend that fades), `m2-14` |
-| D6 taps the interval from a root | ✅ | `m2-06` (any right position once widened), `m2-14` |
-| G–B shift content | ✅ | `m2-07` (worked → faded → independent; C1, C2 and C3 G–B examples), `m2-03` and `m2-06` (the slip is named), `m2-14` (the slip comes back) |
-| Confusable pairing (seed and learned, with decay) | ✅ | `confusions.test.ts`, `session.test.ts` (unit). No e2e: pairing moves a review at most 2 slots |
-| Placement test | ✅ | `m2-09` (F1, F2, C2 and C3 probes, known items seeded at ≈10 days, skippable), `m2-14` (screens) |
-| Also in M2: quests, focused sessions, Explore v2, FSRS refit | ✅ | `m2-10`, `m2-11`, `m2-12`, `refit.test.ts` |
-| Retake the placement test from Settings | ⏳ pending | **M2-15** (filed today from user feedback, not built) |
-| "Test out" of a locked module | ⏳ pending | **M2-16** (filed today from user feedback, not built) |
+| §11 scope                                                          | Status     | Evidence                                                                                                                                   |
+| ------------------------------------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| C1 octave skills (shapes, G–B shift, double octaves, every octave) | ✅         | `c1.test.ts`, `c1-every-octave.test.ts`; `m2-03`, `m2-14`                                                                                  |
+| C3 interval-shape skills (3rds to 7ths, G–B shift items)           | ✅         | `c3.test.ts`; `m2-05`, `m2-06`, `m2-14`                                                                                                    |
+| D4 octave finder: whole neck on iPad, region by region on compact  | ✅         | `m2-03` (≥44pt cells, per-target feedback, a phone in portrait), `m2-14` (all four profiles)                                               |
+| D5 names the interval from two dots                                | ✅         | `m2-05` (distractors by scope, a legend that fades), `m2-14`                                                                               |
+| D6 taps the interval from a root                                   | ✅         | `m2-06` (any right position once widened), `m2-14`                                                                                         |
+| G–B shift content                                                  | ✅         | `m2-07` (worked → faded → independent; C1, C2 and C3 G–B examples), `m2-03` and `m2-06` (the slip is named), `m2-14` (the slip comes back) |
+| Confusable pairing (seed and learned, with decay)                  | ✅         | `confusions.test.ts`, `session.test.ts` (unit). No e2e: pairing moves a review at most 2 slots                                             |
+| Placement test                                                     | ✅         | `m2-09` (F1, F2, C2 and C3 probes, known items seeded at ≈10 days, skippable), `m2-14` (screens)                                           |
+| Also in M2: quests, focused sessions, Explore v2, FSRS refit       | ✅         | `m2-10`, `m2-11`, `m2-12`, `refit.test.ts`                                                                                                 |
+| Retake the placement test from Settings                            | ⏳ pending | **M2-15** (filed today from user feedback, not built)                                                                                      |
+| "Test out" of a locked module                                      | ⏳ pending | **M2-16** (filed today from user feedback, not built)                                                                                      |
 
 **Not covered by placement:** C1 isn't in `placement.topics` (design §3.4 lists F1, F2, C2, C3, C5 and C8), so an experienced player meets octave shapes as new items. C1 is soft-unlocked, so this costs time but never blocks. M2-16 already adds C4.
 
 **Findings** (from the QA run and the production screenshots). None blocks M2:
+
 1. **Placement-seeded reviews come back grouped by drill (research/02 rule 6).** `dueReviews` in `app/src/engine/session.ts` orders reviews by retrievability, then by item ID. `save.ts` seeds every known item with the same `now` and stability, so all of them reach the same retrievability. Ten days after a placement test, the first review session is sorted by item ID: every `find:` (D2), then every `interval-name:` (D5), every `interval:` (D6), `letter:`, `note@` and `step:`. That is fully blocked, by drill and by skill. The cross-drill e2e reproduced this: seven reviews with the same history came out in three blocks. Learned confusions can't fix it, because pairing moves a review at most 2 slots. Proposed fix: break near-ties (say, retrievability within 0.02) with a round-robin over skill or drill, or a shuffle seeded from the session `rng`, rather than by item ID.
 2. **D4 shows the wrong help panel.** D4 has no context panel of its own, so its sessions fall back to the generic "Musical alphabet" panel (`SessionScreen.tsx`). D5 and D6 show interval legends and the G–B tip. D4 should show octave shapes: 2 strings up, 2 frets higher, or 3 across the G–B pair, plus the double octave.
 3. **Learn: a run-on prerequisite list.** A locked skill reads "It joins your sessions once you're practising Half steps: sharps and flats and Whole steps and Octave shapes" (C3.thirds). The skill titles have their own colons and "and"s, so the list needs commas, or one item per line.
@@ -326,6 +345,7 @@ The production screenshots also confirm the M1 QA fixes: inactive frets recede i
 **M3 is done for its §11 scope.** Design §11 gives M3 no separate definition of done, so this checks its scope: "C4, C5, C6 via D7–D10, Explore (CAGED visualiser, chord finder), worked examples". Every M3 package (M3-01 to M3-18) is live, including D36–D38 and the staged chord tones (M3-17), which came from user requests. The pass ran on `origin/main` at f28b252, and production served `index-oxSeeCam.js`.
 
 The evidence is `app/e2e/m3-12.spec.ts`. Its screen walk is tagged `@smoke`, so it runs on all four Playwright profiles, both locally and against https://fretfree.app (4 of 4 passed on production). The walk opens:
+
 - the Keys, Chords and CAGED modules, with five C4–C6 worked examples;
 - the CAGED visualiser (C, then G's chain) and the chord finder (tapped C7, then F#m7's voicings);
 - the first prompt of D7 (key and chord), D8, D9, D36, D37 and D38, each with its context panel;
@@ -333,20 +353,21 @@ The evidence is `app/e2e/m3-12.spec.ts`. Its screen walk is tagged `@smoke`, so 
 
 Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep @screens`, the walk also saves each screen in dark and light: 184 shots from production. The command is in the spec header. A second test aborts the CAGED chunk and checks that Explore's Reload button is a full 44pt tap target. It was 28px tall; fixed in this package, from the M3-16 review.
 
-| §11 scope | Status | Evidence |
-|---|---|---|
-| C4 key spelling and scale degrees through D7 (enharmonics enforced) | ✅ | `c4.test.ts`; `m3-02`, `m3-12` |
-| C5 chord construction, triads → 7ths → sus/add, with the 7 vs maj7 pairing | ✅ | `c5.test.ts`; `m3-03`, `m3-12` |
-| D8 chord tones in a shape, root first, both directions | ✅ | `c5-chord-tones.test.ts`; `m3-04`, `m3-17`, `m3-12` |
-| C6 CAGED through D9 (triad cores first, whole neck on iPad) and D10 | ✅ | `c6.test.ts`; `m3-05`, `m3-06`, `m3-12` |
-| Also in M3: D36 name the chord, D37 chord tones across the neck, D38 build the chord | ✅ | `m3-13`, `m3-14`, `m3-15`, `m3-12` |
-| Chord-diagram component and drill context panels | ✅ | `ChordDiagram.test.tsx`; `m3-09`, `m3-11`, `m3-12` |
-| Explore: CAGED visualiser (respects reduced motion, Quiz me) | ✅ | `m3-08`, `m3-12` |
-| Explore: chord finder (`Chord.detect`, voicings from MIT chords-db) | ✅ | `m3-09`, `m3-12` |
-| Worked examples for C4–C6 ("CAGED is a map", "find the root first") | ✅ | `m3-10`, `m3-12` (but see finding 1) |
-| Explore views and drill views lazy, first-load JS ≤ 250 KB | ✅ | `m3-16`, `m3-18`, M1-42; `scripts/check-bundle.mjs` |
+| §11 scope                                                                            | Status | Evidence                                            |
+| ------------------------------------------------------------------------------------ | ------ | --------------------------------------------------- |
+| C4 key spelling and scale degrees through D7 (enharmonics enforced)                  | ✅     | `c4.test.ts`; `m3-02`, `m3-12`                      |
+| C5 chord construction, triads → 7ths → sus/add, with the 7 vs maj7 pairing           | ✅     | `c5.test.ts`; `m3-03`, `m3-12`                      |
+| D8 chord tones in a shape, root first, both directions                               | ✅     | `c5-chord-tones.test.ts`; `m3-04`, `m3-17`, `m3-12` |
+| C6 CAGED through D9 (triad cores first, whole neck on iPad) and D10                  | ✅     | `c6.test.ts`; `m3-05`, `m3-06`, `m3-12`             |
+| Also in M3: D36 name the chord, D37 chord tones across the neck, D38 build the chord | ✅     | `m3-13`, `m3-14`, `m3-15`, `m3-12`                  |
+| Chord-diagram component and drill context panels                                     | ✅     | `ChordDiagram.test.tsx`; `m3-09`, `m3-11`, `m3-12`  |
+| Explore: CAGED visualiser (respects reduced motion, Quiz me)                         | ✅     | `m3-08`, `m3-12`                                    |
+| Explore: chord finder (`Chord.detect`, voicings from MIT chords-db)                  | ✅     | `m3-09`, `m3-12`                                    |
+| Worked examples for C4–C6 ("CAGED is a map", "find the root first")                  | ✅     | `m3-10`, `m3-12` (but see finding 1)                |
+| Explore views and drill views lazy, first-load JS ≤ 250 KB                           | ✅     | `m3-16`, `m3-18`, M1-42; `scripts/check-bundle.mjs` |
 
 **Findings** (production screenshots, four profiles). None blocks M3; 1 and 2 are the ones to fix first:
+
 1. **"Find the root first" cuts off the note it asks for, on iPad portrait and iPad mini.** The Learn card shows frets 1–5 of the example's 1–7 window. The C# on fret 6 ("Tap the highlighted C# to go on") is off the card, along with the right edge of the shape outline. It's fine on iPad landscape. Every worked-example neck also runs to the card's right edge with no padding: on iPad mini, C5's seventh-shapes example clips its "8" fret label, and the CAGED example clips a marker.
 2. **Guided prompts lose the degree shapes.** On a first-exposure prompt, D8, D9, D37 and D38 draw every chord tone as the same blue circle, labelled R, 3 or 5. The context panel's legend on the same screen draws the root as a square and the 5th as a triangle. D9 says "The square is the root", yet its second root is a circle. Feedback and D36 use the shapes correctly. This breaks the "shape as well as colour" rule (CLAUDE.md, design §8).
 3. **D10 and D36 show the generic "Musical alphabet" panel** (they declare no `contextPanel`). M3-11 rightly keeps the CAGED chain away from D10, since it would give the answer away, but the alphabet is noise there. D36 could show the triad formulas and the rule that the 3rd decides the quality, without naming the chord.
@@ -369,6 +390,7 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
 **M5 is done for its §11 scope, in software. Real-guitar tuning is still open.** Design §11 gives M5 no separate definition of done, so this checks its scope: "Tuner, D16 and D17, mic onboarding". Every M5 package (M5-01 to M5-07) is live. The pass ran on `origin/main` at e17426d, and production served `index-iGD_NodS.js`. Everything here was checked with a fake mic: a fake pitch source, or a sine wave fed to the shipped worklet. No real guitar or real iPad microphone was used. The hardware checks are listed after the table.
 
 The evidence is `app/e2e/m5-08.spec.ts`. Its four walks are tagged `@smoke`, so they run on all four Playwright profiles, both locally and against https://fretfree.app (16 of 16 passed on production). The walks cover:
+
 - **Mic setup:** the welcome screen, then the onboarding mic step. Here a 110 Hz sine runs through the shipped pitch worklet ("Mic is working. Heard A2."), and the same check runs again from Settings.
 - **The tuner:** the Tools list, then the tuner idle, flat (A2 −18 cents) and in tune (E2 +2).
 - **A refused mic:** the explanations on the onboarding step and in the tuner.
@@ -380,20 +402,21 @@ The evidence is `app/e2e/m5-08.spec.ts`. Its four walks are tagged `@smoke`, so 
 
 Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep @screens`, the walks also save each screen in dark and light: 168 shots from production. The command is in the spec header. Four reviewers went through the shots, one per profile, and I checked the main findings myself.
 
-| §11 scope | Status | Evidence |
-|---|---|---|
-| Pitch input: `PitchSource` contract, notes stable for ≥80ms, a fake source | ✅ | `mic/index.test.ts` (glitches, dropouts, serialised starts, `lost`) |
-| AudioWorklet detector (pitchy); the mic is asked for only on the learner's tap | ✅ | `detector.test.ts` (synthetic signals, octave errors, start timeout); `m5-02` |
-| Tuner, which doubles as the mic check (§7 Tools, §9) | ✅ | `tuner/logic.test.ts`, `Tuner.test.tsx`; `m5-03`, `m5-08` |
-| Mic onboarding step and Settings card | ✅ | `mic.test.tsx`; `m5-04`, `m5-08` (but see findings 6 and 7) |
-| D16 "Play the note": any position, region, or pitch class | ✅ | `d16-play-note/*.test.ts*`; `m5-05`, `m5-08` (but see findings 1, 2 and 4) |
-| D17 "Play the interval, arpeggio or scale" | ✅ | `d17-play-sequence/*.test.ts*`; `m5-06`, `m5-08` (but see finding 3) |
-| Mic drills served only in mic mode (`requiresMic`) | ✅ | `drill-picker` tests; `m5-05`, `m5-06` ("never served without mic mode") |
-| Mic quest: counts tries on due cards, right or wrong (not give-ups), target 3, paid once a day. Mic badges: earned by accuracy, not volume | ✅ | `try-mic.test.ts`, `achievements/mic-drills.test.ts`; `m5-07` ("many answers at low accuracy earn nothing"), `m5-08` |
-| Tuned against a real guitar and a real iPad mic | ⏳ pending | Needs the user's hardware; see below |
-| I2 arpeggios in D17 | ⏳ pending | No I2 skill yet (M6) |
+| §11 scope                                                                                                                                  | Status     | Evidence                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| Pitch input: `PitchSource` contract, notes stable for ≥80ms, a fake source                                                                 | ✅         | `mic/index.test.ts` (glitches, dropouts, serialised starts, `lost`)                                                  |
+| AudioWorklet detector (pitchy); the mic is asked for only on the learner's tap                                                             | ✅         | `detector.test.ts` (synthetic signals, octave errors, start timeout); `m5-02`                                        |
+| Tuner, which doubles as the mic check (§7 Tools, §9)                                                                                       | ✅         | `tuner/logic.test.ts`, `Tuner.test.tsx`; `m5-03`, `m5-08`                                                            |
+| Mic onboarding step and Settings card                                                                                                      | ✅         | `mic.test.tsx`; `m5-04`, `m5-08` (but see findings 6 and 7)                                                          |
+| D16 "Play the note": any position, region, or pitch class                                                                                  | ✅         | `d16-play-note/*.test.ts*`; `m5-05`, `m5-08` (but see findings 1, 2 and 4)                                           |
+| D17 "Play the interval, arpeggio or scale"                                                                                                 | ✅         | `d17-play-sequence/*.test.ts*`; `m5-06`, `m5-08` (but see finding 3)                                                 |
+| Mic drills served only in mic mode (`requiresMic`)                                                                                         | ✅         | `drill-picker` tests; `m5-05`, `m5-06` ("never served without mic mode")                                             |
+| Mic quest: counts tries on due cards, right or wrong (not give-ups), target 3, paid once a day. Mic badges: earned by accuracy, not volume | ✅         | `try-mic.test.ts`, `achievements/mic-drills.test.ts`; `m5-07` ("many answers at low accuracy earn nothing"), `m5-08` |
+| Tuned against a real guitar and a real iPad mic                                                                                            | ⏳ pending | Needs the user's hardware; see below                                                                                 |
+| I2 arpeggios in D17                                                                                                                        | ⏳ pending | No I2 skill yet (M6)                                                                                                 |
 
 **Checks the brief asked for:**
+
 - **D17 "Show me" against the mic quest: fixed.** Commit 8a866bc leaves give-ups out (`isGiveUp`), and `m5-07`'s "a D17 'Show me' … doesn't move the quest" tests it.
 - **Toggling mic mode mid-day: still open, but bounded.** The day's draw isn't stored. `drawQuests` re-runs whenever `settings.micEnabled` changes, so `try-mic` joins or leaves and displaces at most one other quest. That quest's progress vanishes from Today while mic mode is on. `completeQuests` pays each quest id once per day. The only setting-dependent template is `try-mic`, so toggling exposes at most one extra bonus: 4 bonuses a day, not 3. Getting the 4th means either playing 3 answers into the mic, or completing the displaced quest after switching mic mode off. A 15 XP ceiling can't be farmed by repeating it. The `QuestSnapshot` comment now states this correctly. Freezing each day's draw in `dailyProgress` (an M5-07 follow-up) would close it.
 - **"8 quick questions… under 3 minutes": not true for everyone.** Without the install step there are 8 steps. Three of them aren't quick questions:
@@ -402,9 +425,11 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
   - the placement test, which on its own has a 3-minute budget (`placement.budgetMs` 180 000).
 
   A beginner who skips placement finishes in well under 3 minutes. A player who takes the test needs about 4. The same sentence also says "change them later in **Progress**"; it should say Settings (the M5-04 follow-up, `OnboardingFlow.tsx`).
+
 - **Cross-drill audio: still open.** D16 and D17 each ignore only their own miss playback (`quiet()`, `d17Accepts`). Another drill's multi-note feedback that is still sounding when a mic prompt appears can be heard as an answer. The fix proposed in M5-06 still applies: a shared "audio busy until" signal from `audio/audio.ts`.
 
 **Still to check on a real iPad and guitar.** These are all fake-tested only, and they are for the user's device pass:
+
 - `micLatencyMs` (150) and `playAllowanceMs` (1000) against real response times;
 - the `minRms` gate (0.002);
 - octave forgiveness. Pitch-class mode forgives an octave and region mode doesn't. At D17 scope 1, the first wrong note ends the attempt, so a brushed string grades Again at once, which may feel punitive;
@@ -414,6 +439,7 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
 - on iPhone, whether an open mic routes the tuner's reference tones to the earpiece.
 
 **Findings** (production screenshots, four profiles, plus code reading). None blocks M5. Fix 1–3 first:
+
 1. **D16's feedback hides its own answer on iPad Pro landscape and iPad mini.** D16's view is taller than the screen: the page is 933pt on an 834pt iPad Pro and 851pt on a 768pt mini, with empty space under the neck. D16 draws about 77pt per string, against about 65pt in D17. When a miss is shown, the fixed feedback bar sits right over string 6. That cuts the green A circle at fret 5, the vermillion B diamond at fret 7 and the string's label in half, and those markers are the whole "right against wrong" feedback. Fit the D16 neck to the screen, as D17 does, and keep the answer markers above the bar. D17 also scrolls on the mini (775–811pt).
 2. **The light-theme root marker fails contrast on every neck.** The neck tokens have no light values (`tokens.css`), so the wood stays dark brown. `--root` does switch to `#965800` in light mode, and the fretboard fills root markers with it (`Fretboard.module.css:96`). On the wood that is about 2:1, and the dark label on the fill is about 2.8:1, which fails WCAG AA. D17's root square shows it clearly (09/09c light). This isn't specific to M5: every root marker in light theme is affected. Give neck markers their own token that doesn't change with the theme. It stays Okabe–Ito orange, not the brand colour.
 3. **D17's feedback doesn't show the wrong note against the right one.** After G, A, A♯, slot 3 shows "✗ A♯" but never the B that was due. The neck draws the whole G major fingering in green, with no marker for the A♯ played and nothing to set the missed B apart. The explanation text does say "After A comes B". D16 gets this right: a diamond for the note played and a circle for the target. D17 should mark the missed degree on the neck and in its slot.
@@ -440,6 +466,7 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
 **M6 is done for its §11 scope, with two cuts and one open product call.** Design §11 gives M6 no separate definition of done, so this checks its scope: "C7, I1, I2, I4, I5, I7, D18–D21, rhythm track". Every M6 package (M6-01 to M6-09) is live. The pass ran on `origin/main` at eadbe1cf, and production served `index-DxzG9-Pb.js`. First-load JS is 245.2 KB of the 250 KB budget, so M1-44's headroom has held through four more M6 drills.
 
 The evidence is `app/e2e/m6-10.spec.ts`. Its screen walk is tagged `@smoke`, so it runs on all four Playwright profiles, both locally and against https://fretfree.app (4 of 4 passed on production). The walk opens:
+
 - the six Learn modules M6 fills (Pentatonic, Triads, Arpeggios, Minor and function, Scales, Rhythm), for a new learner;
 - the first prompt (a new skill's worked example, with its context panel) of the pentatonic-box drill on C7 minor boxes, the relative minor and I7 positions, then D18, D19, D8 on I2 and the function drill on I5;
 - the function drill's harmonic-minor V answered with the natural v, and its feedback;
@@ -448,32 +475,35 @@ The evidence is `app/e2e/m6-10.spec.ts`. Its screen walk is tagged `@smoke`, so 
 
 Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep @screens`, the walk also saves each screen in dark and light: 168 shots from production. The command is in the spec header. Four reviewers went through the shots, one per profile, and I checked the main findings myself (D8's legend against its neck, D20's grid, the C7 and D21 markers, D18 in portrait).
 
-| §11 scope | Status | Evidence |
-|---|---|---|
-| Intermediate theory: pentatonic ↔ CAGED, arpeggios, 5-position major scale, minor harmony, function | ✅ | `theory/pentatonic`, `arpeggios`, `function` tests (M6-01) |
-| C7 pentatonic boxes and the relative minor (box-overlay drill) | ✅ | `c7.test.ts`, `d-pentatonic-box/*.test.ts`; `m6-02`, `m6-10` (but see findings 2 and 6) |
-| I1 triad inversions on a string set (D18) | ✅ | `i1.test.ts`, `d18-inversions/*.test.ts`; `m6-03`, `m6-10` (but see findings 2 and 4) |
-| I1 voice leading (D19) | ✅ | `i1-voice-leading.test.ts`, `d19-voice-leading/*.test.ts`; `m6-04` on all four profiles, `m6-10` |
-| I2 arpeggios | ✂️ partial | `i2.test.ts`; `m6-05`, `m6-10`. Chord tones in 7th-chord shapes only, through D8 (see "Cuts") |
-| I4 minor harmony and I5 function, substitution, borrowing (choice drill) | ✅ | `i4.test.ts`, `i5.test.ts`, `d-function/*.test.ts`; `m6-06`, `m6-10` (but see finding 5) |
-| I7 major scale in five positions, runs from any degree | ✅ | `i7.test.ts`, `scale-position.test.ts`; `m6-07`, `m6-10` (but see findings 2 and 6) |
-| F4 rhythm track and D20 on the shared M8-01 timing engine | ✅ | `f4.test.ts`, `d20-rhythm/*.test.ts`; `m6-08`, `m6-10` (but see finding 3) |
-| D21 visualise (mental practice, rule 14) | ⚠️ not optional | `d21-visualise/*.test.ts`; `m6-09` on all four profiles, `m6-10` (see "For the PM") |
-| I2 arpeggios played into the mic (D17) | ⏳ pending | I2 lists only D8; carried over from the M5 table |
+| §11 scope                                                                                           | Status          | Evidence                                                                                         |
+| --------------------------------------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------ |
+| Intermediate theory: pentatonic ↔ CAGED, arpeggios, 5-position major scale, minor harmony, function | ✅              | `theory/pentatonic`, `arpeggios`, `function` tests (M6-01)                                       |
+| C7 pentatonic boxes and the relative minor (box-overlay drill)                                      | ✅              | `c7.test.ts`, `d-pentatonic-box/*.test.ts`; `m6-02`, `m6-10` (but see findings 2 and 6)          |
+| I1 triad inversions on a string set (D18)                                                           | ✅              | `i1.test.ts`, `d18-inversions/*.test.ts`; `m6-03`, `m6-10` (but see findings 2 and 4)            |
+| I1 voice leading (D19)                                                                              | ✅              | `i1-voice-leading.test.ts`, `d19-voice-leading/*.test.ts`; `m6-04` on all four profiles, `m6-10` |
+| I2 arpeggios                                                                                        | ✂️ partial      | `i2.test.ts`; `m6-05`, `m6-10`. Chord tones in 7th-chord shapes only, through D8 (see "Cuts")    |
+| I4 minor harmony and I5 function, substitution, borrowing (choice drill)                            | ✅              | `i4.test.ts`, `i5.test.ts`, `d-function/*.test.ts`; `m6-06`, `m6-10` (but see finding 5)         |
+| I7 major scale in five positions, runs from any degree                                              | ✅              | `i7.test.ts`, `scale-position.test.ts`; `m6-07`, `m6-10` (but see findings 2 and 6)              |
+| F4 rhythm track and D20 on the shared M8-01 timing engine                                           | ✅              | `f4.test.ts`, `d20-rhythm/*.test.ts`; `m6-08`, `m6-10` (but see finding 3)                       |
+| D21 visualise (mental practice, rule 14)                                                            | ⚠️ not optional | `d21-visualise/*.test.ts`; `m6-09` on all four profiles, `m6-10` (see "For the PM")              |
+| I2 arpeggios played into the mic (D17)                                                              | ⏳ pending      | I2 lists only D8; carried over from the M5 table                                                 |
 
 **Cuts and tightenings (recorded from the M6 reviews):**
+
 - **I2 is a partial cut of research/03 I2** ("chord tones inside any box"). It covers chord tones in 7th-chord shapes only (roots, then 3rds and 7ths, then 5ths). Chord tones inside pentatonic boxes and target notes aren't built; neither is I2 in D17.
 - **I7 depends on `C7.major-boxes`, so on C6 transitively.** The design table (§M-Scales) lists only C6. This is an intentional tightening for rule 7 (CAGED → pentatonic → full scale). `engine/frontier.ts` still says the Scales module unlocks after "CAGED". It should say "CAGED and pentatonic" (and Arpeggios should also name chords: see finding 7).
 
 **Checks the brief asked for:**
+
 - **The drill picker's rotation (M6-09) against the whole matrix: confirmed.** The lane ran the M5-08 and M6-09 batch on all four profiles: 1052 passed, with one flake. The flake was `m3-05.spec.ts:241` on ipad-mini, D9 whole shapes, the skill whose rotation changed. It passed on retry and was fixed later with `test.slow()`, so it was a timeout, not the old two-drill order. No spec has failed on the rotation since.
 - **D19 on iPad portrait and iPad mini: confirmed.** `m6-04` passed in the M6-04 lane batch (1118 passed), and again here on `ipad-portrait` and `ipad-mini-landscape`, with `m6-09`: 8 of 8. That covers the 12-fret portrait window and the ≥44pt cell check.
 - **The design doc has no "items and grading" paragraph for any M6 drill.** D18, D19, D20, D21, the pentatonic-box drill and the function drill all lack one (design §6 has them for D4, D8, D13, D36–D40). M6-04's report has the material for D19's. This is for whoever next owns `docs/design/app-design.md`.
 - **No Learn worked examples for M6 topics.** `learn/worked-examples/` stops at C6, so M6 skills on Learn have no "Worked example" button. Each M6 drill does walk a new item through on its first rep (rule 8), which the walk shows, so this is a gap in Learn, not in teaching.
 
-**For the PM: D21 isn't optional (research/02 rule 14).** Rule 14 says mental-practice drills are *optional*. D21 now takes every third turn on C6 whole-shape cards (D9 → D10 → D21), and no setting turns it off; design §6 lists D21 with no setting. Proposed: a "Mental practice" setting, read in `drill-picker.ts` the way `requiresMic` and `requiresSound` are (a `mental` flag on the drill's meta). It would be on by default, because D21 adds a context for the same fact (rule 12), and a learner could switch it off. This is a curriculum call, so it's the PM's; nothing is blocked meanwhile.
+**For the PM: D21 isn't optional (research/02 rule 14).** Rule 14 says mental-practice drills are _optional_. D21 now takes every third turn on C6 whole-shape cards (D9 → D10 → D21), and no setting turns it off; design §6 lists D21 with no setting. Proposed: a "Mental practice" setting, read in `drill-picker.ts` the way `requiresMic` and `requiresSound` are (a `mental` flag on the drill's meta). It would be on by default, because D21 adds a context for the same fact (rule 12), and a learner could switch it off. This is a curriculum call, so it's the PM's; nothing is blocked meanwhile.
 
 **Findings** (production screenshots, four profiles, plus code reading). None blocks M6. Fix 1–3 first:
+
 1. **D8's I2 worked example contradicts its own legend.** The context panel's legend for E7 shows R as an orange square, 3 as a circle, 5 as a yellow triangle and ♭7 as a pink hexagon. On the neck every note is the same blue circle: the roots are ringed circles labelled "R", and the other notes show letter names (G♯, B, D), so degrees and names are mixed on one neck. `promptMarkers` in `d8-chord-tone/D8View.tsx` uses the `target` and `tone` styles; `d8DegreeStyle` is only used for feedback. This breaks the "shape as well as colour" rule (CLAUDE.md, design §8). It's the same pattern as M3 finding 2, which D8's guided prompts still have.
 2. **Worked examples lose the degree shapes and don't label what to tap.**
    - The `target` style overrides each note's degree shape. D18's 5th is a ringed blue circle, not a triangle, until it's tapped (`degreeMarker(n, 'target')` in `D18View.tsx`). I7 (`ScaleView.tsx`) draws its 3rds and 5ths as circles, while C7 (`BoxView.tsx`) in the same drill folder draws its 5th as a triangle. D19's root is a circle.
@@ -519,6 +549,7 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
 - **No stop-the-line events.** Every failure was caught at verify (main reset, nothing deployed).
 
 **Backlog-shape observations (applied in the second shift):**
+
 - `app/src/engine/config.ts` ("every tunable threshold") is a de facto hotspot. Almost every WP appends a block to it, causing repeated rebase conflicts (M1-12 three times). Proposal: one config file per area (`engine/config/<area>.ts`, auto-merged, as the registries are), so WPs add files instead of editing a hub. **Done:** `engine/config/` is auto-collected by `import.meta.glob`, with each area typed through `EngineConfig` declaration merging.
 - Shared e2e specs (`d1-session.spec.ts`, `smoke.spec.ts`) and `e2e/helpers.ts` are owned by no WP but get edited whenever a drill changes the session flow. Proposal: make them orchestrator-owned and have WPs add helpers in new files. **Done:** the worker brief now says so. M2-11 (focused sessions) will add a `focusSession(page, skillId)` helper so specs pin a skill instead of depending on what a fresh session serves.
 
@@ -531,6 +562,12 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
   - **Tab items reach Today only for tab readers (M9-05).** TAB new cards go to Today only when the learner's goal includes reading tab, or they focus the Tab module; everyone else still sees the module on Learn (rules 11 and 16). A reader who tests out skips `F3.markers` only if the probe passes it.
   - **The function drill keeps its "IV in C major" cue line (M6-14).** The card tests numeral → function, so naming the numeral is fair.
   - **M7-05 waits for M10-02.** Both add a schema version, and M7-05 must restage the rows M10-02 moves to new skill IDs.
+  - **The songs on-ramp: shorter chord, harmony and capo gates (M10-02).** The old gates were all "mastered": `C5.triads` needed every C3 interval and both C4 key skills, `C8.numerals-major` (all 12 keys, 144 cards) needed the flat-key degrees and triads, `C9.pop` needed all of C8, and the capo needed the sharp keys and triads. A songs learner reached a Roman numeral after six to ten weeks. Now:
+    - `C5.triads` is hard on `C3.thirds` (a triad is two stacked 3rds) and soft on `C4.sharp-keys`. `C6.triad-cores` stays hard on F2 ×2 and is soft on `C5.triads`; `C7.minor-boxes` is soft on `C6.minor-cores` instead of hard on `C6.minor-shapes`; `C10.capo-g-c-d` is soft on the sharp keys and triads (a capo question needs "which key sounds").
+    - C8 comes in three key stages: C, G, D (`C8.numerals-major`, hard on `C5.triads`, soft on the sharp-key degrees); A, E, F (`C8.numerals-a-e-f`, soft on stage 1 and the flat-key degrees, F's); B, F♯ and the flat keys (`C8.numerals-other-keys`, hard on `C4.flat-key-degrees`, soft on stage 2). Nashville is split the same way, each stage soft on its Roman stage. Only stage 1 is probed in placement. Schema v4 moves the later keys' cards, reviews and states to their stage (a mastered C8 carries to every stage), and JSON import does the same.
+    - `C9.pop` is hard on `C5.triads` and soft on C8 stage 1.
+    - **Rule 7 still holds.** Its gates are on mastery, and they stay hard: intervals → chord construction (`C3.thirds` → `C5.triads`), chord construction → progressions (`C5.triads` → `C8.numerals-major` and `C9.pop`), and F2 → CAGED (`C6.triad-cores`, and through it C7). What became soft are the practice-type prerequisites: keys spelled alongside triads, numerals practised while progressions are built, and key stages that are the same facts in more keys.
+    - Downstream (PM calls): Today's "new" count derives each skill's status, so soft-gated skills count once open; soft edges order placement and test-out probes but verdicts carry across hard edges only; Explore and focus walk-backs stay on hard prerequisites (soft ones are already open).
   - **Reviewer should-fixes that touch learning are required, not optional:** answer leaks before a response (rule 4), wrong theory in feedback, and intro copy that states one case as the only one.
 - **First-load JS budget temporarily raised to 280 KB (user decision, 2026-10-20). This deviates from design §10 (250 KB).** Every drill's `logic.ts` is still in first-load JS: views became lazy in M3-18, but logic didn't. D11 (M4-02) took the total to 250.5 KB with four more drills waiting. The user chose to raise `scripts/check-bundle.mjs` to 280 KB so the drain could finish, rather than hold the drills. **M1-42 (Priority high) moves drill logic out of first-load JS and must restore the budget to 250 KB.**
 - **Test-out marks a skill mastered without spaced reviews (M2-16, 2026-10-19). This deviates from design §3.4's mastery definition (rule 7).** Mastery normally means 90% of items at stability ≥ 7 days with median RT on target. A test-out where every probe is fluent seeds the skill's items at 10 days and marks it mastered. It is stricter than onboarding placement (more probes, no slips), and any existing card below the stability threshold is probed too, so weak real reviews can't be overridden. Older cards keep their own FSRS schedule.
@@ -549,10 +586,10 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
 
 Two workers ran in parallel in an orchestrator-created tab (serial phase, ceiling 2).
 
-| WP | Worker | Review rounds | Integration | Result |
-|---|---|---|---|---|
-| M1-01 | about 18 min | 1 (approved; its should-fix became an M1-06 backlog change: route guard) | 44 s: rebase, ff, ship, push | live |
-| M1-02 | about 6 min, plus 3 fix rounds | 4 (each round found a real forgiveness bug in the streak contract) | 44 s | live |
+| WP    | Worker                         | Review rounds                                                            | Integration                  | Result |
+| ----- | ------------------------------ | ------------------------------------------------------------------------ | ---------------------------- | ------ |
+| M1-01 | about 18 min                   | 1 (approved; its should-fix became an M1-06 backlog change: route guard) | 44 s: rebase, ff, ship, push | live   |
+| M1-02 | about 6 min, plus 3 fix rounds | 4 (each round found a real forgiveness bug in the streak contract)       | 44 s                         | live   |
 
 Rough edges found and fixed in the skill:
 
@@ -570,9 +607,10 @@ The trust-folder prompt never appeared, because worktrees under the trusted repo
 **Placement time budget (M2-16, 2026-10-19).** Onboarding placement now probes C4 (key spelling), so a perfect expert faces about 67 probes. At the assumed 3.5 s a probe, the 180 s budget reaches every C3 group and C4's sharp keys, but not the flat keys. Onboarding alone therefore won't open Chords; the new "Test out" on a locked module does. Options: (a) accept this (recommended, since test-out covers it), (b) raise the budget to about 4 minutes, or (c) trim tiers. Nothing is blocked; the default is (a).
 
 **M7 accounts and sync (filed 2026-10-18; unblocked 2026-10-18 evening):**
+
 1. ~~**New AWS services.**~~ **Answered (user, 2026-10-18 evening): "Approved: build the FretworkSync stack (Cognito, API/Lambda, DynamoDB)."** It sends through the existing FretworkEmail SES setup. Accounts stay optional (design §1 principle 8). M7 is unblocked.
 2. ~~**Email sender.**~~ **Answered (2026-10-18, via the infra session):** `no-reply@fretfree.app` ("Fret Free"), from the separate `FretworkEmail` stack, which owns the fretfree.app SES identity, DKIM, MAIL FROM and DMARC. SES production access is granted in eu-west-1.
-3. **Privacy.** Emails and progress would be stored in AWS us-east-1. Is a short privacy note on the About page enough, or do you want a separate privacy policy page? *Partly answered: the infra session is adding a `/privacy` page (linked from About and Settings), and M7-06 would extend it to cover sync.*
+3. **Privacy.** Emails and progress would be stored in AWS us-east-1. Is a short privacy note on the About page enough, or do you want a separate privacy policy page? _Partly answered: the infra session is adding a `/privacy` page (linked from About and Settings), and M7-06 would extend it to cover sync._
 
 ~~**DNS safety rule.**~~ **Answered (user, 2026-10-18 evening):** "fretfree.app and www.fretfree.app are the only DNS entries we need." SKILL §7 lists exactly those (plus their ACM validation records).
 
@@ -581,13 +619,13 @@ The trust-folder prompt never appeared, because worktrees under the trusted repo
 - **Name:** keep "Fretwork" (user, 2026-10-18).
 - **Dependencies:** the orchestrator may add licence-compatible dependencies (MIT/ISC/BSD/Apache-2.0/0BSD) itself, without asking each time (user, 2026-10-18).
 - **"Learn to read" scope:** add a small tab-reading track (M9) so "learn tab" is a real option (user, 2026-10-18).
-- **iCloud:** `~/Documents` is iCloud-synced, and `fileproviderd` was the top CPU user. iCloud only skips names that *end* in `.nosync`, and `Projects.nosync.noindex` ends in `.noindex`. The repo was renamed to `guitar.nosync` (user, 2026-10-18).
+- **iCloud:** `~/Documents` is iCloud-synced, and `fileproviderd` was the top CPU user. iCloud only skips names that _end_ in `.nosync`, and `Projects.nosync.noindex` ends in `.noindex`. The repo was renamed to `guitar.nosync` (user, 2026-10-18).
 
 ## Parallelism log
 
-| Period | Phase | Ceiling | Avg active | Peak | Notes |
-|---|---|---|---|---|---|
-| Dry run (M1-01, M1-02) | serial | 2 | 1.6 | 2 | 16 samples. Idle time was spent in review rounds on M1-02 |
+| Period                 | Phase  | Ceiling | Avg active | Peak | Notes                                                     |
+| ---------------------- | ------ | ------- | ---------- | ---- | --------------------------------------------------------- |
+| Dry run (M1-01, M1-02) | serial | 2       | 1.6        | 2    | 16 samples. Idle time was spent in review rounds on M1-02 |
 
 | Fan-out, 09:24–11:47 UTC | fanout | 5–8 (one hotfix burst to 10) | 7.3 | 10 | 155 samples, 4% idle slots. The serial ship lane (≈5–10 min per ship) was the bottleneck, not workers. Reviewers ran in parallel throughout |
 | Drain, 11:47–handoff | fanout → paused | 2–5 (load-driven, iCloud) | ≈4 | 6 | No new spawns after the user asked for the handoff. M1-12, M1-07, M6-01 and M1-19 drained through the lane |
