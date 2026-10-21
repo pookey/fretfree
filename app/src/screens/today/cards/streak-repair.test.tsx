@@ -98,7 +98,9 @@ describe('Today streak-repair card', () => {
     await practisedToday(20);
     render(<Card db={db} now={clock} />);
     expect(
-      await screen.findByText('Double session done. Your streak will be restored shortly.'),
+      await screen.findByText(
+        'Double session done. Your streak is restored when you end a session or next open FretFree.',
+      ),
     ).toBeVisible();
   });
 

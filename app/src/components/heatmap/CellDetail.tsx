@@ -36,7 +36,7 @@ export function CellDetail({
       ) : (
         <dl className={styles.facts}>
           <div>
-            <dt>Stable for</dt>
+            <dt>Remembered for</dt>
             <dd data-testid="heat-stability">{formatDays(cell.stabilityDays)}</dd>
           </div>
           {cell.recallNow !== null && (
@@ -59,7 +59,7 @@ export function CellDetail({
             </dd>
           </div>
           <div>
-            <dt>Answers from recall</dt>
+            <dt>Answers without a hint</dt>
             <dd data-testid="heat-answers">
               {cell.correct} of {cell.reviews} right
             </dd>

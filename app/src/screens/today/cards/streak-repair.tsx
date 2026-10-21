@@ -170,7 +170,7 @@ export function Card({ db = getDb(), now = systemNow }: StreakRepairProps) {
         </div>
         <p className={styles.note}>
           {done
-            ? 'Double session done. Your streak will be restored shortly.'
+            ? 'Double session done. Your streak is restored when you end a session or next open FretFree.'
             : 'Every minute you practise today counts, across as many sessions as you like.'}
         </p>
       </div>

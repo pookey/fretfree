@@ -17,7 +17,8 @@ export function HeatmapLegend({
   return (
     <div className={styles.legend} data-testid="heatmap-legend">
       <p className={styles.legendTitle} id="heatmap-legend-title">
-        Memory stability: how long until recall drops to 90%
+        How long each note stays remembered: the days until you’d have a 1-in-10 chance of
+        forgetting it
       </p>
       <ol className={styles.scale} aria-labelledby="heatmap-legend-title">
         {labels.map((label, band) => (

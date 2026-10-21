@@ -201,7 +201,7 @@ describe('<FretboardHeatmap> fit and scroll', () => {
 describe('<HeatmapLegend>', () => {
   it('lists the sequential bands in order plus the empty and slow cues', () => {
     render(<HeatmapLegend bounds={[1, 7, 21, 90]} targetMs={2700} />);
-    const scale = screen.getByRole('list', { name: /memory stability/i });
+    const scale = screen.getByRole('list', { name: /how long each note stays remembered/i });
     const items = within(scale).getAllByRole('listitem');
     expect(items.map((i) => i.textContent)).toEqual([
       'Under 1 day',
@@ -235,6 +235,8 @@ describe('<CellDetail>', () => {
     expect(screen.getByTestId('heat-forecast')).toHaveTextContent(/^\d+%$/);
     expect(detail).toHaveTextContent('Recall now');
     expect(detail).toHaveTextContent('Next review');
+    expect(detail).toHaveTextContent('Remembered for');
+    expect(detail).toHaveTextContent('Answers without a hint');
   });
 
   it('says so when a cell has no answers or isn’t practised', () => {
