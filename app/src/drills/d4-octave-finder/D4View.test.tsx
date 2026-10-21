@@ -90,6 +90,25 @@ describe('<D4View> single octave', () => {
     expect(screen.getByTestId('d4-explain')).toHaveTextContent(/without the G–B shift/);
   });
 
+  it('names sharps with ♯ in the prompt, markers and feedback', () => {
+    const p = prompt('octave:s6f2→s4');
+    const { rerender, props } = view(p);
+    expect(screen.getByTestId('d4-prompt')).toHaveTextContent('Tap the octave of F♯ on string 4');
+    expect(screen.getByTestId('d4-explain')).toHaveTextContent(
+      'Start from the F♯ in the square and use octave shapes.',
+    );
+    expect(screen.queryByTestId('d4-rule')).toBeNull();
+    rerender(<D4View {...props} feedback={fb(p, [at(4, 5)])} />);
+    expect(screen.getByTestId('d4-explain')).toHaveTextContent(
+      "You tapped G (string 4, fret 5). This shape doesn't cross the G–B strings",
+    );
+    expect(screen.getByTestId('d4-explain')).toHaveTextContent(
+      '2 strings up (toward string 1), 2 frets higher.',
+    );
+    expect(neck().querySelector('[data-testid="marker-root"]')).toHaveTextContent('F♯');
+    expect(screen.queryByText(/#/)).toBeNull();
+  });
+
   it('shows a window around the dot on compact screens', () => {
     view(prompt('octave:s6f5→s4'), { sizeClass: 'compact' });
     expect(neck().getAttribute('data-fret-from')).toBe('2');
@@ -108,6 +127,9 @@ describe('<D4View> every octave', () => {
     expect(markers('root')).toEqual([p.source]);
     expect(neck().getAttribute('data-fret-to')).toBe('15');
     expect(screen.getByTestId('d4-count')).toHaveTextContent('Found 0 of 6');
+    expect(screen.getByTestId('d4-rule')).toHaveTextContent(
+      "Tap them in any order. A wrong tap ends the round; tap Done if you can't find the rest.",
+    );
 
     const [first, ...rest] = p.targets;
     tap(first!);
@@ -120,6 +142,12 @@ describe('<D4View> every octave', () => {
     for (const t of rest) tap(t);
     expect(onAnswer).toHaveBeenCalledTimes(1);
     expect(onAnswer).toHaveBeenCalledWith(p.targets);
+  });
+
+  it('says how the round ends on compact screens too', () => {
+    view(prompt(G), { sizeClass: 'compact' });
+    expect(screen.queryByTestId('d4-explain')).toBeNull();
+    expect(screen.getByTestId('d4-rule')).toHaveTextContent(/A wrong tap ends the round/);
   });
 
   it('hides the target count at low guide levels', () => {
@@ -157,7 +185,8 @@ describe('<D4View> every octave', () => {
     expect(markers('ghost')).toHaveLength(p.targets.length - 1);
     expect(markers('wrong')).toEqual([at(4, 6)]);
     expect(screen.queryByRole('button', { name: 'Done' })).toBeNull();
-    expect(screen.getByTestId('d4-explain')).toHaveTextContent(/You tapped G#/);
+    expect(screen.getByTestId('d4-explain')).toHaveTextContent(/You tapped G♯/);
+    expect(screen.queryByTestId('d4-rule')).toBeNull();
   });
 
   it('marks every target on a guided rep', () => {

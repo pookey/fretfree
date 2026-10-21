@@ -4,8 +4,10 @@ import { COMPACT_WINDOW_FRETS, neckRegions, targetsByRegion } from '../../shell/
 import { playNotes } from '../../audio/audio';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import { inRange, noteAt, samePosition, type FretRange, type Position } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillRenderProps } from '../types';
 import {
+  D4_ROUND_RULE,
   d4Explain,
   d4Found,
   d4IsLive,
@@ -117,8 +119,9 @@ export function D4View({
     if (!feedback) onAnswer(view.taps);
   };
 
-  const pcAt = (p: Position) => noteAt(p, tuning, prompt.accidentalPref).pc;
-  const label = (p: Position, style: FretMarker['style'], text = prompt.pc): FretMarker => ({
+  const name = displayPc(prompt.pc);
+  const pcAt = (p: Position) => displayPc(noteAt(p, tuning, prompt.accidentalPref).pc);
+  const label = (p: Position, style: FretMarker['style'], text = name): FretMarker => ({
     ...p,
     style,
     label: text,
@@ -141,7 +144,7 @@ export function D4View({
 
   const found = d4Found(prompt, taps).length;
   const inFrets = regions.length > 1 ? ` in frets ${region.from}–${region.to}` : '';
-  const pc = <strong>{prompt.pc}</strong>;
+  const pc = <strong>{name}</strong>;
   let question;
   if (prompt.mode === 'single') {
     question = guided ? (
@@ -184,7 +187,12 @@ export function D4View({
             <p className={styles.explain} data-testid="d4-explain">
               {feedback
                 ? d4Explain(prompt, feedback)
-                : `Start from the ${prompt.pc} in the square and use octave shapes.`}
+                : `Start from the ${name} in the square and use octave shapes.`}
+            </p>
+          )}
+          {every && !feedback && (
+            <p className={styles.rule} data-testid="d4-rule">
+              {D4_ROUND_RULE}
             </p>
           )}
           {every && (
@@ -230,7 +238,7 @@ export function D4View({
           label={
             prompt.mode === 'single'
               ? `Fretboard: find the octave on string ${prompt.string}`
-              : `Fretboard: tap every ${prompt.pc}`
+              : `Fretboard: tap every ${name}`
           }
         />
       </div>

@@ -10,6 +10,7 @@ import {
 import { octaveShapeOffset } from '../../engine/skills/c1';
 import type { DrillFeedback } from '../types';
 import {
+  D4_ROUND_RULE,
   D4_SCOPE,
   d4CanTest,
   d4Check,
@@ -28,6 +29,7 @@ import {
   d4RoundOrder,
   d4ScopeFor,
   d4ShapeLabel,
+  d4ShapeText,
   d4ShapeWindow,
   d4ShowsCount,
   d4Sounds,
@@ -142,6 +144,17 @@ describe('D4 single octave', () => {
     });
   });
 
+  it('says which way the strings go in the shape the learner reads', () => {
+    expect(d4ShapeText(6, 4, 2)).toBe('2 strings up (toward string 1), 2 frets higher');
+    expect(d4ShapeText(2, 4, -3)).toBe('2 strings down (toward string 6), 3 frets lower');
+    expect(d4ShapeText(6, 1, 0)).toBe('5 strings up (toward string 1), same fret');
+    expect(d4ShapeText(6, 5, 5)).toBe('1 string up (toward string 1), 5 frets higher');
+    expect(single('octave:s4f5→s2')).toMatchObject({
+      shapeText: '2 strings up (toward string 1), 3 frets higher',
+      otherShapeText: '2 strings up (toward string 1), 2 frets higher',
+    });
+  });
+
   it('labels shapes', () => {
     expect(d4ShapeLabel(6, 5, 5)).toBe('1 string up, 5 frets higher');
     expect(d4ShapeLabel(3, 6, 3)).toBe('3 strings down, 3 frets higher');
@@ -154,20 +167,17 @@ describe('D4 single octave', () => {
 
   it('grades the tap, and logs the unshifted fret as a shape confusion', () => {
     const p = single('octave:s4f5→s2');
-    expect(d4Check(p, [at(2, 8)])).toEqual({
-      correct: true,
-      expected: '2 strings up, 3 frets higher',
-    });
+    const expected = '2 strings up (toward string 1), 3 frets higher';
+    const concept = '2 strings up, 3 frets higher';
+    expect(d4Check(p, [at(2, 8)])).toEqual({ correct: true, expected, concept });
     expect(d4Check(p, [at(2, 7)])).toEqual({
       correct: false,
-      expected: '2 strings up, 3 frets higher',
+      expected,
+      concept,
       confusedWith: '2 strings up, 2 frets higher',
     });
     // The same fret on another string is just wrong.
-    expect(d4Check(p, [at(3, 7)])).toEqual({
-      correct: false,
-      expected: '2 strings up, 3 frets higher',
-    });
+    expect(d4Check(p, [at(3, 7)])).toEqual({ correct: false, expected, concept });
     expect(d4Check(p, []).correct).toBe(false);
     // Over-applying the shift to a shape that doesn't cross it is the same confusion.
     expect(d4Check(single('octave:s6f5→s4'), [at(4, 8)]).confusedWith).toBe(
@@ -178,17 +188,17 @@ describe('D4 single octave', () => {
   it('explains the shape and the G–B shift', () => {
     const p = single('octave:s4f5→s2');
     expect(d4Explain(p, fb(p, [at(2, 8)]))).toBe(
-      'The octave is at string 2, fret 8: 2 strings up, 3 frets higher. The shape crosses the G–B strings, which are a fret closer, so it shifts a fret.',
+      'The octave is at string 2, fret 8: 2 strings up (toward string 1), 3 frets higher. The shape crosses the G–B strings, which are a fret closer, so it shifts a fret.',
     );
     expect(d4Explain(p, fb(p, [at(2, 7)]))).toMatch(
-      /^You tapped F# \(string 2, fret 7\)\. That is the shape without the G–B shift: 2 strings up, 2 frets higher\. The octave is at string 2, fret 8/,
+      /^You tapped F♯ \(string 2, fret 7\)\. That is the shape without the G–B shift: 2 strings up \(toward string 1\), 2 frets higher\. The octave is at string 2, fret 8/,
     );
     expect(d4Explain(p, fb(p, [at(1, 1)]))).toMatch(
       /^You tapped F \(string 1, fret 1\)\. The octave/,
     );
     const plain = single('octave:s6f5→s4');
     expect(d4Explain(plain, fb(plain, [at(4, 8)]))).toBe(
-      "You tapped A# (string 4, fret 8). This shape doesn't cross the G–B strings, so there is no extra fret. The octave is at string 4, fret 7: 2 strings up, 2 frets higher.",
+      "You tapped A♯ (string 4, fret 8). This shape doesn't cross the G–B strings, so there is no extra fret. The octave is at string 4, fret 7: 2 strings up (toward string 1), 2 frets higher.",
     );
   });
 
@@ -229,7 +239,7 @@ describe('D4 every octave', () => {
   it('respells the pitch class and handles other tunings', () => {
     const flat = d4MakePrompt(
       { id: 'octaves:A#', skillId: 'C1.every-octave' },
-      { ...ctx(), accidentalPref: 'flat' },
+      { ...ctx(), accidentalPref: 'flat' as const },
     );
     expect(flat.pc).toBe('Bb');
     const drop = d4MakePrompt(
@@ -243,7 +253,7 @@ describe('D4 every octave', () => {
   it('is right once every target is tapped, in any order', () => {
     const p = every('octaves:G');
     const taps = [...p.targets].reverse();
-    expect(d4Check(p, taps)).toEqual({ correct: true, expected: 'G' });
+    expect(d4Check(p, taps)).toEqual({ correct: true, expected: 'G', concept: 'G' });
     expect(d4Found(p, taps)).toEqual(taps);
     expect(d4Missed(p, taps)).toEqual([]);
     // The dot itself is never a wrong tap.
@@ -254,15 +264,16 @@ describe('D4 every octave', () => {
   it('is wrong with targets left, and logs a wrong tap as a note confusion', () => {
     const p = every('octaves:G');
     const some = p.targets.slice(0, 2);
-    expect(d4Check(p, some)).toEqual({ correct: false, expected: 'G' });
+    expect(d4Check(p, some)).toEqual({ correct: false, expected: 'G', concept: 'G' });
     expect(d4Missed(p, some)).toHaveLength(p.targets.length - 2);
     expect(d4Check(p, [...some, at(4, 6)])).toEqual({
       correct: false,
       expected: 'G',
+      concept: 'G',
       confusedWith: 'G#',
     });
     // A tap outside the live area has no note to confuse.
-    expect(d4Check(p, [at(1, 15)])).toEqual({ correct: false, expected: 'G' });
+    expect(d4Check(p, [at(1, 15)])).toEqual({ correct: false, expected: 'G', concept: 'G' });
   });
 
   it('explains the result', () => {
@@ -273,9 +284,26 @@ describe('D4 every octave', () => {
       '2 are still to find, ringed on the neck.',
     );
     expect(d4Explain(p, fb(p, [at(4, 6)]))).toBe(
-      'You tapped G# (string 4, fret 6). 6 are still to find, ringed on the neck.',
+      'You tapped G♯ (string 4, fret 6). 6 are still to find, ringed on the neck.',
     );
-    expect(d4Explain(p, fb(p, [...p.targets, at(4, 6)]))).toBe('You tapped G# (string 4, fret 6).');
+    expect(d4Explain(p, fb(p, [...p.targets, at(4, 6)]))).toBe('You tapped G♯ (string 4, fret 6).');
+  });
+
+  it('names sharps and flats with ♯ and ♭, keeping the ASCII concept', () => {
+    const p = every('octaves:F#');
+    expect(d4Check(p, p.targets)).toEqual({ correct: true, expected: 'F♯', concept: 'F#' });
+    expect(d4Explain(p, fb(p, p.targets))).toBe("That's every F♯ in frets 0–12.");
+    const flat = d4MakePrompt(
+      { id: 'octaves:A#', skillId: 'C1.every-octave' },
+      { ...ctx(), accidentalPref: 'flat' as const },
+    );
+    expect(d4Check(flat, flat.targets).expected).toBe('B♭');
+  });
+
+  it('says how a round ends', () => {
+    expect(D4_ROUND_RULE).toBe(
+      "Tap them in any order. A wrong tap ends the round; tap Done if you can't find the rest.",
+    );
   });
 
   it('grades completion time per target', () => {

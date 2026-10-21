@@ -20,6 +20,7 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { D4_SCOPES, d4ShapeLabel, d4SingleShape as singleShape, type D4Scope } from './meta';
 
@@ -53,6 +54,10 @@ export {
 /** Frets 0–12: the C1 region; above 12 the neck repeats (dimmed, not hidden). */
 export const D4_REGION: FretRange = { from: 0, to: 12 };
 
+/** How an every-octave round ends, said before it starts (copy audit §3). */
+export const D4_ROUND_RULE =
+  "Tap them in any order. A wrong tap ends the round; tap Done if you can't find the rest.";
+
 /** Compact screens show single items in a window at least this wide, centred on the dot. */
 export const D4_SHAPE_WINDOW_FRETS = 7;
 
@@ -79,8 +84,10 @@ export interface D4SinglePrompt extends D4Base {
   scope: D4Scope;
   /** Frets from the dot to its octave. */
   offset: number;
-  /** The shape, e.g. "2 strings up, 3 frets higher"; also its confusion concept. */
+  /** The shape, e.g. "2 strings up, 3 frets higher": its confusion concept. */
   shape: string;
+  /** The shape as the learner reads it, saying which way "up" is (`d4ShapeText`). */
+  shapeText: string;
   /** The shape crosses the G–B strings (research/03: teach it explicitly). */
   gbShift: boolean;
   /**
@@ -90,6 +97,7 @@ export interface D4SinglePrompt extends D4Base {
    */
   otherFret: number;
   otherShape: string;
+  otherShapeText: string;
 }
 
 export interface D4EveryPrompt extends D4Base {
@@ -116,6 +124,17 @@ export function d4OtherOffset(from: number, to: number, offset: number, tuning: 
   const up = to < from ? 1 : -1;
   const crosses = crossesGBShift(from, to, tuning);
   return offset + (crosses ? -up : up);
+}
+
+/**
+ * A shape as the learner reads it: "2 strings up (toward string 1), 3 frets
+ * higher". "Up the neck" elsewhere means toward the body, so the string move
+ * names its direction. The bare `d4ShapeLabel` stays the confusion concept.
+ */
+export function d4ShapeText(from: number, to: number, offset: number): string {
+  const label = d4ShapeLabel(from, to, offset);
+  const toward = to < from ? 'up (toward string 1)' : 'down (toward string 6)';
+  return label.replace(/ (up|down),/, ` ${toward},`);
 }
 
 function spell(pos: Position, tuning: Tuning, pref: AccidentalPref): string {
@@ -148,9 +167,11 @@ function makeSingle(
     scope,
     offset: shape.offset,
     shape: shape.shape,
+    shapeText: d4ShapeText(ref.from.string, ref.string, shape.offset),
     gbShift: crossesGBShift(ref.from.string, ref.string, tuning),
     otherFret: ref.from.fret + otherOffset,
     otherShape: d4ShapeLabel(ref.from.string, ref.string, otherOffset),
+    otherShapeText: d4ShapeText(ref.from.string, ref.string, otherOffset),
   };
 }
 
@@ -214,24 +235,31 @@ function pcAt(prompt: D4Prompt, pos: Position): string {
   return spell(pos, prompt.tuning, prompt.accidentalPref);
 }
 
+/**
+ * `expected` is what the feedback bar prints (`2 strings up (toward string 1),
+ * 3 frets higher`, `F♯`); the confusion matrix keeps the bare shape label or
+ * the ASCII pitch class as its concept.
+ */
 function checkSingle(prompt: D4SinglePrompt, taps: D4Answer): DrillCheck {
   const tap = taps[0];
-  const expected = prompt.shape;
-  if (tap && d4IsTarget(prompt, tap)) return { correct: true, expected };
+  const base = { expected: prompt.shapeText, concept: prompt.shape };
+  if (tap && d4IsTarget(prompt, tap)) return { correct: true, ...base };
   if (tap && tap.string === prompt.string && tap.fret === prompt.otherFret) {
-    return { correct: false, expected, confusedWith: prompt.otherShape };
+    return { correct: false, ...base, confusedWith: prompt.otherShape };
   }
-  return { correct: false, expected };
+  return { correct: false, ...base };
 }
 
 function checkEvery(prompt: D4EveryPrompt, taps: D4Answer): DrillCheck {
-  const expected = prompt.pc;
+  const base = { expected: displayPc(prompt.pc), concept: prompt.pc };
   const wrong = d4WrongTaps(prompt, taps)[0];
   if (wrong) {
     const given = d4IsLive(prompt, wrong) ? pcAt(prompt, wrong) : null;
-    return given ? { correct: false, expected, confusedWith: given } : { correct: false, expected };
+    return given
+      ? { correct: false, ...base, confusedWith: given }
+      : { correct: false, ...base };
   }
-  return { correct: d4Missed(prompt, taps).length === 0, expected };
+  return { correct: d4Missed(prompt, taps).length === 0, ...base };
 }
 
 export function d4Check(prompt: D4Prompt, taps: D4Answer): DrillCheck {
@@ -283,13 +311,13 @@ function explainSingle(prompt: D4SinglePrompt, fb: DrillFeedback<D4Answer>): str
   const shift = prompt.gbShift
     ? ' The shape crosses the G–B strings, which are a fret closer, so it shifts a fret.'
     : '';
-  const answer = `The octave is at ${where(target)}: ${prompt.shape}.${shift}`;
+  const answer = `The octave is at ${where(target)}: ${prompt.shapeText}.${shift}`;
   const tap = fb.answer[0];
   if (fb.result.correct || !tap) return answer;
-  const tapped = `You tapped ${pcAt(prompt, tap)} (${where(tap)}).`;
+  const tapped = `You tapped ${displayPc(pcAt(prompt, tap))} (${where(tap)}).`;
   if (fb.result.confusedWith) {
     const why = prompt.gbShift
-      ? `That is the shape without the G–B shift: ${prompt.otherShape}.`
+      ? `That is the shape without the G–B shift: ${prompt.otherShapeText}.`
       : `This shape doesn't cross the G–B strings, so there is no extra fret.`;
     return `${tapped} ${why} ${answer}`;
   }
@@ -297,13 +325,13 @@ function explainSingle(prompt: D4SinglePrompt, fb: DrillFeedback<D4Answer>): str
 }
 
 function explainEvery(prompt: D4EveryPrompt, fb: DrillFeedback<D4Answer>): string {
-  if (fb.result.correct) return `That's every ${prompt.pc} in frets 0–12.`;
+  if (fb.result.correct) return `That's every ${displayPc(prompt.pc)} in frets 0–12.`;
   const missed = d4Missed(prompt, fb.answer).length;
   const left =
     missed > 0 ? `${missed} ${missed === 1 ? 'is' : 'are'} still to find, ringed on the neck.` : '';
   const wrong = d4WrongTaps(prompt, fb.answer)[0];
   if (!wrong) return left;
-  return `You tapped ${pcAt(prompt, wrong)} (${where(wrong)}). ${left}`.trim();
+  return `You tapped ${displayPc(pcAt(prompt, wrong))} (${where(wrong)}). ${left}`.trim();
 }
 
 /** One line of feedback naming the shape, or what was missed. */
