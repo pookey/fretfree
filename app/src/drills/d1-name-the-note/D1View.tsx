@@ -90,7 +90,7 @@ export function D1View({
               'Name the highlighted note'
             )}
           </p>
-          <p className={styles.explain} data-testid="d1-explain">
+          <p className={styles.explain} data-testid="d1-explain" aria-live="polite">
             {feedback && d1Explain(prompt, feedback, tuning)}
           </p>
           <div className={styles.choices} role="group" aria-labelledby="drill-prompt">

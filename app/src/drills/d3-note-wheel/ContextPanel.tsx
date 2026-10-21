@@ -18,9 +18,10 @@ export function NoteWheelContextPanel({
   // The worked example shows full guides (design §3.3 step 2).
   const level: GuideLevel = guided ? 3 : guideLevel;
   const given = feedback ? d3AnswerPc(feedback.answer) : null;
-  // "E–F" would answer "the note after E?": below level 3 a musical-alphabet
-  // prompt gets the rule only once it is answered.
-  const showRule = level >= 3 || (level >= 2 && (prompt.kind === 'step' || feedback !== null));
+  // "E–F" would answer "the note after E?" and "a half step above E?": below
+  // level 3 the rule waits until the prompt is answered (research/02 rule 4,
+  // recall before reveal). The wheel's ½ marks still carry the cue unnamed.
+  const showRule = level >= 3 || (level >= 2 && feedback !== null);
   return (
     <div className={styles.panel}>
       <h2>Note wheel</h2>

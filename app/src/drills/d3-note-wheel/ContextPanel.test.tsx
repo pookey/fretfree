@@ -84,9 +84,23 @@ describe('<NoteWheelContextPanel>', () => {
       done();
     }
 
-    panel(p, { guideLevel: 2 });
+    panel(p, { guideLevel: 2, feedback: fb(p, 'F#') });
     expect(screen.getByText(/No sharp between/)).toBeInTheDocument();
   });
+
+  it.each(['step:+1@E', 'step:-1@F', 'step:+1@B', 'step:-1@C', 'step:+2@D'])(
+    'below level 3, %s gets the B–C/E–F rule only once answered',
+    (id) => {
+      const p = prompt(id);
+      const { unmount } = panel(p, { guideLevel: 2 });
+      // "E–F" would name the answer to "a half step above E?".
+      expect(screen.queryByText(/No sharp between/)).toBeNull();
+      expect(screen.getByTestId('half-step-E-F')).toHaveTextContent('½');
+      unmount();
+      panel(p, { guideLevel: 2, feedback: fb(p, 'G') });
+      expect(screen.getByText(/No sharp between/)).toBeInTheDocument();
+    },
+  );
 
   it('keeps the wheel from answering a musical-alphabet prompt below level 3', () => {
     const p = prompt('letter:+1@E');

@@ -212,5 +212,6 @@ describe('<D3View>', () => {
     unmount();
     renderView(p, { feedback: { answer: 'F#', result: d3Check(p, 'F#') } });
     expect(screen.getByTestId('d3-hint')).toHaveTextContent('E to F♯ is two frets on one string.');
+    expect(screen.getByTestId('d3-hint')).toHaveAttribute('aria-live', 'polite');
   });
 });

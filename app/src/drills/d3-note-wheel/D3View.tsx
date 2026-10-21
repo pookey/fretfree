@@ -119,6 +119,7 @@ export function D3View({
           <p
             className={styles.hint}
             data-testid="d3-hint"
+            aria-live="polite"
             data-explaining={feedback ? true : undefined}
           >
             {feedback

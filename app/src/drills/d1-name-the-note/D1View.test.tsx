@@ -188,5 +188,7 @@ describe('<D1View> ♯/♭ and the explanation line (M10-05)', () => {
     const feedback = { answer: 'G#', result: d1Check(GS, 'G#') };
     renderD1(GS, { guideLevel: 1, feedback });
     expect(screen.getByTestId('d1-explain')).toHaveTextContent('G♯: fret 4 on string 6.');
+    // Announced, not only shown: the bar alone says just "That was G♯."
+    expect(screen.getByTestId('d1-explain')).toHaveAttribute('aria-live', 'polite');
   });
 });
