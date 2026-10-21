@@ -80,9 +80,12 @@ describe('startWithSoundSkills', () => {
 describe('leadWithSound', () => {
   const frontier = orderFrontier(
     SKILLS.filter((s) =>
-      ['F1.alphabet', 'I6.intervals-fourths-fifths', 'I6.chords-major-minor', 'I6.ear-find'].includes(
-        s.id,
-      ),
+      [
+        'F1.alphabet',
+        'I6.intervals-fourths-fifths',
+        'I6.chords-major-minor',
+        'I6.ear-find',
+      ].includes(s.id),
     ),
     'general',
   );

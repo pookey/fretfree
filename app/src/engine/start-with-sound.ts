@@ -19,7 +19,8 @@ import type { Skill } from './model';
 
 type Config = typeof ENGINE_CONFIG.startWithSound;
 
-const isEar = (skill: Skill, cfg: Config) => (cfg.topics as readonly string[]).includes(skill.topic);
+const isEar = (skill: Skill, cfg: Config) =>
+  (cfg.topics as readonly string[]).includes(skill.topic);
 
 /** The skills as gating sees them: ear skills drop their day-one neck prerequisites. */
 export function startWithSoundSkills(

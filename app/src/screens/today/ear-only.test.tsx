@@ -35,9 +35,15 @@ const dueInterval = scheduler.seedKnownCard(
   old,
   1,
 );
-const notDueEar = scheduler.seedKnownCard(item('I6.chords-major-minor', () => true), now, 30);
+const notDueEar = scheduler.seedKnownCard(
+  item('I6.chords-major-minor', () => true),
+  now,
+  30,
+);
 // C2's named finds: D15 serves them too, but they aren't ear practice.
-const findSkill = SKILLS.find((s) => s.topic === 'C2' && s.items().some((i) => i.id.startsWith('find:')))!;
+const findSkill = SKILLS.find(
+  (s) => s.topic === 'C2' && s.items().some((i) => i.id.startsWith('find:')),
+)!;
 const dueNamedFind = scheduler.seedKnownCard(
   item(findSkill.id, (id) => id.startsWith('find:')),
   old,
