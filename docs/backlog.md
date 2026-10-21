@@ -1707,7 +1707,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Tests updated for each changed string.
 
 ### M10-12 · Split C2 by string, with a milestone per string
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** M4-08
 - **After:** M10-02, M10-05, M10-08
