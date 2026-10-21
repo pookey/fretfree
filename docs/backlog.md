@@ -1733,7 +1733,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - The registry test lists the skills covered.
 
 ### M10-14 · Worked examples for intervals, harmony, progressions, capo and boxes
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** none
 - **After:** M10-02
