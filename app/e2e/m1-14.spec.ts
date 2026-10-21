@@ -134,7 +134,9 @@ test.describe('M1-14 Progress fretboard heatmap', () => {
 
     const legend = map(page).getByTestId('heatmap-legend');
     await expect(
-      legend.getByRole('list', { name: /how long each note stays remembered/i }).getByRole('listitem'),
+      legend
+        .getByRole('list', { name: /how long each note stays remembered/i })
+        .getByRole('listitem'),
     ).toHaveCount(5);
     await expect(legend).toContainText('Not practised yet');
     await expect(legend).toContainText('slow');
