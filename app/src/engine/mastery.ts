@@ -37,6 +37,36 @@ export function isMastered(
   return rt !== null && rt <= input.targets.targetMs;
 }
 
+/** A skill's prerequisites by the status each needs (design §3.4). */
+export interface Gates {
+  mastered: readonly string[];
+  practising: readonly string[];
+}
+
+/**
+ * `prerequisites` need mastering and `softPrerequisites` practising;
+ * `softUnlock` softens every one of them.
+ */
+export function gatesOf(skill: Skill): Gates {
+  const soft = skill.softPrerequisites ?? [];
+  return skill.softUnlock === true
+    ? { mastered: [], practising: [...skill.prerequisites, ...soft] }
+    : { mastered: skill.prerequisites, practising: soft };
+}
+
+/** True when a prerequisite's `status` meets the `gate` it is listed under. */
+export function meetsGate(gate: keyof Gates, status: SkillStatus | undefined): boolean {
+  return status === 'mastered' || (gate === 'practising' && status === 'practising');
+}
+
+/** The prerequisites `skill` still waits for: hard ones first, then soft. */
+export function unmetGates(skill: Skill, statuses: ReadonlyMap<string, SkillStatus>): string[] {
+  const gates = gatesOf(skill);
+  return (['mastered', 'practising'] as const).flatMap((gate) =>
+    gates[gate].filter((p) => !meetsGate(gate, statuses.get(p))),
+  );
+}
+
 /**
  * Unlocking is soft (design §3.4): locked skills can still be previewed; they
  * just don't feed new items into sessions automatically.
@@ -47,11 +77,7 @@ export function deriveStatus(
   current: SkillStatus | undefined,
 ): SkillStatus {
   if (current === 'mastered' || current === 'practising') return current;
-  const ok = skill.prerequisites.every((p) => {
-    const s = statuses.get(p);
-    return s === 'mastered' || (skill.softUnlock === true && s === 'practising');
-  });
-  return ok ? 'unlocked' : 'locked';
+  return unmetGates(skill, statuses).length === 0 ? 'unlocked' : 'locked';
 }
 
 /** Skills that may feed new items: unlocked or practising, not mastered. */

@@ -18,9 +18,16 @@ export interface Skill {
   /** Default frontier order (lower first); the goal profile reorders later. */
   readonly order: number;
   readonly title: string;
+  /** Skills to master first (merely practise, with `softUnlock`). */
   readonly prerequisites: readonly string[];
   /** Low-risk skills unlock once prerequisites are merely practising. */
   readonly softUnlock?: boolean;
+  /**
+   * Prerequisites that need only be practising, beside `prerequisites`: one
+   * gate can say "C3.thirds mastered, C4.sharp-keys practising" without
+   * softening the rest (design §3.4, research/02 rule 7).
+   */
+  readonly softPrerequisites?: readonly string[];
   /**
    * Leave the skill out of the onboarding placement test (design §3.4):
    * practice rather than a gate, or past where its budget stops a realistic

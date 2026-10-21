@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyCard } from 'ts-fsrs';
-import { deriveStatus, isFrontier, isMastered, median, nextGuideLevel } from './mastery';
+import {
+  deriveStatus,
+  gatesOf,
+  isFrontier,
+  isMastered,
+  meetsGate,
+  median,
+  nextGuideLevel,
+  unmetGates,
+} from './mastery';
 import type { CardRecord, Skill, SkillStatus } from './model';
 
 const targets = { targetMs: 2500, fluentTargetMs: 1500 };
@@ -89,6 +98,72 @@ describe('deriveStatus (soft unlocking)', () => {
     expect(isFrontier('practising')).toBe(true);
     expect(isFrontier('locked')).toBe(false);
     expect(isFrontier('mastered')).toBe(false);
+  });
+});
+
+describe('mixed gates (soft prerequisites)', () => {
+  // "a mastered, c practising": the hard gate stays hard.
+  const mixed: Skill = {
+    id: 'b',
+    topic: 'X',
+    order: 0,
+    title: 'B',
+    prerequisites: ['a'],
+    softPrerequisites: ['c'],
+    drillTypes: [],
+    items: () => [],
+  };
+  const m = (a?: SkillStatus, c?: SkillStatus) =>
+    new Map<string, SkillStatus>([
+      ...(a ? [['a', a] as const] : []),
+      ...(c ? [['c', c] as const] : []),
+    ]);
+
+  it('splits prerequisites into those to master and those to practise', () => {
+    expect(gatesOf(mixed)).toEqual({ mastered: ['a'], practising: ['c'] });
+    expect(gatesOf({ ...mixed, softPrerequisites: [] })).toEqual({
+      mastered: ['a'],
+      practising: [],
+    });
+    // `softUnlock` softens every one, as before.
+    expect(gatesOf({ ...mixed, softUnlock: true })).toEqual({
+      mastered: [],
+      practising: ['a', 'c'],
+    });
+  });
+
+  it('meets a hard gate only by mastery, a soft one by practice too', () => {
+    expect(meetsGate('mastered', 'mastered')).toBe(true);
+    expect(meetsGate('mastered', 'practising')).toBe(false);
+    expect(meetsGate('practising', 'practising')).toBe(true);
+    expect(meetsGate('practising', 'mastered')).toBe(true);
+    expect(meetsGate('practising', 'unlocked')).toBe(false);
+    expect(meetsGate('practising', undefined)).toBe(false);
+  });
+
+  it('unlocks once the hard prerequisite is mastered and the soft one practising', () => {
+    expect(deriveStatus(mixed, m('mastered', 'practising'), undefined)).toBe('unlocked');
+    expect(deriveStatus(mixed, m('mastered', 'mastered'), undefined)).toBe('unlocked');
+  });
+
+  it('stays locked while either gate is unmet', () => {
+    expect(deriveStatus(mixed, m('practising', 'practising'), undefined)).toBe('locked');
+    expect(deriveStatus(mixed, m('mastered', 'unlocked'), undefined)).toBe('locked');
+    expect(deriveStatus(mixed, m('mastered'), undefined)).toBe('locked');
+    expect(deriveStatus(mixed, m(), undefined)).toBe('locked');
+  });
+
+  it('names what is still unmet, hard gates first', () => {
+    expect(unmetGates(mixed, m())).toEqual(['a', 'c']);
+    expect(unmetGates(mixed, m('practising', 'practising'))).toEqual(['a']);
+    expect(unmetGates(mixed, m('mastered', 'locked'))).toEqual(['c']);
+    expect(unmetGates(mixed, m('mastered', 'practising'))).toEqual([]);
+  });
+
+  it('keeps softUnlock behaving exactly as before', () => {
+    const soft = { ...mixed, softUnlock: true };
+    expect(deriveStatus(soft, m('practising', 'practising'), undefined)).toBe('unlocked');
+    expect(deriveStatus(soft, m('practising'), undefined)).toBe('locked');
   });
 });
 

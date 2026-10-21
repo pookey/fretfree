@@ -76,6 +76,16 @@ describe('skill registry', () => {
     for (const s of SKILLS) for (const p of s.prerequisites) expect(getSkill(p)).toBeDefined();
   });
 
+  it('has soft prerequisites that exist, come earlier and aren’t also hard', () => {
+    for (const s of SKILLS) {
+      for (const p of s.softPrerequisites ?? []) {
+        expect(getSkill(p), `${s.id} → ${p}`).toBeDefined();
+        expect(getSkill(p)!.order, `${s.id} → ${p}`).toBeLessThan(s.order);
+        expect(s.prerequisites, s.id).not.toContain(p);
+      }
+    }
+  });
+
   it('orders prerequisites as a DAG that the frontier order respects', () => {
     // Kahn's algorithm: every skill must be reachable with no cycle.
     const indegree = new Map(SKILLS.map((s) => [s.id, s.prerequisites.length]));
