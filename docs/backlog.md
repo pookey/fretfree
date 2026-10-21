@@ -1693,7 +1693,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Tests updated, plus an e2e test of the welcome copy.
 
 ### M10-11 · Copy fixes: the later drills' prompts and notices
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
 - **Deps:** none
 - **Design:** copy audit (drills) §3, §4 items 6–9, runners-up
