@@ -33,6 +33,24 @@
   gap: var(--space-3);
 }
 
+/* The widest scope on an iPad in landscape leaves no room to spare above the
+   neck (M2-22), and a miss's explanation can run to three lines. While it
+   shows, the answered question steps aside for it (kept for screen readers:
+   it names the answers' group), and the explanation is a touch smaller. */
+.drill[data-size-class='regular-wide'][data-wide][data-answered] .prompt {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.drill[data-size-class='regular-wide'][data-wide][data-answered] .hint {
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
 .drill[data-size-class='regular-wide'][data-wide] .choice {
   min-height: 3rem;
 }

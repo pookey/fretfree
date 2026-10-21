@@ -93,6 +93,7 @@ export function D5View({
       className={styles.drill}
       data-size-class={sizeClass}
       data-wide={d5LineLegend(choices.length) || undefined}
+      data-answered={Boolean(feedback) || undefined}
       data-testid="d5-drill"
     >
       <div className={styles.upper}>
