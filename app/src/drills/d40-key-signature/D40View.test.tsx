@@ -91,7 +91,9 @@ describe('<D40View>', () => {
 
   it('names the relative minor buttons as minor keys', () => {
     renderView(prompt('relative-minor:Eb'));
-    expect(screen.getByText('Its relative minor?')).toBeVisible();
+    expect(
+      screen.getByText('Which minor key shares its key signature (its relative minor)?'),
+    ).toBeVisible();
     expect(screen.getByRole('button', { name: 'C minor' })).toHaveTextContent('Cm');
   });
 

@@ -405,9 +405,11 @@ describe('D40 text', () => {
     expect(d40Subject(eb)).toBe('E♭ major');
     expect(d40Task(eb)).toBe('How many sharps or flats?');
     expect(d40Subject(prompt('signature-key:3b'))).toBe('3 flats');
-    expect(d40Task(prompt('signature-key:3b'))).toBe('Which major key?');
-    expect(d40Task(prompt('relative-minor:Eb'))).toBe('Its relative minor?');
-    expect(d40Task(prompt('dominant:Eb'))).toBe('Which key is its V?');
+    expect(d40Task(prompt('signature-key:3b'))).toBe('Which major key has this key signature?');
+    expect(d40Task(prompt('relative-minor:Eb'))).toBe(
+      'Which minor key shares its key signature (its relative minor)?',
+    );
+    expect(d40Task(prompt('dominant:Eb'))).toBe('Which key is its V, a 5th up?');
   });
 
   it('states each fact with its reason', () => {

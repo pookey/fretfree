@@ -81,11 +81,11 @@ export function d40Task(prompt: D40Prompt): string {
     case 'key-signature':
       return 'How many sharps or flats?';
     case 'signature-key':
-      return 'Which major key?';
+      return 'Which major key has this key signature?';
     case 'relative-minor':
-      return 'Its relative minor?';
+      return 'Which minor key shares its key signature (its relative minor)?';
     case 'dominant':
-      return 'Which key is its V?';
+      return 'Which key is its V, a 5th up?';
   }
 }
 
@@ -185,7 +185,7 @@ const RULES: Record<D40Kind, string> = {
   'signature-key':
     'Sharps: the key is a half step above the last sharp. Flats: the second-last flat names the key (1 flat is F).',
   'relative-minor':
-    'A relative minor shares its major key’s signature. Its tonic is the major’s 6th, a minor 3rd down.',
+    "A relative minor shares its major key's signature. Its tonic is the major's 6th, a minor 3rd down.",
   dominant: 'The V is a 5th up: the next key clockwise, with one more sharp or one fewer flat.',
 };
 
