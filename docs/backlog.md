@@ -1491,7 +1491,7 @@ A short track for learners who want to read tab. Tab maps straight onto skills F
   - RTL tests and an iPad e2e render check.
 
 ### M9-02 · Tab skills, and D33 "Tab → neck"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M9-01, M1-03
 - **Design:** `docs/design/tab-track.md`, §6
 - **Owns:** `app/src/engine/skills/tab.ts`, `app/src/engine/skills/tab.test.ts`, `app/src/drills/d33-tab-to-neck/**`, `app/e2e/m9-02.spec.ts`
@@ -1596,7 +1596,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): I3 becomes its own "Key signatures" module, ordered after C8 stage 1. A separate module gives it a clear outcome on the Learn map and its own session lane, so it no longer queues behind every C4 item.
 
 ### M10-04 · Concept intros: a registry, a session card, and the first ten
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (review finding 3, rule 8: a new learner is asked to recall facts they have never been told)
 - **Deps:** none
 - **After:** M6-08
@@ -1610,7 +1610,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - RTL tests for the card and the gate. E2E: a fresh learner's first session opens with the alphabet intro, then the guided rep; a second session doesn't show it again.
 
 ### M10-05 · Teach on a miss: D1 and D3, with ♯/♭ and a fading note wheel
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (review finding G: the first drills a beginner meets only say "That was D.")
 - **Deps:** none
 - **Design:** §6 D1, D3, §8; research/02 rules 3, 9; research/03 F1/F2 misconceptions
