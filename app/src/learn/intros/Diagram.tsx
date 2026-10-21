@@ -23,7 +23,7 @@ export function IntroDiagram({
     );
   }
   return (
-    <div className={styles.neck} data-testid="intro-diagram" data-kind="neck">
+    <div data-testid="intro-diagram" data-kind="neck">
       <Fretboard
         fretRange={diagram.range}
         markers={diagram.markers}

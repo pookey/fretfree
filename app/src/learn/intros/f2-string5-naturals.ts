@@ -6,7 +6,7 @@ const intro: ConceptIntro = {
   id: 'f2-string5-naturals',
   for: ['F2.string5-naturals'],
   title: 'Letters on string 5',
-  text: 'Played open, string 5 (next to the thickest) is A. Going up the neck, the letters follow in order: B at fret 2, C at 3, D at 5, E at 7, F at 8, G at 10, A again at 12.',
+  text: 'Played open, string 5 (next to the thickest) is A. Up the neck, the letters follow in order: B at fret 2, C at 3, D at 5, E at 7, F at 8, G at 10, A at 12.',
   diagram: {
     kind: 'neck',
     range: { from: 0, to: 12 },

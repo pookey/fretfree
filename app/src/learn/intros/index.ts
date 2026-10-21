@@ -28,7 +28,7 @@ export function introFor(
 
 /** Words in an intro's text: runs of letters or digits, so "B–C" is two and "C#" one. */
 export function wordCount(text: string): number {
-  return text.match(/[\p{L}\p{N}#']+/gu)?.length ?? 0;
+  return text.match(/[\p{L}\p{N}#'’]+/gu)?.length ?? 0;
 }
 
 export type { ConceptIntro, IntroDiagram, NeckDiagram, WheelDiagram } from './types';

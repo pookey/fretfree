@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef } from 'react';
 import { useAppStore } from '../app-store';
 import { IntroDiagram } from '../learn/intros/Diagram';
 import type { ConceptIntro } from '../learn/intros/types';
@@ -21,12 +21,15 @@ export function ConceptCard({ intro, onDismiss }: ConceptCardProps) {
   const titleId = useId();
   const cardRef = useRef<HTMLElement>(null);
   const done = useRef(false);
-  const dismiss = useRef(() => {});
-  dismiss.current = () => {
+  const latest = useRef(onDismiss);
+  useEffect(() => {
+    latest.current = onDismiss;
+  });
+  const dismiss = useCallback(() => {
     if (done.current) return;
     done.current = true;
-    onDismiss();
-  };
+    latest.current();
+  }, []);
 
   useEffect(() => {
     // The card sits where the drill will be: focusing it must not scroll the page.
@@ -34,12 +37,12 @@ export function ConceptCard({ intro, onDismiss }: ConceptCardProps) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
-        dismiss.current();
+        dismiss();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [dismiss]);
 
   return (
     // A tap anywhere dismisses it; keys go through the window listener above,
@@ -51,7 +54,8 @@ export function ConceptCard({ intro, onDismiss }: ConceptCardProps) {
       tabIndex={-1}
       data-testid="concept-card"
       data-intro={intro.id}
-      onClick={() => dismiss.current()}
+      data-diagram={intro.diagram?.kind}
+      onClick={dismiss}
     >
       <p className={styles.kicker}>New idea</p>
       <h2 id={titleId} className={styles.title}>
@@ -59,11 +63,13 @@ export function ConceptCard({ intro, onDismiss }: ConceptCardProps) {
       </h2>
       <p className={styles.text}>{intro.text}</p>
       {intro.diagram && (
-        <IntroDiagram
-          diagram={intro.diagram}
-          handedness={settings.handedness}
-          pref={settings.accidentalPref}
-        />
+        <div className={styles.diagram}>
+          <IntroDiagram
+            diagram={intro.diagram}
+            handedness={settings.handedness}
+            pref={settings.accidentalPref}
+          />
+        </div>
       )}
       <button type="button" className={styles.go} aria-keyshortcuts="Enter Space">
         Got it

@@ -3,12 +3,12 @@
   margin: 0 auto;
 }
 
-/* A 13-fret window can be wider than a phone: scroll it, never the page. */
-.neck {
-  overflow-x: auto;
-  max-width: 100%;
-}
-
+/*
+ * A small picture, not a neck to tap: it may shrink below the 44pt cells the
+ * Fretboard keeps for tapping (its inline min-width), and it stays short so
+ * the words and "Got it" fit beside it on one screen.
+ */
 .fretboard {
-  min-width: 28rem;
+  min-width: 0 !important;
+  max-height: 14rem;
 }

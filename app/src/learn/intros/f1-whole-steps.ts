@@ -5,7 +5,7 @@ const intro: ConceptIntro = {
   id: 'f1-whole-steps',
   for: ['F1.whole-steps'],
   title: 'Whole steps',
-  text: 'A whole step is two half steps: two frets. From most letters, a whole step up is the next letter: C to D. But E–F is only a half step, so a whole step up from E is F#.',
+  text: 'A half step is one fret; a whole step is two: C to D. But E–F is only a half step, so a whole step up from E is F#, one fret past F.',
   diagram: { kind: 'wheel', guideLevel: 3, start: 'E' },
 };
 
