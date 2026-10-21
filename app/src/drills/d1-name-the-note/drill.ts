@@ -1,3 +1,4 @@
+import { SKILLS } from '../../engine/skills';
 import { lazyLogic, lazyParts } from '../lazy-view';
 import type { DrillType } from '../types';
 import type * as logic from './logic';
@@ -18,7 +19,8 @@ const parts = lazyParts<typeof views>('d1-name-the-note', lazy);
 const nameTheNote: DrillType<D1Prompt, D1Answer> = {
   id: D1_ID,
   title: 'Name the highlighted note',
-  skills: ['F2.string6-naturals', 'F2.string5-naturals', 'C2.all-notes'],
+  // F2's strings 6 and 5, then every C2 stage (M10-12).
+  skills: SKILLS.filter((s) => s.drillTypes.includes(D1_ID)).map((s) => s.id),
   inputModes: ['choice', 'keyboard'],
   scope: D1_SCOPE,
   canTest: d1CanTest,

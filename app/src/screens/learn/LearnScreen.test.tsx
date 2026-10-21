@@ -62,7 +62,7 @@ describe('<LearnScreen>', () => {
     expect(within(detail).getByRole('heading', { level: 2 })).toHaveTextContent('Whole neck');
     expect(within(detail).getByTestId('module-state')).toHaveTextContent('Locked: preview');
     expect(within(detail).getByTestId('preview-note')).toBeInTheDocument();
-    const skill = within(detail).getByTestId('skill-C2.all-notes');
+    const skill = within(detail).getByTestId('skill-C2.string1-naturals');
     expect(skill).toHaveTextContent(/Preview only.*practising:/);
     expect(
       within(within(skill).getByRole('list', { name: 'Prerequisites' }))

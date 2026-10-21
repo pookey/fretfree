@@ -47,6 +47,7 @@ describe('skill registry', () => {
       'F2.string6-naturals',
       'F3.markers',
       'C1.octaves',
+      'C2.string1-naturals',
       'C2.all-notes',
       'C3.thirds',
       'C4.sharp-keys',
@@ -227,15 +228,16 @@ describe('F3 skills', () => {
   });
 });
 
-describe('C2 skill', () => {
-  it('covers the rest of the neck in both directions, leaving F2 its items', () => {
-    const c2 = ids('C2.all-notes');
+describe('C2 skills', () => {
+  it('cover the rest of the neck in both directions, leaving F2 its items', () => {
+    const c2 = SKILLS.filter((s) => s.topic === 'C2').flatMap((s) => ids(s.id));
     const f2 = [...ids('F2.string6-naturals'), ...ids('F2.string5-naturals')];
     const notes = c2.filter((id) => id.startsWith('note@'));
     const finds = c2.filter((id) => id.startsWith('find:'));
     // 78 cells and 72 (pitch class, string) pairs, minus F2's 16 cells and 14 finds.
     expect(notes).toHaveLength(78 - 16);
     expect(finds).toHaveLength(72 - 14);
+    expect(new Set(c2).size).toBe(c2.length);
     expect(c2).toContain('find:C#@s3');
     expect(c2).toContain('find:F#@s6');
     expect(c2).not.toContain('find:G@s6');

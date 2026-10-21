@@ -4,6 +4,7 @@ import { FretworkDB } from '../../storage';
 import { SessionRunner } from '../../session/runner';
 import { DRILLS } from '../registry';
 import { D2_ID, type D2Prompt } from '../d2-find-the-note/logic';
+import { C2_STAGE_IDS } from '../../engine/skills/c2';
 import { D15_ID, type D15Prompt } from './logic';
 
 /**
@@ -68,7 +69,7 @@ describe('D15 in a session', () => {
 
   it('serves C2 find cards named, after D2, graded like D2', async () => {
     const d15 = DRILLS.find((d) => d.id === D15_ID)!;
-    expect(d15.skills).toEqual(['C2.all-notes', 'I6.ear-find']);
+    expect(d15.skills).toEqual([...C2_STAGE_IDS, 'I6.ear-find']);
     expect(d15.requiresMic).toBeFalsy();
 
     // C2's own drill list on a few find items: D2 serves first, then D15

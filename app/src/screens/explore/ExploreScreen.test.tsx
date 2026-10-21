@@ -77,7 +77,7 @@ describe('<ExploreScreen>', () => {
     expect(screen.getByRole('region', { name: 'Fretboard explorer' })).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: 'Quiz me on this' })).toHaveAttribute(
       'href',
-      '/session?skill=F2.string6-naturals&skill=F2.string5-naturals&skill=C2.all-notes',
+      '/session?skill=F2.string6-naturals&skill=F2.string5-naturals&skill=C2.string1-naturals&skill=C2.string4-naturals&skill=C2.string3-naturals&skill=C2.string2-naturals&skill=C2.low-accidentals&skill=C2.all-notes',
     );
   });
 

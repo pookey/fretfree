@@ -8,7 +8,7 @@ import type { WorkedExample } from './types';
  */
 const example: WorkedExample = {
   id: 'c2-gb-octaves',
-  for: ['C1.octaves-gb-shift', 'C2.all-notes'],
+  for: ['C1.octaves-gb-shift', 'C2.all-notes', 'C2.string2-naturals'],
   title: 'Octaves across the G–B shift',
   idea: 'Crossing from the G string to the B string, octave shapes move up one fret.',
   steps: [

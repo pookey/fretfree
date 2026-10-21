@@ -104,6 +104,11 @@ describe('D16 in a session', () => {
       'C1.octaves',
       'C1.octaves-gb-shift',
       'C1.double-octaves',
+      'C2.string1-naturals',
+      'C2.string4-naturals',
+      'C2.string3-naturals',
+      'C2.string2-naturals',
+      'C2.low-accidentals',
       'C2.all-notes',
     ]);
   });

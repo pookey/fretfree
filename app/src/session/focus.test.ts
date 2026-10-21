@@ -65,6 +65,11 @@ describe('noteSkillIds', () => {
     expect(noteSkillIds(SKILLS)).toEqual([
       'F2.string6-naturals',
       'F2.string5-naturals',
+      'C2.string1-naturals',
+      'C2.string4-naturals',
+      'C2.string3-naturals',
+      'C2.string2-naturals',
+      'C2.low-accidentals',
       'C2.all-notes',
     ]);
   });
