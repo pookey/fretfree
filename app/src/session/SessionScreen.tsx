@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type FC } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useAppStore } from '../app-store';
 import { playNotes } from '../audio/audio';
@@ -7,10 +7,14 @@ import { DRILLS, preloadDrill } from '../drills/registry';
 import type { DrillFeedback } from '../drills/types';
 import { SKILLS, createScheduler, type GuideLevel } from '../engine';
 import type { StatusOverlay } from '../engine/overlay';
+import { loadSessionIntros } from '../learn/intros/lazy';
+import type { SessionIntros } from '../learn/intros/session';
+import type { ConceptIntro } from '../learn/intros/types';
 import { useStatusOverlay } from '../screens/settings/DeveloperTools';
 import { useCompactWindowFrets, useSizeClass } from '../shell/size-class';
 import { getDb } from '../storage';
 import { getTuning } from '../theory';
+import type { ConceptCardProps } from './ConceptCard';
 import { parseFocus } from './focus';
 import { parseSessionOptions } from './options';
 import { contextPanelShown } from './context/visibility';
@@ -31,6 +35,8 @@ type Phase =
   | { kind: 'loading' }
   // Nothing to serve: say so rather than finish a session with no answers.
   | { kind: 'empty' }
+  // A new skill's concept intro, before its first worked rep (M10-04).
+  | { kind: 'intro'; current: CurrentPrompt; intro: ConceptIntro; Card: FC<ConceptCardProps> }
   | { kind: 'prompt'; current: CurrentPrompt }
   | { kind: 'feedback'; current: CurrentPrompt; feedback: DrillFeedback<unknown> }
   | { kind: 'summary'; celebration: Celebration };
@@ -52,6 +58,7 @@ export function SessionScreen() {
   const routeState: unknown = useLocation().state;
   const runnerRef = useRef<SessionRunner | null>(null);
   const trackerRef = useRef<CelebrationTracker | null>(null);
+  const intros = useRef<SessionIntros | null>(null);
   const shownAt = useRef(0);
   const busy = useRef(false);
   // Set while the next prompt's view downloads, so Continue can't skip past it.
@@ -95,6 +102,10 @@ export function SessionScreen() {
     await preloadDrill(current.drill).catch(() => undefined);
     switching.current = false;
     if (runnerRef.current !== runner || runner.isFinished) return;
+    const si = intros.current;
+    const intro = si?.introFor(current.entry);
+    // The card isn't timed: the response clock starts once it is dismissed.
+    if (si && intro) return setPhase({ kind: 'intro', current, intro, Card: si.Card });
     shownAt.current = performance.now();
     setPhase({ kind: 'prompt', current });
   }, [finish]);
@@ -103,21 +114,24 @@ export function SessionScreen() {
     if (!loaded || runnerRef.current) return;
     let live = true;
     const db = getDb();
+    const options = parseSessionOptions(routeState);
     void Promise.all([
+      loadSessionIntros(db, options),
       SessionRunner.start({
         db,
         scheduler,
         settings,
         skills: SKILLS,
-        ...parseSessionOptions(routeState),
+        ...options,
         drills: DRILLS,
         focus: parseFocus(new URLSearchParams(query), SKILLS),
         overlay,
       }),
       CelebrationTracker.begin({ db, skills: SKILLS }),
-    ]).then(([runner, tracker]) => {
+    ]).then(([sessionIntros, runner, tracker]) => {
       if (!live) return;
       if (runner.isEmpty) return setPhase({ kind: 'empty' });
+      intros.current = sessionIntros;
       runnerRef.current = runner;
       trackerRef.current = tracker;
       setEndsAt(runner.endsAt);
@@ -256,7 +270,15 @@ export function SessionScreen() {
 
       <div className={styles.body} data-testid="session">
         <section className={styles.drillArea} data-drill={current?.drill.id}>
-          {current && Drill ? (
+          {phase.kind === 'intro' ? (
+            <phase.Card
+              intro={phase.intro}
+              onDismiss={() => {
+                shownAt.current = performance.now();
+                setPhase({ kind: 'prompt', current: phase.current });
+              }}
+            />
+          ) : current && Drill ? (
             <DrillLoadFailed
               key={current.drill.id}
               title={current.drill.title}
