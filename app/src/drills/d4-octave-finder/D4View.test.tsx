@@ -128,7 +128,7 @@ describe('<D4View> every octave', () => {
     expect(neck().getAttribute('data-fret-to')).toBe('15');
     expect(screen.getByTestId('d4-count')).toHaveTextContent('Found 0 of 6');
     expect(screen.getByTestId('d4-rule')).toHaveTextContent(
-      "Tap them in any order. A wrong tap ends the round; tap Done if you can't find the rest.",
+      "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.",
     );
 
     const [first, ...rest] = p.targets;
@@ -196,6 +196,9 @@ describe('<D4View> every octave', () => {
       'Here is every G. Tap each one to continue.',
     );
     expect(markers('target')).toHaveLength(6);
+    expect(screen.getByTestId('d4-rule')).toHaveTextContent(
+      /^Tap the notes in any order\. A wrong tap ends the round\.$/,
+    );
     tap(p.targets[0]!);
     expect(markers('target')).toHaveLength(5);
     expect(screen.getByTestId('d4-count')).toHaveTextContent('Found 1 of 6');

@@ -64,7 +64,7 @@ test.describe('M10-08 ♯ and ♭ in the first drills', () => {
     await expect(drillArea(page)).toHaveAttribute('data-drill', 'octave-finder');
     await expect(page.getByTestId('d4-prompt')).toContainText('Tap every F♯');
     await expect(page.getByTestId('d4-rule')).toHaveText(
-      "Tap them in any order. A wrong tap ends the round; tap Done if you can't find the rest.",
+      "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.",
     );
     await expect(page.getByRole('button', { name: 'Done' })).toBeVisible();
     await expectNoHorizontalOverflow(page);

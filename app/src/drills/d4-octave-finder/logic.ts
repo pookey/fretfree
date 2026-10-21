@@ -54,9 +54,16 @@ export {
 /** Frets 0–12: the C1 region; above 12 the neck repeats (dimmed, not hidden). */
 export const D4_REGION: FretRange = { from: 0, to: 12 };
 
-/** How an every-octave round ends, said before it starts (copy audit §3). */
-export const D4_ROUND_RULE =
-  "Tap them in any order. A wrong tap ends the round; tap Done if you can't find the rest.";
+/**
+ * How an every-octave round ends, said before it starts (copy audit §3), in
+ * the words D9, D37 and the box drill use. A worked example draws every
+ * target, so it leaves Done out.
+ */
+export function d4RoundRule(guided: boolean): string {
+  return guided
+    ? 'Tap the notes in any order. A wrong tap ends the round.'
+    : "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.";
+}
 
 /** Compact screens show single items in a window at least this wide, centred on the dot. */
 export const D4_SHAPE_WINDOW_FRETS = 7;

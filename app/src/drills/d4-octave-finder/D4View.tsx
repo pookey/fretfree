@@ -7,7 +7,6 @@ import { inRange, noteAt, samePosition, type FretRange, type Position } from '..
 import { displayPc } from '../../theory/pitch-display';
 import type { DrillRenderProps } from '../types';
 import {
-  D4_ROUND_RULE,
   d4Explain,
   d4Found,
   d4IsLive,
@@ -15,6 +14,7 @@ import {
   d4Missed,
   d4NeckGuideLevel,
   d4RegionWindow,
+  d4RoundRule,
   d4RoundOrder,
   d4ShapeWindow,
   d4ShowsCount,
@@ -192,7 +192,7 @@ export function D4View({
           )}
           {every && !feedback && (
             <p className={styles.rule} data-testid="d4-rule">
-              {D4_ROUND_RULE}
+              {d4RoundRule(guided)}
             </p>
           )}
           {every && (

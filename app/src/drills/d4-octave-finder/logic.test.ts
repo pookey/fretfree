@@ -10,7 +10,6 @@ import {
 import { octaveShapeOffset } from '../../engine/skills/c1';
 import type { DrillFeedback } from '../types';
 import {
-  D4_ROUND_RULE,
   D4_SCOPE,
   d4CanTest,
   d4Check,
@@ -26,6 +25,7 @@ import {
   d4NeckGuideLevel,
   d4OtherOffset,
   d4RegionWindow,
+  d4RoundRule,
   d4RoundOrder,
   d4ScopeFor,
   d4ShapeLabel,
@@ -300,10 +300,11 @@ describe('D4 every octave', () => {
     expect(d4Check(flat, flat.targets).expected).toBe('B♭');
   });
 
-  it('says how a round ends', () => {
-    expect(D4_ROUND_RULE).toBe(
-      "Tap them in any order. A wrong tap ends the round; tap Done if you can't find the rest.",
+  it('says how a round ends, leaving Done out of a worked example', () => {
+    expect(d4RoundRule(false)).toBe(
+      "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.",
     );
+    expect(d4RoundRule(true)).toBe('Tap the notes in any order. A wrong tap ends the round.');
   });
 
   it('grades completion time per target', () => {
