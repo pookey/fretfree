@@ -1636,7 +1636,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Unit tests per misconception, and an e2e test for one wrong answer in each drill.
 
 ### M10-07 · Say what each skill and module is for, in plain words on Learn
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** M10-01
 - **After:** M10-03
@@ -1722,7 +1722,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): string 1 first (it repeats string 6's names two octaves up, so it transfers almost for free), then 4 and 3 (each reachable by the octave shapes from strings 6 and 5 the learner already knows, C1.octaves), and string 2 last (the B-string shift makes it the hardest).
 
 ### M10-13 · Worked examples for Neck basics: F1, F2 string 5 and F3
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** none
 - **Design:** §6 (worked example on first exposure); research/02 rule 8
