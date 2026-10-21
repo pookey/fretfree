@@ -1557,7 +1557,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - No skill changes its gates in this WP. Unit tests cover mixed gates in `deriveStatus` and test-out. The registry test asserts that every `softPrerequisites` ID exists.
 
 ### M10-02 · Songs on-ramp: stage C8 by key group and shorten the chord, harmony and capo gates
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (review finding 1: a songs learner reaches a Roman numeral after six to ten weeks and a progression after two to three months)
 - **Deps:** M10-01
 - **Design:** §5 (M-Harmony and M-Progressions "open early, in parallel"); research/02 rule 7; research/03 order
