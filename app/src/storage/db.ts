@@ -89,6 +89,14 @@ export const SCHEMA_VERSIONS: readonly {
     upgrade: (tx) =>
       Dexie.waitFor(import('./migrations/c5-tone-stages')).then((m) => m.upgradeC5ToneStages(tx)),
   },
+  {
+    // M10-02: C8's harmony in key stages; rows of the later keys move to
+    // their stage's skill. Loaded on demand, as v3.
+    version: 4,
+    stores: {},
+    upgrade: (tx) =>
+      Dexie.waitFor(import('./migrations/c8-stages')).then((m) => m.upgradeC8Stages(tx)),
+  },
 ];
 
 export const SCHEMA_VERSION = SCHEMA_VERSIONS.at(-1)?.version ?? 1;
