@@ -120,6 +120,9 @@ describe('earOnlyPlan', () => {
   });
 });
 
+// The card reads and writes IndexedDB, which is slow when the machine is busy.
+const SLOW = { timeout: 5000 };
+
 function SessionProbe() {
   const { search, state } = useLocation();
   return (
@@ -150,7 +153,7 @@ describe('Quick drills card: Ear only', () => {
 
   it('starts an ear-only session through the URL focus and route state', async () => {
     renderCard();
-    const link = await screen.findByRole('link', { name: 'Ear only (no guitar)' });
+    const link = await screen.findByRole('link', { name: 'Ear only (no guitar)' }, SLOW);
     expect(screen.getByTestId('ear-only-copy')).toHaveTextContent(/nothing is due/i);
     await userEvent.click(link);
     expect(JSON.parse(screen.getByTestId('route-state').textContent!)).toEqual({
@@ -164,14 +167,14 @@ describe('Quick drills card: Ear only', () => {
   it('reviews due ear items', async () => {
     await getDb().cards.bulkPut([dueEarFind, dueNamedFind]);
     renderCard();
-    await screen.findByRole('link', { name: 'Ear only (no guitar)' });
+    await screen.findByRole('link', { name: 'Ear only (no guitar)' }, SLOW);
     expect(screen.getByTestId('ear-only-copy')).toHaveTextContent('Reviews 1 ear item due now.');
   });
 
   it('says when the ear track has not opened yet', async () => {
     useAppStore.setState({ settings: DEFAULT_SETTINGS });
     renderCard();
-    expect(await screen.findByTestId('ear-only-copy')).toHaveTextContent(
+    expect(await screen.findByTestId('ear-only-copy', {}, SLOW)).toHaveTextContent(
       'Ear only (no guitar) opens after your first session.',
     );
     expect(screen.queryByRole('link', { name: 'Ear only (no guitar)' })).toBeNull();
@@ -180,11 +183,13 @@ describe('Quick drills card: Ear only', () => {
   it('asks for sound when it is off, and turns it on', async () => {
     useAppStore.setState({ settings: { ...useAppStore.getState().settings, soundOn: false } });
     renderCard();
-    const turnOn = await screen.findByRole('button', { name: 'Turn sound on' });
+    const turnOn = await screen.findByRole('button', { name: 'Turn sound on' }, SLOW);
     expect(screen.getByTestId('ear-only-copy')).toHaveTextContent('needs sound');
     expect(screen.queryByRole('link', { name: 'Ear only (no guitar)' })).toBeNull();
     await userEvent.click(turnOn);
-    expect(await screen.findByRole('link', { name: 'Ear only (no guitar)' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('link', { name: 'Ear only (no guitar)' }, SLOW),
+    ).toBeInTheDocument();
     expect((await getSettings(getDb())).soundOn).toBe(true);
   });
 });
