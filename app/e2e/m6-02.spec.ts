@@ -150,7 +150,7 @@ test.describe('M6-02 pentatonic boxes over their CAGED shapes', () => {
     page,
   }, info) => {
     await freshStart(page);
-    await masterSkills(page, ['C6.minor-shapes']);
+    await masterSkills(page, ['C6.minor-cores', 'C6.minor-shapes']);
     await focusSession(page, 'C7.minor-boxes');
 
     // The first card is minor box 1, around the E shape, as a worked example.
@@ -182,7 +182,7 @@ test.describe('M6-02 pentatonic boxes over their CAGED shapes', () => {
   test('a tap in the next box is that confusion, and the box is shown', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
-    await masterSkills(page, ['C6.minor-shapes']);
+    await masterSkills(page, ['C6.minor-cores', 'C6.minor-shapes']);
     await focusSession(page, 'C7.minor-boxes');
 
     let task: Task | null = null;
@@ -229,7 +229,12 @@ test.describe('M6-02 pentatonic boxes over their CAGED shapes', () => {
   test('the relative root in a box, and the own root as its confusion', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
-    await masterSkills(page, ['C6.minor-shapes', 'C7.minor-boxes', 'C7.major-boxes']);
+    await masterSkills(page, [
+      'C6.minor-cores',
+      'C6.minor-shapes',
+      'C7.minor-boxes',
+      'C7.major-boxes',
+    ]);
     await focusSession(page, 'C7.relative');
 
     // A worked example first: minor box 1 and its relative major's roots.

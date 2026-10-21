@@ -68,10 +68,10 @@ async function startFindSession(page: Page): Promise<void> {
   await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS]);
   await seedKnownNotes(page);
   await page.reload();
-  // 7 naturals to find on each of strings 6 and 5, the 14 musical-alphabet items,
-  // the 10 fret-marker items and the 3 F4 pulse rhythms: new counts every root
-  // skill, mastered or not.
-  await expect(page.getByTestId('new-count')).toHaveText('41');
+  // New counts the open skills' unseen items (M10-02): 7 naturals to find on
+  // each of strings 6 and 5, the 3 F4 pulse rhythms, and what mastering F1
+  // opens: 8 sharp keys to spell and 5 I6 ear items.
+  await expect(page.getByTestId('new-count')).toHaveText('30');
   await page.getByTestId('start-session').click();
   await expect(page.getByTestId('d2-prompt')).toBeVisible();
 }

@@ -31,8 +31,8 @@ const INTERVAL_SEMITONES: Record<string, number> = {
 const MAJOR = [0, 2, 4, 5, 7, 9, 11];
 /** Correct answers move on by themselves after this long. */
 const AUTO_ADVANCE_MS = 700;
-/** Test-out probes for Chords: 3rds (6), 4ths and 5ths (8), sharp keys (4), flat keys (4). */
-const CHORDS_PROBES = 22;
+/** Test-out probes for Chords: 3rds (6) and sharp keys (4), C5.triads' gate since M10-02. */
+const CHORDS_PROBES = 10;
 
 const dialog = (page: Page) => page.getByRole('dialog', { name: 'Test out' });
 const probe = (page: Page) => page.getByTestId('placement-probe');
@@ -157,11 +157,11 @@ test.describe('M2-16 test out of a locked module', () => {
   });
 
   test('a fluent test-out opens Chords, and a Chords session starts @smoke', async ({ page }) => {
-    // Twenty-odd probes; leave room for a loaded machine.
+    // Ten probes; leave room for a loaded machine.
     test.setTimeout(120_000);
     const offer = page.getByRole('region', { name: 'Already know this?' });
     await expect(offer).toContainText('a short test of Interval shapes: 3rds');
-    await expect(offer).toContainText('Spell the flat keys');
+    await expect(offer).toContainText('Spell the sharp keys');
     await expectNoHorizontalOverflow(page);
 
     const seen = await takeTestOut(page, () => true);
@@ -217,9 +217,7 @@ test.describe('M2-16 test out of a locked module', () => {
     await result(page).getByRole('button', { name: 'Test out again' }).click();
     await expect(result(page)).toHaveCount(0);
     const offer = page.getByRole('region', { name: 'Already know this?' });
-    await expect(offer).toContainText(
-      'a short test of Spell the sharp keys and Spell the flat keys',
-    );
+    await expect(offer).toContainText('a short test of Spell the sharp keys.');
     await expect(offer.getByRole('button', { name: 'Test out' })).toBeFocused();
     const seen = await takeTestOut(page, () => true);
     expect(seen.every((id) => id.startsWith('spell-key:'))).toBe(true);

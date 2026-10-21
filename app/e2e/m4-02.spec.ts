@@ -7,7 +7,7 @@ import { focusSession } from './helpers/focus';
 // quality twin is always offered, and feedback lays out the key's chords.
 
 /** Rule 7: the key's degrees (C4) and triads (C5) open C8 (design §5 M-Harmony). */
-const C8_PREREQS = ['C4.flat-key-degrees', 'C5.triads'];
+const C8_PREREQS = ['C4.sharp-key-degrees', 'C4.flat-key-degrees', 'C5.triads'];
 
 // An independent answer key (deliberately not imported from app code).
 const SCALES: Record<string, string[]> = {
