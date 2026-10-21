@@ -62,8 +62,9 @@ describe('<D9View>', () => {
     );
     expect(markers('root')).toEqual([{ string: 5, fret: 3, label: 'C' }]);
     expect(markers('target')).toEqual([]);
+    // Every prompt says how the round ends and what Done does.
     expect(screen.getByTestId('d9-explain')).toHaveTextContent(
-      'The square is the root, C, on string 5.',
+      "The square is the root, C, on string 5. Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.",
     );
     // At guide level 1 the count hides the total (rule 9).
     expect(screen.getByTestId('d9-count')).toHaveTextContent(/^Found 0$/);

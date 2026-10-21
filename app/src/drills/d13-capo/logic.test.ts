@@ -299,7 +299,7 @@ describe('wording', () => {
   it('hints the method by direction, never the answer', () => {
     expect(d13Hint({ ask: 'sound' })).toMatch(/count up/);
     expect(d13Hint({ ask: 'shape' })).toMatch(/count down/);
-    expect(d13Hint({ ask: 'fret' })).toMatch(/up from the shapes/);
+    expect(d13Hint({ ask: 'fret' })).toBe("Count half steps up from the shapes to the song's key.");
   });
 
   it('fades guides by level (rule 9)', () => {

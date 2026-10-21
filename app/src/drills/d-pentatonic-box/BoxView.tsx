@@ -31,6 +31,10 @@ interface ViewState {
 
 const WIDE: FretRange = { from: 0, to: 15 };
 
+/** How the round ends, under every prompt: the learner can't otherwise know a wrong tap ends it. */
+const ROUND_RULE =
+  "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.";
+
 /** The chord's degrees by shape and colour: the root a square, the 3rd a circle, the 5th a triangle. */
 function chordStyle(degree: BoxNote['degree']): FretMarker['style'] {
   if (degree === '1') return 'root';
@@ -147,18 +151,19 @@ export function BoxView({
   } else {
     question = guided ? (
       <>
-        In this {chord} box, the relative {prompt.relative.quality}’s root is {relRoot}. Tap each{' '}
+        In this {chord} box, the relative {prompt.relative.quality}'s root is {relRoot}. Tap each{' '}
         {relRoot} to continue.
       </>
     ) : (
       <>
-        Tap every root of {chord}’s relative {prompt.relative.quality} in this box
+        Tap every root of {chord}'s relative {prompt.relative.quality} in this box
       </>
     );
   }
   const before =
     `The squares are the roots, ${root}.` +
-    (!overlay && hint && !guided ? ` The relative ${prompt.relative.quality} is ${relRoot}.` : '');
+    (!overlay && hint && !guided ? ` The relative ${prompt.relative.quality} is ${relRoot}.` : '') +
+    ` ${ROUND_RULE}`;
 
   const found = taps.filter((p) => dpbTargetAt(prompt, p)).length;
   return (
@@ -208,7 +213,7 @@ export function BoxView({
           label={
             overlay
               ? `Fretboard: build the box around the ${dpbDisplay(prompt.chord)} chord`
-              : `Fretboard: find the relative ${prompt.relative.quality}’s root in the box`
+              : `Fretboard: find the relative ${prompt.relative.quality}'s root in the box`
           }
         />
       </div>

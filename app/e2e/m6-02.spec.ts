@@ -105,7 +105,7 @@ async function readTask(page: Page): Promise<Task> {
     const answer = solveBox(root, quality, box, given).filter((c) => !shape.has(key(c)));
     return { mode, guided: m![1] === 'This is', root, quality, box, answer, roots };
   }
-  const m = /(?:of|In this) ([A-G][♯♭]?)(m?)(?:’s relative| box)/.exec(text);
+  const m = /(?:of|In this) ([A-G][♯♭]?)(m?)(?:'s relative| box)/.exec(text);
   expect(m, text).not.toBeNull();
   const root = chroma(m![1]!);
   const quality: Quality = m![2] ? 'minor' : 'major';

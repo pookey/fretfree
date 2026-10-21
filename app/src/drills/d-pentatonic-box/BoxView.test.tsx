@@ -75,7 +75,10 @@ describe('<BoxView> overlay', () => {
     expect(markers('fifth').map((m) => m.label)).toEqual(['', '']);
     expect(markers('target')).toEqual([]);
     expect(screen.getByTestId('dpb-count')).toHaveTextContent(/^Found 0$/);
-    expect(screen.getByTestId('dpb-explain')).toHaveTextContent('The squares are the roots, C.');
+    // Every prompt says how the round ends and what Done does.
+    expect(screen.getByTestId('dpb-explain')).toHaveTextContent(
+      "The squares are the roots, C. Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.",
+    );
     expect(neck()).toHaveAttribute('data-fret-from', '0');
     expect(neck()).toHaveAttribute('data-fret-to', '15');
   });
@@ -174,21 +177,23 @@ describe('<BoxView> relative', () => {
     const p = prompt('penta-relative:1@minor');
     view(p, { guideLevel: 3 });
     expect(screen.getByTestId('dpb-prompt')).toHaveTextContent(
-      'Tap every root of Cm’s relative major in this box',
+      "Tap every root of Cm's relative major in this box",
     );
     expect(cells('root')).toEqual(['s6f8', 's4f10', 's1f8']);
     expect(markers('tone')).toHaveLength(9);
     // Even at full guides the box's dots carry no names before an answer (rule 4).
     expect(markers('tone').every((m) => m.label === '')).toBe(true);
     expect(screen.getByTestId('dpb-explain')).toHaveTextContent(
-      'The squares are the roots, C. The relative major is E♭.',
+      "The squares are the roots, C. The relative major is E♭. Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.",
     );
     expect(screen.getByTestId('dpb-count')).toHaveTextContent('Found 0 of 3');
   });
 
   it('keeps the relative key out of the hint line below guide level 2', () => {
     view(prompt('penta-relative:1@minor'));
-    expect(screen.getByTestId('dpb-explain')).toHaveTextContent(/^The squares are the roots, C\.$/);
+    expect(screen.getByTestId('dpb-explain')).toHaveTextContent(
+      /^The squares are the roots, C\. Tap the notes in any order\. A wrong tap ends the round; tap Done if you can't find the rest\.$/,
+    );
   });
 
   it('answers on a tap on the box’s own root', () => {
@@ -204,7 +209,7 @@ describe('<BoxView> relative', () => {
     const p = prompt('penta-relative:1@minor');
     view(p, { guided: true });
     expect(screen.getByTestId('dpb-prompt')).toHaveTextContent(
-      'In this Cm box, the relative major’s root is E♭. Tap each E♭ to continue.',
+      "In this Cm box, the relative major's root is E♭. Tap each E♭ to continue.",
     );
     expect(cells('target')).toEqual(['s6f11', 's3f8', 's1f11']);
   });

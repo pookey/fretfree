@@ -309,7 +309,7 @@ export function d13Hint(prompt: Pick<D13Prompt, 'ask'>): string {
     case 'shape':
       return 'The shapes sit below the song: count down one half step per fret.';
     case 'fret':
-      return 'Count half steps up from the shapes to the song’s key.';
+      return "Count half steps up from the shapes to the song's key.";
   }
 }
 

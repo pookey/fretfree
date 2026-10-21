@@ -106,6 +106,10 @@ describe('<D37View> every note of a chord', () => {
     const p = prompt(C);
     const { onAnswer } = view(p, { guideLevel: 1 });
     expect(screen.getByTestId('d37-count')).toHaveTextContent(/^Found 0$/);
+    // With no other hint, the line is just how the round ends.
+    expect(screen.getByTestId('d37-explain')).toHaveTextContent(
+      /^Tap the notes in any order\. A wrong tap ends the round; tap Done if you can't find the rest\.$/,
+    );
     tap(at(6, 0));
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(onAnswer).toHaveBeenCalledWith([at(6, 0)]);
@@ -155,7 +159,7 @@ describe('<D37View> a box: one CAGED shape’s span', () => {
       'Tap every note of C major in frets 5–8',
     );
     expect(screen.getByTestId('d37-explain')).toHaveTextContent(
-      'These frets hold the G shape of C major.',
+      "These frets hold the G shape of C major. Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.",
     );
     tap(at(6, 3));
     expect(onAnswer).not.toHaveBeenCalled();
@@ -193,7 +197,7 @@ describe('<D37View> one degree', () => {
     );
     expect(where(markers('root'))).toEqual(['s2f1', 's5f3']);
     expect(screen.getByTestId('d37-explain')).toHaveTextContent(
-      'These frets hold the C shape of C major. The squares are its roots. Count up from them.',
+      `These frets hold the C shape of C major. The squares are its roots. Count up from them. Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.`,
     );
     expect(cell(5, 3)).toHaveAccessibleName('string 5, fret 3, root');
     // A root square is a guide, not an answer.
