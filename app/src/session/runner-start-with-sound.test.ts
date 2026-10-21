@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS, SKILLS, createScheduler } from '../engine';
 import { DRILLS } from '../drills/registry';
-import { FretworkDB } from '../storage';
+import { FretworkDB, putSkillState } from '../storage';
 import { SessionRunner } from './runner';
 
-// "Start with sound" (design §4): a first session opens with ear → fretboard.
+// "Start with sound" (design §4): a first session opens with ear → fretboard,
+// and once that is practising new items come in the usual goal order (rule 6).
 
 let db: FretworkDB;
 let n = 0;
@@ -42,5 +43,16 @@ describe('SessionRunner with "start with sound"', () => {
     expect(first.entry.skillId).toBe('I6.ear-find');
     expect(first.entry.itemId).toMatch(/^ear-find:/);
     expect(first.drill.id).toBe('hear-it-find-it');
+  });
+
+  it('goes back to the goal order once ear → fretboard is practising', async () => {
+    await putSkillState(db, {
+      skillId: 'I6.ear-find',
+      status: 'practising',
+      guideLevel: 3,
+      rollingAccuracy: 1,
+    });
+    const r = await start(true);
+    expect(skillOf(r)).toMatch(/^F1\./);
   });
 });

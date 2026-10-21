@@ -11,6 +11,11 @@ export const startWithSound = {
   openPrerequisites: ['F1.alphabet', 'F2.string6-naturals'],
   /** Ear → fretboard first (design §4, research/02 rule 13): these lead the path, in order. */
   leading: ['I6.ear-find'],
+  /**
+   * The lead ends once this skill is practising or mastered: new items then
+   * interleave in goal order (research/02 rule 6: block briefly, then interleave).
+   */
+  leadUntil: 'I6.ear-find',
 } as const;
 
 declare module './index' {

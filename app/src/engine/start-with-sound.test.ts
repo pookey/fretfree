@@ -68,6 +68,7 @@ describe('startWithSoundSkills', () => {
       topics: ['I6'],
       openPrerequisites: ['F1.a'],
       leading: [],
+      leadUntil: 'I6.d',
     });
     expect(out.map((s) => s.prerequisites)).toEqual([[], ['F1.a'], ['I6.x'], ['I6.c']]);
     // Untouched skills are the same objects; a changed one keeps its items.
@@ -78,6 +79,7 @@ describe('startWithSoundSkills', () => {
 });
 
 describe('leadWithSound', () => {
+  const none = new Map<string, SkillStatus>();
   const frontier = orderFrontier(
     SKILLS.filter((s) =>
       [
@@ -91,12 +93,12 @@ describe('leadWithSound', () => {
   );
 
   it('keeps the goal order when the setting is off', () => {
-    expect(leadWithSound(frontier, false)).toEqual(frontier);
+    expect(leadWithSound(frontier, false, none)).toEqual(frontier);
     expect(frontier[0]?.id).toBe('F1.alphabet');
   });
 
   it('puts ear → fretboard first, then the rest of the ear track, then the neck', () => {
-    expect(leadWithSound(frontier, true).map((s) => s.id)).toEqual([
+    expect(leadWithSound(frontier, true, none).map((s) => s.id)).toEqual([
       'I6.ear-find',
       'I6.intervals-fourths-fifths',
       'I6.chords-major-minor',
@@ -106,7 +108,27 @@ describe('leadWithSound', () => {
 
   it('is stable within each group', () => {
     const skills = [skill('a', 'F1'), skill('b', 'I6'), skill('c', 'F2'), skill('d', 'I6')];
-    const cfg = { topics: ['I6'], openPrerequisites: [], leading: ['d'] };
-    expect(leadWithSound(skills, true, cfg).map((s) => s.id)).toEqual(['d', 'b', 'a', 'c']);
+    const cfg = { topics: ['I6'], openPrerequisites: [], leading: ['d'], leadUntil: 'b' };
+    expect(leadWithSound(skills, true, none, cfg).map((s) => s.id)).toEqual(['d', 'b', 'a', 'c']);
+    const done = new Map<string, SkillStatus>([['b', 'practising']]);
+    expect(leadWithSound(skills, true, done, cfg)).toEqual(skills);
+  });
+
+  it('leads while ear → fretboard is unlocked but not yet practised', () => {
+    const unlocked = new Map<string, SkillStatus>([
+      ['I6.ear-find', 'unlocked'],
+      ['F1.alphabet', 'practising'],
+    ]);
+    expect(leadWithSound(frontier, true, unlocked)[0]?.id).toBe('I6.ear-find');
+  });
+
+  it('ends the lead once ear → fretboard is practising or mastered (rule 6: then interleave)', () => {
+    for (const status of ['practising', 'mastered'] as const) {
+      const statuses = new Map<string, SkillStatus>([['I6.ear-find', status]]);
+      const out = leadWithSound(frontier, true, statuses);
+      expect(out).toEqual(frontier);
+      expect(out).not.toBe(frontier);
+      expect(out[0]?.id).toBe('F1.alphabet');
+    }
   });
 });

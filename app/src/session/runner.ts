@@ -260,12 +260,13 @@ export class SessionRunner {
       frontierInOrder.push(skill);
     }
     // The goal profile reorders frontier skills (design §3.3 step 2), and
-    // "start with sound" puts the ear track first.
+    // "start with sound" puts the ear track first until ear-find is practising.
     const frontier: Item[] = deps.reviewOnly
       ? []
       : leadWithSound(
           orderFrontier(frontierInOrder, deps.settings.goal),
           deps.settings.startWithSound,
+          statuses,
         ).flatMap((skill) => skill.items().filter(serves));
     const tuning = getTuning(deps.settings.tuning);
     const ctx = { tuning, accidentalPref: deps.settings.accidentalPref };
