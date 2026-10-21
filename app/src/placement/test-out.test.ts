@@ -130,6 +130,67 @@ describe('the scope of a test-out', () => {
     expect(unmetPrerequisites(INTERVALS, SKILLS, steps)).toEqual(['C1.octaves']);
   });
 
+  describe('a gate that mixes mastered and practising (soft prerequisites)', () => {
+    const skill = (id: string, topic: string, extra: Partial<Skill> = {}): Skill => ({
+      id,
+      topic,
+      order: 0,
+      title: id,
+      prerequisites: [],
+      drillTypes: [],
+      items: () => [],
+      ...extra,
+    });
+    const hard = skill('X.hard', 'X');
+    const soft = skill('X.soft', 'X');
+    const entry = skill('Y.entry', 'Y', {
+      prerequisites: ['X.hard'],
+      softPrerequisites: ['X.soft'],
+    });
+    // Soft prerequisites inside the module keep a skill from opening it.
+    const inner = skill('Y.inner', 'Y', { softPrerequisites: ['Y.entry'] });
+    const mixed = [hard, soft, entry, inner];
+    const module: Module = { ...CHORDS, topics: ['Y'] };
+    const at = (statuses: [string, SkillStatus][]) => {
+      const out = new Map<string, SkillStatus>(statuses);
+      for (const s of mixed) out.set(s.id, deriveStatus(s, out, out.get(s.id)));
+      return out;
+    };
+
+    it('opens the module from the skill whose prerequisites, hard and soft, lie outside', () => {
+      expect(entrySkills(module, mixed)).toEqual([entry]);
+    });
+
+    it('probes both while neither is met', () => {
+      expect(unmetPrerequisites(module, mixed, at([]))).toEqual(['X.hard', 'X.soft']);
+    });
+
+    it('probes the hard one until it is mastered, though practising', () => {
+      const s = at([
+        ['X.hard', 'practising'],
+        ['X.soft', 'practising'],
+      ]);
+      expect(unmetPrerequisites(module, mixed, s)).toEqual(['X.hard']);
+    });
+
+    it('probes the soft one only until it is practising', () => {
+      expect(unmetPrerequisites(module, mixed, at([['X.hard', 'mastered']]))).toEqual(['X.soft']);
+      const met = at([
+        ['X.hard', 'mastered'],
+        ['X.soft', 'practising'],
+      ]);
+      expect(met.get('Y.entry')).toBe('unlocked');
+      expect(unmetPrerequisites(module, mixed, met)).toEqual([]);
+    });
+
+    it('opens once a test-out masters the hard one, with the soft one known', () => {
+      const summary = { knownSkills: ['X.hard', 'X.soft'], masteredSkills: ['X.hard'] };
+      expect(opensAfter(module, mixed, at([]), summary)).toBe(true);
+      const short = { knownSkills: ['X.hard', 'X.soft'], masteredSkills: ['X.soft'] };
+      expect(opensAfter(module, mixed, at([]), short)).toBe(false);
+    });
+  });
+
   it('asks for nothing once the module is open', () => {
     const open = new Map(FRESH).set('C5.triads', 'unlocked');
     expect(unmetPrerequisites(CHORDS, SKILLS, open)).toEqual([]);

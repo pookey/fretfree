@@ -1,6 +1,6 @@
 import { ENGINE_CONFIG } from '../engine/config';
 import { moduleOfTopic, type Module } from '../engine/frontier';
-import { deriveStatus, isFrontier } from '../engine/mastery';
+import { deriveStatus, isFrontier, unmetGates } from '../engine/mastery';
 import type { CardRecord, Item, Skill, SkillStatus } from '../engine/model';
 import { skillGroups, type GroupInput } from './algorithm';
 import type { PlacementSummary } from './save';
@@ -19,23 +19,21 @@ export function moduleSkills(module: Module, skills: readonly Skill[]): Skill[] 
 }
 
 /**
- * The module's first skills: those whose prerequisites all lie outside it.
- * They are the ones that open the module.
+ * The module's first skills: those whose prerequisites, hard and soft, all
+ * lie outside it. They are the ones that open the module.
  */
 export function entrySkills(module: Module, skills: readonly Skill[]): Skill[] {
   const mine = moduleSkills(module, skills);
   const ids = new Set(mine.map((s) => s.id));
-  return mine.filter((s) => s.prerequisites.every((p) => !ids.has(p)));
-}
-
-/** True when `status` meets `skill`'s prerequisite rule (`deriveStatus`). */
-function meets(skill: Skill, status: SkillStatus | undefined): boolean {
-  return status === 'mastered' || (skill.softUnlock === true && status === 'practising');
+  return mine.filter((s) =>
+    [...s.prerequisites, ...(s.softPrerequisites ?? [])].every((p) => !ids.has(p)),
+  );
 }
 
 /**
  * The prerequisites a locked module still needs, in curriculum order: every
- * prerequisite of a locked first skill that doesn't yet meet its unlock rule.
+ * prerequisite of a locked first skill that doesn't yet meet its gate
+ * (`deriveStatus`): a hard one not mastered, a soft one not yet practising.
  * For Chords on a fresh profile, the C3 and C4 skills `C5.triads` needs.
  */
 export function unmetPrerequisites(
@@ -46,7 +44,7 @@ export function unmetPrerequisites(
   const unmet = new Set<string>();
   for (const skill of entrySkills(module, skills)) {
     if (statuses.get(skill.id) !== 'locked') continue;
-    for (const p of skill.prerequisites) if (!meets(skill, statuses.get(p))) unmet.add(p);
+    for (const p of unmetGates(skill, statuses)) unmet.add(p);
   }
   return skills.filter((s) => unmet.has(s.id)).map((s) => s.id);
 }
