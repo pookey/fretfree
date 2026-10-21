@@ -35,8 +35,13 @@ export const skills: Skill[] = [
     topic: 'C7',
     order: 1700,
     title: 'Pentatonic boxes: minor',
-    // Rule 7: CAGED → pentatonic. Each minor box wraps a minor CAGED shape.
-    prerequisites: ['C6.minor-shapes'],
+    // Rule 7: CAGED → pentatonic. Each minor box wraps a minor CAGED shape,
+    // and the box is learned as that shape's core plus the notes around it,
+    // so the minor cores need only be practising (M10-02): the whole minor
+    // shapes waited on the major ones too. F2 → CAGED still holds, through
+    // `C6.triad-cores`.
+    prerequisites: [],
+    softPrerequisites: ['C6.minor-cores'],
     softUnlock: false,
     drillTypes: DRILLS,
     items: memo(() =>

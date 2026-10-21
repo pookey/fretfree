@@ -38,10 +38,13 @@ describe('C9 skills', () => {
     expect(pop.indexOf('prog:vi-IV-I-V:build') - pop.indexOf('prog:I-V-vi-IV:build')).toBe(1);
   });
 
-  it('opens on numerals (rule 7, design §5), the rest once pop is under way', () => {
+  it('opens on triads (rule 7) and practised numerals, the rest once pop is under way', () => {
     expect(getSkill('C9.pop')).toMatchObject({
       topic: 'C9',
-      prerequisites: ['C8.numerals-major'],
+      // M10-02: chord construction → progressions stays hard; C8's first
+      // stage need only be practising.
+      prerequisites: ['C5.triads'],
+      softPrerequisites: ['C8.numerals-major'],
       drillTypes: ['progression-builder'],
     });
     expect(getSkill('C9.pop')?.softUnlock).toBeUndefined();

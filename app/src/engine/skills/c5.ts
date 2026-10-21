@@ -16,8 +16,12 @@ import { itemsOf, memo } from './helpers';
  * natural roots come first. Three stages also keep the placement test's
  * expert run within its budget (one probe group per skill).
  *
- * Chord construction is gated on mastery of the intervals it stacks (rule 7)
- * and of the keys it's spelled from (C4), so no C5 skill soft-unlocks.
+ * Chord construction is gated on mastery of the intervals it stacks (rule 7),
+ * so no C5 skill soft-unlocks. Triads asked for every C3 and C4 skill
+ * mastered until M10-02, which held a songs learner back from harmony for
+ * weeks. A triad is two stacked 3rds, so `C3.thirds` mastered is the rule-7
+ * gate; the sharp keys need only be practising, since spelling triads drills
+ * the same letters and accidentals and the two reinforce each other.
  */
 
 // D17 (play-sequence) plays the arpeggio on a real guitar, in mic mode only.
@@ -100,6 +104,7 @@ interface Group {
   title: string;
   kinds: readonly ChordKind[];
   prerequisites: readonly string[];
+  softPrerequisites?: readonly string[];
 }
 
 const GROUPS: readonly Group[] = [
@@ -107,8 +112,10 @@ const GROUPS: readonly Group[] = [
     id: 'C5.triads',
     title: 'Spell major and minor triads',
     kinds: ['major', 'minor'],
-    // A triad stacks a 3rd and a 5th (C3) on a root spelled from its key (C4).
-    prerequisites: ['C3.thirds', 'C3.fourths-fifths', 'C4.sharp-keys', 'C4.flat-keys'],
+    // A triad is two stacked 3rds (C3, rule 7), spelled with a key's letters
+    // and accidentals (C4, practised alongside).
+    prerequisites: ['C3.thirds'],
+    softPrerequisites: ['C4.sharp-keys'],
   },
   {
     id: 'C5.sevenths',
@@ -132,6 +139,7 @@ export const skills: Skill[] = GROUPS.map((g, i) => ({
   order: 1500 + i * 10,
   title: g.title,
   prerequisites: g.prerequisites,
+  ...(g.softPrerequisites ? { softPrerequisites: g.softPrerequisites } : {}),
   drillTypes: DRILLS,
   items: memo(() => itemsOf(g.id, chordIds(g.kinds))),
 }));

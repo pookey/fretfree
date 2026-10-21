@@ -245,8 +245,8 @@ export function chordMarkers(
 /**
  * "Quiz me on this" (design §7): the C9 skill that teaches this progression,
  * plus the C10 capo skills when a capo is on. Gating stays on (rule 7), so
- * until those are open the quiz offers the nearest open prerequisites of
- * each (C8's numerals for C9; the keys and triads for C10).
+ * until those are open the quiz offers the nearest open hard prerequisites
+ * of each (triads for C9; C10's first stage has none, M10-02).
  */
 export function playerQuizFocus(
   progressionId: string,

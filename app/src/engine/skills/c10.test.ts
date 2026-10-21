@@ -41,8 +41,11 @@ describe('C10 skills', () => {
     expect(orders).toEqual([...orders].sort((a, b) => a - b));
   });
 
-  it('opens after keys and triads, as Harmony does, then on the first stage', () => {
-    expect(getSkill('C10.capo-g-c-d')!.prerequisites).toEqual(['C4.sharp-keys', 'C5.triads']);
+  it('opens once keys and triads are practising, then on the first stage', () => {
+    // M10-02: a capo question needs "which key sounds", not mastered spelling.
+    expect(getSkill('C10.capo-g-c-d')!.prerequisites).toEqual([]);
+    expect(getSkill('C10.capo-g-c-d')!.softPrerequisites).toEqual(['C4.sharp-keys', 'C5.triads']);
+    expect(getSkill('C10.capo-g-c-d')!.softUnlock).toBe(false);
     expect(getSkill('C10.capo-a-e')!.prerequisites).toEqual(['C10.capo-g-c-d']);
     expect(getSkill('C10.capo-minor')!.prerequisites).toEqual(['C10.capo-g-c-d']);
   });

@@ -28,6 +28,7 @@ interface Group {
   id: string;
   title: string;
   prerequisites: readonly string[];
+  softPrerequisites?: readonly string[];
   /** Rule 7 gates the first CAGED skill on mastered notes and triads; later ones open as usual. */
   softUnlock: boolean;
   kind: 'caged' | 'caged-core';
@@ -38,9 +39,12 @@ const GROUPS: readonly Group[] = [
   {
     id: 'C6.triad-cores',
     title: 'CAGED triad cores',
-    // Rule 7: natural notes on strings 6 and 5 → CAGED (the roots sit there),
-    // and triads before CAGED (research/03: triads are the shapes' cores).
-    prerequisites: ['F2.string6-naturals', 'F2.string5-naturals', 'C5.triads'],
+    // Rule 7: natural notes on strings 6 and 5 → CAGED (the roots sit there).
+    // Triads are the shapes' cores (research/03), but placing one on the neck
+    // needs the string notes automatic, not mastered spelling: building cores
+    // reinforces spelling, so the two interleave (M10-02, a PM call).
+    prerequisites: ['F2.string6-naturals', 'F2.string5-naturals'],
+    softPrerequisites: ['C5.triads'],
     softUnlock: false,
     kind: 'caged-core',
     quality: 'major',
@@ -86,6 +90,7 @@ export const skills: Skill[] = GROUPS.map((g, i) => ({
   order: 1600 + i * 10,
   title: g.title,
   prerequisites: g.prerequisites,
+  ...(g.softPrerequisites ? { softPrerequisites: g.softPrerequisites } : {}),
   softUnlock: g.softUnlock,
   drillTypes: g.kind === 'caged' ? SHAPE_DRILLS : DRILLS,
   items: memo(() =>

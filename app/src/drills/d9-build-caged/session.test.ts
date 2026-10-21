@@ -36,7 +36,7 @@ async function master(skillIds: readonly string[], guideLevel: 0 | 1 = 0) {
 describe('D9 in a session', () => {
   it('serves the triad cores first, guided, graded per note', async () => {
     const cores = skill('C6.triad-cores');
-    await master(cores.prerequisites);
+    await master([...cores.prerequisites, ...(cores.softPrerequisites ?? [])]);
     const r = await SessionRunner.start({
       db,
       scheduler: createScheduler({ enableFuzz: false }),

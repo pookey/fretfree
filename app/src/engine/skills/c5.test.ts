@@ -46,13 +46,11 @@ describe('C5 skills', () => {
     expect(new Set(kinds)).toEqual(new Set(C5_CHORD_KINDS));
   });
 
-  it('opens on mastered intervals (C3) and keys (C4), each stage after the last', () => {
-    expect(getSkill('C5.triads')!.prerequisites).toEqual([
-      'C3.thirds',
-      'C3.fourths-fifths',
-      'C4.sharp-keys',
-      'C4.flat-keys',
-    ]);
+  it('opens on mastered 3rds (C3) and practised keys (C4), each stage after the last', () => {
+    // M10-02: a triad is two stacked 3rds (rule 7); the keys are practised alongside.
+    expect(getSkill('C5.triads')!.prerequisites).toEqual(['C3.thirds']);
+    expect(getSkill('C5.triads')!.softPrerequisites).toEqual(['C4.sharp-keys']);
+    expect(getSkill('C5.sevenths')!.softPrerequisites).toBeUndefined();
     expect(getSkill('C5.sevenths')!.prerequisites).toEqual(['C5.triads', 'C3.sevenths']);
     expect(getSkill('C5.sus-add')!.prerequisites).toEqual(['C5.sevenths', 'C3.seconds']);
     // Rule 7 gates chord construction on mastered intervals: no soft unlock.

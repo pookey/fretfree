@@ -24,6 +24,7 @@ interface Group {
   id: string;
   title: string;
   prerequisites: readonly string[];
+  softPrerequisites?: readonly string[];
   softUnlock?: boolean;
   progressions: readonly string[];
 }
@@ -32,9 +33,12 @@ const GROUPS: readonly Group[] = [
   {
     id: 'C9.pop',
     title: 'Progressions: pop and rock',
-    // Rule 7 and design §5: numerals → progressions. C8 already builds on the
-    // key's degrees (C4) and its triads (C5).
-    prerequisites: ['C8.numerals-major'],
+    // Rule 7: chord construction → progressions, so triads (C5) mastered.
+    // It waited on C8's numerals mastered, in all 12 keys, until M10-02; a
+    // progression is built in a key, and building one reinforces its
+    // numerals, so C8's first stage (C, G and D) need only be practising.
+    prerequisites: ['C5.triads'],
+    softPrerequisites: ['C8.numerals-major'],
     progressions: ['I-IV-V', 'I-V-vi-IV', 'vi-IV-I-V', 'I-vi-IV-V'],
   },
   {
@@ -75,6 +79,7 @@ export const skills: Skill[] = GROUPS.map((g, i) => ({
   order: 1599.2 + i * 0.2,
   title: g.title,
   prerequisites: g.prerequisites,
+  ...(g.softPrerequisites ? { softPrerequisites: g.softPrerequisites } : {}),
   ...(g.softUnlock ? { softUnlock: true } : {}),
   drillTypes: DRILLS,
   items: memo(() => itemsOf(g.id, ids(g.progressions))),

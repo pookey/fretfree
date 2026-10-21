@@ -48,10 +48,15 @@ describe('C7 skills', () => {
     }
   });
 
-  it('gates the first box on the minor CAGED shapes it wraps (rule 7)', () => {
+  it('opens the first box once the minor CAGED cores it wraps are practising', () => {
     const first = getSkill('C7.minor-boxes')!;
-    expect(first.prerequisites).toEqual(['C6.minor-shapes']);
+    // M10-02: soft on the minor cores, not hard on the whole minor shapes.
+    expect(first.prerequisites).toEqual([]);
+    expect(first.softPrerequisites).toEqual(['C6.minor-cores']);
     expect(first.softUnlock).toBe(false);
+    // Rule 7's F2 → CAGED gate still holds, through the cores.
+    expect(getSkill('C6.minor-cores')!.prerequisites).toEqual(['C6.triad-cores']);
+    expect(getSkill('C6.triad-cores')!.prerequisites).toContain('F2.string6-naturals');
     expect(getSkill('C7.major-boxes')!.prerequisites).toEqual(['C7.minor-boxes']);
     expect(getSkill('C7.relative')!.prerequisites).toEqual(['C7.minor-boxes', 'C7.major-boxes']);
   });

@@ -165,23 +165,21 @@ describe('playerQuizFocus', () => {
   });
 
   it('walks the capo skills back on their own while the progression skill is open', () => {
+    // M10-02: walk-backs follow hard prerequisites only. C10's first stage
+    // has none (its keys and triads are soft), so a locked capo walks back to
+    // nothing and the quiz keeps to the progression.
     const open = new Set(['C9.pop', 'C4.sharp-keys', 'C5.triads']);
-    expect(playerQuizFocus('I-V-vi-IV', 3, open)).toEqual({
-      skillIds: ['C9.pop', 'C4.sharp-keys', 'C5.triads'],
-    });
+    expect(playerQuizFocus('I-V-vi-IV', 3, open)).toEqual({ skillIds: ['C9.pop'] });
     // And an open capo skill doesn't hide the progression's walk-back.
-    expect(playerQuizFocus('ii-V-I', 3, new Set(['C10.capo-g-c-d', 'C8.numerals-major']))).toEqual({
-      skillIds: ['C8.numerals-major', 'C10.capo-g-c-d'],
-    });
-    // A shared prerequisite is listed once.
-    expect(playerQuizFocus('I-V-vi-IV', 3, new Set(['C5.triads']))).toEqual({
-      skillIds: ['C5.triads'],
+    expect(playerQuizFocus('ii-V-I', 3, new Set(['C10.capo-g-c-d', 'C5.triads']))).toEqual({
+      skillIds: ['C5.triads', 'C10.capo-g-c-d'],
     });
   });
 
   it('walks back to the nearest open prerequisite while the skill is locked', () => {
-    expect(playerQuizFocus('ii-V-I', 0, new Set(['C8.numerals-major']))).toEqual({
-      skillIds: ['C8.numerals-major'],
+    // C9.pop is hard on C5.triads (rule 7); C8's numerals are soft.
+    expect(playerQuizFocus('ii-V-I', 0, new Set(['C5.triads', 'C8.numerals-major']))).toEqual({
+      skillIds: ['C5.triads'],
     });
   });
 

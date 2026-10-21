@@ -16,10 +16,11 @@ import { itemsOf, memo } from './helpers';
  * shape by shape, so the directions are mixed from the start (rule 6), and
  * D13 keys them `capo:up` and `capo:down` for the confusion matrix.
  *
- * Design §5 opens Progressions after Harmony (C8), which builds on keys and
- * triads, and rule 7 gates progressions on chord construction. There are no
- * C8 skills yet, so the first stage is gated on what Harmony needs: the sharp
- * keys (key names) and triads, mastered. The later stages build on it alone.
+ * The first stage opens once the sharp keys (key names) and triads are
+ * practising. It asked for both mastered until M10-02, but a capo question
+ * needs "which key sounds", fret arithmetic on key names, not mastered
+ * spelling; rule 7's chord construction → progressions gate is C9's, not
+ * this one's. The later stages build on it alone.
  */
 
 const DRILLS = ['capo'];
@@ -33,6 +34,7 @@ interface Group {
   /** Open-shape keys (`OPEN_SHAPE_KEYS` labels) in the order they enter. */
   shapes: readonly string[];
   prerequisites: readonly string[];
+  softPrerequisites?: readonly string[];
   /** Opens once the prerequisites are merely practising. */
   softUnlock: boolean;
 }
@@ -43,7 +45,8 @@ const GROUPS: readonly Group[] = [
     title: 'Capo with G, C and D shapes',
     // The shapes most songs are played in under a capo.
     shapes: ['G', 'C', 'D'],
-    prerequisites: ['C4.sharp-keys', 'C5.triads'],
+    prerequisites: [],
+    softPrerequisites: ['C4.sharp-keys', 'C5.triads'],
     softUnlock: false,
   },
   {
@@ -75,6 +78,7 @@ export const skills: Skill[] = GROUPS.map((g, i) => ({
   order: 2000 + i * 10,
   title: g.title,
   prerequisites: g.prerequisites,
+  ...(g.softPrerequisites ? { softPrerequisites: g.softPrerequisites } : {}),
   softUnlock: g.softUnlock,
   drillTypes: DRILLS,
   items: memo(() => itemsOf(g.id, capoIds(g.shapes))),

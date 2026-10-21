@@ -35,7 +35,8 @@ async function master(skillIds: readonly string[], guideLevel: 0 | 1 = 0) {
 
 describe('D12 in a session', () => {
   it('serves C9 guided first, graded per slot', async () => {
-    await master(skill('C9.pop').prerequisites);
+    const s = skill('C9.pop');
+    await master([...s.prerequisites, ...(s.softPrerequisites ?? [])]);
     const r = await SessionRunner.start({
       db,
       scheduler: createScheduler({ enableFuzz: false }),

@@ -37,7 +37,8 @@ async function master(skillIds: readonly string[], guideLevel: 0 | 1 = 0) {
 
 describe('pentatonic boxes in a session', () => {
   it('serves minor box 1 first, guided, graded per note', async () => {
-    await master(skill('C7.minor-boxes').prerequisites);
+    const s = skill('C7.minor-boxes');
+    await master([...s.prerequisites, ...(s.softPrerequisites ?? [])]);
     const r = await SessionRunner.start({
       db,
       scheduler: createScheduler({ enableFuzz: false }),
