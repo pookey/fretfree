@@ -3,9 +3,11 @@ import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard
 import type { GuideLevel } from '../../engine/model';
 import { neckWindow } from '../../shell/size-class';
 import type { Position } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillRenderProps } from '../types';
 import {
   d3AnswerPc,
+  d3Explain,
   d3FeedbackPositions,
   d3KeyToAnswer,
   d3TapAnswer,
@@ -35,6 +37,9 @@ export function D3View({
   aside,
 }: DrillRenderProps<D3Prompt, D3Answer>) {
   const { pref, choices } = prompt;
+  // Answers stay ASCII (`F#`); everything the learner reads says F♯.
+  const from = displayPc(prompt.from);
+  const target = displayPc(prompt.expectedPc);
 
   useEffect(() => {
     if (feedback) return;
@@ -62,7 +67,7 @@ export function D3View({
   const start: FretMarker = {
     ...prompt.fromPosition,
     style: 'root',
-    label: prompt.from,
+    label: from,
     forceLabel: true,
   };
   let markers: FretMarker[] = [start];
@@ -74,13 +79,13 @@ export function D3View({
       ...pos.expected.map((p): FretMarker => ({
         ...p,
         style: 'correct',
-        label: prompt.expectedPc,
+        label: target,
         forceLabel: true,
       })),
       ...pos.given.map((p): FretMarker => ({
         ...p,
         style: 'wrong',
-        label: given ?? undefined,
+        label: given === null ? undefined : displayPc(given),
         forceLabel: true,
       })),
     ];
@@ -89,7 +94,7 @@ export function D3View({
     markers.push({
       ...prompt.expectedPosition,
       style: 'target',
-      label: prompt.expectedPc,
+      label: target,
       forceLabel: true,
     });
   }
@@ -104,14 +109,21 @@ export function D3View({
           <p className={styles.prompt} id="drill-prompt">
             {guided ? (
               <>
-                {d3WorkedExample(prompt)} Tap <strong>{prompt.expectedPc}</strong> to continue.
+                {d3WorkedExample(prompt)} Tap <strong>{target}</strong> to continue.
               </>
             ) : (
               prompt.question
             )}
           </p>
-          <p className={styles.hint} data-testid="d3-hint">
-            {!feedback && 'Tap the note on any string of the neck, or press a button.'}
+          {/* One slot: the input hint while open, then the explanation (D6's pattern). */}
+          <p
+            className={styles.hint}
+            data-testid="d3-explain"
+            data-explaining={feedback ? true : undefined}
+          >
+            {feedback
+              ? d3Explain(prompt, feedback)
+              : 'Tap the note on any string of the neck, or press a button.'}
           </p>
           <div className={styles.choices} role="group" aria-labelledby="drill-prompt">
             {choices.map((c, i) => {
@@ -134,7 +146,7 @@ export function D3View({
                   onClick={() => onAnswer(c)}
                   aria-keyshortcuts={i < 9 ? String(i + 1) : undefined}
                 >
-                  {c}
+                  {displayPc(c)}
                 </button>
               );
             })}
@@ -151,7 +163,7 @@ export function D3View({
           guideLevel={neckLevel}
           accidentalPref={pref}
           onTapCell={tap}
-          label={`Fretboard, ${prompt.from} marked on string ${prompt.fromPosition.string}. Tap the answer on any string.`}
+          label={`Fretboard, ${from} marked on string ${prompt.fromPosition.string}. Tap the answer on any string.`}
         />
       </div>
       {/* iPad portrait: the context panel sits below the neck; compact styles it as a sheet. */}

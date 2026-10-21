@@ -11,6 +11,7 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { d3Parse as parse, d3SemitonesOf as semitonesOf, type D3Kind } from './meta';
 
@@ -33,6 +34,7 @@ export interface D3Prompt {
   offset: number;
   /** Signed semitones from `from` to the answer. */
   semitones: number;
+  /** Display text, with ♯/♭ (`A half step above F♯?`). */
   question: string;
   expectedPc: string;
   /** Answer buttons, in ascending pitch order. */
@@ -90,7 +92,8 @@ function stepName(semitones: number): string {
   return `${size} half steps`;
 }
 
-export function d3Question(kind: D3Kind, from: string, offset: number): string {
+export function d3Question(kind: D3Kind, ascii: string, offset: number): string {
+  const from = displayPc(ascii);
   if (kind === 'step') return `${stepName(offset)} ${offset > 0 ? 'above' : 'below'} ${from}?`;
   // "Note", not "letter": learners read "letter" as jargon. "In the musical
   // alphabet" keeps it apart from half steps (the note after C is not C♯).
@@ -102,7 +105,7 @@ export function d3Question(kind: D3Kind, from: string, offset: number): string {
 
 /** The worked-example line for the first, guided rep of a new item. */
 export function d3WorkedExample(prompt: D3Prompt): string {
-  return `${prompt.question.slice(0, -1)} is ${prompt.expectedPc}.`;
+  return `${prompt.question.slice(0, -1)} is ${displayPc(prompt.expectedPc)}.`;
 }
 
 export function d3Choices(
@@ -157,6 +160,15 @@ export function d3MakePrompt(item: Item, ctx: DrillContext): D3Prompt {
   };
 }
 
+function parses(pc: string): boolean {
+  try {
+    chromaOf(pc);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function sameChroma(a: string, b: string): boolean {
   try {
     return chromaOf(a) === chromaOf(b);
@@ -165,13 +177,147 @@ function sameChroma(a: string, b: string): boolean {
   }
 }
 
+/**
+ * `expected` is what the feedback bar prints (`That was F♯.`); the confusion
+ * matrix keeps the ASCII pitch class as its concept.
+ */
 export function d3Check(prompt: D3Prompt, answer: D3Answer): DrillCheck {
   const pc = d3AnswerPc(answer);
   // A musical-alphabet answer is a natural: never its enharmonic sharp or flat.
   const correct = sameChroma(pc, prompt.expectedPc) && (prompt.kind !== 'letter' || isNatural(pc));
+  const expected = displayPc(prompt.expectedPc);
+  const concept = prompt.expectedPc;
   return correct
-    ? { correct, expected: prompt.expectedPc }
-    : { correct, expected: prompt.expectedPc, confusedWith: pc };
+    ? { correct, expected, concept }
+    : { correct, expected, concept, confusedWith: pc };
+}
+
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+
+const ALPHABET_RULE = 'The musical alphabet runs A B C D E F G, then A again.';
+
+/** The two natural pairs a half step apart: no sharp between them (topic F1). */
+export const HALF_STEP_PAIRS: readonly (readonly [string, string])[] = [
+  ['B', 'C'],
+  ['E', 'F'],
+];
+
+/** `from` to `to` in semitones, signed the short way round; a tritone follows `toward`. */
+function signedSemitones(from: string, to: string, toward: number): number {
+  const up = mod(chromaOf(to) - chromaOf(from), 12);
+  return up > 6 || (up === 6 && toward < 0) ? up - 12 : up;
+}
+
+/** The notes from the start to `semitones` away, one per fret, as displayed. */
+function stepWalk(prompt: D3Prompt, semitones: number): string[] {
+  const dir = Math.sign(semitones);
+  return Array.from({ length: Math.abs(semitones) + 1 }, (_, i) =>
+    displayPc(midiToFretNote(prompt.fromMidi + i * dir, prompt.pref).pc),
+  );
+}
+
+/** The B–C or E–F pair a walk of `semitones` from the start steps across, if any. */
+function crossedPair(prompt: D3Prompt, semitones: number): readonly [string, string] | null {
+  const from = chromaOf(prompt.from);
+  const dir = Math.sign(semitones);
+  for (let i = 0; i < Math.abs(semitones); i++) {
+    // The lower chroma of this half step: a pair is crossed when it is the pair's lower note.
+    const lo = mod(from + i * dir + Math.min(dir, 0), 12);
+    const pair = HALF_STEP_PAIRS.find(([a]) => chromaOf(a) === lo);
+    if (pair) return pair;
+  }
+  return null;
+}
+
+function stepPhrase(semitones: number): string {
+  return `${stepName(semitones).replace(/^A /, 'a ')} ${semitones > 0 ? 'above' : 'below'}`;
+}
+
+function lettersPhrase(steps: number): string {
+  const size = Math.abs(steps);
+  const which = steps > 0 ? 'after' : 'before';
+  return size === 1 ? `the note ${which}` : `${size} notes ${which}`;
+}
+
+/** The letters from the start, `offset` steps along the alphabet, inclusive. */
+function letterWalk(from: string, offset: number): string[] {
+  const start = LETTERS.indexOf(from);
+  const dir = Math.sign(offset);
+  return Array.from(
+    { length: Math.abs(offset) + 1 },
+    (_, i) => LETTERS[mod(start + i * dir, 7)] as string,
+  );
+}
+
+function d3LetterExplain(prompt: D3Prompt, fb: DrillFeedback<D3Answer>): string {
+  const { from, offset } = prompt;
+  const walk = letterWalk(from, offset);
+  const counted =
+    Math.abs(offset) === 1
+      ? `${offset > 0 ? 'After' : 'Before'} ${from} comes ${walk[1]}.`
+      : `${lettersPhrase(offset)} ${from}: ${walk.join(' ')}.`;
+  if (fb.result.correct) return counted;
+  const pc = d3AnswerPc(fb.answer);
+  const said = parses(pc) ? [letterMiss(pc, from)] : [];
+  return [...said, ALPHABET_RULE, counted].join(' ');
+}
+
+/** What a wrong musical-alphabet answer is, counted from the start. */
+function letterMiss(pc: string, from: string): string {
+  if (!isNatural(pc)) {
+    return `You said ${displayPc(pc)}: sharps and flats sit between the letters, not in the musical alphabet.`;
+  }
+  const steps = mod(LETTERS.indexOf(pc) - LETTERS.indexOf(from) + 3, 7) - 3;
+  return steps === 0
+    ? `You said ${pc}, the note you started on.`
+    : `You said ${pc}, ${lettersPhrase(steps)} ${from}.`;
+}
+
+function d3StepExplain(prompt: D3Prompt, fb: DrillFeedback<D3Answer>): string {
+  const { semitones } = prompt;
+  const size = Math.abs(semitones);
+  const walk = stepWalk(prompt, semitones);
+  const from = displayPc(prompt.from);
+  const expected = displayPc(prompt.expectedPc);
+  const span = size === 1 ? 'one fret' : size === 2 ? 'two frets' : `${size} frets`;
+  const accidental = prompt.pref === 'flat' ? 'flat' : 'sharp';
+  if (fb.result.correct) {
+    const gap =
+      size === 1 && crossedPair(prompt, semitones) ? `: no ${accidental} between them` : '';
+    return `${from} to ${expected} is ${span} on one string${gap}.`;
+  }
+  const pc = d3AnswerPc(fb.answer);
+  const parts: string[] = [];
+  let pair = crossedPair(prompt, semitones);
+  if (parses(pc)) {
+    const given = signedSemitones(prompt.from, pc, semitones);
+    parts.push(
+      given === 0
+        ? `You said ${from}, the note you started on.`
+        : `You said ${displayPc(pc)}, ${stepPhrase(given)} ${from}.`,
+    );
+    if (given !== 0) pair ??= crossedPair(prompt, given);
+  }
+  if (pair) {
+    const [lo, hi] = pair;
+    const half =
+      semitones > 0 ? `a half step above ${lo} is ${hi}` : `a half step below ${hi} is ${lo}`;
+    parts.push(`There's no ${accidental} between ${lo} and ${hi}: ${half}.`);
+  }
+  const step =
+    size === 1 ? 'A half step is' : size === 2 ? 'A whole step is' : `${size} half steps are`;
+  parts.push(`${step} ${span}: ${walk.join(' ')}.`);
+  return parts.join(' ');
+}
+
+/**
+ * The line under the prompt once answered (design §6 D3). A miss names what
+ * the chosen note actually is from the start, then the F1 rule it broke: the
+ * alphabet wraps from G to A, and B–C and E–F have no sharp between them. A
+ * correct answer gets one short confirming line.
+ */
+export function d3Explain(prompt: D3Prompt, fb: DrillFeedback<D3Answer>): string {
+  return prompt.kind === 'letter' ? d3LetterExplain(prompt, fb) : d3StepExplain(prompt, fb);
 }
 
 /**

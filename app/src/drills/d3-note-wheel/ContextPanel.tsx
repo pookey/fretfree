@@ -18,6 +18,9 @@ export function NoteWheelContextPanel({
   // The worked example shows full guides (design §3.3 step 2).
   const level: GuideLevel = guided ? 3 : guideLevel;
   const given = feedback ? d3AnswerPc(feedback.answer) : null;
+  // "E–F" would answer "the note after E?": below level 3 a musical-alphabet
+  // prompt gets the rule only once it is answered.
+  const showRule = level >= 3 || (level >= 2 && (prompt.kind === 'step' || feedback !== null));
   return (
     <div className={styles.panel}>
       <h2>Note wheel</h2>
@@ -32,7 +35,7 @@ export function NoteWheelContextPanel({
             }
           : {})}
       />
-      {level >= 2 && (
+      {showRule && (
         <p>
           No sharp between <strong>B–C</strong> and <strong>E–F</strong>: they are a half step
           apart. Every other pair of neighbours in the musical alphabet is a whole step.

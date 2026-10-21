@@ -9,6 +9,7 @@ import {
   d3Choices,
   d3ConceptOf,
   d3DescribeAnswer,
+  d3Explain,
   d3FeedbackPositions,
   d3GivenPosition,
   d3KeyToAnswer,
@@ -101,7 +102,12 @@ describe('D3 prompts', () => {
   });
 
   it('writes the worked example from the question', () => {
-    expect(d3WorkedExample(make('step:+2@E'))).toBe('A whole step above E is F#.');
+    expect(d3WorkedExample(make('step:+2@E'))).toBe('A whole step above E is F♯.');
+    expect(d3Question('step', 'F#', 1)).toBe('A half step above F♯?');
+    expect(make('step:-2@F', { accidentalPref: 'flat' }).question).toBe('A whole step below F?');
+    expect(d3WorkedExample(make('step:+1@D', { accidentalPref: 'flat' }))).toBe(
+      'A half step above D is E♭.',
+    );
     expect(d3WorkedExample(make('letter:+1@G'))).toBe(
       'The note after G in the musical alphabet is A.',
     );
@@ -151,9 +157,15 @@ describe('D3 prompts', () => {
 describe('D3 checking and feedback', () => {
   it('accepts the answer or its enharmonic, and records the confusion', () => {
     const p = make('step:+2@E');
-    expect(d3Check(p, 'F#')).toEqual({ correct: true, expected: 'F#' });
+    // The bar shows F♯; the confusion matrix keeps the ASCII concept.
+    expect(d3Check(p, 'F#')).toEqual({ correct: true, expected: 'F♯', concept: 'F#' });
     expect(d3Check(p, 'Gb').correct).toBe(true);
-    expect(d3Check(p, 'F')).toEqual({ correct: false, expected: 'F#', confusedWith: 'F' });
+    expect(d3Check(p, 'F')).toEqual({
+      correct: false,
+      expected: 'F♯',
+      concept: 'F#',
+      confusedWith: 'F',
+    });
     expect(d3Check(p, 'H').correct).toBe(false);
   });
 
@@ -210,7 +222,11 @@ describe('D3 neck taps', () => {
     ] as const) {
       expect(d3Check(p, tap(s, f)), `s${s}f${f}`).toEqual(d3Check(p, 'F#'));
     }
-    expect(d3Check(p, tap(6, 2, 'flat'))).toEqual({ correct: true, expected: 'F#' });
+    expect(d3Check(p, tap(6, 2, 'flat'))).toEqual({
+      correct: true,
+      expected: 'F♯',
+      concept: 'F#',
+    });
     expect(d3Check(p, tap(3, 0))).toEqual(d3Check(p, 'G'));
   });
 
@@ -218,7 +234,12 @@ describe('D3 neck taps', () => {
     const p = make('letter:+1@E');
     expect(d3Check(p, tap(6, 1)).correct).toBe(true);
     // The sharp a fret above F is wrong, as is any sharp or flat cell.
-    expect(d3Check(p, tap(6, 2))).toEqual({ correct: false, expected: 'F', confusedWith: 'F#' });
+    expect(d3Check(p, tap(6, 2))).toEqual({
+      correct: false,
+      expected: 'F',
+      concept: 'F',
+      confusedWith: 'F#',
+    });
     expect(d3Check(p, tap(5, 1)).correct).toBe(false);
     // An enharmonic spelling of a natural (E♯ for F) is not the natural.
     expect(d3Check(p, 'E#').correct).toBe(false);
@@ -298,5 +319,113 @@ describe('D3 keyboard', () => {
     expect(d3KeyToAnswer('F', true, flat, 'flat')).toBeNull();
     expect(d3KeyToAnswer('x', false, sharp, 'sharp')).toBeNull();
     expect(d3KeyToAnswer('G', true, sharp, 'sharp')).toBeNull();
+  });
+});
+
+describe('D3 explanations (design §6 D3, research/03 F1)', () => {
+  const explain = (id: string, answer: D3Answer, pref: AccidentalPref = 'sharp') => {
+    const p = make(id, { accidentalPref: pref });
+    return d3Explain(p, { answer, result: d3Check(p, answer) });
+  };
+
+  describe('the musical alphabet', () => {
+    it('wraps from G to A', () => {
+      expect(explain('letter:+1@G', 'F')).toBe(
+        'You said F, the note before G. The musical alphabet runs A B C D E F G, then A again. After G comes A.',
+      );
+      expect(explain('letter:-1@A', 'B')).toBe(
+        'You said B, the note after A. The musical alphabet runs A B C D E F G, then A again. Before A comes G.',
+      );
+    });
+
+    it('counts several notes along it', () => {
+      expect(explain('letter:+2@F', 'G')).toBe(
+        'You said G, the note after F. The musical alphabet runs A B C D E F G, then A again. 2 notes after F: F G A.',
+      );
+      expect(explain('letter:-3@D', 'C')).toBe(
+        'You said C, the note before D. The musical alphabet runs A B C D E F G, then A again. 3 notes before D: D C B A.',
+      );
+    });
+
+    it('has no sharps or flats', () => {
+      const tapped = d3TapAnswer({ string: 6, fret: 2 }, STANDARD_TUNING, 'sharp');
+      expect(explain('letter:+1@E', tapped)).toBe(
+        'You said F♯: sharps and flats sit between the letters, not in the musical alphabet. The musical alphabet runs A B C D E F G, then A again. After E comes F.',
+      );
+      expect(explain('letter:+1@C', 'Db', 'flat')).toMatch(/^You said D♭: sharps and flats/);
+    });
+
+    it('notices an answer that never moved', () => {
+      expect(explain('letter:+1@C', 'C')).toMatch(/^You said C, the note you started on\. /);
+    });
+
+    it('still teaches the rule for an unreadable answer', () => {
+      expect(explain('letter:+1@C', 'H')).toBe(
+        'The musical alphabet runs A B C D E F G, then A again. After C comes D.',
+      );
+    });
+
+    it('confirms a correct answer in one line', () => {
+      expect(explain('letter:+1@G', 'A')).toBe('After G comes A.');
+      expect(explain('letter:+2@E', 'G')).toBe('2 notes after E: E F G.');
+    });
+  });
+
+  describe('half and whole steps', () => {
+    it('E–F: no sharp between them, so a half step above E is F', () => {
+      expect(explain('step:+1@E', 'F#')).toBe(
+        "You said F♯, a whole step above E. There's no sharp between E and F: a half step above E is F. A half step is one fret: E F.",
+      );
+      expect(explain('step:+2@E', 'F')).toBe(
+        "You said F, a half step above E. There's no sharp between E and F: a half step above E is F. A whole step is two frets: E F F♯.",
+      );
+    });
+
+    it('B–C, going down', () => {
+      expect(explain('step:-1@C', 'A#')).toBe(
+        "You said A♯, a whole step below C. There's no sharp between B and C: a half step below C is B. A half step is one fret: C B.",
+      );
+    });
+
+    it('names the gap the wrong answer stepped over', () => {
+      expect(explain('step:+2@D', 'F')).toBe(
+        "You said F, 3 half steps above D. There's no sharp between E and F: a half step above E is F. A whole step is two frets: D D♯ E.",
+      );
+    });
+
+    it('half for whole, and the wrong direction, away from B–C and E–F', () => {
+      expect(explain('step:+2@G', 'G#')).toBe(
+        'You said G♯, a half step above G. A whole step is two frets: G G♯ A.',
+      );
+      expect(explain('step:+2@G', 'F')).toBe(
+        'You said F, a whole step below G. A whole step is two frets: G G♯ A.',
+      );
+      expect(explain('step:+1@G', 'G')).toBe(
+        'You said G, the note you started on. A half step is one fret: G G♯.',
+      );
+    });
+
+    it('spells the walk and the rule with the flat preference', () => {
+      expect(explain('step:-2@F', 'E', 'flat')).toBe(
+        "You said E, a half step below F. There's no flat between E and F: a half step below F is E. A whole step is two frets: F E E♭.",
+      );
+    });
+
+    it('describes a tap by its pitch class', () => {
+      const tapped = d3TapAnswer({ string: 3, fret: 0 }, STANDARD_TUNING, 'sharp');
+      expect(explain('step:+2@E', tapped)).toMatch(/^You said G, 3 half steps above E\. /);
+    });
+
+    it('still counts for an unreadable answer', () => {
+      expect(explain('step:+2@G', 'H')).toBe('A whole step is two frets: G G♯ A.');
+    });
+
+    it('confirms a correct answer in one line', () => {
+      expect(explain('step:+2@E', 'F#')).toBe('E to F♯ is two frets on one string.');
+      expect(explain('step:+1@E', 'F')).toBe(
+        'E to F is one fret on one string: no sharp between them.',
+      );
+      expect(explain('step:+1@G', 'G#')).toBe('G to G♯ is one fret on one string.');
+    });
   });
 });

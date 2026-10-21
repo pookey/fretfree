@@ -38,6 +38,7 @@
 .hint {
   margin: 0;
   min-height: 1.5em;
+  max-width: 48rem;
   color: var(--text-muted);
   text-align: center;
 }
@@ -126,9 +127,10 @@
 }
 
 /* A phone on its side has no room for the hint line: it would push the
-   letterboxed neck off the bottom. The neck is still an answer surface. */
+   letterboxed neck off the bottom. The neck is still an answer surface. A
+   miss's explanation stays: it is the lesson, and Continue is pinned. */
 @media (max-height: 499px) {
-  .drill[data-size-class='compact'] .hint {
+  .drill[data-size-class='compact'] .hint:not([data-explaining]) {
     display: none;
   }
 }

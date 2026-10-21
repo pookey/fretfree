@@ -57,34 +57,58 @@ describe('<NoteWheelContextPanel>', () => {
     expect(screen.getByRole('img').getAttribute('aria-label')).not.toMatch(/letter/i);
   });
 
+  const wheelNames = () =>
+    Array.from(
+      screen.getByTestId('note-wheel').querySelectorAll('[data-testid^="wheel-note-"] text'),
+    ).map((t) => t.textContent);
+
   it('fades with the guide level', () => {
     const p = prompt('step:+1@E');
     const { unmount } = panel(p, { guideLevel: 3 });
-    expect(screen.getByTestId('wheel-note-C#')).toHaveTextContent('C#');
+    expect(screen.getByTestId('wheel-note-C#')).toHaveTextContent('C♯');
+    expect(wheelNames()).toHaveLength(12);
     expect(screen.getByText(/one fret/)).toBeInTheDocument();
     unmount();
 
-    const two = panel(p, { guideLevel: 2 });
-    expect(screen.getByTestId('wheel-note-C#')).toHaveTextContent('');
-    expect(screen.getByTestId('half-step-E-F')).toHaveTextContent('½');
-    expect(screen.queryByText(/one fret/)).toBeNull();
-    two.unmount();
+    // Levels 1–2: all 12 positions and the ½ marks, but only the start is named (M10-05).
+    for (const guideLevel of [2, 1] as const) {
+      const { unmount: done } = panel(p, { guideLevel });
+      expect(
+        screen.getByTestId('note-wheel').querySelectorAll('[data-testid^="wheel-note-"]'),
+      ).toHaveLength(12);
+      expect(wheelNames()).toEqual(['E']);
+      expect(screen.getByTestId('half-step-E-F')).toHaveTextContent('½');
+      expect(screen.getByTestId('half-step-B-C')).toHaveTextContent('½');
+      expect(screen.getByRole('img').getAttribute('aria-label')).not.toMatch(/B–C|E–F/);
+      expect(screen.queryByText(/one fret/)).toBeNull();
+      done();
+    }
 
-    panel(p, { guideLevel: 1 });
-    expect(screen.queryByTestId('wheel-note-C#')).toBeNull();
-    expect(screen.getByTestId('half-step-E-F')).toHaveTextContent('');
-    expect(screen.queryByText(/No sharp/)).toBeNull();
+    panel(p, { guideLevel: 2 });
+    expect(screen.getByText(/No sharp between/)).toBeInTheDocument();
+  });
+
+  it('keeps the wheel from answering a musical-alphabet prompt below level 3', () => {
+    const p = prompt('letter:+1@E');
+    const { unmount } = panel(p, { guideLevel: 2 });
+    expect(wheelNames()).toEqual(['E']);
+    // "E–F" in the rule would name the note after E.
+    expect(screen.queryByText(/No sharp between/)).toBeNull();
+    unmount();
+    panel(p, { guideLevel: 2, feedback: fb(p, 'G') });
+    expect(wheelNames()).toEqual(['E', 'F', 'G']);
+    expect(screen.getByText(/No sharp between/)).toBeInTheDocument();
   });
 
   it('shows full guides in the worked example', () => {
     panel(prompt('step:+1@E'), { guided: true, guideLevel: 1 });
-    expect(screen.getByTestId('wheel-note-C#')).toHaveTextContent('C#');
+    expect(screen.getByTestId('wheel-note-C#')).toHaveTextContent('C♯');
     expect(screen.getByText(/one fret/)).toBeInTheDocument();
   });
 
   it('spells the wheel with the flat preference', () => {
     panel(prompt('step:+2@E', 'flat'));
-    expect(screen.getByTestId('wheel-note-Gb')).toHaveTextContent('Gb');
+    expect(screen.getByTestId('wheel-note-Gb')).toHaveTextContent('G♭');
   });
 
   it('marks the answer and a wrong button answer once answered', () => {
