@@ -2,6 +2,25 @@
 
 ## Current status
 
+**Seventh shift progress (2026-10-21 from 01:20, PM session fretfree-pm-7). 13 work packages shipped so far. All six high-priority M10 learning-path fixes are live. Production = origin/main = `d1f29fdb`.**
+
+Shipped this shift:
+- **M10, the learning path:** **M10-01** soft prerequisites per skill; **M10-02** the songs on-ramp (C8 in three key groups, looser C5–C10 gates, schema v4 with a restaging migration); **M10-03** session lanes (2:1:1 across open modules, new items dealt in blocks of at least two, a daily new-item cap that ends with one spaced pass and counts toward the goal, I3 as its own "Key signatures" module); **M10-04** concept intros (the first ten, lazy); **M10-05** and **M10-06** teach on a miss in D1, D3, D5 and D39; **M10-08** one vocabulary in the drills (♯/♭, spoken degrees for VoiceOver); **M10-10** and **M10-11** copy fixes.
+- **Other:** **M4-10** "Ear only" and "start with sound"; **M9-02** tab skills and D33 "Tab → neck"; **M6-10** the M6 QA (findings filed as M6-11 to M6-14).
+
+The PM's curriculum calls this shift are under "Decisions and deviations".
+
+Incidents:
+- **Network outage (~01:37):** the API was unreachable (DNS), and every worker stopped mid-task; all resumed when prompted.
+- **Lane failure, M4-10:** its own onboarding spec raced the page under lane load (`skipTo` clicked a step that had gone). Fixed in the spec; shipped on the next run.
+- **Full matrix outside the lane:** the rebase-brief template still said `pnpm verify`, so one worker ran the four-project matrix by itself. The template now says `verify:quick` (18d6efdb).
+- **Load:** fileproviderd (iCloud) at ~90% CPU pushed the load average to 94–107 for about an hour. The ceiling went down to 2–3 and back up. The lasting fix is to move the repo out of `~/Documents`; that is the user's call.
+- **Flakes:** `m4-09.spec.ts:140` passed on retry once; two jsdom unit tests got more time (dc8c6baf, 7e60e932).
+
+Effective parallelism wasn't sampled this shift; the ceiling moved 8 → 2 → 5 with load.
+
+### Sixth shift report
+
 **Sixth shift report (2026-10-20 16:15 → 2026-10-21 handover, PM session guitar-nosync-14). 119 work packages done, 23 shipped this shift. Every package in flight was drained to production before the handover. Production = origin/main = the handoff docs commit after `61738133`.** The next PM starts on **M10**, the learning-path fixes (see below and `docs/handoff/08-pm-handoff.md`).
 
 Shipped this shift:

@@ -1637,7 +1637,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 
 ### M10-07 · Say what each skill and module is for, in plain words on Learn
 - **Status:** todo
-- **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
+- **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** M10-01
 - **After:** M10-03
 - **Design:** §5, §7 (Learn); research/02 rule 15; research/03 "Learner can DO"
@@ -1652,7 +1652,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 
 ### M10-08 · One vocabulary in the drills: ♯/♭, ♭3/♭7, whole and half steps, one mic voice
 - **Status:** done
-- **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
+- **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** M10-05
 - **Design:** §6; copy audit (drills) §2 items 1–6, 10
 - **Owns:** `app/src/drills/d2-find-the-note/**`, `app/src/drills/d4-octave-finder/**`, `app/src/drills/d6-interval-tap/**`, `app/src/drills/d7-spell-it/**`, `app/src/drills/d16-play-note/**`, `app/src/drills/d17-play-sequence/**`, `app/e2e/m10-08.spec.ts`
@@ -1665,7 +1665,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 
 ### M10-09 · One vocabulary on the screens: "items", one learning/stable legend, Learn's names in Progress
 - **Status:** todo
-- **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
+- **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** M10-07
 - **Design:** §7; copy audit (screens) §9 items 1–3, Top 10 items 4, 5, 10
 - **Owns:** `app/src/components/learning-legend/**`, `app/src/screens/learn/LearnScreen.tsx`, `app/src/screens/learn/ModuleDetail.tsx`, `app/src/session/summary/SessionSummary.tsx`, `app/src/session/summary/copy.ts`, `app/src/session/summary/copy.test.ts`, `app/src/screens/progress/panels/topics.tsx`, `app/src/screens/progress/panels/topics.test.tsx`, `app/src/screens/progress/panels/stats.tsx`, `app/src/screens/today/cards/stats.tsx`, `app/src/components/heatmap/RetentionForecast.tsx`, `app/src/placement/PlacementTest.tsx`, `app/e2e/m10-09.spec.ts`
@@ -1680,7 +1680,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 
 ### M10-10 · Copy fixes: onboarding, Today, Progress and Settings
 - **Status:** done
-- **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
+- **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** none
 - **Design:** copy audit (screens) §1, §4, §6, §7, "smaller fixes"
 - **Owns:** `app/src/onboarding/OnboardingFlow.tsx`, `app/src/onboarding/options.ts`, `app/src/onboarding/steps/placement.tsx`, `app/src/onboarding/steps/notation.tsx`, `app/src/screens/today/cards/streak-repair.tsx`, `app/src/screens/today/cards/streak-repair.test.tsx`, `app/src/components/heatmap/HeatmapLegend.tsx`, `app/src/components/heatmap/CellDetail.tsx`, `app/src/screens/privacy/PrivacyScreen.tsx`, `app/src/onboarding/calibration/CalibrationSetting.tsx`, `app/e2e/m10-10.spec.ts`
@@ -1694,7 +1694,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 
 ### M10-11 · Copy fixes: the later drills' prompts and notices
 - **Status:** done
-- **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
+- **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** none
 - **Design:** copy audit (drills) §3, §4 items 6–9, runners-up
 - **Owns:** `app/src/drills/d9-build-caged/**`, `app/src/drills/d13-capo/**`, `app/src/drills/d36-name-the-chord/**`, `app/src/drills/d37-chord-tones-neck/**`, `app/src/drills/d38-build-the-chord/**`, `app/src/drills/d40-key-signature/**`, `app/src/drills/d-pentatonic-box/**`, `app/e2e/m10-11.spec.ts`
@@ -1708,7 +1708,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 
 ### M10-12 · Split C2 by string, with a milestone per string
 - **Status:** todo
-- **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
+- **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** M4-08
 - **After:** M10-02, M10-05, M10-08
 - **Design:** §3.7 (achievements), §5; research/03 C2 (weak-cell targeting); research/02 rule 15
@@ -1723,7 +1723,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 
 ### M10-13 · Worked examples for Neck basics: F1, F2 string 5 and F3
 - **Status:** todo
-- **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
+- **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** none
 - **Design:** §6 (worked example on first exposure); research/02 rule 8
 - **Owns:** `app/src/learn/worked-examples/f1-alphabet.tsx`, `app/src/learn/worked-examples/f1-steps.tsx`, `app/src/learn/worked-examples/f2-string5.ts`, `app/src/learn/worked-examples/f3-markers.tsx`, `app/src/learn/worked-examples/f1-f3.test.tsx`, `app/e2e/m10-13.spec.ts`
@@ -1734,7 +1734,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 
 ### M10-14 · Worked examples for intervals, harmony, progressions, capo and boxes
 - **Status:** todo
-- **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
+- **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** none
 - **After:** M10-02
 - **Design:** §6; research/02 rule 8
@@ -1746,7 +1746,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 
 ### M10-15 · Today: a first-day line, and streak freezes explained
 - **Status:** todo
-- **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
+- **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** none
 - **Design:** §3.7, §7 (Today); research/02 rule 15
 - **Owns:** `app/src/screens/today/cards/hero.tsx`, `app/src/screens/today/cards/hero.test.tsx`, `app/src/components/goal-ring/progress.ts`, `app/e2e/m10-15.spec.ts`
@@ -1758,7 +1758,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 
 ### M10-16 · Placement probes for octave shapes and triad cores, and test-out from the Learn map
 - **Status:** todo
-- **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
+- **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** M10-01
 - **After:** M10-09
 - **Design:** §3.4 (placement, test-out)
@@ -1771,7 +1771,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 
 ### M10-17 · Achievements for chords, CAGED, harmony and progressions, and a fair speed demon
 - **Status:** todo
-- **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
+- **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** M6-08
 - **After:** M10-02
 - **Design:** §3.7 achievements; research/02 rule 15
