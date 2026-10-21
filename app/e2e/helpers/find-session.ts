@@ -64,8 +64,9 @@ export async function startFindSession(page: Page): Promise<void> {
   await page.reload();
   // New counts the open skills' unseen items (M10-02): 7 naturals to find on
   // each of strings 6 and 5, the 3 F4 pulse rhythms, and what mastering F1
-  // opens: 8 sharp keys to spell, 5 I6 ear items and 13 TAB string-1 cards.
-  await expect(page.getByTestId('new-count')).toHaveText('43');
+  // and F3 opens: 5 I6 ear items and 13 TAB string-1 cards. Keys are mastered
+  // here too, so C4's 8 sharp keys don't count.
+  await expect(page.getByTestId('new-count')).toHaveText('35');
   await page.getByTestId('start-session').click();
   await expect(page.getByTestId('d2-prompt')).toBeVisible();
 }
