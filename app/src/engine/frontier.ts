@@ -30,53 +30,65 @@ export const MODULES: readonly Module[] = [
     topics: ['F1', 'F2', 'F3'],
     unlocksAfter: null,
     track: 'core',
-    summary: 'The musical alphabet, natural notes on strings 6 and 5, and the fret markers.',
+    summary:
+      'Name the notes on the two low strings without counting, and find your place from the fret markers. Everything else on the neck is measured from these.',
     misconception:
-      'There is no sharp between B–C or E–F. Recall the note at a fret; don’t count up from the nut.',
+      'There’s no sharp or flat between B and C, or between E and F. And when you name a fret, recall it: don’t count up from the nut.',
   },
   {
     id: 'notes-2',
     title: 'Whole neck',
     topics: ['C1', 'C2'],
-    unlocksAfter: 'Neck basics',
+    unlocksAfter: 'Neck basics: the natural notes on strings 6 and 5',
     track: 'core',
-    summary: 'Octave shapes, including the G–B shift, and every note on every string.',
+    summary:
+      'Find any note on any string, and every octave of it, so the whole neck is yours, not just the first few frets.',
     misconception:
-      'Frets 7–12 on the middle strings get neglected. The G–B shift breaks octave shapes.',
+      'Give frets 7–12 on strings 2–4 extra attention: they’re the ones most players skip. And when an octave shape crosses from G to B, it moves up one fret.',
   },
   {
     id: 'intervals',
     title: 'Intervals',
     topics: ['C3'],
-    unlocksAfter: 'The musical alphabet (and, softly, octaves)',
+    unlocksAfter: 'Half and whole steps, and octave shapes',
     track: 'core',
-    summary: 'Interval shapes from m2 to P8 and the G–B +1 fret shift.',
-    misconception: 'Interval shapes move up a fret when they cross from the G to the B string.',
+    summary:
+      'Find any interval from any root as a shape, so chords and scales stop being grips you memorise.',
+    misconception:
+      'When an interval shape crosses from the G string to the B string, move the top note up one fret.',
   },
   {
     id: 'keys',
     title: 'Keys',
     topics: ['C4'],
-    unlocksAfter: 'The musical alphabet',
+    unlocksAfter: 'Half and whole steps',
     track: 'core',
-    summary: 'Major scale construction and the degrees of every key.',
+    summary:
+      'Spell the major scale of every key and name any note in it by number, such as the 6th of E♭.',
+    misconception:
+      'Use each letter once when you spell a major scale: F♯ major has E♯, not F, so no letter is skipped or doubled.',
   },
   {
     id: 'chords',
     title: 'Chords',
     topics: ['C5'],
-    unlocksAfter: 'Intervals and Keys',
+    unlocksAfter: '3rds (Intervals) and the sharp keys (Keys)',
     track: 'core',
-    summary: 'Triads, then 7th chords, then sus and add chords.',
-    misconception: 'The b7 in “7” is not the 7 in “maj7”.',
+    summary:
+      'Spell any triad or 7th chord, and see which note in a chord shape is the root, 3rd, 5th or 7th.',
+    misconception:
+      'Don’t mix up the ♭7 in a “7” chord with the 7 in a “maj7”: G7 has F, Gmaj7 has F♯.',
   },
   {
     id: 'harmony',
     title: 'Harmony',
     topics: ['C8'],
-    unlocksAfter: 'Keys and triads',
+    unlocksAfter: 'Triads (Chords) and scale degrees (Keys)',
     track: 'core',
-    summary: 'Diatonic chords in any key, Roman and Nashville numerals.',
+    summary:
+      'Name the chords of any major key by number, so a chart in Roman or Nashville numerals plays in any key.',
+    misconception:
+      'Expect the vi chord to be minor even though the key is major: each chord’s quality comes from the scale, not from the key’s name.',
   },
   {
     // I3 is an intermediate topic (research/03). Its own module, after
@@ -85,70 +97,85 @@ export const MODULES: readonly Module[] = [
     id: 'key-signatures',
     title: 'Key signatures',
     topics: ['I3'],
-    unlocksAfter: 'Keys',
+    unlocksAfter: 'The sharp keys (Keys); it doesn’t wait for Harmony',
     track: 'core',
-    summary: 'Key signatures and the circle of fifths, each key’s V and its relative minor.',
+    summary:
+      'Say how many sharps or flats any major key has, and give its V and its relative minor from the circle of fifths.',
+    misconception:
+      'A key signature tells you which notes are sharp or flat. It doesn’t tell you which chord a song starts on.',
   },
   {
     id: 'progressions',
     title: 'Progressions',
     topics: ['C9', 'C10'],
-    unlocksAfter: 'Harmony',
+    unlocksAfter: 'Triads and Roman numerals; the capo skills need only triads and the sharp keys',
     track: 'core',
-    summary: 'Common progressions, capo and transposition, and hearing them.',
-    misconception: 'I–V–vi–IV and vi–IV–I–V are rotations of each other.',
+    summary:
+      'Build the progressions most songs use, in any key, and work out where to put a capo to play them.',
+    misconception:
+      'You may hear I–V–vi–IV and vi–IV–I–V as different songs, but they’re the same four chords, started in a different place.',
   },
   {
     id: 'caged',
     title: 'CAGED',
     topics: ['C6'],
-    unlocksAfter: 'Natural notes and triads',
+    unlocksAfter: 'The natural notes on strings 6 and 5, and triads',
     track: 'core',
-    summary: 'The five shapes from their triad cores, chaining and root finding.',
-    misconception: 'CAGED is a map, not five grips to memorise, and it doesn’t replace note names.',
+    summary:
+      'Play one chord in five places up the neck with the CAGED shapes, and find its root in each.',
+    misconception:
+      'Use CAGED as a map of the neck, not five grips to memorise, and keep naming the notes: CAGED doesn’t replace them.',
   },
   {
     id: 'pentatonic',
     title: 'Pentatonic',
     topics: ['C7'],
-    unlocksAfter: 'CAGED',
+    unlocksAfter: 'The minor CAGED cores',
     track: 'core',
-    summary: 'Pentatonic boxes linked to CAGED shapes, and the relative minor.',
-    misconception: '“Box prison”: hear the root and move between boxes.',
+    summary:
+      'Play the pentatonic scale all over the neck, each box linked to a chord shape you already know.',
+    misconception:
+      'Don’t get stuck in one box. Find the root by ear, then slide to the next box from it.',
   },
   {
     id: 'triads',
     title: 'Triads',
     topics: ['I1'],
-    unlocksAfter: 'CAGED and chords',
+    unlocksAfter: 'The CAGED triad cores',
     track: 'core',
-    summary: 'Triads and inversions on every string set, and voice leading.',
-    misconception: 'Triads are the cores of the CAGED shapes, not a new set of shapes.',
+    summary:
+      'Play any major or minor triad in every inversion on four sets of strings, and move between chords smoothly.',
+    misconception:
+      'You don’t need a new set of shapes: each of these triads is the core of a CAGED shape you know.',
   },
   {
     id: 'arpeggios',
     title: 'Arpeggios',
     topics: ['I2'],
-    unlocksAfter: 'CAGED and pentatonic',
+    unlocksAfter:
+      'The 3rd and 7th in 7th-chord shapes (Chords), the dominant 7 CAGED shapes and the minor pentatonic boxes',
     track: 'core',
-    summary: 'Chord tones inside shapes and boxes, and target notes.',
+    summary:
+      'Find every note of a 7th chord inside the shapes and boxes you know, so a solo can land on chord tones.',
   },
   {
     id: 'minor-function',
     title: 'Minor and function',
     topics: ['I4', 'I5'],
-    unlocksAfter: 'Progressions',
+    unlocksAfter: 'Pop and minor-key progressions',
     track: 'core',
-    summary: 'Minor-key harmony, chord function and substitution.',
-    misconception: 'E7 does belong in A minor: it is the harmonic-minor V.',
+    summary: 'Make sense of minor keys and of chords from outside the key, such as E7 in A minor.',
+    misconception:
+      'You’ll meet E7 in A minor songs, and it belongs there: it’s the V chord of the harmonic minor scale.',
   },
   {
     id: 'scales',
     title: 'Scales',
     topics: ['I7'],
-    unlocksAfter: 'CAGED',
+    unlocksAfter: 'The major pentatonic boxes, which build on CAGED',
     track: 'core',
-    summary: 'The major scale in five positions, from any degree.',
+    summary:
+      'Play the full major scale in five positions up the neck, starting from any note of it.',
   },
   {
     id: 'advanced',
@@ -156,7 +183,7 @@ export const MODULES: readonly Module[] = [
     topics: [],
     unlocksAfter: null,
     track: 'optional',
-    summary: 'Modes, drop-2 voicings and reharmonisation.',
+    summary: 'Colour what you play with modes, drop-2 voicings and reharmonisation.',
   },
   {
     id: 'rhythm',
@@ -164,8 +191,9 @@ export const MODULES: readonly Module[] = [
     topics: ['F4'],
     unlocksAfter: null,
     track: 'parallel',
-    summary: 'Tap and strum timing against a click.',
-    misconception: 'Theory-heavy learners neglect timing.',
+    summary: 'Keep steady time with a click, tapping and strumming, from your first day.',
+    misconception:
+      'Knowing the notes isn’t playing in time. Keep tapping with the click even when the theory feels done.',
   },
   {
     // Design §5 also lists I6 progression ear under Progressions. Each topic
@@ -176,7 +204,7 @@ export const MODULES: readonly Module[] = [
     topics: ['I6'],
     unlocksAfter: null,
     track: 'parallel',
-    summary: 'Hear intervals, chord quality and progressions, from day one.',
+    summary: 'Recognise intervals, chord types and progressions by ear, from your first day.',
   },
   {
     id: 'meter',
@@ -184,25 +212,28 @@ export const MODULES: readonly Module[] = [
     topics: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
     unlocksAfter: 'Rhythm',
     track: 'future',
-    summary: 'Time signatures, simple vs compound meter, counting and meter by ear.',
+    summary:
+      'Read a time signature, feel simple and compound meter apart, and count any bar aloud.',
   },
   {
     id: 'reading',
     title: 'Reading',
     topics: ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7'],
-    unlocksAfter: 'Natural notes on strings 6 and 5, and time signatures',
+    unlocksAfter: 'The natural notes on strings 6 and 5, and time signatures (Meter)',
     track: 'future',
-    summary: 'Staff reading for guitar, staff ↔ fretboard by position, and sight-reading.',
+    summary:
+      'Read standard notation on the guitar, linking each note on the staff to a fret, and sight-read simple tunes.',
   },
   {
     // docs/design/tab-track.md §1: soft-unlocked for everyone; M9-05 promotes it.
     id: 'tab',
     title: 'Tab',
     topics: ['TAB'],
-    unlocksAfter: 'The fret markers',
+    unlocksAfter: 'The fret markers (Neck basics)',
     track: 'optional',
-    summary: 'Read a tab line and a fret number as a place on the neck, at speed.',
-    misconception: 'The top line of tab is the high e string, not the low E.',
+    summary:
+      'Read any tab number as a place on the neck straight away, so learning a song from tab is quick.',
+    misconception: 'Read the top line of tab as the high e string, not the low E.',
   },
 ];
 
