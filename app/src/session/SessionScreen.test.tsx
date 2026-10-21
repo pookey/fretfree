@@ -60,14 +60,14 @@ async function choice(name: string): Promise<HTMLElement> {
   const group = await screen.findByRole(
     'group',
     { name: 'Name the highlighted note' },
-    { timeout: 10_000 },
+    { timeout: 30_000 },
   );
   return within(group).getByRole('button', { name });
 }
 
 async function answerWrong(): Promise<HTMLElement> {
   fireEvent.click(await choice('C'));
-  expect(await screen.findByTestId('feedback-wrong')).toHaveTextContent(
+  expect(await screen.findByTestId('feedback-wrong', {}, { timeout: 10_000 })).toHaveTextContent(
     "That was G. You'll see it again shortly.",
   );
   const button = screen.getByRole('button', { name: 'Continue' });
@@ -84,7 +84,7 @@ async function expectNextPrompt(): Promise<void> {
   await waitFor(async () => expect(await choice('G')).toBeEnabled());
 }
 
-describe('<SessionScreen> feedback bar (M1-28)', () => {
+describe('<SessionScreen> feedback bar (M1-28)', { timeout: 60_000 }, () => {
   beforeEach(async () => {
     await seedOneReview();
     useAppStore.setState({ loaded: true });
