@@ -218,7 +218,7 @@ export function D36View({
             guideLevel={guided ? 3 : guideLevel}
             blindMode={blindMode}
             accidentalPref={prompt.accidentalPref}
-            label={`Fretboard: ${name ?? 'a chord voicing'}, low string first: ${description}`}
+            label={`Fretboard: ${name ?? 'a chord shape'}, low string first: ${description}`}
           />
         )}
       </div>

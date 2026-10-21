@@ -185,7 +185,7 @@ test.describe('M3-15 D38 builds the chord from a root', () => {
     await expect(explain).toContainText('One that works:');
     // The placed note is drawn by its degree; the missing ones are ringed.
     await expect(neck(page).getByTestId('marker-ghost').first()).toBeVisible();
-    await expect(page.getByRole('list', { name: 'Your voicing, low string first' })).toContainText(
+    await expect(page.getByRole('list', { name: 'Your chord, low string first' })).toContainText(
       'R',
     );
     expect(await confusionRows(page)).toEqual([]);

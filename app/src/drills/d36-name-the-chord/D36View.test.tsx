@@ -76,7 +76,7 @@ describe('<D36View> prompt', () => {
     const text = ['d36-prompt', 'd36-explain'].map((id) => screen.getByTestId(id).textContent);
     expect([...text, neck().textContent].join(' ')).not.toMatch(/\bAm?\b|minor|shape/);
     expect(neck()).toHaveAccessibleName(
-      /^Fretboard: a chord voicing, low string first: string 6 muted, string 5 open/,
+      /^Fretboard: a chord shape, low string first: string 6 muted, string 5 open/,
     );
     expect(neck()).not.toHaveAccessibleName(/root|minor|Am/);
     expect(neck()).toHaveAttribute('data-fret-to', '15');

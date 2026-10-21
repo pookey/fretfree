@@ -261,7 +261,7 @@ function Readout({
   return (
     <ol
       className={styles.readout}
-      aria-label="Your voicing, low string first"
+      aria-label="Your chord, low string first"
       data-testid="d38-readout"
     >
       {strings.map((s) => {

@@ -56,7 +56,7 @@ const markers = (style: string) =>
     label: m.textContent,
   }));
 const slots = () =>
-  within(screen.getByRole('list', { name: 'Your voicing, low string first' }))
+  within(screen.getByRole('list', { name: 'Your chord, low string first' }))
     .getAllByRole('listitem')
     .map((li) => li.getAttribute('aria-label'));
 const fb = (p: D38Prompt, answer: D38Answer): DrillFeedback<D38Answer> => ({
