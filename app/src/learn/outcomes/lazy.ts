@@ -1,18 +1,28 @@
 import { useEffect, useState } from 'react';
+import type { Skill } from '../../engine';
 
 /**
- * Skill outcomes, loaded on demand: only Learn shows them, so they stay out
- * of first-load JS (design §10). The service worker precaches the chunk.
+ * What a skill row can preview, loaded on demand: its outcome, and whether
+ * it has a concept intro (`learn/intros`). Only Learn shows them, so they
+ * stay out of first-load JS (design §10). The service worker precaches the
+ * chunks.
  */
-export type OutcomeOf = (skillId: string) => string | undefined;
+export interface SkillPreviews {
+  outcomeOf(skillId: string): string | undefined;
+  hasIntro(skill: Pick<Skill, 'id' | 'topic'>): boolean;
+}
 
-let loaded: OutcomeOf | undefined;
-let pending: Promise<OutcomeOf> | undefined;
+let loaded: SkillPreviews | undefined;
+let pending: Promise<SkillPreviews> | undefined;
 
-/** Downloads the outcomes once; later calls share the same promise. */
-export function loadOutcomes(): Promise<OutcomeOf> {
-  return (pending ??= import('./index').then(
-    (index) => (loaded = index.outcomeFor),
+/** Downloads the outcomes and intros once; later calls share the same promise. */
+export function loadOutcomes(): Promise<SkillPreviews> {
+  return (pending ??= Promise.all([import('./index'), import('../intros')]).then(
+    ([outcomes, intros]) =>
+      (loaded = {
+        outcomeOf: outcomes.outcomeFor,
+        hasIntro: (skill) => intros.introFor(skill) !== undefined,
+      }),
     (e: unknown) => {
       // A failed download (offline before the precache) can be retried later.
       pending = undefined;
@@ -21,19 +31,19 @@ export function loadOutcomes(): Promise<OutcomeOf> {
   ));
 }
 
-/** The outcome lookup, or `null` while it downloads. */
-export function useOutcomes(): OutcomeOf | null {
-  const [outcomes, setOutcomes] = useState<OutcomeOf | null>(() => loaded ?? null);
+/** The preview lookups, or `null` while they download. */
+export function useOutcomes(): SkillPreviews | null {
+  const [previews, setPreviews] = useState(loaded ?? null);
   useEffect(() => {
-    if (outcomes) return;
+    if (previews) return;
     let live = true;
     loadOutcomes().then(
-      (o) => live && setOutcomes(() => o),
+      (p) => live && setPreviews(p),
       (e: unknown) => console.error('Loading skill outcomes failed', e),
     );
     return () => {
       live = false;
     };
-  }, [outcomes]);
-  return outcomes;
+  }, [previews]);
+  return previews;
 }

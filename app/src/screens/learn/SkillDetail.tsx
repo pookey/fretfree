@@ -5,7 +5,7 @@ import { useOutcomes } from '../../learn/outcomes/lazy';
 import { practiseHref } from '../../learn/worked-examples/focus';
 import { useWorkedExamples } from '../../learn/worked-examples/lazy';
 import { MasteryRing } from './MasteryRing';
-import { skillRingState, skillStatusLabel, type SkillView } from './map-model';
+import { hasPreview, skillRingState, skillStatusLabel, type SkillView } from './map-model';
 import styles from './Learn.module.css';
 import local from './SkillDetail.module.css';
 
@@ -71,10 +71,14 @@ export function SkillDetail({ view }: { view: SkillView }) {
   const { skill } = view;
   const examples = useWorkedExamples();
   const example = examples?.exampleFor(skill);
-  const outcomes = useOutcomes();
-  const outcome = outcomes?.(skill.id);
-  // Until both load, assume a preview: every skill has an outcome (its registry test).
-  const previewable = !outcomes || !examples || Boolean(outcome ?? example);
+  const previews = useOutcomes();
+  const outcome = previews?.outcomeOf(skill.id);
+  const previewable = hasPreview({
+    loading: !previews || !examples,
+    outcome,
+    intro: previews?.hasIntro(skill) ?? false,
+    example,
+  });
   const [open, setOpen] = useState(false);
   const exampleId = useId();
   // A skill no built drill can test would open an empty session.

@@ -30,8 +30,11 @@ describe('skill-outcome registry', () => {
   it('loads on demand, once', async () => {
     const [a, b] = await Promise.all([loadOutcomes(), loadOutcomes()]);
     expect(a).toBe(b);
-    expect(a('F1.alphabet')).toBe(outcomeFor('F1.alphabet'));
-    expect(a('X.none')).toBeUndefined();
+    expect(a.outcomeOf('F1.alphabet')).toBe(outcomeFor('F1.alphabet'));
+    expect(a.outcomeOf('X.none')).toBeUndefined();
+    // Intros count as something to preview too (M10-07 review).
+    expect(a.hasIntro({ id: 'F1.alphabet', topic: 'F1' })).toBe(true);
+    expect(a.hasIntro({ id: 'X.none', topic: 'X' })).toBe(false);
   });
 });
 

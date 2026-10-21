@@ -164,10 +164,24 @@ export const SKILL_STATUS_LABEL: Readonly<Record<SkillStatus, string>> = {
 
 /**
  * A skill's status label. "Locked: preview" promises something to look at,
- * so a locked skill with no outcome or worked example reads just "Locked".
+ * so a locked skill with nothing to preview (see `hasPreview`) reads just "Locked".
  */
 export function skillStatusLabel(status: SkillStatus, previewable: boolean): string {
   return status === 'locked' && !previewable ? 'Locked' : SKILL_STATUS_LABEL[status];
+}
+
+/**
+ * Whether a skill row has something to preview: an outcome, a concept intro
+ * or a worked example. While they load, assume so: the outcome registry gives
+ * every skill one, so the label doesn't flicker.
+ */
+export function hasPreview(found: {
+  loading: boolean;
+  outcome: string | undefined;
+  intro: boolean;
+  example: unknown;
+}): boolean {
+  return found.loading || Boolean(found.outcome) || found.intro || found.example !== undefined;
 }
 
 /**

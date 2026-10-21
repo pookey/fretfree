@@ -7,6 +7,7 @@ import {
   SKILL_STATUS_LABEL,
   buildMap,
   defaultModule,
+  hasPreview,
   percent,
   skillRingState,
   skillStatusLabel,
@@ -237,6 +238,16 @@ describe('status labels', () => {
     expect(skillStatusLabel('locked', false)).toBe('Locked');
     for (const status of ['unlocked', 'practising', 'mastered'] as const)
       expect(skillStatusLabel(status, false)).toBe(SKILL_STATUS_LABEL[status]);
+  });
+
+  it('counts an outcome, an intro or a worked example as a preview', () => {
+    const none = { loading: false, outcome: undefined, intro: false, example: undefined };
+    expect(hasPreview(none)).toBe(false);
+    expect(hasPreview({ ...none, outcome: 'Name it.' })).toBe(true);
+    expect(hasPreview({ ...none, intro: true })).toBe(true);
+    expect(hasPreview({ ...none, example: {} })).toBe(true);
+    // Still loading: assume a preview, so the label doesn't flicker.
+    expect(hasPreview({ ...none, loading: true })).toBe(true);
   });
 
   it('keeps the module preview label and says when one is not built', () => {
