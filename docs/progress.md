@@ -435,6 +435,78 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
 
 **Not findings:** the walk seeds one review the day before and a month-old D7 history, so Today's "Due reviews" tile and Progress's counts reflect that seeding. The mastery map's yellow "90 days or more" band is a Progress legend colour, not the sunflower brand colour on a drill's neck. The 12th-fret double inlay and string letters on session necks, against a single inlay and string numbers on the mastery map, are long-standing differences between the two components.
 
+## M6 definition of done (M6-10 QA, 2026-10-21)
+
+**M6 is done for its §11 scope, with two cuts and one open product call.** Design §11 gives M6 no separate definition of done, so this checks its scope: "C7, I1, I2, I4, I5, I7, D18–D21, rhythm track". Every M6 package (M6-01 to M6-09) is live. The pass ran on `origin/main` at eadbe1cf, and production served `index-DxzG9-Pb.js`. First-load JS is 245.2 KB of the 250 KB budget, so M1-44's headroom has held through four more M6 drills.
+
+The evidence is `app/e2e/m6-10.spec.ts`. Its screen walk is tagged `@smoke`, so it runs on all four Playwright profiles, both locally and against https://fretfree.app (4 of 4 passed on production). The walk opens:
+- the six Learn modules M6 fills (Pentatonic, Triads, Arpeggios, Minor and function, Scales, Rhythm), for a new learner;
+- the first prompt (a new skill's worked example, with its context panel) of the pentatonic-box drill on C7 minor boxes, the relative minor and I7 positions, then D18, D19, D8 on I2 and the function drill on I5;
+- the function drill's harmonic-minor V answered with the natural v, and its feedback;
+- D20's eighth notes, played 90 ms late through the e2e onset fake, and its marks;
+- D21's blank neck, then a tap outside the shape and its feedback, the summary and Progress.
+
+Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep @screens`, the walk also saves each screen in dark and light: 168 shots from production. The command is in the spec header. Four reviewers went through the shots, one per profile, and I checked the main findings myself (D8's legend against its neck, D20's grid, the C7 and D21 markers, D18 in portrait).
+
+| §11 scope | Status | Evidence |
+|---|---|---|
+| Intermediate theory: pentatonic ↔ CAGED, arpeggios, 5-position major scale, minor harmony, function | ✅ | `theory/pentatonic`, `arpeggios`, `function` tests (M6-01) |
+| C7 pentatonic boxes and the relative minor (box-overlay drill) | ✅ | `c7.test.ts`, `d-pentatonic-box/*.test.ts`; `m6-02`, `m6-10` (but see findings 2 and 6) |
+| I1 triad inversions on a string set (D18) | ✅ | `i1.test.ts`, `d18-inversions/*.test.ts`; `m6-03`, `m6-10` (but see findings 2 and 4) |
+| I1 voice leading (D19) | ✅ | `i1-voice-leading.test.ts`, `d19-voice-leading/*.test.ts`; `m6-04` on all four profiles, `m6-10` |
+| I2 arpeggios | ✂️ partial | `i2.test.ts`; `m6-05`, `m6-10`. Chord tones in 7th-chord shapes only, through D8 (see "Cuts") |
+| I4 minor harmony and I5 function, substitution, borrowing (choice drill) | ✅ | `i4.test.ts`, `i5.test.ts`, `d-function/*.test.ts`; `m6-06`, `m6-10` (but see finding 5) |
+| I7 major scale in five positions, runs from any degree | ✅ | `i7.test.ts`, `scale-position.test.ts`; `m6-07`, `m6-10` (but see findings 2 and 6) |
+| F4 rhythm track and D20 on the shared M8-01 timing engine | ✅ | `f4.test.ts`, `d20-rhythm/*.test.ts`; `m6-08`, `m6-10` (but see finding 3) |
+| D21 visualise (mental practice, rule 14) | ⚠️ not optional | `d21-visualise/*.test.ts`; `m6-09` on all four profiles, `m6-10` (see "For the PM") |
+| I2 arpeggios played into the mic (D17) | ⏳ pending | I2 lists only D8; carried over from the M5 table |
+
+**Cuts and tightenings (recorded from the M6 reviews):**
+- **I2 is a partial cut of research/03 I2** ("chord tones inside any box"). It covers chord tones in 7th-chord shapes only (roots, then 3rds and 7ths, then 5ths). Chord tones inside pentatonic boxes and target notes aren't built; neither is I2 in D17.
+- **I7 depends on `C7.major-boxes`, so on C6 transitively.** The design table (§M-Scales) lists only C6. This is an intentional tightening for rule 7 (CAGED → pentatonic → full scale). `engine/frontier.ts` still says the Scales module unlocks after "CAGED". It should say "CAGED and pentatonic" (and Arpeggios should also name chords: see finding 7).
+
+**Checks the brief asked for:**
+- **The drill picker's rotation (M6-09) against the whole matrix: confirmed.** The lane ran the M5-08 and M6-09 batch on all four profiles: 1052 passed, with one flake. The flake was `m3-05.spec.ts:241` on ipad-mini, D9 whole shapes, the skill whose rotation changed. It passed on retry and was fixed later with `test.slow()`, so it was a timeout, not the old two-drill order. No spec has failed on the rotation since.
+- **D19 on iPad portrait and iPad mini: confirmed.** `m6-04` passed in the M6-04 lane batch (1118 passed), and again here on `ipad-portrait` and `ipad-mini-landscape`, with `m6-09`: 8 of 8. That covers the 12-fret portrait window and the ≥44pt cell check.
+- **The design doc has no "items and grading" paragraph for any M6 drill.** D18, D19, D20, D21, the pentatonic-box drill and the function drill all lack one (design §6 has them for D4, D8, D13, D36–D40). M6-04's report has the material for D19's. This is for whoever next owns `docs/design/app-design.md`.
+- **No Learn worked examples for M6 topics.** `learn/worked-examples/` stops at C6, so M6 skills on Learn have no "Worked example" button. Each M6 drill does walk a new item through on its first rep (rule 8), which the walk shows, so this is a gap in Learn, not in teaching.
+
+**For the PM: D21 isn't optional (research/02 rule 14).** Rule 14 says mental-practice drills are *optional*. D21 now takes every third turn on C6 whole-shape cards (D9 → D10 → D21), and no setting turns it off; design §6 lists D21 with no setting. Proposed: a "Mental practice" setting, read in `drill-picker.ts` the way `requiresMic` and `requiresSound` are (a `mental` flag on the drill's meta). It would be on by default, because D21 adds a context for the same fact (rule 12), and a learner could switch it off. This is a curriculum call, so it's the PM's; nothing is blocked meanwhile.
+
+**Findings** (production screenshots, four profiles, plus code reading). None blocks M6. Fix 1–3 first:
+1. **D8's I2 worked example contradicts its own legend.** The context panel's legend for E7 shows R as an orange square, 3 as a circle, 5 as a yellow triangle and ♭7 as a pink hexagon. On the neck every note is the same blue circle: the roots are ringed circles labelled "R", and the other notes show letter names (G♯, B, D), so degrees and names are mixed on one neck. `promptMarkers` in `d8-chord-tone/D8View.tsx` uses the `target` and `tone` styles; `d8DegreeStyle` is only used for feedback. This breaks the "shape as well as colour" rule (CLAUDE.md, design §8). It's the same pattern as M3 finding 2, which D8's guided prompts still have.
+2. **Worked examples lose the degree shapes and don't label what to tap.**
+   - The `target` style overrides each note's degree shape. D18's 5th is a ringed blue circle, not a triangle, until it's tapped (`degreeMarker(n, 'target')` in `D18View.tsx`). I7 (`ScaleView.tsx`) draws its 3rds and 5ths as circles, while C7 (`BoxView.tsx`) in the same drill folder draws its 5th as a triangle. D19's root is a circle.
+   - C7's box worked example says "Tap each note to continue", but only 6 of the 12 markers count ("Found 0 of 6"). The six targets are unlabelled blue circles, told apart only by a white ring, and they share the fill of the labelled ♭3 next to them (`BoxView.tsx:109` returns `style: 'target'` with no label). The relative-minor example says "Tap each F", but no marker says F. D19's targets are unlabelled too (`D19View.tsx:133`). D18, I7 and D8 do label theirs.
+   - I7's hint "the dots are major box 1" covers every dot, including the ringed 4ths and 7ths, which aren't in the box. It never says those are the notes to tap.
+3. **D20's grid makes a false accent pattern, and its button sits apart.**
+   - The boxes for beats 2, 3 and 4 are about 25% smaller than beat 1 and every "&", and their counts sit higher. In `D20View.module.css`, `.cell[data-beat='true']:not(:first-child)` adds a margin inside a fixed `3.5rem` grid column, and the box (width 100%, square) shrinks. In a rhythm drill, box size reads as accent.
+   - Start is centred on the full width, not under the prompt column (`.play` sits outside `.upper`). On a sideways phone it's below the fold.
+   - In feedback, every late hit is a ▶ glyph, which reads as a play button, and nothing marks where the click was.
+4. **D18 in iPad portrait shows frets 1–13, with no nut and no string names.** `d18Window` (`d18-inversions/logic.ts`) starts at the active range's fret 1, and the string names only draw in the open-string column. The other portrait drills show 12 frets, the nut and the names. The portrait neck drills (C7, D18, D19, D21) also centre the neck in a tall empty band, about 190pt above and 180pt below it, with the panel pinned at the bottom: the M3 finding 5 pattern again (`.drill { justify-content: space-between }` in each view's CSS).
+5. **The function drill repeats itself.**
+   - When the harmonic-minor V is answered with the natural v, the feedback repeats the guided prompt's fact word for word ("V in A minor is E. A harmonic minor raises G to G♯…"), and the prompt still says "Tap E to continue". `FunctionView.tsx` renders `dfFact` in both places. "Raising it to the leading tone makes E" has an unclear "it".
+   - On I5, the panel says "Tonic chords rest, subdominant chords move away…" and then "Function: Tonic rests, subdominant moves away, dominant pulls home." (`dfHint` plus `FUNCTION_ROLE_LINE` at guide level 3, `d-function/text.ts`).
+   - The cue line "IV in C major" shows on every function card, guided or not (`dfCueNote`). Reviewers split on this: the card tests numeral → function, so naming the numeral is fair, but it also makes the level-2 "Chords in C major" panel redundant. It's for the PM; leave it as it is.
+6. **D21's feedback makes the missed answer the faintest mark.** After a wrong tap, the missed root is a dashed ghost circle at 0.7 opacity in inlay colour. That is the thing the learner most needs to see, and it's drawn as a circle, not the root square. Meanwhile the wrong tap is a bold vermillion diamond, and the found root is a plain root square, where the pentatonic-box drill turns found notes green. D21's explanation says "You tapped string 1, fret 4" on a neck with no string names or fret numbers; naming the note (G♯, already on the marker) would be clearer. The feedback bar says "the A shape of A♯" where B♭ would be the usual spelling.
+7. **Learn copy for M6 modules.**
+   - **"Builds on" doesn't match the gate.** Scales says "Builds on: CAGED", but its test-out is "Pentatonic boxes: major". Arpeggios says "CAGED and pentatonic", but its gate also needs "Find the 3rd and 7th in 7th-chord shapes". `unlocksAfter` is free text in `engine/frontier.ts`.
+   - **The test-out sentence joins raw skill titles,** as M3 finding 7 noted. For example: "a short test of Find the 3rd and 7th in 7th-chord shapes, CAGED shapes: dominant 7 and Pentatonic boxes: minor", and "once you're practising Keep the pulse: tap on the beat" (`placement/TestOut.tsx`, `listOf`). On iPad mini, the Arpeggios Test out button sits below the panel's fold.
+8. **Light-theme neck markers still fail contrast** (M5 finding 2, unchanged). The light-theme `--root` (#965800), `--tone` (#0072b2) and `--wrong` sit on the unchanged dark wood at about 2.1–2.4:1, under 3:1 for graphics. The dark labels on those fills are about 3.1–3.5:1, under 4.5:1. `Fretboard.contrast.test.ts` checks neither the fills against the wood nor the labels against the fills. Every M6 neck shows it: C7 roots, D8, D21's root.
+9. **Small layout points.**
+   - **Needless scroll:** on iPad landscape and the mini, the relative-minor, I7 and D19 prompts are 7–36pt taller than the screen, with about 100pt empty under the fret numbers; the taller panel or a two-line hint pushes the neck down.
+   - **I7's open-string markers** at fret 0 cover the nut's string names.
+   - **The D8 panel's chord diagram** has labels about 4–6pt high (M3 finding 9).
+   - **Progress:** the achievement toast covers the h1, and "frets 0–12." breaks after the dash. It needs a non-breaking range.
+10. **Copy:**
+    - D20 says "Tap **Eighth notes** at 66 BPM", with the pattern name capitalised mid-sentence; `D20View.test.tsx` pins "Tap Only the “&”s". Its panel says "2 times through" where the prompt says "twice".
+    - D19's subtitle "If they share none, all three move the same way" is shown on a move where they share one.
+    - The summary still says "Those notes come back sooner" after shape, rhythm and function sessions, and "come back tomorrow" twice (M3 finding 7).
+    - Straight and curly apostrophes are still mixed: "you've" against "you’ve", "today's" against "Today’s", "You'll".
+11. **Phone (best effort):** neck cells are about 33pt on a sideways phone. The neck shows 10 frets where design §7 says compact zooms to about 5. The C7, D18 and D19 windows hold their shapes.
+
+**Not findings:** the walk's seeding masters F2 skills, so "String 6 master" and "String 5 master" unlock on Progress, and the summary's 0% accuracy is because guided reps don't count. The yellow 5th triangles are `--chord-fifth` (Okabe–Ito #f0e442), not the sunflower brand colour, which appears only on buttons. D21's blank neck, with no fret numbers or string names and a count with no total, is by design (rule 4). The Learn shots stop at the viewport because the module panel scrolls inside the shell. In the C7 example the D and A string names are hidden on purpose, because an unlabelled target sits at fret 12 (`hiddenStringNames`). Neck cells on every iPad profile are 53–70pt.
+
 ## Fan-out incidents and fixes (2026-10-18)
 
 - **Stale Vitest module cache (fixed, a53c400).** Vitest 5's `fsModuleCache` reused a cached `import.meta.glob` expansion in the long-lived main checkout, so `pnpm verify` on main lost M1-03's new skill files while fresh worktrees passed. The quality gate now runs with `fsModuleCache: false`.
