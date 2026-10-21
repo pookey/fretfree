@@ -5,15 +5,22 @@ import type { AchievementContext, AchievementDefinition } from '../types';
  * skips this module.
  */
 
-/** A badge earned when `skillId` reaches `mastered` (design §3.4). */
+/**
+ * A badge earned when `skillId` reaches `mastered` (design §3.4), or every
+ * one of a list of skills does: a milestone a staged topic reaches whole.
+ */
 export function masteryAchievement(
-  def: Omit<AchievementDefinition, 'category' | 'isUnlocked'> & { skillId: string },
+  def: Omit<AchievementDefinition, 'category' | 'isUnlocked'> & {
+    skillId: string | readonly string[];
+  },
 ): AchievementDefinition {
   const { skillId, ...rest } = def;
+  const skillIds = typeof skillId === 'string' ? [skillId] : skillId;
   return {
     ...rest,
     category: 'mastery',
-    isUnlocked: (ctx: AchievementContext) => ctx.skillStates.get(skillId)?.status === 'mastered',
+    isUnlocked: (ctx: AchievementContext) =>
+      skillIds.every((id) => ctx.skillStates.get(id)?.status === 'mastered'),
   };
 }
 

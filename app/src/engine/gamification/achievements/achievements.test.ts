@@ -5,6 +5,7 @@ import { SKILLS } from '../../skills';
 import { DEFAULT_GAMIFICATION } from '../../../storage/gamification-model';
 import type { AchievementContext, AchievementDefinition } from '../types';
 import { checkAchievements } from './check';
+import { C2_STAGE_IDS } from '../../skills/c2';
 import { masteryAchievement, streakAchievement } from './helpers';
 import { ACHIEVEMENTS } from './index';
 import { isSpeedDemon } from './speed-demon';
@@ -48,6 +49,12 @@ const reviews = (n: number, over: Partial<ReviewLogRecord> = {}) =>
   Array.from({ length: n }, () => review(over));
 
 const ids = (defs: readonly AchievementDefinition[]) => defs.map((d) => d.id);
+
+/** The string badges after F2's, in C2's teaching order (M10-12). */
+const C2_STRINGS = [1, 4, 3, 2];
+
+/** Every C2 stage mastered: the whole neck. */
+const WHOLE_NECK = Object.fromEntries(C2_STAGE_IDS.map((id) => [id, 'mastered' as const]));
 const none = new Set<string>();
 
 describe('achievement registry', () => {
@@ -55,6 +62,10 @@ describe('achievement registry', () => {
     expect(ids(ACHIEVEMENTS)).toEqual([
       'string-6-master',
       'string-5-master',
+      'string-1-master',
+      'string-4-master',
+      'string-3-master',
+      'string-2-master',
       'whole-neck',
       'mic-notes',
       'mic-sequences',
@@ -74,9 +85,13 @@ describe('achievement registry', () => {
 
   it('ties every mastery badge to a registered skill', () => {
     const skillIds = new Set(SKILLS.map((s) => s.id));
-    for (const id of ['F2.string6-naturals', 'F2.string5-naturals', 'C2.all-notes']) {
-      expect(skillIds.has(id)).toBe(true);
+    for (const id of ['F2.string6-naturals', 'F2.string5-naturals', ...C2_STAGE_IDS]) {
+      expect(skillIds.has(id), id).toBe(true);
     }
+    for (const n of C2_STRINGS) expect(skillIds.has(`C2.string${n}-naturals`)).toBe(true);
+    // Every C2 stage, the last of which keeps the old single skill's ID.
+    expect(C2_STAGE_IDS).toHaveLength(6);
+    expect(C2_STAGE_IDS.at(-1)).toBe('C2.all-notes');
   });
 
   it('unlocks nothing on a fresh install', () => {
@@ -87,17 +102,27 @@ describe('achievement registry', () => {
 describe('checkAchievements', () => {
   it('returns newly met badges in order and skips already-unlocked ones', () => {
     const c = ctx({
-      skillStates: states({ 'C2.all-notes': 'mastered', 'F2.string6-naturals': 'mastered' }),
+      skillStates: states({ ...WHOLE_NECK, 'F2.string6-naturals': 'mastered' }),
       gamification: { ...DEFAULT_GAMIFICATION, streakLongest: 30 },
     });
     expect(ids(checkAchievements(c, none, ACHIEVEMENTS))).toEqual([
       'string-6-master',
+      'string-1-master',
+      'string-4-master',
+      'string-3-master',
+      'string-2-master',
       'whole-neck',
       'streak-7',
       'streak-30',
     ]);
     expect(
-      ids(checkAchievements(c, new Set(['string-6-master', 'streak-7']), ACHIEVEMENTS)),
+      ids(
+        checkAchievements(
+          c,
+          new Set(['string-6-master', ...C2_STRINGS.map((n) => `string-${n}-master`), 'streak-7']),
+          ACHIEVEMENTS,
+        ),
+      ),
     ).toEqual(['whole-neck', 'streak-30']);
   });
 
@@ -143,7 +168,12 @@ describe('checkAchievements', () => {
 });
 
 describe('mastery badges', () => {
-  const masteryIds = ['string-6-master', 'string-5-master', 'whole-neck'];
+  const masteryIds = [
+    'string-6-master',
+    'string-5-master',
+    ...C2_STRINGS.map((n) => `string-${n}-master`),
+    'whole-neck',
+  ];
   const unlockedFor = (c: AchievementContext) =>
     ids(checkAchievements(c, none, ACHIEVEMENTS)).filter((id) => masteryIds.includes(id));
 
@@ -153,7 +183,7 @@ describe('mastery badges', () => {
         skillStates: states({
           'F2.string6-naturals': status,
           'F2.string5-naturals': status,
-          'C2.all-notes': status,
+          ...Object.fromEntries(C2_STAGE_IDS.map((id) => [id, status])),
         }),
       });
       expect(unlockedFor(c)).toEqual([]);
@@ -167,7 +197,22 @@ describe('mastery badges', () => {
     expect(
       unlockedFor(ctx({ skillStates: states({ 'F2.string5-naturals': 'mastered' }) })),
     ).toEqual(['string-5-master']);
-    expect(unlockedFor(ctx({ skillStates: states({ 'C2.all-notes': 'mastered' }) }))).toEqual([
+    for (const n of C2_STRINGS) {
+      expect(
+        unlockedFor(ctx({ skillStates: states({ [`C2.string${n}-naturals`]: 'mastered' }) })),
+      ).toEqual([`string-${n}-master`]);
+    }
+  });
+
+  it('give "Whole neck" only for every C2 stage mastered', () => {
+    // The last stage alone, as a single-skill C2 used to be, is not the whole neck.
+    expect(unlockedFor(ctx({ skillStates: states({ 'C2.all-notes': 'mastered' }) }))).toEqual([]);
+    for (const missing of C2_STAGE_IDS) {
+      const c = ctx({ skillStates: states({ ...WHOLE_NECK, [missing]: 'practising' }) });
+      expect(unlockedFor(c), missing).not.toContain('whole-neck');
+    }
+    expect(unlockedFor(ctx({ skillStates: states(WHOLE_NECK) }))).toEqual([
+      ...C2_STRINGS.map((n) => `string-${n}-master`),
       'whole-neck',
     ]);
   });
@@ -192,6 +237,20 @@ describe('mastery badges', () => {
     expect(def.category).toBe('mastery');
     expect(def.isUnlocked(ctx({ skillStates: states({ S: 'mastered' }) }))).toBe(true);
     expect(def.isUnlocked(ctx())).toBe(false);
+  });
+
+  it('builds a mastery badge from a list of skills, earned once all are mastered', () => {
+    const def = masteryAchievement({
+      id: 'm',
+      title: 'M',
+      description: 'You know them.',
+      order: 1,
+      skillId: ['S', 'T'],
+    });
+    expect(def.isUnlocked(ctx({ skillStates: states({ S: 'mastered' }) }))).toBe(false);
+    expect(def.isUnlocked(ctx({ skillStates: states({ S: 'mastered', T: 'mastered' }) }))).toBe(
+      true,
+    );
   });
 });
 
