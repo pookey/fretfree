@@ -247,24 +247,27 @@ export function d33StaffLabel(prompt: D33Prompt, staffLevel: GuideLevel): string
 // --- Compact window -------------------------------------------------------
 
 /**
- * Width the staff takes beside the neck on a phone on its side
+ * Width the staff takes beside the neck on a phone on its side, in rem
  * (D33View.module.css: 9rem tall at the staff's 352 × 318 aspect, plus the
- * column gap).
+ * 0.75rem column gap).
  */
-export const D33_SIDE_STAFF_PX = 172;
+export const D33_SIDE_STAFF_REM = (9 * 352) / 318 + 0.75;
 
 /**
  * The compact window's width in frets. The session sizes it for a neck that
  * spans the screen; on a phone on its side the staff sits beside the neck,
  * so the window shrinks to what still fits at the neck's 44pt cells.
+ * `remPx` is the root font size the staff's rem height resolves against.
  */
 export function d33CompactFrets(
   compactFrets: number | undefined,
   width: number,
   height: number,
+  remPx = 16,
 ): number | undefined {
   if (compactFrets === undefined || !isShortLandscape(width, height)) return compactFrets;
-  return Math.min(compactFrets, compactWindowFrets(width - D33_SIDE_STAFF_PX, height));
+  const staff = Math.ceil(D33_SIDE_STAFF_REM * remPx);
+  return Math.min(compactFrets, compactWindowFrets(width - staff, height));
 }
 
 /**

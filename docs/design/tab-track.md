@@ -6,11 +6,11 @@ Tab is easy to explain and quick to learn. It names a string and a fret, with no
 
 ## 1. Who gets it
 
-| Learner | Tab track |
-|---|---|
-| Wants to learn tab (`reading.learn.tab`, onboarding, M1-26) | **Promoted** in the frontier (M9-05) |
-| Already reads tab (`reading.reads.tab`) | Soft-unlocked. A short probe can test them out (M9-05) |
-| Everyone else | Soft-unlocked and previewable (design §3.4, §4). Nothing locks it away |
+| Learner                                                     | Tab track                                                              |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Wants to learn tab (`reading.learn.tab`, onboarding, M1-26) | **Promoted** in the frontier (M9-05)                                   |
+| Already reads tab (`reading.reads.tab`)                     | Soft-unlocked. A short probe can test them out (M9-05)                 |
+| Everyone else                                               | Soft-unlocked and previewable (design §3.4, §4). Nothing locks it away |
 
 Tab ↔ fretboard drills are on when the learner reads or is learning tab (research/03, Track R note).
 
@@ -34,6 +34,7 @@ Pure and deterministic, like the rest of `theory/`.
   ```
 
   `parseTab` reads it back. It accepts one or more blocks (systems) of one line per string. Line names are optional, but if present they must match the tuning (enharmonics and case don't matter). It also accepts bar lines mid-line, spaces, and a missing closing bar. Columns count from each line's first bar line, so names of different widths still align.
+
 - **Strict parsing.** `parseTab` throws a `TabParseError` with a line and column on: a block with the wrong number of lines, a misnamed line, a fret outside 0–24, a technique symbol (`h p / \ b x ~` …), or two notes that overlap in time. It reports these rather than guessing. Techniques and chords can be added later, as new event fields, without breaking the single-note phrase shape.
 - `tabEventLabel` gives the VoiceOver label: "string 3, fret 5".
 
@@ -41,15 +42,15 @@ Pure and deterministic, like the rest of `theory/`.
 
 An SVG built for touch, the tab partner of `<Fretboard>` (design §8). It is plain SVG with no notation library: tab is only lines and numbers, and VexFlow (M8-02) would cost bundle budget for nothing here.
 
-| Prop | Meaning |
-|---|---|
-| `notes` | `TabNote[]`: `{ string, fret, style?, hideFret? }`, one column each, in playing order |
-| `minColumns` | Draw at least this many columns; fewer notes sit in the middle (D33 shows one note on a wider staff) |
-| `cursor` | Index of the phrase cursor (D35): drawn `current`, with a caret under the column and `aria-current="step"` |
-| `lineMarks` | `{ string, style }[]` with style `selected` (a picked line), `correct` (flashes) or `wrong` (dashed) |
-| `guideLevel` | String-name fading (§5) |
-| `onPickLine(string)` | Makes each line a button for picking a string (D34) |
-| `tuning`, `label`, `className` | As for `<Fretboard>` |
+| Prop                           | Meaning                                                                                                    |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `notes`                        | `TabNote[]`: `{ string, fret, style?, hideFret? }`, one column each, in playing order                      |
+| `minColumns`                   | Draw at least this many columns; fewer notes sit in the middle (D33 shows one note on a wider staff)       |
+| `cursor`                       | Index of the phrase cursor (D35): drawn `current`, with a caret under the column and `aria-current="step"` |
+| `lineMarks`                    | `{ string, style }[]` with style `selected` (a picked line), `correct` (flashes) or `wrong` (dashed)       |
+| `guideLevel`                   | String-name fading (§5)                                                                                    |
+| `onPickLine(string)`           | Makes each line a button for picking a string (D34)                                                        |
+| `tuning`, `label`, `className` | As for `<Fretboard>`                                                                                       |
 
 - **Shapes as well as colour** (Okabe–Ito tokens). Notes: `plain` is the number knocked out of the line; `current` gets a sky-blue rounded outline; `correct` a bluish-green circle that flashes; `wrong` a vermillion diamond; `ghost` a dashed outline. Lines: `selected` is a heavy sky-blue line on a tinted band; `correct` is green and flashes; `wrong` is vermillion **and dashed**.
 - **Tap targets.** Each line's hit band is one line gap tall (48 design px). The SVG never renders below the scale that keeps that band at 44pt (`minScale`), and never above `MAX_SCALE` (1.25). On short screens (phone landscape, height < 500pt) it stays at the 44pt minimum so the staff and the neck both fit. A consumer on a narrow screen wraps it in a horizontal scroller, as the neck does.
@@ -63,10 +64,10 @@ An SVG built for touch, the tab partner of `<Fretboard>` (design §8). It is pla
 
 Proposed IDs, following the existing convention of one ID per direction (`note@s6f5` / `find:G@s5`):
 
-| Item | Direction | Drill |
-|---|---|---|
-| `tab@s3f5` | tab → neck: read the note on the tab, tap it on the neck | D33 |
-| `tab-write@s3f5` | neck → tab: see the cell, pick the line and the fret | D34 |
+| Item             | Direction                                                | Drill |
+| ---------------- | -------------------------------------------------------- | ----- |
+| `tab@s3f5`       | tab → neck: read the note on the tab, tap it on the neck | D33   |
+| `tab-write@s3f5` | neck → tab: see the cell, pick the line and the fret     | D34   |
 
 - The skills cover single notes on each string at frets 0–12 (6 × 13 = 78 facts, each in both directions, research/02 rule 1).
 - **Why one card per cell (decided in M9-02).** The alternative was 6 line ↔ string cards plus the existing neck-locating items. It was rejected because the track trains fluency, and fluency is per cell: reading line 4 / fret 9 as a place is slower than line 1 / fret 0, and FSRS can only schedule that gap if each cell has its own card, graded on its own response time (rules 2 and 3). No existing card asks "go to string 4, fret 9" either: `note@` names a note and `find:` finds a pitch class, so the cells don't duplicate them. `tab@` and `note@` stay separate kinds because knowing where is not knowing what.
@@ -80,12 +81,12 @@ Proposed IDs, following the existing convention of one ID per direction (`note@s
 
 The neck's guide levels (design §3.5) apply to the neck in every tab drill. The tab staff has its own, which fade the string names at the left of the lines:
 
-| Level | `<TabStaff>` shows |
-|---|---|
-| 3 | Every line's name and its string number (`e1 B2 G3 D4 A5 E6`) |
-| 2 | Every line's name (`e B G D A E`) |
-| 1 | Only the top and bottom names (`e`, `E`): anchors to count from |
-| 0 | Bare lines |
+| Level | `<TabStaff>` shows                                              |
+| ----- | --------------------------------------------------------------- |
+| 3     | Every line's name and its string number (`e1 B2 G3 D4 A5 E6`)   |
+| 2     | Every line's name (`e B G D A E`)                               |
+| 1     | Only the top and bottom names (`e`, `E`): anchors to count from |
+| 0     | Bare lines                                                      |
 
 - The fret numbers always show. In tab they are the content being read, not guidance.
 - Immediate correct-answer feedback stays on at every level (rule 9).
@@ -93,15 +94,21 @@ The neck's guide levels (design §3.5) apply to the neck in every tab drill. The
 
 ## 6. Drills
 
-| ID | Drill | Input | Package |
-|---|---|---|---|
-| D33 | **Tab → neck.** One note on `<TabStaff>`; tap that cell on the neck | tap | M9-02 |
-| D34 | **Neck → tab.** A highlighted cell; pick the tab line, then the fret (choice buttons and keyboard). A wrong line and a wrong fret get different feedback | tap + choice | M9-03 |
-| D35 | **Read a tab phrase.** 3–6 notes, 1–3 strings, one position. Tap them on the neck in order; the cursor shows the current note; a wrong tap shows the right cell and carries on. A correct phrase plays back (lazy Tone.js, design §9) | tap | M9-04 |
+| ID  | Drill                                                                                                                                                                                                                                 | Input        | Package |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------- |
+| D33 | **Tab → neck.** One note on `<TabStaff>`; tap that cell on the neck                                                                                                                                                                   | tap          | M9-02   |
+| D34 | **Neck → tab.** A highlighted cell; pick the tab line, then the fret (choice buttons and keyboard). A wrong line and a wrong fret get different feedback                                                                              | tap + choice | M9-03   |
+| D35 | **Read a tab phrase.** 3–6 notes, 1–3 strings, one position. Tap them on the neck in order; the cursor shows the current note; a wrong tap shows the right cell and carries on. A correct phrase plays back (lazy Tone.js, design §9) | tap          | M9-04   |
 
 Every drill follows **worked example → faded → independent** (rule 8): the first rep of a new item shows the answer (tab line highlighted, the cell marked, string names at level 3), and later reps hide it. A queried answer is never shown before the learner answers (rule 4, the M1-25 rule): in D33 the neck has no marker on the target cell; in D34 the tab is empty until the line is picked.
 
-On iPad landscape the staff sits above the neck with both in view, as the staff does in M8 (§12). On compact the staff renders at its 44pt minimum above the 5-fret neck window.
+Layout, as D33 does it:
+
+- **iPad.** The staff sits above the neck with both in view, as the staff does in M8 (§12). It is placed beside the prompt and the feedback line, so the whole neck fits below it.
+- **Read-only staff.** A staff that is only read (D33, D35) is sized by height (about a quarter of the screen), not at `<TabStaff>`'s 44pt minimum. At that minimum it is 291pt tall and pushes the neck's low strings off an iPad in landscape.
+- **Tappable staff.** A staff whose lines are tapped (D34) keeps the 44pt minimum.
+- **Phone in portrait.** The staff sits above the 5-fret neck window.
+- **Phone on its side.** The staff takes a left column beside the neck, and the neck window shrinks to the frets that still fit at 44pt cells (`d33CompactFrets`).
 
 ## 7. Relation to M8 R7 (tab ↔ staff)
 
@@ -114,6 +121,7 @@ R7 (research/03) is about **choosing a position**: reading a staff passage and w
   2. Use `<TabStaff>` everywhere for one look and one set of a11y labels. This needs a new `columnX` input so its columns can follow VexFlow's note positions.
 
   Either way, both tracks share the model and the guide-fading rule (names fade first, fret numbers stay). The choice belongs to M8-02, which owns the VexFlow dependency.
+
 - **Prerequisites.** Neither track requires the other. A learner who reads tab gets R7 as a bridge into staff reading; one who reads staff gets it as a bridge into tab.
 
 ## 8. Explore: Tab viewer

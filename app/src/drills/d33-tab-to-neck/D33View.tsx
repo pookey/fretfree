@@ -37,6 +37,11 @@ interface ViewState {
   frets: number | undefined;
 }
 
+/** The root font size, which the staff's rem height resolves against. */
+function rootFontPx(): number {
+  return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+}
+
 const WIDE: FretRange = { from: 0, to: 15 };
 const REGULAR: FretRange = { from: 0, to: 12 };
 
@@ -60,7 +65,7 @@ export function D33View({
 }: DrillRenderProps<D33Prompt, D33Answer>) {
   const compact = sizeClass === 'compact';
   const compactFrets = compact
-    ? d33CompactFrets(sessionFrets, window.innerWidth, window.innerHeight)
+    ? d33CompactFrets(sessionFrets, window.innerWidth, window.innerHeight, rootFontPx())
     : sessionFrets;
   const neckRef = useRef<HTMLDivElement>(null);
   const moved = useRef(false);

@@ -273,4 +273,8 @@ describe('d33CompactFrets', () => {
     expect(frets).toBeGreaterThanOrEqual(5);
     expect(d33CompactFrets(6, 2000, 343)).toBe(6);
   });
+
+  it('widens the staff with the root font size, leaving fewer frets', () => {
+    expect(d33CompactFrets(9, 734, 343, 24)!).toBeLessThan(d33CompactFrets(9, 734, 343, 16)!);
+  });
 });
