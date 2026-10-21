@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart } from './helpers';
 import { focusSession } from './helpers/focus';
-import { enableIntros } from './helpers/intros';
+import { dismissIntro, enableIntros } from './helpers/intros';
 
 // M10-04: a new skill's concept intro, before its first worked rep
 // (research/02 rule 8), shown once per skill.
@@ -39,8 +39,7 @@ test('a first session opens with the alphabet intro, then the worked rep; the ne
   await expect(workedPrompt(page)).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 
-  await intro.getByRole('button', { name: 'Got it' }).click();
-  await expect(card(page)).toHaveCount(0);
+  await dismissIntro(page);
   await answerWorkedRep(page);
 
   // A second session goes straight to practice.
@@ -70,9 +69,10 @@ test('Space dismisses it, and a neck intro fits the screen', async ({ page }) =>
   await expect(page.locator('[data-drill]')).toBeVisible();
 });
 
-test('each new skill gets its own intro, once in a session', async ({ page }) => {
-  await focusSession(page, ['F1.alphabet', 'F1.b-c-e-f']);
+test('a skill’s intro shows once, not before each rep of its block', async ({ page }) => {
+  await focusSession(page, 'F1.alphabet');
   await expect(card(page)).toHaveAttribute('data-intro', 'f1-alphabet');
+  await expect(card(page)).toHaveAttribute('data-ready', 'true');
   await card(page).click();
   await answerWorkedRep(page);
   // The rest of the alphabet block follows with no card in between.

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { freshStart, wipeData } from './helpers';
 import { focusSession } from './helpers/focus';
+import { dismissIntro } from './helpers/intros';
 import { seedDueItems } from './helpers/octaves';
 
 // Drill views and the run-once onboarding and placement screens load on demand
@@ -155,7 +156,7 @@ test.describe('M3-18 lazy drill views and run-once routes', () => {
 
     await focusSession(page, 'F2.string6-naturals');
     // A wipe without firstLaunch leaves concept intros on (M10-04): their chunk is precached too.
-    await page.getByRole('button', { name: 'Got it' }).click();
+    await dismissIntro(page);
     await expect(page.locator('[data-drill="name-the-note"]')).toBeVisible();
     await expect(page.getByRole('group', { name: /highlighted|this is/i }).first()).toBeVisible();
     await expect(page.getByRole('alert')).toHaveCount(0);
