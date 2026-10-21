@@ -41,6 +41,10 @@ export const SEED_CONFUSIONS: readonly (readonly [string, string])[] = [
   ['prog:I-V-vi-IV', 'prog:vi-IV-I-V'],
   // Capo maths the wrong way round (C10, D13): up from the shapes vs down from the song.
   ['capo:up', 'capo:down'],
+  // Tab lines (D33, `tab:line<n>`): neighbours, and the two E lines read upside down.
+  ['tab:line2', 'tab:line3'],
+  ['tab:line4', 'tab:line5'],
+  ['tab:line1', 'tab:line6'],
 ];
 
 /** Pair weights by unordered concept pair. Read it with `weightOf`. */

@@ -18,8 +18,8 @@ describe('skill registry', () => {
   it('loads every skill of every topic file, named for its topic', () => {
     const fromFiles = Object.entries(files).flatMap(([path, m]) => {
       expect(m.skills?.length, `${path} exports no skills`).toBeGreaterThan(0);
-      // `c5-tones.ts` holds C5 skills, `i3.ts` I3's.
-      const topic = /^\.\/([a-z]\d+)/.exec(path)?.[1]?.toUpperCase();
+      // `c5-tones.ts` holds C5 skills, `i3.ts` I3's, `tab.ts` TAB's.
+      const topic = /^\.\/([a-z]+\d*)/.exec(path)?.[1]?.toUpperCase();
       for (const s of m.skills ?? []) {
         expect(s.topic, path).toBe(topic);
         expect(s.id.startsWith(`${s.topic}.`), s.id).toBe(true);

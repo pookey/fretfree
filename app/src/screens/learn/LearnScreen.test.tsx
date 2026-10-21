@@ -45,7 +45,7 @@ describe('<LearnScreen>', () => {
     await loaded();
     const map = screen.getByRole('region', { name: 'Modules' });
     expect(within(map).getAllByRole('link', { name: /stable|mastered|coming soon/ }).length).toBe(
-      18,
+      19,
     );
     const detail = screen.getByTestId('module-detail');
     expect(within(detail).getByRole('heading', { level: 2 })).toHaveTextContent('Neck basics');

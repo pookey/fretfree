@@ -182,6 +182,16 @@ export const MODULES: readonly Module[] = [
     track: 'future',
     summary: 'Staff reading for guitar, staff ↔ fretboard by position, and sight-reading.',
   },
+  {
+    // docs/design/tab-track.md §1: soft-unlocked for everyone; M9-05 promotes it.
+    id: 'tab',
+    title: 'Tab',
+    topics: ['TAB'],
+    unlocksAfter: 'The fret markers',
+    track: 'optional',
+    summary: 'Read a tab line and a fret number as a place on the neck, at speed.',
+    misconception: 'The top line of tab is the high e string, not the low E.',
+  },
 ];
 
 const BY_TOPIC = new Map(MODULES.flatMap((m) => m.topics.map((t) => [t, m] as const)));

@@ -1,0 +1,124 @@
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+  justify-content: space-between;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.prompt {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.prompt strong {
+  color: var(--tone);
+}
+
+/* The staff is read, not tapped, so it stays at the size that keeps its
+   lines 44pt apart (TabStaff's min-width) and leaves the height to the neck.
+   A narrow phone scrolls it sideways rather than the page. */
+.staff {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.staff svg {
+  width: 0;
+}
+
+.explain {
+  margin: 0;
+  min-height: 1.5em;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.neckRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.neckArea {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.slide {
+  flex: 0 0 auto;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.slide:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+@media (hover: hover) {
+  .slide:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.windowCaption {
+  margin: 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* iPad portrait (as D2): one column from the top (prompt, staff, neck, then
+   help), not the neck centred in a tall empty band. */
+.drill[data-size-class='regular'] {
+  justify-content: flex-start;
+}
+
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-2);
+  justify-content: flex-start;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+/* Best-effort iPhone: keep the zoomed neck within short landscape viewports. */
+.drill[data-size-class='compact'] .neckArea svg {
+  max-height: calc(100dvh - 9rem);
+}

@@ -34,6 +34,7 @@ export const TOPIC_TITLES: Readonly<Record<string, string>> = {
   I5: 'Chord function',
   I6: 'Ear training',
   I7: 'Scale positions',
+  TAB: 'Reading tab',
 };
 
 export interface TopicView {
