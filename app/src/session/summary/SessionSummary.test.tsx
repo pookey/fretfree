@@ -50,6 +50,19 @@ describe('<SessionSummary>', () => {
     expect(screen.getByRole('link', { name: 'Done' })).toHaveAttribute('href', '/');
   });
 
+  it('says why a session ended at its new-item cap, and only then', () => {
+    show();
+    expect(screen.queryByTestId('summary-enough-new')).toBeNull();
+    render(
+      <MemoryRouter>
+        <SessionSummary celebration={base} enoughNew />
+      </MemoryRouter>,
+    );
+    expect(screen.getByTestId('summary-enough-new')).toHaveTextContent(
+      "That's enough new material for today: it sticks better after a sleep.",
+    );
+  });
+
   it('leads with competence and lists the session moments', () => {
     show({
       perfect: true,

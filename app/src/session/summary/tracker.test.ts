@@ -14,8 +14,9 @@ let n = 0;
 let clock: Date;
 const now = () => clock;
 const scheduler = createScheduler({ enableFuzz: false });
-// F1 items are served by D3; these tests drive D1 prompts.
-const NOTE_SKILLS = SKILLS.filter((s) => s.topic !== 'F1');
+// F1 items are served by D3, and the Ear and Rhythm tracks by their own
+// drills; these tests drive D1 prompts.
+const NOTE_SKILLS = SKILLS.filter((s) => !['F1', 'F4', 'I6'].includes(s.topic));
 
 beforeEach(() => {
   db = new FretworkDB(`tracker-${n++}`);

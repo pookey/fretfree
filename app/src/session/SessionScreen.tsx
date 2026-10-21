@@ -39,7 +39,7 @@ type Phase =
   | { kind: 'intro'; current: CurrentPrompt; intro: ConceptIntro; Card: FC<ConceptCardProps> }
   | { kind: 'prompt'; current: CurrentPrompt }
   | { kind: 'feedback'; current: CurrentPrompt; feedback: DrillFeedback<unknown> }
-  | { kind: 'summary'; celebration: Celebration };
+  | { kind: 'summary'; celebration: Celebration; enoughNew: boolean };
 
 /** Full-screen, distraction-free session (design §7 Session). */
 export function SessionScreen() {
@@ -82,7 +82,11 @@ export function SessionScreen() {
     if (!runner || !tracker) return;
     window.clearTimeout(advanceTimer.current);
     const summary = await runner.finish();
-    setPhase({ kind: 'summary', celebration: await tracker.finish(summary) });
+    setPhase({
+      kind: 'summary',
+      celebration: await tracker.finish(summary),
+      enoughNew: summary.enoughNew,
+    });
     void refitIfDue(getDb(), new Date())
       .then((next) => next && useAppStore.setState({ settings: next }))
       .catch((e: unknown) => console.error('Refitting FSRS parameters failed', e));
@@ -204,7 +208,9 @@ export function SessionScreen() {
     return () => window.removeEventListener('keydown', onKey);
   }, [phase, advance]);
 
-  if (phase.kind === 'summary') return <SessionSummary celebration={phase.celebration} />;
+  if (phase.kind === 'summary') {
+    return <SessionSummary celebration={phase.celebration} enoughNew={phase.enoughNew} />;
+  }
   if (phase.kind === 'empty') return <EmptySession />;
 
   const current = phase.kind === 'loading' ? null : phase.current;

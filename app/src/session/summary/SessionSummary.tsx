@@ -3,6 +3,7 @@ import { Confetti } from '../../components/confetti/Confetti';
 import { ENGINE_CONFIG } from '../../engine';
 import type { Celebration } from './celebrations';
 import {
+  ENOUGH_NEW_COPY,
   LEARNED_HINT,
   SPACING_COPY,
   accuracyNote,
@@ -17,6 +18,8 @@ export interface SessionSummaryProps {
   celebration: Celebration;
   /** Where "Done" goes. */
   doneTo?: string;
+  /** The session ended at its new-item cap, so it says why. */
+  enoughNew?: boolean;
 }
 
 /**
@@ -24,7 +27,11 @@ export interface SessionSummaryProps {
  * what the learner can now do, the session's moments, its numbers, where its
  * items stand on Learn's learning / stable scale and why to come back.
  */
-export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryProps) {
+export function SessionSummary({
+  celebration: c,
+  doneTo = '/',
+  enoughNew = false,
+}: SessionSummaryProps) {
   const title = headline(c);
   const [first, ...more] = c.competence;
   const learnedToday = c.competence.some((line) => line.kind === 'learned');
@@ -164,6 +171,11 @@ export function SessionSummary({ celebration: c, doneTo = '/' }: SessionSummaryP
         {/* What's next, with Done always in view: beside the recap at short
             heights, held at the bottom when a tall recap overflows. */}
         <footer className={styles.next}>
+          {enoughNew && (
+            <p className={styles.enough} data-testid="summary-enough-new">
+              {ENOUGH_NEW_COPY}
+            </p>
+          )}
           <p className={styles.spacing} data-testid="summary-spacing">
             {SPACING_COPY}
           </p>

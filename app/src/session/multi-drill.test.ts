@@ -241,17 +241,18 @@ describe('the time budget', () => {
     const r = await SessionRunner.start(
       deps({ skills: [string6, string5], drills: [D1], settings }),
     );
-    // 5 minutes plan 43 prompts: ten new items × 4 reps.
-    expect(r.length).toBe(40);
+    // 5 minutes cap new items at four: four new items × 4 reps.
+    expect(r.length).toBe(16);
     const items = new Set<string>();
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 16; i++) {
       items.add((await play(r, 300, 1_000)).entry.itemId);
       r.next();
     }
-    expect(items.size).toBe(10);
-    // Answered fast, the plan is spent in 40 s: the rest of the frontier follows.
+    expect(items.size).toBe(4);
+    // Answered fast and right, the plan is spent in 16 s and the cap rises
+    // by half: two more of the frontier follow.
     expect(r.isOver).toBe(false);
-    expect(r.length).toBe(64);
+    expect(r.length).toBe(24);
     expect(r.currentPrompt()).toMatchObject({ entry: { kind: 'new', guided: true } });
     expect(items.has(r.currentPrompt()!.entry.itemId)).toBe(false);
   });

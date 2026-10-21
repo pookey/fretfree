@@ -140,7 +140,7 @@ interface Accrual {
  */
 async function accrue(
   db: FretworkDB,
-  add: { xp: number; minutes: number; at: Date },
+  add: { xp: number; minutes: number; at: Date; planDone?: boolean },
   events: GamificationEvent[],
 ): Promise<Accrual> {
   const date = toLocalDate(add.at);
@@ -148,7 +148,7 @@ async function accrue(
   const row = stored ?? emptyDailyProgress(date);
   const state = { ...g, xpTotal: g.xpTotal + add.xp };
   const day = { ...row, xp: row.xp + add.xp, minutes: row.minutes + add.minutes };
-  const goalReached = !row.goalMet && day.minutes >= state.dailyGoalMinutes;
+  const goalReached = !row.goalMet && (day.minutes >= state.dailyGoalMinutes || !!add.planDone);
   const all = [...events];
   if (goalReached) {
     day.goalMet = true;
@@ -252,6 +252,11 @@ export interface SessionProgressInput {
   minutes: number;
   /** Every counted minute of the session, including `minutes`. */
   sessionMinutes: number;
+  /**
+   * The session did its whole plan and ended at its new-item cap: that meets
+   * the daily goal, which rewards the plan, never grinding past it.
+   */
+  planDone?: boolean;
   xp: number;
   itemsSeen: number;
   accuracy: number;
@@ -275,7 +280,11 @@ export async function finishSessionProgress(
   input: SessionProgressInput,
 ): Promise<SessionProgress> {
   return db.transaction('rw', tables(db), async () => {
-    const acc = await accrue(db, { xp: 0, minutes: input.minutes, at: input.at }, []);
+    const acc = await accrue(
+      db,
+      { xp: 0, minutes: input.minutes, at: input.at, planDone: input.planDone },
+      [],
+    );
     const complete: GamificationEvent = {
       type: 'session-complete',
       date: acc.day.date,

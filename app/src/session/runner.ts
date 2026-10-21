@@ -11,7 +11,9 @@ import {
   isFrontier,
   isMastered,
   median,
+  newItemCap,
   nextGuideLevel,
+  retrievalPass,
   rollingAccuracy,
   scheduleRetry,
   sessionLength,
@@ -24,13 +26,14 @@ import {
   type Scheduler,
   type ScopeState,
   type SessionEntry,
+  type SessionLane,
   type Settings,
   type Skill,
   type SkillStateRecord,
   type SkillStatus,
 } from '../engine';
 import type { CardKind, GamificationEvent } from '../engine/gamification';
-import { orderFrontier } from '../engine/frontier';
+import { frontierLanes, orderFrontier } from '../engine/frontier';
 import { leadWithSound, startWithSoundSkills } from '../engine/start-with-sound';
 import { overlayStatus, type StatusOverlay } from '../engine/overlay';
 import { SessionGuides } from '../engine/guides';
@@ -47,6 +50,7 @@ import {
   type FretworkDB,
 } from '../storage';
 import { getTuning } from '../theory/tunings';
+import { isPlacementLog } from '../placement/save';
 import {
   addAnswerProgress,
   answersToday,
@@ -70,6 +74,12 @@ import { focusFilter, type SessionFocus } from './focus';
  * any new block in progress. A queue that runs dry early is planned again
  * from what is left: cards that came due, unseen frontier items, then
  * stretch items.
+ *
+ * New items come from the frontier's lanes (`frontierLanes`), at most
+ * `newItemCap` per session. Once the cap is reached and nothing is due, the
+ * session runs one spaced retrieval pass over its new items and then ends,
+ * saying why: a session that ends this way meets the daily goal, which
+ * rewards doing the plan, never grinding past it.
  *
  * A focus (`focus.ts`) narrows all of that to some skills or items. Gating
  * still looks at every skill, so a focus can't unlock anything.
@@ -132,6 +142,8 @@ export interface SessionSummary {
   minutes: number;
   /** Today's daily goal is met (now or earlier today). */
   goalMet: boolean;
+  /** The session ended early: its new-item cap was reached and nothing was due. */
+  enoughNew: boolean;
   /** The goal was reached during this session. */
   goalReached: boolean;
   /** The streak after finishing. */
@@ -152,7 +164,19 @@ type Planner = (
   cards: readonly CardRecord[],
   seen: ReadonlySet<string>,
   maxItems?: number,
+  /** New items the plan may still introduce (the session's cap less those served). */
+  maxNew?: number,
 ) => SessionEntry[];
+
+/** Unguided, non-placement answers in the adaptive window, oldest first. */
+async function recentAnswers(db: FretworkDB): Promise<boolean[]> {
+  const logs = await db.reviewLogs.orderBy('at').reverse().limit(200).toArray();
+  return logs
+    .filter((l) => !l.hintUsed && !isPlacementLog(l))
+    .slice(0, ENGINE_CONFIG.adaptive.window)
+    .map((l) => l.correct)
+    .reverse();
+}
 
 /** The drill that last served each item more than one drill can serve, from the review log. */
 async function lastDrills(
@@ -196,6 +220,11 @@ export class SessionRunner {
   private readonly lastDrill: Map<string, string>;
   /** Items with a stored card when the session started: real data, never sandboxed. */
   private readonly storedAtStart: ReadonlySet<string>;
+  /** Recent unguided answers, for the new-item cap's raise. */
+  private readonly recent: boolean[];
+  /** The retrieval pass over this session's new items has been queued. */
+  private passQueued = false;
+  private enoughNew = false;
 
   private constructor(
     private readonly deps: RunnerDeps,
@@ -207,14 +236,18 @@ export class SessionRunner {
     lastDrill: Map<string, string>,
     /** Skills on the frontier only through the overlay: their new items aren't stored. */
     private readonly sandbox: ReadonlySet<string>,
+    recent: boolean[],
   ) {
     this.cards = new Map(cards.map((c) => [c.itemId, c]));
     this.storedAtStart = new Set(this.cards.keys());
     this.startedAt = this.now();
     this.lastTick = this.startedAt;
     this.lastDrill = lastDrill;
+    this.recent = recent;
     this.queue = [];
-    this.adopt(planner(this.startedAt, this.budgetMinutes, cards, new Set(), deps.maxItems));
+    this.adopt(
+      planner(this.startedAt, this.budgetMinutes, cards, new Set(), deps.maxItems, this.newCap),
+    );
     this.targets = speedTargets(deps.settings.latencyBaselineMs);
     this.guides = new SessionGuides(this.targets);
   }
@@ -259,29 +292,41 @@ export class SessionRunner {
       frontierSkills.add(skill.id);
       frontierInOrder.push(skill);
     }
-    // The goal profile reorders frontier skills (design §3.3 step 2), and
-    // "start with sound" puts the ear track first until ear-find is practising.
-    const frontier: Item[] = deps.reviewOnly
+    // The goal profile orders each lane's skills (design §3.3 step 2). The
+    // very first session (no cards yet) stays Neck basics: no parallel track.
+    // "Start with sound" instead leads with the ear track until ear-find is
+    // practising (M4-10): one lane in that order, still capped, then lanes.
+    const ordered = orderFrontier(frontierInOrder, deps.settings.goal);
+    const led = leadWithSound(ordered, deps.settings.startWithSound, statuses);
+    const leading = led.some((skill, i) => skill !== ordered[i]);
+    const itemsOf = (skills: readonly Skill[]) =>
+      skills.flatMap((skill) => skill.items().filter(serves));
+    const lanes: SessionLane[] = deps.reviewOnly
       ? []
-      : leadWithSound(
-          orderFrontier(frontierInOrder, deps.settings.goal),
-          deps.settings.startWithSound,
-          statuses,
-        ).flatMap((skill) => skill.items().filter(serves));
+      : leading
+        ? [{ id: 'lead', share: 1, items: itemsOf(led) }]
+        : frontierLanes(frontierInOrder, deps.settings.goal, {
+            firstSession: cards.length === 0,
+          }).map((lane) => ({
+            id: lane.id,
+            share: lane.share,
+            items: itemsOf(lane.skills),
+          }));
     const tuning = getTuning(deps.settings.tuning);
     const ctx = { tuning, accidentalPref: deps.settings.accidentalPref };
 
     // The runner updates this map as it serves, so replans key items to their next drill.
     const lastDrill = await lastDrills(deps.db, cards, picker);
 
-    const planner: Planner = (at, minutes, known, seen, maxItems) => {
+    const planner: Planner = (at, minutes, known, seen, maxItems, maxNew) => {
       const servable = known.filter((c) => serves({ id: c.itemId, skillId: c.skillId }));
       const skillOf = new Map(servable.map((c) => [c.itemId, c.skillId]));
       const plan = buildSession({
         now: at,
         minutes,
         cards: servable,
-        frontier,
+        lanes,
+        ...(maxNew !== undefined ? { maxNew } : {}),
         scheduler: deps.scheduler,
         confusions,
         conceptOf: (itemId) => {
@@ -320,12 +365,31 @@ export class SessionRunner {
     // chunk, shows its load-failed message instead (`lazyParts`).
     await Promise.all(deps.drills.map((d) => d.logic.preload())).catch(() => undefined);
 
+    const recent = await recentAnswers(deps.db);
     const logId = await startSessionLog(deps.db, now);
-    return new SessionRunner(deps, planner, picker, cards, states, logId, lastDrill, sandbox);
+    return new SessionRunner(
+      deps,
+      planner,
+      picker,
+      cards,
+      states,
+      logId,
+      lastDrill,
+      sandbox,
+      recent,
+    );
   }
 
   private get budgetMinutes(): number {
     return this.deps.minutes ?? this.deps.settings.sessionMinutes;
+  }
+
+  /** The session's new-item cap, raised while recent accuracy is above the band. */
+  private get newCap(): number {
+    const { window, minAnswers } = ENGINE_CONFIG.adaptive;
+    const recent = this.recent.slice(-window);
+    const accuracy = recent.length >= minAnswers ? rollingAccuracy(recent) : null;
+    return newItemCap(this.budgetMinutes, accuracy);
   }
 
   private now(): Date {
@@ -507,9 +571,10 @@ export class SessionRunner {
     this.skillStates.set(item.skillId, state);
     if (!sandboxed) this.touchedSkills.add(item.skillId);
 
-    // Guided reps are worked examples, not evidence of recall, for scope purposes.
+    // Guided reps are worked examples, not evidence of recall, for scope or the new cap.
     if (!entry.guided) {
       this.scopes.set(drill.id, updateScope(this.scope(drill), result.correct, drill.scope).state);
+      this.recent.push(result.correct);
     }
     if (sandboxed) this.sandboxedAnswers++;
     else {
@@ -566,8 +631,20 @@ export class SessionRunner {
     if (this.index >= this.queue.length && this.deps.maxItems === undefined) {
       const minutes = this.remainingMs / 60_000;
       const seen = new Set(this.queue.map((e) => e.itemId));
-      this.adopt(this.planner(now, minutes, [...this.cards.values()], seen));
+      const left = Math.max(0, this.newCap - this.newItems.size);
+      const plan = this.planner(now, minutes, [...this.cards.values()], seen, undefined, left);
+      const capped = left === 0 && this.newItems.size > 0 && !this.deps.reviewOnly;
+      if (!capped || plan.some((e) => e.kind === 'review')) this.adopt(plan);
+      else if (!this.passQueued) {
+        // The cap is reached and nothing is due: recall today's new items once more, then stop.
+        this.passQueued = true;
+        this.adopt(retrievalPass([...this.newItems].map((id) => this.itemOf(id))));
+      } else this.enoughNew = true;
     }
+  }
+
+  private itemOf(itemId: string): Item {
+    return { id: itemId, skillId: this.cards.get(itemId)?.skillId ?? '' };
   }
 
   /** Learning steps that have come due go next, after any new block in progress. */
@@ -634,6 +711,7 @@ export class SessionRunner {
       at: endedAt,
       minutes: trailing,
       sessionMinutes: this.minutes,
+      planDone: this.enoughNew && this.answered > 0,
       xp: this.xp,
       itemsSeen: this.answered,
       accuracy,
@@ -648,6 +726,7 @@ export class SessionRunner {
       xp: this.xp,
       minutes: this.minutes,
       goalMet: progress.goalMet,
+      enoughNew: this.enoughNew,
       goalReached: this.goalReached || progress.goalReached,
       streak: progress.state.streakCurrent,
       events: progress.events,

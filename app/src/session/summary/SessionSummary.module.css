@@ -189,6 +189,13 @@
   font-weight: 600;
 }
 
+.enough {
+  margin: 0;
+  max-width: 34rem;
+  align-self: center;
+  font-weight: 600;
+}
+
 .spacing {
   margin: 0;
   color: var(--text-muted);
