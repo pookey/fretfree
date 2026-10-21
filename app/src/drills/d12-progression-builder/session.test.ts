@@ -45,7 +45,7 @@ describe('D12 in a session', () => {
       drills: DRILLS,
       now: () => clock,
       rng: () => 0,
-      maxItems: 4,
+      maxItems: 8,
       focus: { skillIds: ['C9.pop'], itemIds: [] },
     });
     const cur = r.currentPrompt()!;

@@ -21,7 +21,8 @@ const start = (drill: AnyDrillType) =>
     skills: NOTE_SKILLS,
     drills: [drill],
     now: () => new Date('2026-10-19T09:00:00Z'),
-    maxItems: 4,
+    // Two new items × 4 reps: the smallest block a lane serves (M10-03).
+    maxItems: 8,
   });
 
 beforeEach(() => {
@@ -49,7 +50,7 @@ describe('SessionRunner with lazy drill logic', () => {
       },
     };
     const r = await start({ ...D1, logic });
-    expect(r.length).toBe(4);
+    expect(r.length).toBe(8);
     const cur = r.currentPrompt()!;
     expect(cur.drill.id).toBe('name-the-note');
     // The view needs the same chunk, so it shows the drill's load-failed message.

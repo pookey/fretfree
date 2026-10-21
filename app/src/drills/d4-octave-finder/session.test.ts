@@ -35,7 +35,7 @@ async function unlock(skills: readonly Skill[]) {
   );
 }
 
-async function start(skills: readonly Skill[], maxItems = 6) {
+async function start(skills: readonly Skill[], maxItems = 8) {
   await unlock(skills);
   return SessionRunner.start({
     db,

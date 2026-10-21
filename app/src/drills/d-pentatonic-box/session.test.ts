@@ -47,7 +47,7 @@ describe('pentatonic boxes in a session', () => {
       drills: DRILLS,
       now: () => clock,
       rng: () => 0,
-      maxItems: 4,
+      maxItems: 8,
       focus: { skillIds: ['C7.minor-boxes'], itemIds: [] },
     });
     const cur = r.currentPrompt()!;
@@ -127,7 +127,7 @@ describe('pentatonic boxes in a session', () => {
         drills: DRILLS,
         now: () => clock,
         rng: () => 0,
-        maxItems: 4,
+        maxItems: 8,
         focus: { skillIds, itemIds: [] },
       });
     const r = await start(['I7.positions']);

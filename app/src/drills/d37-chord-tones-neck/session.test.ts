@@ -46,7 +46,7 @@ describe('D37 in a session', () => {
       drills: DRILLS,
       now: () => clock,
       rng: () => 0,
-      maxItems: 4,
+      maxItems: 8,
     });
     const cur = r.currentPrompt()!;
     expect(cur.drill.id).toBe(D37_ID);

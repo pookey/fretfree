@@ -41,7 +41,8 @@ async function firstNewSkill(goal: Goal): Promise<string> {
     skills: [...NOTE_SKILLS, harmony],
     drills: DRILLS,
     now: () => new Date('2026-10-18T09:00:00Z'),
-    maxItems: 12,
+    // Room for a two-item block from each lane, so lane order shows (M10-03).
+    maxItems: 16,
   });
   return r.currentPrompt()!.entry.skillId;
 }

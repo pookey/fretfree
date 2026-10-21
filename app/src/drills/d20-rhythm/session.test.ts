@@ -40,7 +40,7 @@ function start(itemIds: string[] = []) {
     drills: DRILLS,
     now: () => clock,
     rng: () => 0,
-    maxItems: 4,
+    maxItems: 8,
     focus: { skillIds: ['F4.pulse'], itemIds },
   });
 }
@@ -85,7 +85,7 @@ describe('D20 in a session', () => {
       drills: DRILLS,
       now: () => clock,
       rng: () => 0,
-      maxItems: 4,
+      maxItems: 8,
       focus: { skillIds: ['F4.pulse'], itemIds: [] },
     });
     expect(getDrill(D20_ID)?.requiresSound).toBe(true);

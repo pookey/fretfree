@@ -45,7 +45,7 @@ describe('D19 in a session', () => {
       drills: DRILLS,
       now: () => clock,
       rng: () => 0,
-      maxItems: 4,
+      maxItems: 8,
       focus: { skillIds: [top.id], itemIds: [] },
     });
     const cur = r.currentPrompt()!;

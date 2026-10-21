@@ -40,7 +40,7 @@ async function start() {
     drills: DRILLS,
     now: () => clock,
     rng: () => 0,
-    maxItems: 4,
+    maxItems: 8,
     focus: { skillIds: ['C5.build-triads'], itemIds: [] },
   });
 }

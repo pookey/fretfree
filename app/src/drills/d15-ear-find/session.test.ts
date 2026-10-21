@@ -27,7 +27,7 @@ afterEach(async () => {
   await db.delete();
 });
 
-function start(skills: Skill[], maxItems = 4) {
+function start(skills: Skill[], maxItems = 8) {
   return SessionRunner.start({
     db,
     scheduler: createScheduler({ enableFuzz: false }),

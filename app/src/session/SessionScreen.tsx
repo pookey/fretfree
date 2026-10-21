@@ -378,9 +378,9 @@ function AlphabetPanel({ guideLevel }: { guideLevel: GuideLevel }) {
 
 /**
  * No item is due or new in what was asked for. Nothing is recorded: an empty
- * session earns no XP and extends no streak.
+ * session earns no XP and extends no streak. With `enoughNew`, today's
+ * new-item cap is spent and nothing is due, so it says why.
  */
-/** `enoughNew`: today's new-item cap is spent and nothing is due, so it says why. */
 function EmptySession({ enoughNew }: { enoughNew: boolean }) {
   return (
     <main className={styles.screen}>
