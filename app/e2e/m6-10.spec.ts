@@ -54,7 +54,12 @@ const MODULES = [
  * so its session serves new items with full guides and the context panel up.
  */
 const DRILLS = [
-  { name: 'c7-minor-box', skill: 'C7.minor-boxes', drill: 'dpb-drill', adds: ['C6.minor-shapes'] },
+  {
+    name: 'c7-minor-box',
+    skill: 'C7.minor-boxes',
+    drill: 'dpb-drill',
+    adds: ['C6.minor-cores', 'C6.minor-shapes'],
+  },
   {
     name: 'c7-relative',
     skill: 'C7.relative',
