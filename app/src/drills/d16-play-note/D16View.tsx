@@ -23,7 +23,6 @@ import styles from './D16View.module.css';
 const REGION: FretRange = { from: 0, to: 12 };
 const COMPACT_FRETS = 5;
 
-
 interface Live {
   prompt: D16Prompt;
   feedback: DrillFeedback<D16Answer> | null;

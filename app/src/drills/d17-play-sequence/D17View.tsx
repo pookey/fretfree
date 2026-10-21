@@ -25,7 +25,6 @@ const WIDE: FretRange = { from: 0, to: 15 };
 const REGULAR: FretRange = { from: 0, to: 12 };
 const REGULAR_HIGH: FretRange = { from: 3, to: 15 };
 
-
 /**
  * D17 view: "Play A, then the major 3rd above it" (design §6 D17, §7 session
  * layout). The learner plays on a real guitar and the mic hears each note in
@@ -279,7 +278,9 @@ function MicPanel({
       {state === 'running' && (
         <p role="status" className={styles.status} data-testid="d17-listening">
           <span className={styles.dot} aria-hidden="true" />
-          {lastHeard === null ? MIC_COPY.listening : `Heard ${lastHeard}: ${heardCount} of ${total}.`}
+          {lastHeard === null
+            ? MIC_COPY.listening
+            : `Heard ${lastHeard}: ${heardCount} of ${total}.`}
         </p>
       )}
       {state === 'error' && (

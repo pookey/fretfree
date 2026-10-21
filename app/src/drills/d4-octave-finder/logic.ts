@@ -255,9 +255,7 @@ function checkEvery(prompt: D4EveryPrompt, taps: D4Answer): DrillCheck {
   const wrong = d4WrongTaps(prompt, taps)[0];
   if (wrong) {
     const given = d4IsLive(prompt, wrong) ? pcAt(prompt, wrong) : null;
-    return given
-      ? { correct: false, ...base, confusedWith: given }
-      : { correct: false, ...base };
+    return given ? { correct: false, ...base, confusedWith: given } : { correct: false, ...base };
   }
   return { correct: d4Missed(prompt, taps).length === 0, ...base };
 }
