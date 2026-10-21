@@ -102,7 +102,7 @@ export const MODULES: readonly Module[] = [
     summary:
       'Say how many sharps or flats any major key has, and give its V and its relative minor from the circle of fifths.',
     misconception:
-      'A key signature tells you which notes are sharp or flat. It doesn’t tell you which chord a song starts on.',
+      'One key signature serves two keys: G major and E minor both have one sharp. Listen for the chord that feels like home.',
   },
   {
     id: 'progressions',
