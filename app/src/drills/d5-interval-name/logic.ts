@@ -14,6 +14,7 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { D5_SCOPE, d5Parse as parse } from './meta';
 
@@ -166,11 +167,6 @@ export function d5Check(prompt: D5Prompt, answer: D5Answer): DrillCheck {
     : { correct, expected: prompt.interval, confusedWith: answer };
 }
 
-/** `F#` → `F♯`, `Bb` → `B♭`: pitch names as the learner reads them. */
-function display(pc: string): string {
-  return pc.replace('#', '♯').replace(/(?<=^[A-G])b/, '♭');
-}
-
 /** `major 3rd`, `tritone`: an interval's name in words. */
 export function d5LongName(name: IntervalName): string {
   return intervalInfo(name).long;
@@ -184,7 +180,7 @@ export function d5ChoiceLabel(name: IntervalName): string {
 /** The worked-example line for the first, guided rep of a new item. */
 export function d5WorkedExample(prompt: D5Prompt): string {
   const info = intervalInfo(prompt.interval);
-  return `This is a ${info.long} (${info.name}), ${prompt.semitones} half steps up from ${display(prompt.rootPc)}.`;
+  return `This is a ${info.long} (${info.name}), ${prompt.semitones} half steps up from ${displayPc(prompt.rootPc)}.`;
 }
 
 /**
@@ -208,13 +204,13 @@ function halfSteps(n: number): string {
  */
 export function d5Explain(prompt: D5Prompt, fb: DrillFeedback<D5Answer>): string {
   const long = d5LongName(prompt.interval);
-  const root = display(prompt.rootPc);
+  const root = displayPc(prompt.rootPc);
   const n = prompt.semitones;
   if (fb.result.correct) {
     return `${long[0]!.toUpperCase()}${long.slice(1)}: ${halfSteps(n)} up from ${root}.`;
   }
   const count = prompt.upperPc
-    ? `From ${root} up to ${display(prompt.upperPc)} is ${halfSteps(n)}: a ${long}, ${prompt.interval}.`
+    ? `From ${root} up to ${displayPc(prompt.upperPc)} is ${halfSteps(n)}: a ${long}, ${prompt.interval}.`
     : `It is ${halfSteps(n)} up from ${root}: a ${long}, ${prompt.interval}.`;
   if (!isIntervalName(fb.answer)) return count;
   const given = intervalInfo(fb.answer);

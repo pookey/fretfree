@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import type { GuideLevel } from '../../engine/model';
 import { neckWindow } from '../../shell/size-class';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillRenderProps } from '../types';
 import {
   D5_FRETS,
@@ -58,7 +59,7 @@ export function D5View({
   // The worked example shows full guides (design §3.3 step 2).
   const level: GuideLevel = guided ? 3 : guideLevel;
 
-  const root: FretMarker = { ...prompt.root, style: 'root', label: prompt.rootPc };
+  const root: FretMarker = { ...prompt.root, style: 'root', label: displayPc(prompt.rootPc) };
   let markers: FretMarker[];
   if (feedback) {
     const pos = d5FeedbackPositions(prompt, feedback, tuning);

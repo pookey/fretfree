@@ -61,7 +61,7 @@ describe('<D5View>', () => {
 
   it('shows the root as a square and the upper note as an unlabelled target', () => {
     renderView(prompt(), { guideLevel: 3 });
-    expect(markers('root')).toEqual([{ string: 6, fret: 2, text: 'F#' }]);
+    expect(markers('root')).toEqual([{ string: 6, fret: 2, text: 'F♯' }]);
     expect(markers('target')).toEqual([{ string: 5, fret: 1, text: '' }]);
     expect(screen.getByText('Name the interval')).toBeInTheDocument();
   });
