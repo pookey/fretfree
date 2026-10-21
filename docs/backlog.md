@@ -1579,7 +1579,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): stage 1 is C, G, D. Three keys keep the first harmony stage small enough to master in days (early success, low load), and they are the commonest keys for beginner songs. A and E come in stage 2.
 
 ### M10-03 · Session lanes and a new-item cap, so parallel tracks get a turn
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (review findings 2 and 4; I6 ear (M4-07) and F4 rhythm (M6-08) both open on day one, and the one-queue frontier starves them)
 - **Deps:** none
 - **After:** M4-07, M6-08
@@ -1651,7 +1651,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - RTL tests, plus an e2e test that a locked skill shows its outcome.
 
 ### M10-08 · One vocabulary in the drills: ♯/♭, ♭3/♭7, whole and half steps, one mic voice
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
 - **Deps:** M10-05
 - **Design:** §6; copy audit (drills) §2 items 1–6, 10
