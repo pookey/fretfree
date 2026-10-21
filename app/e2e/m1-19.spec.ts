@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { F1_SKILLS, answer, freshStart, masterSkills, targetNote } from './helpers';
+import { C4_SKILLS, I3_SKILLS } from './helpers/keys';
 
 const swState = (page: Page) =>
   page.evaluate(async () => {
@@ -32,7 +33,8 @@ test.describe('M1-19 offline', () => {
   test('a full session runs offline after the first load', async ({ page, context }) => {
     await firstVisit(page);
     await freshStart(page);
-    await masterSkills(page, F1_SKILLS);
+    // Keys open with F1 and would take the goal lane's share of new items (M10-03).
+    await masterSkills(page, [...F1_SKILLS, ...C4_SKILLS, ...I3_SKILLS]);
     await expectControlled(page);
 
     await context.setOffline(true);
