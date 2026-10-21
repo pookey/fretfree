@@ -171,15 +171,18 @@ describe('halfWholeStep', () => {
 });
 
 describe('markerStep and repeatStep', () => {
-  it('counts the dots from the nut', () => {
+  it('asks by the dot, never the fret, then names the fret', () => {
     const step = markerStep(7, 6);
-    expect(step.prompt).toBe('Find the 7th-fret marker on string 6.');
+    expect(step.prompt).toBe('Find the third dot from the nut on string 6.');
+    // Fret numbers show from guide level 2, so the prompt never names one (rule 4).
+    expect(step.prompt).not.toMatch(/\d+(st|nd|rd|th)?-?fret|fret \d/);
     expect(step.given).toEqual([]);
     expect(step.explain).toBe(
-      'Count the dots from the nut: 3, 5, 7. The 7th-fret marker is the third dot from the nut.',
+      'Count the dots from the nut: 3, 5, 7. The third dot from the nut is the 7th-fret marker.',
     );
-    expect(markerStep(3, 1).hint).toBe('The first dot from the nut.');
-    expect(markerStep(12, 1).hint).toBe('The double dot.');
+    expect(step.hint).toBe('Count the dots from the nut; the double dot is 12.');
+    expect(markerStep(3, 1).prompt).toBe('Find the first dot from the nut on string 1.');
+    expect(markerStep(12, 1).prompt).toBe('Find the double dot on string 1.');
     expect(() => markerStep(8, 6)).toThrow(/no marker/);
   });
 
@@ -229,8 +232,10 @@ describe('neck-basics examples', () => {
     expect(markers.steps.map((s) => s.answer)).toEqual([
       { string: 6, fret: 15 },
       { string: 2, fret: 9 },
-      { string: 4, fret: 17 },
+      { string: 4, fret: 19 },
     ]);
+    // The two repeats are different notes on different strings (rule 12).
+    expect(markers.steps.map((s) => s.given.map((p) => noteAt(p).pc))).toEqual([['G'], [], ['A']]);
     expect(markers.range!.from).toBe(0);
     expect(markers.range!.to - furthest).toBeGreaterThanOrEqual(1);
     // The double dot is the trap on both repeats.
@@ -287,14 +292,14 @@ describe('<WorkedExample> with the neck-basics examples', () => {
     tap(6, 15);
     expect(playNotes).toHaveBeenLastCalledWith(['G2', 'G3'], { muted: false, volume: 0.8 });
     next();
-    expect(screen.getByTestId('example-hint')).toHaveTextContent(
-      'Hint: The fourth dot from the nut.',
+    expect(screen.getByTestId('example-prompt')).toHaveTextContent(
+      'Find the fourth dot from the nut on string 2.',
     );
     tap(2, 9);
     next();
     tap(4, 12);
     expect(screen.getByTestId('example-trap')).toHaveTextContent('the open string’s octave');
-    expect(screen.getByTestId('example-trap')).toHaveTextContent('at fret 17');
+    expect(screen.getByTestId('example-trap')).toHaveTextContent('at fret 19');
   });
 
   it('works the alphabet from B–C and string 5 from E–F, each with its ghost', () => {

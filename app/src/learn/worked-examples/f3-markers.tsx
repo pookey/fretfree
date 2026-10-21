@@ -8,17 +8,21 @@ const ORDINAL = ['first', 'second', 'third', 'fourth', 'fifth'];
 /** "7th": how a marker is named. */
 const nth = (fret: number) => `${fret}${fret === 3 ? 'rd' : 'th'}`;
 
-/** F3: find a marker's fret by counting the dots from the nut. */
+/**
+ * F3: find a marker by counting the dots from the nut. It is asked by the
+ * dot, never by its fret, so fret numbers on the neck can't answer it
+ * (rule 4); the explanation then names the fret.
+ */
 export function markerStep(fret: number, string: number): ExampleStep {
   const i = DOTS.indexOf(fret);
   if (i < 0) throw new RangeError(`Fret ${fret} has no marker`);
   const which = fret === 12 ? 'the double dot' : `the ${ORDINAL[i]} dot from the nut`;
   return {
-    prompt: `Find the ${nth(fret)}-fret marker on string ${string}.`,
+    prompt: `Find ${which} on string ${string}.`,
     given: [],
     answer: { string, fret },
-    explain: `Count the dots from the nut: ${DOTS.slice(0, i + 1).join(', ')}. The ${nth(fret)}-fret marker is ${which}.`,
-    hint: `${which[0]!.toUpperCase()}${which.slice(1)}.`,
+    explain: `Count the dots from the nut: ${DOTS.slice(0, i + 1).join(', ')}. ${which[0]!.toUpperCase()}${which.slice(1)} is the ${nth(fret)}-fret marker.`,
+    hint: 'Count the dots from the nut; the double dot is 12.',
   };
 }
 
@@ -59,8 +63,8 @@ export function repeatStep(from: Position): ExampleStep {
 /**
  * F3: the fret markers and the 12th-fret repeat. A fretted repeat is worked,
  * counting the dots past the double dot, with fret 12 as the ghost; the faded
- * stage finds a marker; the last repeats another fretted note, where the
- * double dot is the trap again.
+ * stage finds a marker by its dot; the last repeats another note on another
+ * string (rule 12), where the double dot is the trap again.
  */
 const example: WorkedExample = {
   id: 'f3-markers',
@@ -68,8 +72,8 @@ const example: WorkedExample = {
   title: 'Fret markers and the 12th fret',
   idea: 'Dots mark frets 3, 5, 7 and 9, and a double dot fret 12. From there the neck repeats an octave higher: fret 15 is fret 3 again.',
   // From the nut, so the dots can be counted, to a fret past the furthest answer.
-  range: { from: 0, to: 18 },
-  steps: [repeatStep({ string: 6, fret: 3 }), markerStep(9, 2), repeatStep({ string: 4, fret: 5 })],
+  range: { from: 0, to: 20 },
+  steps: [repeatStep({ string: 6, fret: 3 }), markerStep(9, 2), repeatStep({ string: 4, fret: 7 })],
 };
 
 export default example;

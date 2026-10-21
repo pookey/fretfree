@@ -117,16 +117,16 @@ test.describe('M10-13 neck-basics worked examples', () => {
     await expect(neck(page).getByTestId('marker-ghost')).toHaveAttribute('data-fret', '12');
     await tap(page, 6, 15);
     await next(page);
-    await expect(prompt(page)).toHaveText('Find the 9th-fret marker on string 2.');
+    await expect(prompt(page)).toHaveText('Find the fourth dot from the nut on string 2.');
     await tap(page, 2, 9);
     await next(page);
 
     // Inlays only: the dots are the guide.
     await expect(neck(page)).toHaveAttribute('data-guide-level', '1');
-    await expect(prompt(page)).toHaveText('Find this G an octave higher, on string 4.');
+    await expect(prompt(page)).toHaveText('Find this A an octave higher, on string 4.');
     await tap(page, 4, 12);
     await expect(page.getByTestId('example-trap')).toContainText('the open string’s octave');
-    await expect(neck(page).getByTestId('marker-correct')).toHaveAttribute('data-fret', '17');
+    await expect(neck(page).getByTestId('marker-correct')).toHaveAttribute('data-fret', '19');
     // The wide window scrolls inside its pane, never the page.
     await expectNoHorizontalOverflow(page);
   });
