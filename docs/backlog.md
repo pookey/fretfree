@@ -971,7 +971,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/screens/explore/views/progression-player.tsx`, `app/src/screens/explore/views/progression-player.meta.ts`, `app/e2e/m4-09.spec.ts`
 
 ### M4-10 · "Ear only" quick drill and "start with sound" path
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-07, M1-18, M1-06
 - **Owns:** `app/src/screens/today/cards/ear-only.tsx`, `app/src/onboarding/steps/start-with-sound.tsx`
 
