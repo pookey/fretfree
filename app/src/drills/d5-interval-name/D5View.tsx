@@ -106,17 +106,18 @@ export function D5View({
               'Name the interval'
             )}
           </p>
-          {feedback ? (
-            // Feedback teaches the count, at every guide level (rule 9).
-            <p className={styles.hint} data-testid="d5-explain">
-              {d5Explain(prompt, feedback)}
-            </p>
-          ) : (
-            <p className={styles.hint} data-testid="d5-hint">
-              {/* A guide like the others: gone at level 0, the independent stage (rule 9). */}
-              {level >= 1 && 'From the square (the lower note) up to the round dot.'}
-            </p>
-          )}
+          {/* One live region, so a screen reader announces the explanation that replaces the hint. */}
+          <p
+            className={styles.hint}
+            data-testid={feedback ? 'd5-explain' : 'd5-hint'}
+            aria-live="polite"
+          >
+            {feedback
+              ? // Feedback teaches the count, at every guide level (rule 9).
+                d5Explain(prompt, feedback)
+              : // A guide like the others: gone at level 0, the independent stage (rule 9).
+                level >= 1 && 'From the square (the lower note) up to the round dot.'}
+          </p>
           <div className={styles.choices} role="group" aria-labelledby="drill-prompt">
             {choices.map((c, i) => {
               const state = !feedback

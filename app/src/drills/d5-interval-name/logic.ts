@@ -1,3 +1,4 @@
+import { Note } from 'tonal';
 import type { GuideLevel, Item } from '../../engine/model';
 import {
   SHAPE_INTERVALS,
@@ -38,8 +39,11 @@ export interface D5Prompt {
   rootPc: string;
   rootMidi: number;
   rootName: string;
-  /** The upper note's pitch class, for feedback. */
-  upperPc: string;
+  /**
+   * The upper note spelled from the root by the interval (C + m3 is E♭, not
+   * D♯), for feedback; null when that spelling needs a double accidental.
+   */
+  upperPc: string | null;
   upperName: string;
   /** True when the shape crosses the G–B pair (one fret off the all-fourths shape). */
   gbShift: boolean;
@@ -56,6 +60,44 @@ export const D5_CHOICE_COUNTS: readonly number[] = [4, 7, SHAPE_INTERVALS.length
 
 /** Both dots sit on frets 1–12: fretted, and inside every size class's neck window. */
 export const D5_FRETS = { from: 1, to: 12 };
+
+/**
+ * Each interval as tonal names it, for spelling from a root. The tritone is
+ * a ♯4 or a ♭5: whichever the learner's accidental preference leans to first.
+ */
+const TONAL: Record<IntervalName, readonly string[]> = {
+  P1: ['1P'],
+  m2: ['2m'],
+  M2: ['2M'],
+  m3: ['3m'],
+  M3: ['3M'],
+  P4: ['4P'],
+  TT: ['4A', '5d'],
+  P5: ['5P'],
+  m6: ['6m'],
+  M6: ['6M'],
+  m7: ['7m'],
+  M7: ['7M'],
+  P8: ['8P'],
+};
+
+/**
+ * The note an interval above `rootPc`, spelled from the root (C + m3 → `Eb`,
+ * A♯ + M3 → null rather than C𝄪). Null when no spelling avoids a double
+ * accidental, so feedback names only the root.
+ */
+export function d5SpellUpper(
+  rootPc: string,
+  interval: IntervalName,
+  pref: AccidentalPref,
+): string | null {
+  const names = pref === 'flat' ? [...TONAL[interval]].reverse() : TONAL[interval];
+  for (const name of names) {
+    const pc = Note.pitchClass(Note.transpose(rootPc, name));
+    if (pc && !/##|bb|x/.test(pc)) return pc;
+  }
+  return null;
+}
 
 /** A uniform pick of `0 … n-1`, safe against an rng that returns 1. */
 function pick(n: number, rng: () => number): number {
@@ -109,7 +151,7 @@ export function d5MakePrompt(item: Item, ctx: DrillContext): D5Prompt {
     rootPc: rootNote.pc,
     rootMidi: rootNote.midi,
     rootName: rootNote.name,
-    upperPc: upperNote.pc,
+    upperPc: d5SpellUpper(rootNote.pc, interval, ctx.accidentalPref),
     upperName: upperNote.name,
     gbShift: crossesGBShift(from, to, ctx.tuning),
     choices: d5Choices(interval, ctx.scopeLevel, ctx.rng),
@@ -149,26 +191,34 @@ export function d5WorkedExample(prompt: D5Prompt): string {
  * Crossing G–B, a shape is a half step smaller than the same frets on any
  * other pair (research/03 C3): read as all-4ths, it names the next interval up.
  */
-const GB_RULE =
-  'This shape crosses the G and B strings, which are a major 3rd apart, not a 4th, so it is a half step smaller than the same shape elsewhere.';
+const GB_RULE = 'G and B are a major 3rd apart, so this shape is a half step smaller here.';
+
+/** `1 half step`, `4 half steps`. */
+function halfSteps(n: number): string {
+  return n === 1 ? '1 half step' : `${n} half steps`;
+}
 
 /**
  * The feedback line under the prompt (research/02 rule 9; research/03 C3).
  * A wrong answer says what the chosen name means in half steps, then counts
  * the shape, so a miss teaches the method rather than just the answer. A
- * wrong answer one half step too big on a G–B shape names the shift.
+ * wrong answer one half step too big on a G–B shape names the shift. The
+ * upper note is spelled from the root (C to E♭ for a m3), or left out when
+ * that spelling needs a double accidental.
  */
 export function d5Explain(prompt: D5Prompt, fb: DrillFeedback<D5Answer>): string {
   const long = d5LongName(prompt.interval);
   const root = display(prompt.rootPc);
   const n = prompt.semitones;
   if (fb.result.correct) {
-    return `${long[0]!.toUpperCase()}${long.slice(1)}: ${n} half steps up from ${root}.`;
+    return `${long[0]!.toUpperCase()}${long.slice(1)}: ${halfSteps(n)} up from ${root}.`;
   }
-  const count = `From ${root} up to ${display(prompt.upperPc)} is ${n} half steps: a ${long}, ${prompt.interval}.`;
+  const count = prompt.upperPc
+    ? `From ${root} up to ${display(prompt.upperPc)} is ${halfSteps(n)}: a ${long}, ${prompt.interval}.`
+    : `It is ${halfSteps(n)} up from ${root}: a ${long}, ${prompt.interval}.`;
   if (!isIntervalName(fb.answer)) return count;
   const given = intervalInfo(fb.answer);
-  const chose = `You chose ${given.name} (a ${given.long}, ${given.semitones} half steps).`;
+  const chose = `You chose ${given.name} (a ${given.long}, ${halfSteps(given.semitones)}).`;
   const shift = prompt.gbShift && given.semitones === n + 1 ? ` ${GB_RULE}` : '';
   return `${chose} ${count}${shift}`;
 }

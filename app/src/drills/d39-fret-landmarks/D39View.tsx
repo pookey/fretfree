@@ -228,20 +228,21 @@ export function D39View({
               question
             )}
           </p>
-          {feedback ? (
-            // Feedback teaches the method: count the dots, or add 12 (rule 9).
-            <p className={styles.explain} data-testid="d39-explain">
-              {d39Explain(prompt, feedback)}
-            </p>
-          ) : (
-            <p className={styles.hint} data-testid="d39-hint" aria-live="polite">
-              {mode === 'find-marker'
+          {/* One live region, so a screen reader announces the explanation that replaces the hint. */}
+          <p
+            className={feedback ? styles.explain : styles.hint}
+            data-testid={feedback ? 'd39-explain' : 'd39-hint'}
+            aria-live="polite"
+          >
+            {feedback
+              ? // Feedback teaches the method: count the dots, or add 12 (rule 9).
+                d39Explain(prompt, feedback)
+              : mode === 'find-marker'
                 ? 'Tap anywhere on that fret, or use the arrow keys and Enter.'
                 : typed
                   ? `Typed ${typed}. Press Enter to answer.`
                   : ''}
-            </p>
-          )}
+          </p>
           {choices.length > 0 && (
             <div className={styles.choices} role="group" aria-labelledby="drill-prompt">
               {choices.map((c) => {

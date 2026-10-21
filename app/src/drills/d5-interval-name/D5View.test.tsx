@@ -139,6 +139,26 @@ describe('<D5View>', () => {
     );
   });
 
+  it('announces the explanation in the hint’s live region, which stays mounted', () => {
+    const p = prompt();
+    const { rerender } = renderView(p, { guideLevel: 1 });
+    const region = screen.getByTestId('d5-hint');
+    expect(region).toHaveAttribute('aria-live', 'polite');
+    rerender(
+      <D5View
+        prompt={p}
+        guideLevel={1}
+        guided={false}
+        handedness="right"
+        sizeClass="regular-wide"
+        tuning={STANDARD_TUNING}
+        feedback={fb(p, 'm3')}
+        onAnswer={() => {}}
+      />,
+    );
+    expect(screen.getByTestId('d5-explain')).toBe(region);
+  });
+
   it('explains a wrong answer under the prompt, even at guide level 0', () => {
     const p = prompt();
     renderView(p, { guideLevel: 0, feedback: fb(p, 'm3') });

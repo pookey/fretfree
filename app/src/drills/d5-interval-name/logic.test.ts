@@ -22,6 +22,7 @@ import {
   d5LineLegend,
   d5MakePrompt,
   d5Sounds,
+  d5SpellUpper,
   d5WorkedExample,
   type D5Answer,
   type D5Prompt,
@@ -222,7 +223,9 @@ describe('d5Explain', () => {
     expect(gb.gbShift).toBe(true);
     const line = d5Explain(gb, fb(gb, 'P4'));
     expect(line).toMatch(/^You chose P4 \(a perfect 4th, 5 half steps\)\. From \S+ up to \S+ is 4/);
-    expect(line).toContain('crosses the G and B strings');
+    expect(line).toMatch(
+      /G and B are a major 3rd apart, so this shape is a half step smaller here\.$/,
+    );
     // Too small is a different slip: no G–B note.
     expect(d5Explain(gb, fb(gb, 'm3'))).not.toContain('G and B');
     // Off the G–B pair, a P4 for an M3 is a plain miscount.
@@ -237,6 +240,28 @@ describe('d5Explain', () => {
     expect(d5Explain(flat, fb(flat, 'm3'))).toContain('From G♭ up to B♭');
   });
 
+  it('spells the upper note from the root, not by the sharp/flat preference', () => {
+    // m3 from string 5 to 4, root at fret 3: C up to E♭ (not D♯) with sharps.
+    const m3 = prompt('interval-name:m3@s5→s4');
+    expect(m3.root).toEqual({ string: 5, fret: 3 });
+    expect(d5Explain(m3, fb(m3, 'm2'))).toBe(
+      'You chose m2 (a minor 2nd, 1 half step). From C up to E♭ is 3 half steps: a minor 3rd, m3.',
+    );
+    // M3 from the open-E octave (fret 12) with flats: E up to G♯ (not A♭).
+    const e = prompt('interval-name:M3@s6→s5', { accidentalPref: 'flat', rng: () => 0.999 });
+    expect(e.root).toEqual({ string: 6, fret: 12 });
+    expect(d5Explain(e, fb(e, 'm3'))).toContain('From E up to G♯ is 4 half steps');
+  });
+
+  it('names only the root when spelling from it needs a double sharp', () => {
+    // M3 above A♯ is C𝄪: the line counts from the root instead.
+    const a = prompt('interval-name:M3@s6→s5', { rng: () => 0.37 });
+    expect([a.rootPc, a.upperPc]).toEqual(['A#', null]);
+    expect(d5Explain(a, fb(a, 'm3'))).toBe(
+      'You chose m3 (a minor 3rd, 3 half steps). It is 4 half steps up from A♯: a major 3rd, M3.',
+    );
+  });
+
   it('only counts the shape for an answer that is not an interval', () => {
     expect(d5Explain(c, fb(c, 'X' as D5Answer))).toBe(
       'From C up to E is 4 half steps: a major 3rd, M3.',
@@ -246,6 +271,33 @@ describe('d5Explain', () => {
   it('labels a button with its short name, then the name in words', () => {
     expect(d5ChoiceLabel('M3')).toBe('M3, major 3rd');
     expect(d5ChoiceLabel('TT')).toBe('TT, tritone');
+  });
+});
+
+describe('d5SpellUpper', () => {
+  it('spells flat intervals from a natural root under the sharp preference', () => {
+    expect(d5SpellUpper('C', 'm3', 'sharp')).toBe('Eb');
+    expect(d5SpellUpper('C', 'm7', 'sharp')).toBe('Bb');
+    expect(d5SpellUpper('C', 'm6', 'sharp')).toBe('Ab');
+    expect(d5SpellUpper('G', 'm3', 'sharp')).toBe('Bb');
+  });
+
+  it('spells sharp intervals from a natural root under the flat preference', () => {
+    expect(d5SpellUpper('E', 'M3', 'flat')).toBe('G#');
+    expect(d5SpellUpper('B', 'M3', 'flat')).toBe('D#');
+  });
+
+  it('keeps a sharp root’s spelling, and gives up on a double accidental', () => {
+    expect(d5SpellUpper('G#', 'M3', 'sharp')).toBe('B#');
+    expect(d5SpellUpper('F#', 'M7', 'sharp')).toBe('E#');
+    expect(d5SpellUpper('A#', 'M3', 'sharp')).toBeNull();
+    expect(d5SpellUpper('Gb', 'm3', 'flat')).toBeNull();
+  });
+
+  it('spells the tritone as ♯4 or ♭5 by preference', () => {
+    expect(d5SpellUpper('C', 'TT', 'sharp')).toBe('F#');
+    expect(d5SpellUpper('C', 'TT', 'flat')).toBe('Gb');
+    expect(d5SpellUpper('C', 'P8', 'sharp')).toBe('C');
   });
 });
 

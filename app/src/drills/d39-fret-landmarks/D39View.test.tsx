@@ -112,6 +112,7 @@ describe('<D39View>', () => {
     expect(screen.getByTestId('d39-explain')).toHaveTextContent(
       'Count the dots from the nut: 3, 5, 7.',
     );
+    expect(screen.getByTestId('d39-explain')).toHaveAttribute('aria-live', 'polite');
   });
 
   it('finds a marker by tapping any string on its fret', () => {
