@@ -193,6 +193,10 @@ describe('frontierLanes', () => {
   it('keeps the very first session to Neck basics', () => {
     const lanes = frontierLanes([f1, f4, i6], 'songs', { firstSession: true });
     expect(lanes.map((l) => l.id)).toEqual(['neck']);
+    // Unless a parallel track is all that is open.
+    expect(frontierLanes([f4], 'songs', { firstSession: true }).map((l) => l.id)).toEqual([
+      'rhythm',
+    ]);
   });
 
   it('leaves out empty lanes', () => {

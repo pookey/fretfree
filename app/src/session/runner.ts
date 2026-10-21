@@ -293,9 +293,10 @@ export class SessionRunner {
       frontierInOrder.push(skill);
     }
     // The goal profile orders each lane's skills (design §3.3 step 2). The
-    // very first session (no cards yet) stays Neck basics: no parallel track.
-    // "Start with sound" instead leads with the ear track until ear-find is
-    // practising (M4-10): one lane in that order, still capped, then lanes.
+    // very first session (no cards yet) stays Neck basics, unless it is a
+    // focus, which serves what it names. "Start with sound" instead leads with
+    // the ear track until ear-find is practising (M4-10): one lane in that
+    // order, still capped; lanes take over after.
     const ordered = orderFrontier(frontierInOrder, deps.settings.goal);
     const led = leadWithSound(ordered, deps.settings.startWithSound, statuses);
     const leading = led.some((skill, i) => skill !== ordered[i]);
@@ -306,7 +307,7 @@ export class SessionRunner {
       : leading
         ? [{ id: 'lead', share: 1, items: itemsOf(led) }]
         : frontierLanes(frontierInOrder, deps.settings.goal, {
-            firstSession: cards.length === 0,
+            firstSession: cards.length === 0 && !deps.focus,
           }).map((lane) => ({
             id: lane.id,
             share: lane.share,

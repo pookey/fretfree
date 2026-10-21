@@ -284,7 +284,10 @@ export interface FrontierLane {
 }
 
 export interface LaneOptions {
-  /** The learner's very first session: it stays Neck basics, so no parallel track yet. */
+  /**
+   * The learner's very first session: it stays Neck basics, so parallel
+   * tracks wait, unless nothing else is open.
+   */
   firstSession?: boolean;
   shares?: { goal: number; neck: number; parallel: number };
 }
@@ -311,9 +314,12 @@ export function frontierLanes(
 ): FrontierLane[] {
   const lanes = new Map<string, Skill[]>();
   const parallel = new Set<string>();
-  for (const skill of orderFrontier(skills, goal)) {
+  const ordered = orderFrontier(skills, goal);
+  const isParallel = (s: Skill) => moduleOfTopic(s.topic)?.track === 'parallel';
+  const holdParallel = firstSession && ordered.some((s) => !isParallel(s));
+  for (const skill of ordered) {
     const m = moduleOfTopic(skill.topic);
-    if (m?.track === 'parallel' && firstSession) continue;
+    if (m?.track === 'parallel' && holdParallel) continue;
     const id = m?.track === 'parallel' ? m.id : m && NECK_MODULES.has(m.id) ? 'neck' : 'goal';
     if (m?.track === 'parallel') parallel.add(id);
     lanes.set(id, [...(lanes.get(id) ?? []), skill]);

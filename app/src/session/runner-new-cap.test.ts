@@ -90,6 +90,13 @@ describe('the new-item cap', () => {
     expect(summary).toMatchObject({ enoughNew: false, goalMet: false });
   });
 
+  it('serves a parallel track in a first session that focuses on it', async () => {
+    const r = await SessionRunner.start(
+      deps({ skills: [string6, pulse], focus: { skillIds: [pulse.id], itemIds: [] } }),
+    );
+    expect(r.currentPrompt()?.entry.skillId).toBe(pulse.id);
+  });
+
   it('keeps the very first session to the neck, then gives Rhythm a turn', async () => {
     const first = await SessionRunner.start(deps({ skills: [string6, pulse] }));
     const served = await playOut(first);
