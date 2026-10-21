@@ -109,7 +109,7 @@ test.describe('M10-08 ♭3 and ♭7, and whole and half steps', () => {
       'uses each letter once, going up in whole and half steps (W W H W W W H):',
     );
     await expect(panel(page)).toContainText(
-      'Steps up from the key note: whole, whole, half, whole, whole, whole, half (W W H W W W H). A whole step is two frets, a half step one.',
+      'Steps: W W H W W W H (W = whole step, 2 frets; H = half step, 1).',
     );
     await expectNoHorizontalOverflow(page);
   });

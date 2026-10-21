@@ -29,8 +29,8 @@ export function SpellingContextPanel({
       ) : (
         // One paragraph with the hint, so the key's chords fit above an iPad mini's neck.
         <p>
-          Steps up from the key note: whole, whole, half, whole, whole, whole, half (
-          <strong>W W H W W W H</strong>). A whole step is two frets, a half step one.{' '}
+          {/* W and H spelled out once, in the two lines the steps had (iPad mini's budget). */}
+          Steps: <strong>W W H W W W H</strong> (W = whole step, 2 frets; H = half step, 1).{' '}
           {d7Hint(prompt)}
         </p>
       )}

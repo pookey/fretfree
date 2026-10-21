@@ -128,7 +128,7 @@ test.describe('M2-03 D4 octave finder', () => {
     await cellAt(page, { string: 4, fret: 6 }).click();
     await expect(page.getByTestId('feedback-wrong')).toContainText('That was G.');
     await expect(page.getByTestId('d4-explain')).toHaveText(
-      'You tapped G# (string 4, fret 6). 5 are still to find, ringed on the neck.',
+      'You tapped G♯ (string 4, fret 6). 5 are still to find, ringed on the neck.',
     );
     expect(await markerCells(page, 'wrong')).toEqual([{ string: 4, fret: 6 }]);
     expect(await markerCells(page, 'ghost')).toHaveLength(5);
