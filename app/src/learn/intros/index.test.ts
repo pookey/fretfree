@@ -149,6 +149,10 @@ describe('intro content', () => {
     const [root, top] = octave.markers;
     expect(noteAt(top!).midi - noteAt(root!).midi).toBe(12);
     expect([root!.string - top!.string, top!.fret - root!.fret]).toEqual([2, 2]);
+    // C1.octaves also drills 6 → 3 (three frets back) and every shape downward:
+    // the intro offers one shape and its reverse, not the only answer.
+    expect(byId('c1-octaves').text).toMatch(/One octave shape/);
+    expect(byId('c1-octaves').text).toMatch(/two strings thicker, two frets lower/);
 
     const thirds = byId('c3-thirds').diagram!;
     if (thirds.kind !== 'neck') throw new Error('c3-thirds has a neck');

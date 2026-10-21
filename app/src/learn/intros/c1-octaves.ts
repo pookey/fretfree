@@ -2,15 +2,16 @@ import { notesOn } from './diagrams';
 import type { ConceptIntro } from './types';
 
 /**
- * C1: the octave shape from strings 6 and 5. Strings 4 and 3 cross the G–B
- * pair and shift a fret (research/03's misconception); that skill gets its
- * own intro rather than a rule this one would have to qualify.
+ * C1: one octave shape, two strings up from strings 6 and 5, and its reverse.
+ * The skill also drills the shape three strings up (6 → 3, three frets back);
+ * its worked rep shows that one, rather than a rule this intro would have to
+ * qualify. The G–B shift is its own skill.
  */
 const intro: ConceptIntro = {
   id: 'c1-octaves',
   for: ['C1.octaves'],
   title: 'The octave shape',
-  text: 'An octave is the same letter, higher in pitch. From a note on string 6 or 5, its octave is two strings thinner and two frets higher: G at string 6, fret 3 → G at string 4, fret 5.',
+  text: 'An octave is the same letter, higher in pitch. One octave shape: from string 6 or 5, go two strings thinner and two frets higher. Reverse it to go down: two strings thicker, two frets lower.',
   diagram: {
     kind: 'neck',
     range: { from: 1, to: 7 },
