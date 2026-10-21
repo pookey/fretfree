@@ -50,6 +50,9 @@ test.describe('M1-26 reading question', () => {
       .getByRole('checkbox', { name: /Standard notation/ })
       .check();
     await choice(page).getByRole('button', { name: 'Continue' }).click();
+    // "Start with sound" (M4-10) has its own spec.
+    await expect(page.getByRole('heading', { name: 'Where do you want to start?' })).toBeVisible();
+    await choice(page).getByRole('button', { name: 'Skip this step' }).click();
     await expect(page.getByRole('heading', { name: 'How long is a session?' })).toBeVisible();
     await choice(page).getByRole('button', { name: 'Skip this step' }).click();
     // Calibration (M1-07), the mic (M5-04) and the placement test (M2-09) have their own specs.

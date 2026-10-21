@@ -28,8 +28,8 @@ const INTERVAL_SEMITONES: Record<string, number> = {
 /** The most probes any one skill is asked (the largest tier). */
 const MAX_PROBES_PER_SKILL = 6;
 const CHECK_UP_DAYS = 10;
-// Calibration is step 6 of 8; the placement test is last.
-const STEPS = 8;
+// Calibration is step 7 of 9; the placement test is last.
+const STEPS = 9;
 /** Correct answers move on by themselves after this long. */
 const AUTO_ADVANCE_MS = 700;
 

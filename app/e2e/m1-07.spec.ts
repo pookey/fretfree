@@ -6,9 +6,9 @@ import { skipInstallTip } from './helpers/install';
 // trimmed median tap time becomes the baseline for every speed target.
 
 const TRIALS = 16;
-const ONBOARDING_STEPS = 8;
-// Calibration is step 6; the mic step (M5-04) and the placement test (M2-09) follow it.
-const CALIBRATION_STEP = 6;
+const ONBOARDING_STEPS = 9;
+// Calibration is step 7; the mic step (M5-04) and the placement test (M2-09) follow it.
+const CALIBRATION_STEP = 7;
 
 // The page clock is paused during a run, so tap times don't depend on how busy
 // the machine is. Each dot lights within the longest pause (foreperiodMs.max),

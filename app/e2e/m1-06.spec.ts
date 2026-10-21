@@ -10,6 +10,7 @@ const STEPS = [
   'What do you want to play?',
   'Your daily goal',
   'Reading music',
+  'Where do you want to start?',
   'How long is a session?',
   'Tap the lit dots',
   'Play on your real guitar?',
@@ -81,16 +82,20 @@ test.describe('M1-06 onboarding', () => {
     await expectNoHorizontalOverflow(page);
     await next(page);
 
+    // "Start with sound" (M4-10) has its own spec.
     await expectStep(page, 5);
+    await next(page);
+
+    await expectStep(page, 6);
     await pick(page, /15 minutes/);
     await next(page);
 
     // Calibration (M1-07), the mic (M5-04) and the placement test (M2-09) have their own specs.
-    await expectStep(page, 6);
-    await choice(page).getByRole('button', { name: 'Skip this step' }).click();
     await expectStep(page, 7);
     await choice(page).getByRole('button', { name: 'Skip this step' }).click();
     await expectStep(page, 8);
+    await choice(page).getByRole('button', { name: 'Skip this step' }).click();
+    await expectStep(page, 9);
     await choice(page).getByRole('button', { name: 'Skip this step' }).click();
 
     await expect(page).toHaveURL(/\/$/);
@@ -111,6 +116,7 @@ test.describe('M1-06 onboarding', () => {
     await expect(choice(page).getByRole('radio', { name: /Intense/ })).toBeChecked();
     await next(page);
     await expect(readsTab(page)).toBeChecked();
+    await next(page);
     await next(page);
     await expect(choice(page).getByRole('radio', { name: /15 minutes/ })).toBeChecked();
   });

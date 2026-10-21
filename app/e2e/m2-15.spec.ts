@@ -26,8 +26,8 @@ const INTERVAL_SEMITONES: Record<string, number> = {
   m7: 10,
   M7: 11,
 };
-// Calibration is step 6 of 8; the placement test is last.
-const STEPS = 8;
+// Calibration is step 7 of 9; the placement test is last.
+const STEPS = 9;
 /** Correct answers move on by themselves after this long. */
 const AUTO_ADVANCE_MS = 700;
 
