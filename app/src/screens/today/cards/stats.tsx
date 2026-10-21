@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { SKILLS } from '../../../engine';
+import { SKILLS, deriveStatus, isFrontier, type SkillStatus } from '../../../engine';
 import { DRILLS } from '../../../drills/registry';
-import { allCards, countDue, getDb, getGamification } from '../../../storage';
+import { allCards, countDue, getDb, getGamification, getSkillStates } from '../../../storage';
 import styles from '../../screens.module.css';
 
 export const id = 'stats';
@@ -18,8 +18,13 @@ async function loadStats(): Promise<TodayStats> {
   const now = new Date();
   const cards = await allCards(db);
   const carded = new Set(cards.map((c) => c.itemId));
+  // Open skills, by their gates hard and soft, as the session runner derives
+  // them: in registry order, so prerequisites resolve first.
+  const statuses = new Map<string, SkillStatus>();
+  for (const [id, st] of await getSkillStates(db)) statuses.set(id, st.status);
+  for (const s of SKILLS) statuses.set(s.id, deriveStatus(s, statuses, statuses.get(s.id)));
   // Count only items a registered drill can test: some skills list items ahead of their drill.
-  const newAvailable = SKILLS.filter((s) => s.prerequisites.length === 0)
+  const newAvailable = SKILLS.filter((s) => isFrontier(statuses.get(s.id) ?? 'locked'))
     .flatMap((s) =>
       s.items().filter((i) => DRILLS.some((d) => s.drillTypes.includes(d.id) && d.canTest(i))),
     )
