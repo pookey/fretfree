@@ -53,8 +53,9 @@ const ids = (defs: readonly AchievementDefinition[]) => defs.map((d) => d.id);
 /** The string badges after F2's, in C2's teaching order (M10-12). */
 const C2_STRINGS = [1, 4, 3, 2];
 
-/** Every C2 stage mastered: the whole neck. */
-const WHOLE_NECK = Object.fromEntries(C2_STAGE_IDS.map((id) => [id, 'mastered' as const]));
+/** F2's strings and every C2 stage mastered: the whole neck. */
+const NECK_SKILLS = ['F2.string6-naturals', 'F2.string5-naturals', ...C2_STAGE_IDS];
+const WHOLE_NECK = Object.fromEntries(NECK_SKILLS.map((id) => [id, 'mastered' as const]));
 const none = new Set<string>();
 
 describe('achievement registry', () => {
@@ -102,11 +103,12 @@ describe('achievement registry', () => {
 describe('checkAchievements', () => {
   it('returns newly met badges in order and skips already-unlocked ones', () => {
     const c = ctx({
-      skillStates: states({ ...WHOLE_NECK, 'F2.string6-naturals': 'mastered' }),
+      skillStates: states(WHOLE_NECK),
       gamification: { ...DEFAULT_GAMIFICATION, streakLongest: 30 },
     });
     expect(ids(checkAchievements(c, none, ACHIEVEMENTS))).toEqual([
       'string-6-master',
+      'string-5-master',
       'string-1-master',
       'string-4-master',
       'string-3-master',
@@ -119,7 +121,12 @@ describe('checkAchievements', () => {
       ids(
         checkAchievements(
           c,
-          new Set(['string-6-master', ...C2_STRINGS.map((n) => `string-${n}-master`), 'streak-7']),
+          new Set([
+            'string-6-master',
+            'string-5-master',
+            ...C2_STRINGS.map((n) => `string-${n}-master`),
+            'streak-7',
+          ]),
           ACHIEVEMENTS,
         ),
       ),
@@ -204,14 +211,17 @@ describe('mastery badges', () => {
     }
   });
 
-  it('give "Whole neck" only for every C2 stage mastered', () => {
+  it('give "Whole neck" only for F2’s strings and every C2 stage mastered', () => {
     // The last stage alone, as a single-skill C2 used to be, is not the whole neck.
     expect(unlockedFor(ctx({ skillStates: states({ 'C2.all-notes': 'mastered' }) }))).toEqual([]);
-    for (const missing of C2_STAGE_IDS) {
+    // F2's strings are only practising gates on C2, so they are checked too.
+    for (const missing of NECK_SKILLS) {
       const c = ctx({ skillStates: states({ ...WHOLE_NECK, [missing]: 'practising' }) });
       expect(unlockedFor(c), missing).not.toContain('whole-neck');
     }
     expect(unlockedFor(ctx({ skillStates: states(WHOLE_NECK) }))).toEqual([
+      'string-6-master',
+      'string-5-master',
       ...C2_STRINGS.map((n) => `string-${n}-master`),
       'whole-neck',
     ]);

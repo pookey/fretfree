@@ -12,7 +12,8 @@ import { focusSession } from './helpers/focus';
 
 // M10-12: C2 in string stages, each with a ring that fills in days and a
 // milestone of its own: the naturals on strings 1, 4, 3 and 2, then the
-// sharps and flats on strings 6–5 and 4–1. "Whole neck" needs them all.
+// sharps and flats on strings 6–5 and 4–1. "Whole neck" needs them all, and
+// F2's strings 6 and 5 mastered.
 
 const C2_STAGES = [
   'C2.string1-naturals',
@@ -114,13 +115,18 @@ test.describe('M10-12 C2 by string', () => {
     );
 
     await page.goto('/');
+    // Every stage, but F2's strings only practising: not yet the whole neck.
     await masterSkills(page, C2_STAGES);
-    await expect(toast).toContainText('Whole neck');
     await expect(toast).toContainText('String 2 master');
+    await expect(toast).not.toContainText('Whole neck');
+    await toast.getByRole('button', { name: 'Dismiss' }).click();
+    await masterSkills(page, ['F2.string6-naturals', 'F2.string5-naturals']);
+    await expect(toast).toContainText('Whole neck');
+    await expect(toast).toContainText('String 6 master');
     await expectNoHorizontalOverflow(page);
     await toast.getByRole('button', { name: 'Dismiss' }).click();
     await openProgress(page);
-    for (const id of ['string-4-master', 'string-3-master', 'string-2-master', 'whole-neck'])
+    for (const id of ['string-6-master', 'string-2-master', 'whole-neck'])
       await expect(panel.getByTestId(`achievement-${id}`)).toHaveAttribute('data-unlocked', 'true');
     await expectNoHorizontalOverflow(page);
   });
