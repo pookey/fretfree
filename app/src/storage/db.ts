@@ -97,6 +97,14 @@ export const SCHEMA_VERSIONS: readonly {
     upgrade: (tx) =>
       Dexie.waitFor(import('./migrations/c8-stages')).then((m) => m.upgradeC8Stages(tx)),
   },
+  {
+    // M10-12: C2 in string stages; rows of the earlier stages' items move to
+    // their stage's skill. Loaded on demand, as v3.
+    version: 5,
+    stores: {},
+    upgrade: (tx) =>
+      Dexie.waitFor(import('./migrations/c2-strings')).then((m) => m.upgradeC2Strings(tx)),
+  },
 ];
 
 export const SCHEMA_VERSION = SCHEMA_VERSIONS.at(-1)?.version ?? 1;

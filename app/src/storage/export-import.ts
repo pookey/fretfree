@@ -62,12 +62,15 @@ export function parseExport(json: string): ExportFile {
  * future versions that change row shapes must transform rows here.
  */
 export async function importData(db: FretworkDB, file: ExportFile): Promise<void> {
-  // v3 staged D8's chord tones (M3-17), and v4 C8's harmony by key (M10-02).
+  // v3 staged D8's chord tones (M3-17), v4 C8's harmony by key (M10-02),
+  // and v5 C2's notes by string (M10-12).
   let tables = file.tables;
   if (file.schemaVersion < 3)
     tables = (await import('./migrations/c5-tone-stages')).restageTables(tables);
   if (file.schemaVersion < 4)
     tables = (await import('./migrations/c8-stages')).restageTables(tables);
+  if (file.schemaVersion < 5)
+    tables = (await import('./migrations/c2-strings')).restageTables(tables);
   await db.transaction('rw', db.tables, async () => {
     for (const name of TABLE_NAMES) {
       const table = db.table(name);
