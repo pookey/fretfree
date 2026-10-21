@@ -1500,7 +1500,7 @@ From the learning-path review of 2026-10-20 (`docs/review/2026-10-20-learning-pa
 The first six WPs are `Priority: high`, in the review's order (adjusted where verification changed it). M10-01 and M10-02 keep research/02 rule 7 intact: CAGED stays gated on mastered F2 notes, and progressions on mastered chord construction, so the review's "soft on practising" gates are expressed as per-prerequisite soft gates, not whole-skill soft unlocks.
 
 ### M10-01 · [contract] Soft prerequisites per skill, so a gate can mix "mastered" and "practising"
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (blocks M10-02, the songs on-ramp: the review's top finding)
 - **Deps:** none
 - **Design:** §3.1, §5 (soft unlocking); research/02 rule 7
