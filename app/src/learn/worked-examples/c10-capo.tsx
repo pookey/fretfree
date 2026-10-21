@@ -40,7 +40,7 @@ export function capoStep(root: Position, capo: number): ExampleStep {
     trap: {
       at: { string: root.string, fret: below },
       name: wrong,
-      message: `That's ${wrong}: ${up} below the shape. A capo only raises the pitch, so count up from ${shape.tonic}: ${shape.tonic} shapes, capo ${capo}, sound in ${sounding}.`,
+      message: `That's ${wrong}: ${up} below the shape. For the key that sounds, count up from ${shape.tonic}: ${shape.tonic} shapes, capo ${capo}, sound in ${sounding}. Count down only to pick shapes for a song’s key.`,
     },
   };
 }
@@ -57,7 +57,7 @@ const example: WorkedExample = {
   id: 'c10-capo',
   for: ['C10'],
   title: 'Capo: count up',
-  idea: 'A capo raises every note by its fret number. Your fingers still make the shape you know, so the key that sounds is the shape’s key counted up by the capo fret, never down.',
+  idea: 'A capo raises every note by its fret number. Your fingers still make the shape you know, so counting up from the shape’s key gives the key that sounds. To pick shapes for a song’s key, count down from it instead.',
   steps: [
     capoStep({ string: 6, fret: 3 }, 2),
     capoStep({ string: 2, fret: 3 }, 3),
