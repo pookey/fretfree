@@ -142,11 +142,11 @@ describe('D17View', () => {
     expect(onAnswer).not.toHaveBeenCalled();
   });
 
-  it('"Show me" gives up with what was heard', async () => {
+  it('"Show me the answer" gives up with what was heard', async () => {
     const { onAnswer } = view(prompt('spell-key:G'));
     await startListening();
     play('G2');
-    fireEvent.click(screen.getByRole('button', { name: 'Show me' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show me the answer' }));
     expect(onAnswer).toHaveBeenCalledWith(expect.objectContaining({ played: [43], gaveUp: true }));
   });
 
@@ -175,7 +175,7 @@ describe('D17View', () => {
     play('B2');
     const answer = onAnswer.mock.calls[0]![0] as D17Answer;
     rerender(first, fb(first, answer));
-    expect(screen.queryByRole('button', { name: 'Show me' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show me the answer' })).toBeNull();
 
     // The next prompt appears while the miss (2 notes) is still playing back.
     clock += 300;

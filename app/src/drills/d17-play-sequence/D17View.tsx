@@ -5,6 +5,7 @@ import type { PitchSourceErrorReason } from '../../mic/types';
 import { midiToFretNote, type FretRange } from '../../theory';
 import type { DrillRenderProps } from '../types';
 import { useMic, useNotes } from './listen';
+import { MIC_COPY, MIC_PROBLEM } from './mic-copy';
 import {
   d17Accepts,
   d17Explain,
@@ -24,21 +25,13 @@ const WIDE: FretRange = { from: 0, to: 15 };
 const REGULAR: FretRange = { from: 0, to: 12 };
 const REGULAR_HIGH: FretRange = { from: 3, to: 15 };
 
-const MIC_PROBLEM: Record<PitchSourceErrorReason, string> = {
-  denied:
-    "FretFree can't use the mic. Allow the microphone for this site in your browser's settings, then try again.",
-  unsupported: "This browser can't listen to your guitar. Try Safari on iPad, or Chrome.",
-  'no-device': 'No microphone was found. Connect one, then try again.',
-  failed: "The mic didn't start. Try again.",
-  lost: 'The mic stopped: it was unplugged, another app took it, or FretFree went to the background. Try again.',
-};
 
 /**
  * D17 view: "Play A, then the major 3rd above it" (design §6 D17, §7 session
  * layout). The learner plays on a real guitar and the mic hears each note in
  * turn; a row of slots fills as they land, without naming notes still to
  * come. The neck marks the root at scope 0 and shows one fingering on a
- * guided first rep and in feedback. "Show me" is the keyboard path, and the
+ * guided first rep and in feedback. "Show me the answer" is the keyboard path, and the
  * way out when there is no mic.
  */
 export function D17View({
@@ -273,22 +266,20 @@ function MicPanel({
       {state === 'idle' && (
         <>
           <button type="button" className={styles.primary} onClick={onStart}>
-            Start listening
+            {MIC_COPY.start}
           </button>
-          <p className={styles.note}>
-            Play it on your guitar. FretFree listens through the mic; nothing is recorded or sent.
-          </p>
+          <p className={styles.note}>{MIC_COPY.idle}</p>
         </>
       )}
       {state === 'starting' && (
         <p role="status" className={styles.status}>
-          Starting the mic…
+          {MIC_COPY.starting}
         </p>
       )}
       {state === 'running' && (
         <p role="status" className={styles.status} data-testid="d17-listening">
           <span className={styles.dot} aria-hidden="true" />
-          {lastHeard === null ? 'Listening…' : `Heard ${lastHeard}: ${heardCount} of ${total}.`}
+          {lastHeard === null ? MIC_COPY.listening : `Heard ${lastHeard}: ${heardCount} of ${total}.`}
         </p>
       )}
       {state === 'error' && (
@@ -297,12 +288,12 @@ function MicPanel({
             {MIC_PROBLEM[reason ?? 'failed']}
           </p>
           <button type="button" className={styles.primary} onClick={onStart}>
-            Try again
+            {MIC_COPY.retry}
           </button>
         </>
       )}
       <button type="button" className={styles.secondary} onClick={onShowMe}>
-        Show me
+        Show me the answer
       </button>
     </div>
   );
