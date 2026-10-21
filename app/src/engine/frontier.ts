@@ -44,7 +44,7 @@ export const MODULES: readonly Module[] = [
     summary:
       'Find any note on any string, and every octave of it, so the whole neck is yours, not just the first few frets.',
     misconception:
-      'Give frets 7–12 on strings 2–4 extra attention: they’re the ones most players skip. And when an octave shape crosses from G to B, it moves up one fret.',
+      'Give frets 7–12 on strings 2–4 extra attention: they’re the ones most players skip. And watch the G–B shift: an octave shape that crosses from G to B moves up one fret.',
   },
   {
     id: 'intervals',
@@ -124,7 +124,7 @@ export const MODULES: readonly Module[] = [
     summary:
       'Play one chord in five places up the neck with the CAGED shapes, and find its root in each.',
     misconception:
-      'Use CAGED as a map of the neck, not five grips to memorise, and keep naming the notes: CAGED doesn’t replace them.',
+      'Remember that CAGED is a map of the neck, not five grips to memorise, and keep naming the notes: CAGED doesn’t replace them.',
   },
   {
     id: 'pentatonic',

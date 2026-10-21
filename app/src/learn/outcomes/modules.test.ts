@@ -116,7 +116,7 @@ describe('misconception callouts', () => {
       expect(text, m.id).not.toMatch(/\blearners?\b|\bget neglected\b|“Box prison”/i);
       // "you", or a sentence that tells the learner what to do.
       expect(text, m.id).toMatch(
-        /\byou(r|’re|’ll)?\b|(^|[.:] )(Give|Use|Don’t|Expect|Read|Keep|When [^,]+, move)\b/i,
+        /\byou(r|’re|’ll)?\b|(^|[.:] )(Give|Use|Don’t|Expect|Read|Keep|Remember|When [^,]+, move)\b/i,
       );
     }
   });
