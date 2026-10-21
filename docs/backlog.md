@@ -1124,7 +1124,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/drills/d21-visualise/**`
 
 ### M6-10 · M6 milestone QA
-- **Status:** todo
+- **Status:** done
 - **Deps:** M6-01, M6-02, M6-03, M6-04, M6-05, M6-06, M6-07, M6-08, M6-09
 - **Owns:** `docs/progress.md`
 
