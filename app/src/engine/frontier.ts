@@ -1,3 +1,4 @@
+import { ENGINE_CONFIG } from './config';
 import type { Goal, Skill } from './model';
 
 /**
@@ -265,4 +266,59 @@ export function orderFrontier(skills: readonly Skill[], goal: Goal): Skill[] {
       a.id.localeCompare(b.id)
     );
   });
+}
+
+/**
+ * Core modules on the neck itself. The neck lane draws from them, so the
+ * fretboard keeps moving while a goal's modules lead (design §5, "open
+ * early, in parallel").
+ */
+const NECK_MODULES: ReadonlySet<string> = new Set(['notes-1', 'notes-2']);
+
+/** A lane of new material: frontier skills in today's order, with its share of new items. */
+export interface FrontierLane {
+  /** `goal`, `neck`, or a parallel track's module ID. */
+  readonly id: string;
+  readonly share: number;
+  readonly skills: readonly Skill[];
+}
+
+export interface LaneOptions {
+  /** The learner's very first session: it stays Neck basics, so no parallel track yet. */
+  firstSession?: boolean;
+  shares?: { goal: number; neck: number; parallel: number };
+}
+
+/**
+ * Frontier skills split into session lanes (design §3.3 step 2, research/02
+ * rules 6 and 13), each in `orderFrontier` order:
+ *
+ * - `goal`: every module that isn't on the neck or a parallel track, so its
+ *   head is the first open goal-promoted module, or the first open one in
+ *   default order for a goal that promotes none ("general").
+ * - `neck`: the neck modules, Neck basics then Whole neck.
+ * - one lane per open parallel track (Ear, Rhythm), sharing the parallel
+ *   share, so both tracks get a turn when both are open.
+ *
+ * Lanes come in the order of their first skill, so the goal still decides
+ * what a session opens with. Only lanes with skills are returned; the
+ * session builder hands an empty lane's share to the rest.
+ */
+export function frontierLanes(
+  skills: readonly Skill[],
+  goal: Goal,
+  { firstSession = false, shares = ENGINE_CONFIG.session.lanes }: LaneOptions = {},
+): FrontierLane[] {
+  const lanes = new Map<string, Skill[]>();
+  const parallel = new Set<string>();
+  for (const skill of orderFrontier(skills, goal)) {
+    const m = moduleOfTopic(skill.topic);
+    if (m?.track === 'parallel' && firstSession) continue;
+    const id = m?.track === 'parallel' ? m.id : m && NECK_MODULES.has(m.id) ? 'neck' : 'goal';
+    if (m?.track === 'parallel') parallel.add(id);
+    lanes.set(id, [...(lanes.get(id) ?? []), skill]);
+  }
+  const shareOf = (id: string) =>
+    parallel.has(id) ? shares.parallel / parallel.size : id === 'neck' ? shares.neck : shares.goal;
+  return [...lanes].map(([id, laneSkills]) => ({ id, share: shareOf(id), skills: laneSkills }));
 }

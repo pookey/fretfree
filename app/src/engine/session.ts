@@ -30,12 +30,23 @@ export interface FactRef {
   direction: string;
 }
 
+/** A lane of new material (`frontierLanes`): its items in order, and its share of the new items. */
+export interface SessionLane {
+  id: string;
+  share: number;
+  items: readonly Item[];
+}
+
 export interface SessionPlanInput {
   now: Date;
   minutes: number;
   cards: readonly CardRecord[];
-  /** Unseen items from frontier skills, already ordered by goal priority. */
-  frontier: readonly Item[];
+  /** Unseen items from frontier skills, already ordered by goal priority: a single lane. */
+  frontier?: readonly Item[];
+  /** Lanes of frontier items, drawn from by their shares. Takes the place of `frontier`. */
+  lanes?: readonly SessionLane[];
+  /** New items this plan may introduce. Without it, `newItemCap(minutes)`. */
+  maxNew?: number;
   scheduler: Scheduler;
   /** Learned confusions. Merged with the seed pairs and decayed to `now`. */
   confusions?: readonly ConfusionRecord[];
@@ -57,11 +68,57 @@ type SessionConfig = {
   newBlockSize: number;
   newBlockReps: number;
   retryGap: number;
+  maxNewPerSession: number;
+  newCapMinutes: number;
+  newCapRaise: number;
 };
 
 /** Number of prompts that fit the time budget. */
 export function sessionLength(minutes: number, cfg: SessionConfig = ENGINE_CONFIG.session): number {
   return Math.max(5, Math.round((minutes * 60) / cfg.secondsPerItem));
+}
+
+/**
+ * The most new items a session of `minutes` introduces (research/02 rule 11):
+ * `maxNewPerSession` scaled by minutes, raised by `newCapRaise` while recent
+ * accuracy is above the adaptive band's top (rule 5). Never below one.
+ */
+export function newItemCap(
+  minutes: number,
+  recentAccuracy: number | null = null,
+  cfg: SessionConfig = ENGINE_CONFIG.session,
+  bandTop: number = ENGINE_CONFIG.adaptive.widenAbove,
+): number {
+  const base = (cfg.maxNewPerSession * minutes) / cfg.newCapMinutes;
+  const raise = recentAccuracy !== null && recentAccuracy > bandTop ? 1 + cfg.newCapRaise : 1;
+  return Math.max(1, Math.round(base * raise));
+}
+
+/**
+ * How many of `count` new items each lane gets: a smooth weighted
+ * round-robin by `shares`, so 2:1:1 deals goal, neck, parallel, goal… A lane
+ * never gets more than its `sizes`; what it can't take goes to the others.
+ */
+export function laneQuotas(
+  sizes: readonly number[],
+  shares: readonly number[],
+  count: number,
+): number[] {
+  const out = sizes.map(() => 0);
+  const credit = sizes.map(() => 0);
+  for (let k = 0; k < count; k++) {
+    const open = sizes.flatMap((n, i) => (out[i]! < n && shares[i]! > 0 ? [i] : []));
+    if (open.length === 0) break;
+    const total = open.reduce((sum, i) => sum + shares[i]!, 0);
+    let best = open[0]!;
+    for (const i of open) {
+      credit[i]! += shares[i]!;
+      if (credit[i]! > credit[best]!) best = i;
+    }
+    credit[best]! -= total;
+    out[best]!++;
+  }
+  return out;
 }
 
 export interface DueOrder {
@@ -214,6 +271,54 @@ export function blockGuideLevel(rep: number, reps: number, skillLevel: GuideLeve
   return Math.round(3 - (3 - skillLevel) * t) as GuideLevel;
 }
 
+/** A lane's first `quota` new items as blocks, a block never longer than the quota. */
+function laneBlocks(
+  items: readonly Item[],
+  quota: number,
+  cfg: SessionConfig,
+  factOf?: (item: Item) => FactRef | null,
+): SessionEntry[][] {
+  const out: SessionEntry[][] = [];
+  if (quota < 1) return out;
+  let left = quota;
+  for (const group of planNewBlocks(items, Math.min(cfg.newBlockSize, quota), factOf)) {
+    if (left < 1) break;
+    const take = group.slice(0, left);
+    out.push(newItemBlock(take, cfg.newBlockReps));
+    left -= take.length;
+  }
+  return out;
+}
+
+/** Blocks dealt round-robin across lanes, each lane's in order. A block never mixes lanes. */
+function interleaveLanes(lanes: readonly SessionEntry[][][]): SessionEntry[][] {
+  const out: SessionEntry[][] = [];
+  for (let round = 0; lanes.some((l) => round < l.length); round++) {
+    for (const lane of lanes) if (lane[round]) out.push(lane[round]!);
+  }
+  return out;
+}
+
+/**
+ * One spaced retrieval pass over a session's new items, for when its new
+ * cap is reached and nothing is due: recalling them once more after a gap
+ * consolidates them (research/02 rule 6). Dealt round-robin across skills,
+ * each skill's items in the order they were introduced.
+ */
+export function retrievalPass(items: readonly Item[]): SessionEntry[] {
+  const bySkill = new Map<string, Item[]>();
+  for (const i of items) bySkill.set(i.skillId, [...(bySkill.get(i.skillId) ?? []), i]);
+  const queues = [...bySkill.values()];
+  const out: SessionEntry[] = [];
+  for (let round = 0; queues.some((q) => round < q.length); round++) {
+    for (const q of queues) {
+      const i = q[round];
+      if (i) out.push({ itemId: i.id, skillId: i.skillId, kind: 'stretch', guided: false });
+    }
+  }
+  return out;
+}
+
 /**
  * Spread blocks evenly among reviews, starting with a short warm-up of
  * reviews. A block never splits a confusable pair (`joined`, see
@@ -255,23 +360,25 @@ export function buildSession(input: SessionPlanInput): SessionEntry[] {
   }));
 
   const carded = new Set(input.cards.map((c) => c.itemId));
-  const fresh = input.frontier.filter((i) => !carded.has(i.id));
-  let slots = total - reviews.length;
+  const lanes = (input.lanes ?? [{ id: 'frontier', share: 1, items: input.frontier ?? [] }]).map(
+    (l) => ({ ...l, items: l.items.filter((i) => !carded.has(i.id)) }),
+  );
+  const fresh = lanes.reduce((n, l) => n + l.items.length, 0);
   const perItem = cfg.newBlockReps + 1;
-  const blocks: SessionEntry[][] = [];
-  let placed = 0;
-  for (const group of planNewBlocks(fresh, cfg.newBlockSize, input.factOf)) {
-    const fit = Math.min(group.length, Math.floor(slots / perItem));
-    if (fit < 1) break;
-    const block = newItemBlock(group.slice(0, fit), cfg.newBlockReps);
-    blocks.push(block);
-    slots -= block.length;
-    placed += fit;
-    if (fit < group.length) break;
-  }
+  const maxNew = Math.max(0, input.maxNew ?? newItemCap(input.minutes, null, cfg));
+  const quotas = laneQuotas(
+    lanes.map((l) => l.items.length),
+    lanes.map((l) => l.share),
+    Math.min(maxNew, Math.floor((total - reviews.length) / perItem)),
+  );
+  const blocks = interleaveLanes(
+    lanes.map((l, i) => laneBlocks(l.items, quotas[i]!, cfg, input.factOf)),
+  );
+  const placed = quotas.reduce((n, q) => n + q, 0);
+  const slots = total - reviews.length - placed * perItem;
 
-  // Top up with further due reviews only if no new material is left to fill the session.
-  if (slots > 0 && placed === fresh.length && due.length > reviews.length) {
+  // Top up with further due reviews unless new items were left out for want of time.
+  if (slots > 0 && (placed === fresh || placed >= maxNew) && due.length > reviews.length) {
     for (const c of due.slice(reviews.length, reviews.length + slots)) {
       reviews.push({ itemId: c.itemId, skillId: c.skillId, kind: 'review', guided: false });
     }

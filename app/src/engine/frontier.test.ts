@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   GOAL_PROFILES,
   MODULES,
+  frontierLanes,
   moduleOfTopic,
   moduleRank,
   orderFrontier,
@@ -146,6 +147,63 @@ describe('key signatures', () => {
     expect(order.indexOf('key-signatures')).toBeGreaterThan(order.indexOf('harmony'));
     for (const goal of GOALS) {
       expect(moduleRank('key-signatures', goal)).toBeGreaterThan(moduleRank('harmony', goal));
+    }
+  });
+});
+
+describe('frontierLanes', () => {
+  const f1 = skill('F1.alphabet', 'F1', 100);
+  const c2 = skill('C2.all-notes', 'C2', 1200);
+  const c3 = skill('C3.thirds', 'C3', 1300);
+  const c4 = skill('C4.sharp-keys', 'C4', 1400);
+  const c8 = skill('C8.numerals-major', 'C8', 1598);
+  const f4 = skill('F4.pulse', 'F4', 400);
+  const i6 = skill('I6.intervals-fourths-fifths', 'I6', 2500);
+  const all = [i6, c8, c4, c3, c2, f4, f1];
+  const lane = (lanes: ReturnType<typeof frontierLanes>, id: string) =>
+    lanes.find((l) => l.id === id);
+
+  it('splits goal modules, the neck and each parallel track, in today’s order', () => {
+    const lanes = frontierLanes(all, 'songs');
+    expect(ids(lane(lanes, 'goal')!.skills)).toEqual([c8.id, c4.id, c3.id]);
+    expect(ids(lane(lanes, 'neck')!.skills)).toEqual([f1.id, c2.id]);
+    expect(ids(lane(lanes, 'ear')!.skills)).toEqual([i6.id]);
+    expect(ids(lane(lanes, 'rhythm')!.skills)).toEqual([f4.id]);
+    // Songs promotes Harmony, so the goal lane leads.
+    expect(lanes[0]?.id).toBe('goal');
+  });
+
+  it('shares 2:1:1, splitting the parallel share between open tracks', () => {
+    const lanes = frontierLanes(all, 'general');
+    expect(lanes.map((l) => [l.id, l.share])).toEqual([
+      ['neck', 1],
+      ['goal', 2],
+      ['rhythm', 0.5],
+      ['ear', 0.5],
+    ]);
+    const one = frontierLanes([f1, c3, i6], 'general');
+    expect(lane(one, 'ear')?.share).toBe(1);
+  });
+
+  it('uses the default module order for a goal that promotes none', () => {
+    expect(ids(lane(frontierLanes(all, 'general'), 'goal')!.skills)).toEqual([c3.id, c4.id, c8.id]);
+    expect(ids(lane(frontierLanes(all, 'improvise'), 'goal')!.skills)[0]).toBe(c3.id);
+  });
+
+  it('keeps the very first session to Neck basics', () => {
+    const lanes = frontierLanes([f1, f4, i6], 'songs', { firstSession: true });
+    expect(lanes.map((l) => l.id)).toEqual(['neck']);
+  });
+
+  it('leaves out empty lanes', () => {
+    expect(frontierLanes([], 'general')).toEqual([]);
+    expect(frontierLanes([c4], 'jazz').map((l) => l.id)).toEqual(['goal']);
+  });
+
+  it('puts every frontier skill in exactly one lane, for every goal', () => {
+    for (const goal of GOALS) {
+      const lanes = frontierLanes(SKILLS, goal);
+      expect(lanes.flatMap((l) => ids(l.skills)).sort()).toEqual(ids(SKILLS).sort());
     }
   });
 });

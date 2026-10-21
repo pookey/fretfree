@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Rating } from 'ts-fsrs';
+import { ENGINE_CONFIG } from './config';
 import { createScheduler } from './scheduler';
 import {
   blockBoundary,
@@ -7,13 +8,19 @@ import {
   buildSession,
   dueReviews,
   inLearningStep,
+  laneQuotas,
   newItemBlock,
+  newItemCap,
   planNewBlocks,
+  retrievalPass,
   scheduleRetry,
   sessionLength,
   type SessionEntry,
 } from './session';
-import type { CardRecord, Item } from './model';
+import { frontierLanes, moduleOfTopic } from './frontier';
+import { deriveStatus, isFrontier } from './mastery';
+import type { CardRecord, Goal, Item, SkillStatus } from './model';
+import { SKILLS } from './skills';
 
 const now = new Date('2026-10-18T09:00:00Z');
 const DAY = 86_400_000;
@@ -219,7 +226,14 @@ describe('blockGuideLevel', () => {
 
 describe('buildSession', () => {
   it('fills a session with new items in blocks when nothing is due', () => {
-    const plan = buildSession({ now, minutes: 2, cards: [], frontier: items(20), scheduler: s });
+    const plan = buildSession({
+      now,
+      minutes: 2,
+      cards: [],
+      frontier: items(20),
+      scheduler: s,
+      maxNew: 8,
+    });
     // 17 slots → one block of 4 items × (worked example + 3 reps).
     expect(plan).toHaveLength(16);
     expect(new Set(plan.map((e) => e.itemId)).size).toBe(4);
@@ -320,13 +334,7 @@ describe('buildSession new blocks', () => {
       frontier,
       scheduler: s,
       factOf: (i) => ({ fact: i.id.split(':')[1]!, direction: i.id.split(':')[0]! }),
-      config: {
-        secondsPerItem: 7,
-        reviewShare: 0.7,
-        newBlockSize: 2,
-        newBlockReps: 3,
-        retryGap: 3,
-      },
+      config: { ...ENGINE_CONFIG.session, newBlockSize: 2 },
     });
     expect(plan.slice(0, 8).every((e) => e.block === 'note:A')).toBe(true);
     // Partners keep their frontier order.
@@ -336,7 +344,7 @@ describe('buildSession new blocks', () => {
   it('stops at a partial block when the session is nearly full', () => {
     const plan = buildSession({
       now,
-      minutes: 1,
+      minutes: 10,
       cards: [],
       frontier: items(10),
       scheduler: s,
@@ -399,3 +407,179 @@ describe('scheduleRetry', () => {
     expect(scheduleRetry(q, 99)).toEqual(q);
   });
 });
+
+describe('newItemCap', () => {
+  it('is eight at ten minutes, scaled by minutes, never below one', () => {
+    expect(newItemCap(10)).toBe(ENGINE_CONFIG.session.maxNewPerSession);
+    expect(newItemCap(5)).toBe(4);
+    expect(newItemCap(15)).toBe(12);
+    expect(newItemCap(0.5)).toBe(1);
+  });
+
+  it('rises while recent accuracy is above the adaptive band', () => {
+    expect(newItemCap(10, 0.95)).toBe(12);
+    expect(newItemCap(10, 0.92)).toBe(8);
+    expect(newItemCap(10, 0.5)).toBe(8);
+  });
+});
+
+describe('laneQuotas', () => {
+  it('deals by share, and hands what a lane can’t take to the rest', () => {
+    expect(laneQuotas([20, 20, 20], [2, 1, 1], 8)).toEqual([4, 2, 2]);
+    expect(laneQuotas([20, 20, 20, 20], [2, 1, 0.5, 0.5], 8)).toEqual([4, 2, 1, 1]);
+    expect(laneQuotas([1, 20, 20], [2, 1, 1], 8)).toEqual([1, 4, 3]);
+    expect(laneQuotas([3], [1], 8)).toEqual([3]);
+    expect(laneQuotas([5, 5], [0, 1], 8)).toEqual([0, 5]);
+    expect(laneQuotas([], [], 8)).toEqual([]);
+  });
+});
+
+describe('retrievalPass', () => {
+  it('recalls each item once, round-robin across skills, in the order introduced', () => {
+    const pass = retrievalPass([
+      { id: 'a1', skillId: 'a' },
+      { id: 'a2', skillId: 'a' },
+      { id: 'b1', skillId: 'b' },
+    ]);
+    expect(pass.map((e) => e.itemId)).toEqual(['a1', 'b1', 'a2']);
+    expect(pass.every((e) => e.kind === 'stretch' && !e.guided && e.block === undefined)).toBe(
+      true,
+    );
+  });
+});
+
+describe('buildSession lanes', () => {
+  const lane = (id: string, share: number, n: number) => ({ id, share, items: items(n, id) });
+
+  it('draws new blocks round-robin by share, up to the cap, never mixing lanes', () => {
+    const plan = buildSession({
+      now,
+      minutes: 10,
+      cards: [],
+      lanes: [lane('g', 2, 20), lane('n', 1, 20), lane('p', 1, 20)],
+      scheduler: s,
+    });
+    const fresh = new Set(plan.map((e) => e.itemId));
+    expect(fresh.size).toBe(8);
+    expect([...fresh].filter((id) => id.startsWith('g'))).toEqual(['g0', 'g1', 'g2', 'g3']);
+    expect([...fresh].filter((id) => id.startsWith('n'))).toEqual(['n0', 'n1']);
+    expect([...fresh].filter((id) => id.startsWith('p'))).toEqual(['p0', 'p1']);
+    // Each block keeps to one lane, and the goal's comes first.
+    const blocks = new Map<string, Set<string>>();
+    for (const e of plan)
+      blocks.set(e.block!, (blocks.get(e.block!) ?? new Set()).add(e.itemId[0]!));
+    expect([...blocks.values()].every((lanes) => lanes.size === 1)).toBe(true);
+    expect(plan[0]?.itemId).toBe('g0');
+  });
+
+  it('takes `maxNew` over the cap, and fills with due reviews once it is spent', () => {
+    const cards = Array.from({ length: 30 }, (_, i) => dueCard(`r${i}`, 3 + i));
+    const plan = buildSession({
+      now,
+      minutes: 10,
+      cards,
+      lanes: [lane('g', 2, 20)],
+      scheduler: s,
+      maxItems: 30,
+      maxNew: 1,
+    });
+    expect(plan.filter((e) => e.kind === 'new')).toHaveLength(4);
+    // 21 reviews fit the 70% share; the cap leaves room for the other five.
+    expect(plan.filter((e) => e.kind === 'review')).toHaveLength(26);
+    const none = buildSession({
+      now,
+      minutes: 10,
+      cards: [],
+      lanes: [lane('g', 2, 5)],
+      scheduler: s,
+      maxNew: 0,
+    });
+    expect(none).toEqual([]);
+  });
+});
+
+/**
+ * The first sessions of a new learner with the registered skills: each
+ * session's new items are answered (one Good review) and their skills become
+ * practising, a day apart.
+ */
+function firstSessions(goal: Goal, count: number, minutes = 10): SessionEntry[][] {
+  const statuses = new Map<string, SkillStatus>();
+  const cards: CardRecord[] = [];
+  const plans: SessionEntry[][] = [];
+  for (let k = 0; k < count; k++) {
+    const at = new Date(now.getTime() + k * DAY);
+    const frontier = SKILLS.filter((skill) => {
+      const status = deriveStatus(skill, statuses, statuses.get(skill.id));
+      statuses.set(skill.id, status);
+      return isFrontier(status);
+    });
+    const lanes = frontierLanes(frontier, goal, { firstSession: cards.length === 0 }).map((l) => ({
+      id: l.id,
+      share: l.share,
+      items: l.skills.flatMap((skill) => skill.items()),
+    }));
+    const plan = buildSession({ now: at, minutes, cards, lanes, scheduler: s });
+    plans.push(plan);
+    for (const e of plan.filter((x) => x.kind === 'new' && x.rep === 0)) {
+      cards.push(s.review(s.newCard({ id: e.itemId, skillId: e.skillId }, at), Rating.Good, at));
+      statuses.set(e.skillId, 'practising');
+    }
+  }
+  return plans;
+}
+
+const TOPIC = new Map(SKILLS.map((skill) => [skill.id, skill.topic]));
+const moduleOf = (e: SessionEntry) => moduleOfTopic(TOPIC.get(e.skillId) ?? '')?.id;
+const newModules = (plan: readonly SessionEntry[]) =>
+  new Set(plan.filter((e) => e.kind === 'new').map(moduleOf));
+
+describe.each<Goal>(['songs', 'improvise', 'jazz', 'general'])(
+  'the first sessions for %s',
+  (goal) => {
+    const plans = firstSessions(goal, 3);
+
+    it('a 10-minute day-one session introduces at most the cap, all Neck basics', () => {
+      const day1 = plans[0]!.filter((e) => e.kind === 'new');
+      expect(new Set(day1.map((e) => e.itemId)).size).toBeLessThanOrEqual(newItemCap(10));
+      expect(newModules(plans[0]!)).toEqual(new Set(['notes-1']));
+    });
+
+    it('never introduces more than the cap', () => {
+      for (const plan of plans) {
+        const fresh = new Set(plan.filter((e) => e.kind === 'new').map((e) => e.itemId));
+        expect(fresh.size).toBeLessThanOrEqual(newItemCap(10));
+      }
+    });
+
+    it('serves Ear or Rhythm within the first three sessions', () => {
+      const parallel = plans.flatMap((p) => [...newModules(p)]);
+      expect(parallel.some((m) => m === 'ear' || m === 'rhythm')).toBe(true);
+    });
+
+    it('draws from two open modules in one session', () => {
+      const f2 = SKILLS.find((x) => x.id === 'F2.string6-naturals')!;
+      const c4 = SKILLS.find((x) => x.id === 'C4.sharp-keys')!;
+      const lanes = frontierLanes([f2, c4], goal).map((l) => ({
+        id: l.id,
+        share: l.share,
+        items: l.skills.flatMap((skill) => skill.items()),
+      }));
+      const plan = buildSession({ now, minutes: 10, cards: [], lanes, scheduler: s });
+      expect(newModules(plan)).toEqual(new Set(['notes-1', 'keys']));
+    });
+
+    it('still puts due reviews first (rule 16)', () => {
+      const cards = Array.from({ length: 10 }, (_, i) => dueCard(`note@s6f${i}`, 5 + i));
+      const frontier = SKILLS.filter((x) => x.id === 'F2.string5-naturals' || x.id === 'F4.pulse');
+      const lanes = frontierLanes(frontier, goal).map((l) => ({
+        id: l.id,
+        share: l.share,
+        items: l.skills.flatMap((skill) => skill.items()),
+      }));
+      const plan = buildSession({ now, minutes: 10, cards, lanes, scheduler: s });
+      expect(plan[0]?.kind).toBe('review');
+      expect(plan.filter((e) => e.kind === 'review')).toHaveLength(10);
+    });
+  },
+);
