@@ -98,7 +98,11 @@ describe('D6 in a session', () => {
     expect(p.scope).toBe('shape');
 
     const res = await r.answer(p.shapeTarget, 400);
-    expect(res.result).toEqual({ correct: true, expected: 'm3' });
+    expect(res.result).toEqual({
+      correct: true,
+      expected: 'a minor 3rd (m3)',
+      concept: 'm3',
+    });
     expect(res.sounds.expected).toHaveLength(2);
     const log = await db.reviewLogs.toArray();
     expect(log).toHaveLength(1);

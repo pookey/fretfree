@@ -89,7 +89,9 @@ test.describe('M10-08 ♯ and ♭ in the first drills', () => {
 });
 
 test.describe('M10-08 ♭3 and ♭7, and whole and half steps', () => {
-  test('D6 labels the minor 3rd ♭3', async ({ page }, info) => {
+  test('D6 labels the minor 3rd ♭3, says "flat 3", and names it in full', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await seedIntervals(page, { mastered: SKILLS_BEFORE_C3, cards: KNOWN_THIRDS_NAMES });
@@ -97,7 +99,15 @@ test.describe('M10-08 ♭3 and ♭7, and whole and half steps', () => {
     await expect(page.getByTestId('d6-prompt')).toContainText(
       'This is the minor 3rd above the root',
     );
-    await expect(neck(page).getByTestId('marker-target')).toHaveText('♭3');
+    const target = neck(page).getByTestId('marker-target');
+    await expect(target).toHaveText('♭3');
+    await expect(target).toHaveAccessibleName('flat 3');
+    const cell = {
+      string: Number(await target.getAttribute('data-string')),
+      fret: Number(await target.getAttribute('data-fret')),
+    };
+    await neck(page).locator(`[data-cell="s${cell.string}f${cell.fret}"]`).click();
+    await expect(page.getByTestId('feedback-correct')).toHaveText('✓ a minor 3rd (m3)');
   });
 
   test('D7 spells out W and H for a key', async ({ page }, info) => {

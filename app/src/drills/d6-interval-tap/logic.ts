@@ -67,7 +67,7 @@ export interface D6Prompt {
   liveStrings: number[];
   /** Every correct cell: the interval's degree in the active region. */
   targets: Position[];
-  /** The concept and the feedback text, e.g. `M3` or `M3 (G–B shift)`. */
+  /** The confusion concept, e.g. `M3` or `M3 (G–B shift)`; the bar prints `d6ExpectedText`. */
   expected: string;
   tuning: Tuning;
   accidentalPref: AccidentalPref;
@@ -178,20 +178,32 @@ export function d6ForgotShift(prompt: D6Prompt, answer: D6Answer): boolean {
   return unshifted !== null && samePosition(unshifted, answer);
 }
 
+/**
+ * What the feedback bar prints: the interval's full name, then its short
+ * one, as D5 bridges them (`a major 3rd (M3)`). The bare concept
+ * (`M3 (G–B shift)`) stays the confusion matrix's.
+ */
+export function d6ExpectedText(prompt: D6Prompt): string {
+  const name = d6IntervalName(prompt.interval);
+  const article = /^[aeiou]/.test(name) ? 'an' : 'a';
+  const shift = prompt.gbShift ? ', with the G–B shift' : '';
+  return `${article} ${name} (${prompt.interval})${shift}`;
+}
+
 export function d6Check(prompt: D6Prompt, answer: D6Answer): DrillCheck {
-  const expected = prompt.expected;
-  if (prompt.targets.some((t) => samePosition(t, answer))) return { correct: true, expected };
-  if (!d6IsLive(prompt, answer)) return { correct: false, expected };
+  const base = { expected: d6ExpectedText(prompt), concept: prompt.expected };
+  if (prompt.targets.some((t) => samePosition(t, answer))) return { correct: true, ...base };
+  if (!d6IsLive(prompt, answer)) return { correct: false, ...base };
   // Forgetting the shift is confused with the unshifted shape, so the session
   // pairs shifted and unshifted items of this interval (research/02 rule 6).
   if (d6ForgotShift(prompt, answer)) {
-    return { correct: false, expected, confusedWith: conceptFor(prompt.interval, false) };
+    return { correct: false, ...base, confusedWith: conceptFor(prompt.interval, false) };
   }
   const given = intervalFromRoot(prompt.root, answer, prompt.tuning);
   // The root itself, or its octave, isn't an interval the drill teaches.
   return given === 'P1' || given === 'P8'
-    ? { correct: false, expected }
-    : { correct: false, expected, confusedWith: given };
+    ? { correct: false, ...base }
+    : { correct: false, ...base, confusedWith: given };
 }
 
 export function d6DescribeAnswer(answer: D6Answer): string {

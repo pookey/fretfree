@@ -18,6 +18,7 @@ import {
   d6ConceptOf,
   d6DegreeAt,
   d6DescribeAnswer,
+  d6ExpectedText,
   d6Explain,
   d6FeedbackPositions,
   d6ForgotShift,
@@ -148,7 +149,11 @@ describe('d6MakePrompt', () => {
     // C#3 on string 5 is a 6th below the A3 root, and still its 3rd.
     const below = { string: 5, fret: 4 };
     expect(midiAt(below)).toBeLessThan(midiAt(p.root));
-    expect(d6Check(p, below)).toEqual({ correct: true, expected: 'M3' });
+    expect(d6Check(p, below)).toEqual({
+      correct: true,
+      expected: 'a major 3rd (M3)',
+      concept: 'M3',
+    });
   });
 
   it('flags G–B shift shapes, one fret above the all-fourths shape', () => {
@@ -198,7 +203,11 @@ describe('d6Box', () => {
 describe('d6Check', () => {
   it('accepts the shape cell', () => {
     const p = prompt('interval:m7@s6→s4', 0, atFret(5));
-    expect(d6Check(p, p.shapeTarget)).toEqual({ correct: true, expected: 'm7' });
+    expect(d6Check(p, p.shapeTarget)).toEqual({
+      correct: true,
+      expected: 'a minor 7th (m7)',
+      concept: 'm7',
+    });
   });
 
   it('records the interval tapped as the confusion', () => {
@@ -206,17 +215,37 @@ describe('d6Check', () => {
     // String 5 fret 5 is D, a P4 above A.
     expect(d6Check(p, { string: 5, fret: 5 })).toEqual({
       correct: false,
-      expected: 'M3',
+      expected: 'a major 3rd (M3)',
+      concept: 'M3',
       confusedWith: 'P4',
     });
   });
 
   it('records no confusion for the root, its octaves or dimmed cells', () => {
     const p = prompt('interval:M3@s6→s5', 1, atFret(5));
-    expect(d6Check(p, p.root)).toEqual({ correct: false, expected: 'M3' });
-    expect(d6Check(p, { string: 4, fret: 7 })).toEqual({ correct: false, expected: 'M3' });
-    expect(d6Check(p, { string: 5, fret: 11 })).toEqual({ correct: false, expected: 'M3' });
+    expect(d6Check(p, p.root)).toEqual({
+      correct: false,
+      expected: 'a major 3rd (M3)',
+      concept: 'M3',
+    });
+    expect(d6Check(p, { string: 4, fret: 7 })).toEqual({
+      correct: false,
+      expected: 'a major 3rd (M3)',
+      concept: 'M3',
+    });
+    expect(d6Check(p, { string: 5, fret: 11 })).toEqual({
+      correct: false,
+      expected: 'a major 3rd (M3)',
+      concept: 'M3',
+    });
     expect(d6IsLive(p, { string: 5, fret: 11 })).toBe(false);
+  });
+
+  it('names the interval in full for the feedback bar', () => {
+    expect(d6ExpectedText(prompt('interval:P5@s6→s5', 0, atFret(5)))).toBe('a perfect 5th (P5)');
+    expect(d6ExpectedText(prompt('interval:m3@s3→s2', 0, atFret(5)))).toBe(
+      'a minor 3rd (m3), with the G–B shift',
+    );
   });
 
   it('pairs a forgotten G–B shift with the unshifted interval (rule 6)', () => {
@@ -225,7 +254,8 @@ describe('d6Check', () => {
     expect(d6ForgotShift(p, slip)).toBe(true);
     expect(d6Check(p, slip)).toEqual({
       correct: false,
-      expected: 'M3 (G–B shift)',
+      expected: 'a major 3rd (M3), with the G–B shift',
+      concept: 'M3 (G–B shift)',
       confusedWith: 'M3',
     });
     expect(d6ForgotShift(p, { string: 2, fret: 6 })).toBe(false);

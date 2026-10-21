@@ -140,7 +140,7 @@ test.describe('M2-06 D6 interval tap', () => {
     await expectNoHorizontalOverflow(page);
 
     await cellAt(page, target).click();
-    await expect(page.getByTestId('feedback-correct')).toHaveText('✓ m3');
+    await expect(page.getByTestId('feedback-correct')).toHaveText('✓ a minor 3rd (m3)');
     await expect(neck(page).getByTestId('marker-correct')).toHaveText('♭3');
   });
 
@@ -174,7 +174,9 @@ test.describe('M2-06 D6 interval tap', () => {
     // The all-fourths shape, one fret short: the classic slip.
     const slip = { string: 2, fret: answer.fret - 1 };
     await cellAt(page, slip).click();
-    await expect(page.getByTestId('feedback-wrong')).toContainText('That was M3 (G–B shift)');
+    await expect(page.getByTestId('feedback-wrong')).toContainText(
+      'That was a major 3rd (M3), with the G–B shift.',
+    );
     await expect(page.getByTestId('d6-explain')).toContainText(
       "That's the shape without the G–B shift.",
     );
