@@ -1782,3 +1782,36 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Speed demon measures against the learner's calibrated tap time (M6-08 already excludes timing drills), or its copy says "1.2 seconds flat".
   - Unit tests for each.
   - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): milestones mark mastery, never volume: one per module mastered (chords, CAGED shapes, harmony, progressions), plus one for the first song-ready progression; plain, encouraging names; no streak pressure. Speed demon becomes relative to the learner's own calibrated tap time (motor speed differs between people; the goal is fluent recall, not fast hands), with copy that says so.
+
+### M10-18 · ♯/♭ on the neck and in worked-example traps
+- **Status:** todo
+- **Priority:** high (M10 is the user's top priority; follow-up from M10-08 and M10-14)
+- **Deps:** M10-08, M10-14
+- **Design:** §8 labels; research/02 rule 10; M10-05's `theory/pitch-display.ts`
+- **Owns:** `app/src/components/fretboard/labels.ts`, `app/src/components/fretboard/labels.test.ts`, `app/src/learn/worked-examples/logic.ts` `exampleMarkers`, `app/e2e/m10-18.spec.ts`
+- **Acceptance:**
+  - The neck's open-string names and guide-level note labels use `displayPc` (♯/♭ glyphs, the learner's sharp/flat preference), not ASCII `#`/`b`. If the labels live in `Fretboard.tsx` rather than a `labels.ts`, move the formatting into a small `labels.ts` and keep `Fretboard.tsx` edits to the call site.
+  - A tapped trap in a worked example is labelled with `trap.name`, so a flat-named trap never reads "A#" next to "That's B♭".
+  - VoiceOver names keep using `spokenPc`.
+  - Unit tests for both; an e2e check on one guide-level neck.
+
+### M10-19 · Explore walk-backs follow the gates still unmet
+- **Status:** todo
+- **Priority:** high (M10 is the user's top priority; follow-up from M10-02)
+- **Deps:** M10-02
+- **Design:** PM decision on M10-02 (progress.md "Decisions and deviations")
+- **Owns:** `app/src/screens/explore/views/chord-finder.tsx`, `app/src/screens/explore/views/caged.tsx`, `app/src/screens/explore/views/circle-of-fifths.tsx`, their `*.test.tsx`, `app/e2e/m10-19.spec.ts`
+- **Acceptance:**
+  - The chord-finder, CAGED and circle-of-fifths "Quiz me" walk-backs use `session/focus.ts` `nearestOpenSkills` with derived statuses (`useSkillStatuses()`, as the progression player does since M10-02), instead of their inline hard-prerequisite loops. A locked skill points at its unmet gates: a hard gate not mastered, or a soft one not practising.
+  - Tests per view for a soft-gated locked skill.
+
+### M10-20 · Placement probes for skipped C2 and C8 stages
+- **Status:** todo
+- **Priority:** high (M10 is the user's top priority; follow-up from M10-02 and M10-12)
+- **Deps:** M10-02, M10-12
+- **After:** M10-16
+- **Design:** research/02 rule 7; PM decision (progress.md)
+- **Owns:** `app/src/placement/algorithm.ts`, `app/src/placement/algorithm.test.ts`, `app/src/engine/config/placement.ts`, `app/e2e/m10-20.spec.ts`
+- **Acceptance:**
+  - PM decision: a learner placed "known" on a later C2 or C8 stage does not get the earlier stages implied (a known string 2 says nothing about string 1). Placement adds one short probe per skipped earlier stage, inside the existing time budget (`placement.budgetMs`), and seeds only what the learner shows.
+  - Unit tests: an expert passing a later stage gets probes for the earlier ones; a probe failure leaves that stage as new cards.
