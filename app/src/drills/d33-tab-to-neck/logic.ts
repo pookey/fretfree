@@ -13,6 +13,7 @@ import {
 import { tabEventLabel, tabLineName } from '../../theory/tab';
 import { tabGuide } from '../../components/tab/guide';
 import type { TabLineMark, TabNoteStyle } from '../../components/tab/TabStaff';
+import { compactWindowFrets, isShortLandscape } from '../../shell/size-class';
 import { d2SpanWindow } from '../d2-find-the-note/logic';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { D33_SCOPES, d33LineConcept, type D33Scope } from './meta';
@@ -244,6 +245,27 @@ export function d33StaffLabel(prompt: D33Prompt, staffLevel: GuideLevel): string
 }
 
 // --- Compact window -------------------------------------------------------
+
+/**
+ * Width the staff takes beside the neck on a phone on its side
+ * (D33View.module.css: 9rem tall at the staff's 352 × 318 aspect, plus the
+ * column gap).
+ */
+export const D33_SIDE_STAFF_PX = 172;
+
+/**
+ * The compact window's width in frets. The session sizes it for a neck that
+ * spans the screen; on a phone on its side the staff sits beside the neck,
+ * so the window shrinks to what still fits at the neck's 44pt cells.
+ */
+export function d33CompactFrets(
+  compactFrets: number | undefined,
+  width: number,
+  height: number,
+): number | undefined {
+  if (compactFrets === undefined || !isShortLandscape(width, height)) return compactFrets;
+  return Math.min(compactFrets, compactWindowFrets(width - D33_SIDE_STAFF_PX, height));
+}
 
 /**
  * The first compact window. It starts at the nut so it gives nothing away; a

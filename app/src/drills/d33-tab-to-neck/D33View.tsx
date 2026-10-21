@@ -12,6 +12,7 @@ import {
 import type { DrillRenderProps } from '../types';
 import {
   D33_STAFF_COLUMNS,
+  d33CompactFrets,
   d33Explain,
   d33FeedbackPositions,
   d33InitialWindow,
@@ -51,13 +52,16 @@ export function D33View({
   guided,
   handedness,
   sizeClass,
-  compactFrets,
+  compactFrets: sessionFrets,
   tuning,
   feedback,
   onAnswer,
   aside,
 }: DrillRenderProps<D33Prompt, D33Answer>) {
   const compact = sizeClass === 'compact';
+  const compactFrets = compact
+    ? d33CompactFrets(sessionFrets, window.innerWidth, window.innerHeight)
+    : sessionFrets;
   const neckRef = useRef<HTMLDivElement>(null);
   const moved = useRef(false);
   const [state, setState] = useState<ViewState>(() => ({

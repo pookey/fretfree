@@ -7,6 +7,7 @@ import {
   D33_SCOPE,
   d33CanTest,
   d33Check,
+  d33CompactFrets,
   d33ConceptOf,
   d33DescribeAnswer,
   d33Explain,
@@ -257,5 +258,19 @@ describe('d33InitialWindow', () => {
     const guided = d33InitialWindow(p, true, 5);
     expect(guided.from).toBeLessThanOrEqual(9);
     expect(guided.to).toBeGreaterThanOrEqual(9);
+  });
+});
+
+describe('d33CompactFrets', () => {
+  it('keeps the session’s window in portrait and on iPad', () => {
+    expect(d33CompactFrets(5, 390, 844)).toBe(5);
+    expect(d33CompactFrets(undefined, 734, 343)).toBeUndefined();
+  });
+
+  it('narrows a landscape phone’s window to the room beside the staff', () => {
+    const frets = d33CompactFrets(9, 734, 343)!;
+    expect(frets).toBeLessThan(9);
+    expect(frets).toBeGreaterThanOrEqual(5);
+    expect(d33CompactFrets(6, 2000, 343)).toBe(6);
   });
 });
