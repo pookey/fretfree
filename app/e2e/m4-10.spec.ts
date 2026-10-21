@@ -83,10 +83,11 @@ test.describe('M4-10 start with sound', () => {
     await page.getByTestId('start-session').click();
     await sessionReady(page);
     await expect(page.locator('[data-drill]')).toHaveAttribute('data-drill', 'hear-it-find-it');
+    // A new card opens with its worked example (research/02 rule 8): the first
+    // ear-find card, a 4th over the open low E.
     await expect(page.getByTestId('d15-prompt')).toHaveText(
-      /^Find the note you hear on string \d$/,
+      'This is A on string 6, a perfect 4th above the open E. Listen, then tap it.',
     );
-
     // Re-opening onboarding shows the choice.
     await page.goto('/onboarding');
     await choice(page).getByRole('button', { name: 'Get started' }).click();
@@ -129,7 +130,10 @@ test.describe('M4-10 ear only', () => {
     const drill = await page.locator('[data-drill]').getAttribute('data-drill');
     expect(EAR_DRILLS).toContain(drill);
     if (drill === 'hear-it-find-it')
-      await expect(page.getByTestId('d15-prompt')).toHaveText(/^Find the note you hear/);
+      // An ear card: its worked example, or the note unnamed. Never a named find.
+      await expect(page.getByTestId('d15-prompt')).toHaveText(
+        /above the open [A-G]|^Find the note you hear/,
+      );
   });
 
   test('with sound off, "Ear only" offers to turn sound on', async ({ page }) => {
