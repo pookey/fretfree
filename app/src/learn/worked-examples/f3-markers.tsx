@@ -57,18 +57,19 @@ export function repeatStep(from: Position): ExampleStep {
 }
 
 /**
- * F3: the fret markers, then the 12th-fret repeat. The faded stage repeats an
- * open string at the double dot; the last repeats a fretted note, where the
- * double dot is the trap.
+ * F3: the fret markers and the 12th-fret repeat. A fretted repeat is worked,
+ * counting the dots past the double dot, with fret 12 as the ghost; the faded
+ * stage finds a marker; the last repeats another fretted note, where the
+ * double dot is the trap again.
  */
 const example: WorkedExample = {
   id: 'f3-markers',
   for: ['F3.markers', 'F3.repeat-12'],
   title: 'Fret markers and the 12th fret',
   idea: 'Dots mark frets 3, 5, 7 and 9, and a double dot fret 12. From there the neck repeats an octave higher: fret 15 is fret 3 again.',
-  // From the nut, so the dots can be counted, to the first dot past the double dot.
-  range: { from: 0, to: 15 },
-  steps: [markerStep(7, 6), repeatStep({ string: 4, fret: 0 }), repeatStep({ string: 6, fret: 3 })],
+  // From the nut, so the dots can be counted, to a fret past the furthest answer.
+  range: { from: 0, to: 18 },
+  steps: [repeatStep({ string: 6, fret: 3 }), markerStep(9, 2), repeatStep({ string: 4, fret: 5 })],
 };
 
 export default example;

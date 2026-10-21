@@ -10,7 +10,7 @@ import steps, { halfWholeStep } from './f1-steps';
 import string5 from './f2-string5';
 import markers, { markerStep, repeatStep } from './f3-markers';
 import { exampleFor } from './index';
-import { stepRange } from './logic';
+import { START, exampleMarkers, stepRange } from './logic';
 import { WorkedExample } from './WorkedExample';
 
 vi.mock('../../audio/audio', () => ({ playNotes: vi.fn(() => Promise.resolve()) }));
@@ -38,14 +38,20 @@ describe('worked-example registry: neck basics', () => {
     });
   });
 
-  it('gives each example one trap, and a fresh string or note at every stage', () => {
+  it('works the trap first, then brings it back unaided, on fresh cells', () => {
     for (const e of [alphabet, steps, string5, markers]) {
+      const [worked, , independent] = e.steps;
+      // Worked: the misconception is drawn as a ghost (rule 8, as in c5-root-first).
+      expect(worked.trap, e.id).toBeDefined();
       expect(
-        e.steps.filter((s) => s.trap),
+        exampleMarkers(e, START).filter((m) => m.style === 'ghost'),
         e.id,
-      ).toHaveLength(1);
-      // The trap is met unaided, on the last stage.
-      expect(e.steps[2].trap, e.id).toBeDefined();
+      ).toEqual([expect.objectContaining(worked.trap!.at)]);
+      // Independent: the same misconception, met unaided on another string or note.
+      expect(independent.trap, e.id).toBeDefined();
+      expect(`${independent.answer.string}:${noteAt(independent.answer).pc}`, e.id).not.toBe(
+        `${worked.answer.string}:${noteAt(worked.answer).pc}`,
+      );
     }
   });
 });
@@ -203,21 +209,32 @@ describe('markerStep and repeatStep', () => {
 });
 
 describe('neck-basics examples', () => {
-  it('shows string 5 from the nut, landmarks first, then a step off the third', () => {
+  it('shows string 5 from the nut, stepping off the third and first markers', () => {
     expect(string5.steps.map((s) => s.answer)).toEqual([
-      { string: 5, fret: 3 },
-      { string: 5, fret: 5 },
       { string: 5, fret: 8 },
+      { string: 5, fret: 5 },
+      { string: 5, fret: 2 },
     ]);
-    expect(string5.steps[2].prompt).toBe('Find F on string 5, from E at the third marker.');
-    expect(string5.steps[2].trap).toMatchObject({ at: { string: 5, fret: 9 }, name: 'F#' });
+    expect(string5.steps[0].prompt).toBe('Find F on string 5, from E at the third marker.');
+    expect(string5.steps[0].trap).toMatchObject({ at: { string: 5, fret: 9 }, name: 'F#' });
+    expect(string5.steps[1].given).toEqual([]);
+    expect(string5.steps[2].prompt).toBe('Find B on string 5, from C at the first marker.');
+    expect(string5.steps[2].trap).toMatchObject({ at: { string: 5, fret: 1 }, name: 'Bb' });
     const windows = string5.steps.map((s) => stepRange(s, string5.range));
     expect(new Set(windows.map((w) => `${w.from}-${w.to}`))).toEqual(new Set(['0-9']));
   });
 
-  it('keeps the F3 window from the nut to the first dot past 12', () => {
-    expect(markers.range).toEqual({ from: 0, to: 15 });
-    expect(markers.steps.map((s) => s.answer.fret)).toEqual([7, 12, 15]);
+  it('keeps the F3 window from the nut to a fret past the furthest answer', () => {
+    const furthest = Math.max(...markers.steps.map((s) => s.answer.fret));
+    expect(markers.steps.map((s) => s.answer)).toEqual([
+      { string: 6, fret: 15 },
+      { string: 2, fret: 9 },
+      { string: 4, fret: 17 },
+    ]);
+    expect(markers.range!.from).toBe(0);
+    expect(markers.range!.to - furthest).toBeGreaterThanOrEqual(1);
+    // The double dot is the trap on both repeats.
+    expect(markers.steps.map((s) => s.trap?.at.fret)).toEqual([12, undefined, 12]);
   });
 
   it('anchors the F1 windows on the given note, so they never point at the answer', () => {
@@ -241,36 +258,54 @@ describe('<WorkedExample> with the neck-basics examples', () => {
     );
   const next = () => fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
-  it('walks half and whole steps, then calls out E–F', () => {
+  it('works a whole step past E–F, then calls out B–C unaided', () => {
     render(<WorkedExample example={steps} />);
     expect(screen.getByTestId('example-prompt')).toHaveTextContent(
-      'Find a half step above C on string 5.',
+      'Find a whole step above E on string 6.',
     );
-    expect(screen.getByTestId('marker-target')).toHaveAttribute('data-fret', '4');
+    // Worked: the answer highlighted, the half-step F as a ghost.
+    expect(screen.getByTestId('marker-target')).toHaveAttribute('data-fret', '2');
+    expect(screen.getByTestId('marker-ghost')).toHaveAttribute('data-fret', '1');
+    tap(6, 2);
+    expect(playNotes).toHaveBeenCalledWith(['E2', 'F#2'], { muted: false, volume: 0.8 });
+    next();
+
+    expect(screen.getByTestId('example-hint')).toHaveTextContent('Hint: One fret up.');
     tap(5, 4);
-    expect(playNotes).toHaveBeenCalledWith(['C3', 'C#3'], { muted: false, volume: 0.8 });
+    expect(screen.getByTestId('example-correct')).toHaveTextContent('A half step is one fret');
     next();
 
-    expect(screen.getByTestId('example-hint')).toHaveTextContent('Hint: Two frets down.');
-    tap(4, 5);
-    expect(screen.getByTestId('example-correct')).toHaveTextContent('A whole step is two frets');
-    next();
-
-    tap(6, 1);
-    expect(screen.getByTestId('example-wrong')).toHaveTextContent('✗ That’s F.');
-    expect(screen.getByTestId('example-trap')).toHaveTextContent('E–F has no sharp between them');
+    tap(3, 4);
+    expect(screen.getByTestId('example-wrong')).toHaveTextContent('✗ That’s B.');
+    expect(screen.getByTestId('example-trap')).toHaveTextContent('B–C has no sharp between them');
     expect(screen.getByTestId('example-done')).toBeInTheDocument();
   });
 
-  it('repeats a note past the double dot, and calls out fret 12', () => {
+  it('works a repeat past the double dot, then calls out fret 12 unaided', () => {
     render(<WorkedExample example={markers} />);
-    tap(6, 7);
+    expect(screen.getByTestId('marker-ghost')).toHaveAttribute('data-fret', '12');
+    tap(6, 15);
+    expect(playNotes).toHaveBeenLastCalledWith(['G2', 'G3'], { muted: false, volume: 0.8 });
     next();
-    expect(screen.getByTestId('example-hint')).toHaveTextContent('Hint: The double dot.');
+    expect(screen.getByTestId('example-hint')).toHaveTextContent(
+      'Hint: The fourth dot from the nut.',
+    );
+    tap(2, 9);
+    next();
     tap(4, 12);
-    expect(playNotes).toHaveBeenLastCalledWith(['D3', 'D4'], { muted: false, volume: 0.8 });
-    next();
-    tap(6, 12);
     expect(screen.getByTestId('example-trap')).toHaveTextContent('the open string’s octave');
+    expect(screen.getByTestId('example-trap')).toHaveTextContent('at fret 17');
+  });
+
+  it('works the alphabet from B–C and string 5 from E–F, each with its ghost', () => {
+    const { unmount } = render(<WorkedExample example={alphabet} />);
+    expect(screen.getByTestId('example-prompt')).toHaveTextContent(
+      'Find the letter after B on string 5.',
+    );
+    expect(screen.getByTestId('marker-ghost')).toHaveAttribute('data-fret', '4');
+    unmount();
+    render(<WorkedExample example={string5} />);
+    expect(screen.getByTestId('marker-target')).toHaveAttribute('data-fret', '8');
+    expect(screen.getByTestId('marker-ghost')).toHaveAttribute('data-fret', '9');
   });
 });

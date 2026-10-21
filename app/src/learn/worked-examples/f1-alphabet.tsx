@@ -74,9 +74,9 @@ export function letterStep(from: Position, dir: 1 | -1): ExampleStep {
 }
 
 /**
- * F1: the musical alphabet and its two half-step pairs, on one string. The
- * stages wrap forwards, wrap backwards, then meet B–C unaided (rule 12: a new
- * string each time).
+ * F1: the musical alphabet and its two half-step pairs, on one string. B–C is
+ * worked with its two-frets ghost, the faded stage wraps G to A, and E–F
+ * comes back unaided (rule 12: a new string each time).
  */
 const example: WorkedExample = {
   id: 'f1-alphabet',
@@ -84,9 +84,9 @@ const example: WorkedExample = {
   title: 'The musical alphabet',
   idea: 'Seven letters, A to G, then A again. Neighbours are two frets apart, except B–C and E–F: one fret, with no sharp between.',
   steps: [
-    letterStep({ string: 6, fret: 3 }, 1),
-    letterStep({ string: 3, fret: 2 }, -1),
     letterStep({ string: 5, fret: 2 }, 1),
+    letterStep({ string: 6, fret: 3 }, 1),
+    letterStep({ string: 4, fret: 2 }, 1),
   ],
 };
 

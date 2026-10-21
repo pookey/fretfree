@@ -50,8 +50,9 @@ export function halfWholeStep(from: Position, semitones: 1 | 2 | -1 | -2): Examp
 }
 
 /**
- * F1: half and whole steps as frets. A half step up, a whole step down, then
- * a whole step up from E unaided, where E–F's missing sharp is the trap.
+ * F1: half and whole steps as frets. A whole step up from E is worked, with
+ * E–F's missing sharp as the ghost; a half step up is faded; a whole step
+ * down from C meets B–C's unaided.
  */
 const example: WorkedExample = {
   id: 'f1-steps',
@@ -59,9 +60,9 @@ const example: WorkedExample = {
   title: 'Half and whole steps',
   idea: 'One fret is a half step; two frets are a whole step. A sharp raises a note a half step, a flat lowers it one.',
   steps: [
-    halfWholeStep({ string: 5, fret: 3 }, 1),
-    halfWholeStep({ string: 4, fret: 7 }, -2),
     halfWholeStep({ string: 6, fret: 0 }, 2),
+    halfWholeStep({ string: 5, fret: 3 }, 1),
+    halfWholeStep({ string: 3, fret: 5 }, -2),
   ],
 };
 
