@@ -76,7 +76,11 @@ describe('<D16View>', () => {
     view(prompt(findItemId('A', 6)));
     expect(screen.getByTestId('d16-prompt')).toHaveTextContent('Play A on string 6');
     expect(screen.getByTestId('d16-explain')).toHaveTextContent(/^Frets 0–12\./);
-    expect(screen.getByText(/listens through the microphone and records nothing/)).toBeVisible();
+    expect(
+      screen.getByText(
+        'Play it on your guitar. FretFree listens through the mic; nothing is recorded or sent.',
+      ),
+    ).toBeVisible();
     expect(mic.startCalls).toBe(0);
     await startListening();
     expect(mic.startCalls).toBe(1);
@@ -179,7 +183,9 @@ describe('<D16View>', () => {
     view(prompt(findItemId('A', 6)));
     mic.failNextStart('denied');
     await startListening();
-    expect(screen.getByRole('alert')).toHaveTextContent(/microphone access was blocked/);
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "FretFree can't use the mic. Allow the microphone for this site in your browser's settings, then try again.",
+    );
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     });
@@ -204,7 +210,9 @@ describe('<D16View>', () => {
     view(prompt(findItemId('A', 6)));
     mic.failNextStart('unsupported');
     await startListening();
-    expect(screen.getByRole('alert')).toHaveTextContent("This browser can't listen for notes.");
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "This browser can't listen to your guitar. Try Safari on iPad, or Chrome.",
+    );
     expect(screen.queryByRole('button')).toBeNull();
   });
 
@@ -230,6 +238,18 @@ describe('<D16View>', () => {
     );
     expect(screen.getByTestId('marker-correct')).toHaveAttribute('data-fret', '5');
     expect(screen.getByTestId('marker-wrong')).toHaveAttribute('data-fret', '7');
+  });
+
+  it('names sharps with ♯ in the prompt, markers and feedback', () => {
+    const p = prompt(findItemId('F#', 6));
+    const { rerender, props } = view(p);
+    expect(screen.getByTestId('d16-prompt')).toHaveTextContent('Play F♯ on string 6');
+    rerender(<D16View {...props} feedback={fb(p, 43, 'G2')} />);
+    expect(screen.getByTestId('d16-explain')).toHaveTextContent(
+      'You played G2. F♯ is at fret 2 on string 6.',
+    );
+    expect(screen.getByTestId('marker-correct')).toHaveTextContent('F♯');
+    expect(screen.queryByText(/#/)).toBeNull();
   });
 
   it("draws an octave shape's dot and asks for its octave", () => {

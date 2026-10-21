@@ -17,6 +17,7 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { D16_SCOPES, type D16Mode } from './meta';
 
@@ -127,16 +128,21 @@ export function d16MakePrompt(item: Item, ctx: DrillContext): D16Prompt {
   throw new Error(`D16 cannot test item ${item.id}`);
 }
 
+/**
+ * `expected` is what the feedback bar prints (`That was F♯.`); the confusion
+ * matrix keeps the ASCII pitch class as its concept.
+ */
 export function d16Check(prompt: D16Prompt, answer: D16Answer): DrillCheck {
+  const base = { expected: displayPc(prompt.pc), concept: prompt.pc };
   const mode = d16MatchMode(prompt.mode);
   if (prompt.midis.some((m) => pitchMatches(answer.midi, m, mode))) {
-    return { correct: true, expected: prompt.pc };
+    return { correct: true, ...base };
   }
   const played = chromaToPc(answer.midi, prompt.accidentalPref);
   // An octave shape's concept is the shape; the wrong octave is no note confusion.
   return prompt.source === null && chromaOf(played) !== chromaOf(prompt.pc)
-    ? { correct: false, expected: prompt.pc, confusedWith: played }
-    : { correct: false, expected: prompt.pc };
+    ? { correct: false, ...base, confusedWith: played }
+    : { correct: false, ...base };
 }
 
 export function d16DescribeAnswer(answer: D16Answer): string {
@@ -220,23 +226,22 @@ function fretList(frets: readonly number[]): string {
 /** One line of feedback: where the note is, and what was heard when that differs. */
 export function d16Explain(prompt: D16Prompt, fb: DrillFeedback<D16Answer>): string {
   const frets = fretList(prompt.targets.map((t) => t.fret));
+  const pc = displayPc(prompt.pc);
   const where =
     prompt.source === null
-      ? `${prompt.pc} is at ${frets} on string ${prompt.string}.`
-      : `The octave of ${prompt.pc} on string ${prompt.source.string}, fret ${prompt.source.fret} is at ${frets} on string ${prompt.string}.`;
-  const heard = `You played ${nameOf(prompt, fb.answer.midi)}.`;
+      ? `${pc} is at ${frets} on string ${prompt.string}.`
+      : `The octave of ${pc} on string ${prompt.source.string}, fret ${prompt.source.fret} is at ${frets} on string ${prompt.string}.`;
+  const heard = `You played ${displayPc(nameOf(prompt, fb.answer.midi))}.`;
   if (!fb.result.correct) return `${heard} ${where}`;
   // Pitch-class mode took another octave: say where the asked-for one is.
-  return prompt.midis.includes(fb.answer.midi)
-    ? where
-    : `${heard} Any ${prompt.pc} counts. ${where}`;
+  return prompt.midis.includes(fb.answer.midi) ? where : `${heard} Any ${pc} counts. ${where}`;
 }
 
 /** What the mode lets count, said once under the prompt. */
 export function d16ModeHint(prompt: D16Prompt): string {
   switch (prompt.mode) {
     case 'pitch-class':
-      return `Any ${prompt.pc} counts, in any octave.`;
+      return `Any ${displayPc(prompt.pc)} counts, in any octave.`;
     case 'region':
       return `Frets ${prompt.activeRange.from}–${prompt.activeRange.to}. The mic hears the pitch, so the same note on another string counts too.`;
     case 'any-position':

@@ -142,7 +142,7 @@ test.describe('D16 "Play the note"', () => {
 
     await failNextStart(page, 'denied');
     await page.getByRole('button', { name: 'Start listening' }).click();
-    await expect(page.getByRole('alert')).toContainText('microphone access was blocked');
+    await expect(page.getByRole('alert')).toContainText("FretFree can't use the mic");
     await page.getByRole('button', { name: 'Try again' }).click();
     await expect(page.getByTestId('d16-mic')).toHaveAttribute('data-state', 'running');
   });

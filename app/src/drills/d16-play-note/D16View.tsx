@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import { getPitchSource } from '../../mic/source';
-import type {
-  PitchSource,
-  PitchSourceError,
-  PitchSourceErrorReason,
-  PitchSourceState,
-} from '../../mic/types';
+import type { PitchSource, PitchSourceError, PitchSourceState } from '../../mic/types';
 import { midiToFretNote, noteAt, type FretRange, type Position } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillFeedback, DrillRenderProps } from '../types';
+import { MIC_COPY, MIC_PROBLEM } from '../d17-play-sequence/mic-copy';
 import { createD16Listener } from './listen';
 import {
   d16Explain,
@@ -26,15 +23,6 @@ import styles from './D16View.module.css';
 const REGION: FretRange = { from: 0, to: 12 };
 const COMPACT_FRETS = 5;
 
-/** What to say when the mic can't start, by reason (design §9). */
-const ERRORS: Record<PitchSourceErrorReason, string> = {
-  denied:
-    "FretFree can't hear you: microphone access was blocked. Allow it for this site in your browser's settings, then try again.",
-  'no-device': 'No microphone was found. Connect one, then try again.',
-  unsupported: "This browser can't listen for notes.",
-  failed: "The microphone didn't start. Try again.",
-  lost: 'The mic stopped: it was unplugged, another app took it, or FretFree went to the background. Try again.',
-};
 
 interface Live {
   prompt: D16Prompt;
@@ -161,8 +149,9 @@ export function D16View({
   const compact = sizeClass === 'compact';
   const mic = useMicAnswer(prompt, feedback, onAnswer);
 
-  const pcAt = (p: Position) => noteAt(p, tuning, prompt.accidentalPref).pc;
-  const mark = (p: Position, style: FretMarker['style'], label = prompt.pc): FretMarker => ({
+  const name = displayPc(prompt.pc);
+  const pcAt = (p: Position) => displayPc(noteAt(p, tuning, prompt.accidentalPref).pc);
+  const mark = (p: Position, style: FretMarker['style'], label = name): FretMarker => ({
     ...p,
     style,
     label,
@@ -185,7 +174,7 @@ export function D16View({
       })
     : REGION;
 
-  const pc = <strong>{prompt.pc}</strong>;
+  const pc = <strong>{name}</strong>;
   const first = prompt.targets[0];
   let question;
   if (prompt.source) {
@@ -225,7 +214,9 @@ export function D16View({
           {!feedback && (
             <MicPanel
               {...mic}
-              ringing={mic.ringing && midiToFretNote(mic.ringing.midi, prompt.accidentalPref).pc}
+              ringing={
+                mic.ringing && displayPc(midiToFretNote(mic.ringing.midi, prompt.accidentalPref).pc)
+              }
             />
           )}
         </div>
@@ -244,7 +235,7 @@ export function D16View({
           })}
           blindMode={blindMode}
           accidentalPref={prompt.accidentalPref}
-          label={`Fretboard: play ${prompt.pc} on string ${prompt.string}`}
+          label={`Fretboard: play ${name} on string ${prompt.string}`}
         />
       </div>
       {compact && (
@@ -271,14 +262,14 @@ function MicPanel({ state, error, ringing, start }: MicPanelProps) {
     return (
       <p className={styles.listening} role="status" data-testid="d16-mic" data-state={state}>
         <span className={styles.pulse} aria-hidden="true" />
-        {ringing ? `Still hearing ${ringing}. Mute the strings, then play.` : 'Listening…'}
+        {ringing ? `Still hearing ${ringing}. Mute the strings, then play.` : MIC_COPY.listening}
       </p>
     );
   }
   if (state === 'starting') {
     return (
       <p className={styles.status} role="status" data-testid="d16-mic" data-state={state}>
-        Starting the microphone…
+        {MIC_COPY.starting}
       </p>
     );
   }
@@ -287,16 +278,14 @@ function MicPanel({ state, error, ringing, start }: MicPanelProps) {
     <div className={styles.micPanel} data-testid="d16-mic" data-state={state}>
       {reason ? (
         <p className={styles.error} role="alert">
-          {ERRORS[reason]}
+          {MIC_PROBLEM[reason]}
         </p>
       ) : (
-        <p className={styles.status}>
-          Play on your guitar. FretFree listens through the microphone and records nothing.
-        </p>
+        <p className={styles.status}>{MIC_COPY.idle}</p>
       )}
       {reason !== 'unsupported' && (
         <button type="button" className={styles.primary} onClick={start}>
-          {reason ? 'Try again' : 'Start listening'}
+          {reason ? MIC_COPY.retry : MIC_COPY.start}
         </button>
       )}
     </div>

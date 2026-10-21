@@ -125,7 +125,7 @@ describe('d16CanTest / d16MakePrompt', () => {
 describe('d16Check', () => {
   it('pitch-class mode takes any octave of the note', () => {
     const p = prompt(findItemId('A', 6), 0);
-    expect(d16Check(p, A2)).toEqual({ correct: true, expected: 'A' });
+    expect(d16Check(p, A2)).toEqual({ correct: true, expected: 'A', concept: 'A' });
     expect(d16Check(p, A3).correct).toBe(true);
     expect(d16Check(p, played(81, 'A5')).correct).toBe(true);
   });
@@ -133,7 +133,7 @@ describe('d16Check', () => {
   it('region mode takes only the pitch on the named string', () => {
     const p = prompt(findItemId('A', 6), 1);
     expect(d16Check(p, A2).correct).toBe(true);
-    expect(d16Check(p, A3)).toEqual({ correct: false, expected: 'A' });
+    expect(d16Check(p, A3)).toEqual({ correct: false, expected: 'A', concept: 'A' });
     const e = prompt(findItemId('E', 6), 1);
     expect(d16Check(e, played(40, 'E2')).correct).toBe(true);
     expect(d16Check(e, played(52, 'E3')).correct).toBe(true);
@@ -142,16 +142,32 @@ describe('d16Check', () => {
 
   it('logs a wrong note as a confusion of the two notes', () => {
     const p = prompt(findItemId('A', 6), 1);
-    expect(d16Check(p, B2)).toEqual({ correct: false, expected: 'A', confusedWith: 'B' });
+    expect(d16Check(p, B2)).toEqual({
+      correct: false,
+      expected: 'A',
+      concept: 'A',
+      confusedWith: 'B',
+    });
     const flat = prompt(findItemId('A', 6), 1, { accidentalPref: 'flat' });
     expect(d16Check(flat, played(46, 'A#2')).confusedWith).toBe('Bb');
+  });
+
+  it('shows the expected note with ♯/♭ and keeps the ASCII concept', () => {
+    const p = prompt(findItemId('F#', 6), 1);
+    expect(d16Check(p, played(42, 'F#2'))).toEqual({
+      correct: true,
+      expected: 'F♯',
+      concept: 'F#',
+    });
+    const flat = prompt(findItemId('A#', 6), 1, { accidentalPref: 'flat' });
+    expect(d16Check(flat, A2)).toMatchObject({ expected: 'B♭', concept: 'Bb' });
   });
 
   it('any-position mode takes only the octave, and logs no note confusion', () => {
     const p = prompt(octaveItemId({ string: 6, fret: 5 }, 4));
     expect(d16Check(p, A3).correct).toBe(true);
-    expect(d16Check(p, A2)).toEqual({ correct: false, expected: 'A' });
-    expect(d16Check(p, played(59, 'B3'))).toEqual({ correct: false, expected: 'A' });
+    expect(d16Check(p, A2)).toEqual({ correct: false, expected: 'A', concept: 'A' });
+    expect(d16Check(p, played(59, 'B3'))).toEqual({ correct: false, expected: 'A', concept: 'A' });
   });
 });
 
@@ -211,6 +227,10 @@ describe('d16FeedbackPositions / d16Explain', () => {
     );
     const e = prompt(findItemId('E', 6), 1);
     expect(d16Explain(e, fb(e, played(40, 'E2')))).toBe('E is at frets 0 and 12 on string 6.');
+    const fs = prompt(findItemId('F#', 6), 1);
+    expect(d16Explain(fs, fb(fs, played(46, 'A#2')))).toBe(
+      'You played A♯2. F♯ is at fret 2 on string 6.',
+    );
     const oct = prompt(octaveItemId({ string: 6, fret: 5 }, 4));
     expect(d16Explain(oct, fb(oct, A2))).toBe(
       'You played A2. The octave of A on string 6, fret 5 is at fret 7 on string 4.',
@@ -219,6 +239,7 @@ describe('d16FeedbackPositions / d16Explain', () => {
 
   it('says what each mode lets count', () => {
     expect(d16ModeHint(prompt(findItemId('A', 6), 0))).toBe('Any A counts, in any octave.');
+    expect(d16ModeHint(prompt(findItemId('C#', 5), 0))).toBe('Any C♯ counts, in any octave.');
     expect(d16ModeHint(prompt(findItemId('A', 6), 1))).toMatch(/^Frets 0–12\. The mic hears/);
     expect(d16ModeHint(prompt(octaveItemId({ string: 6, fret: 5 }, 4)))).toMatch(
       /same note on another string counts/,
