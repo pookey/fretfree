@@ -24,6 +24,21 @@ export function masteryAchievement(
   };
 }
 
+/** "String N master": every natural on a C2 string mastered (M10-12). */
+export function stringMasterAchievement(
+  string: number,
+  name: string,
+  order: number,
+): AchievementDefinition {
+  return masteryAchievement({
+    id: `string-${string}-master`,
+    title: `String ${string} master`,
+    description: `You know every natural note on the ${name} string, frets 0–12.`,
+    order,
+    skillId: `C2.string${string}-naturals`,
+  });
+}
+
 /**
  * A streak milestone badge (7, 30, 100, 365 days). It goes by the longest
  * streak, so a later break never takes it back, and the streak only counts

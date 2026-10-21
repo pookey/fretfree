@@ -56,21 +56,29 @@ export function parseExport(json: string): ExportFile {
   return file as ExportFile;
 }
 
+type Tables = ExportFile['tables'];
+
+/**
+ * The schema versions that moved rows to new skills, each with its frozen
+ * restage, in version order: v3 staged D8's chord tones (M3-17), v4 C8's
+ * harmony by key (M10-02), and v5 C2's notes by string (M10-12). Loaded on
+ * demand, as the upgrades are.
+ */
+const RESTAGES: readonly [number, () => Promise<{ restageTables: (t: Tables) => Tables }>][] = [
+  [3, () => import('./migrations/c5-tone-stages')],
+  [4, () => import('./migrations/c8-stages')],
+  [5, () => import('./migrations/c2-strings')],
+];
+
 /**
  * Replace all local data with the export's contents. Older exports are
  * written into the current schema; Dexie migrations only run on open, so
  * future versions that change row shapes must transform rows here.
  */
 export async function importData(db: FretworkDB, file: ExportFile): Promise<void> {
-  // v3 staged D8's chord tones (M3-17), v4 C8's harmony by key (M10-02),
-  // and v5 C2's notes by string (M10-12).
   let tables = file.tables;
-  if (file.schemaVersion < 3)
-    tables = (await import('./migrations/c5-tone-stages')).restageTables(tables);
-  if (file.schemaVersion < 4)
-    tables = (await import('./migrations/c8-stages')).restageTables(tables);
-  if (file.schemaVersion < 5)
-    tables = (await import('./migrations/c2-strings')).restageTables(tables);
+  for (const [version, load] of RESTAGES)
+    if (file.schemaVersion < version) tables = (await load()).restageTables(tables);
   await db.transaction('rw', db.tables, async () => {
     for (const name of TABLE_NAMES) {
       const table = db.table(name);

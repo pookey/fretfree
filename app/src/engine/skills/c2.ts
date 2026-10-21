@@ -1,6 +1,6 @@
 import { NATURAL_PCS, chromaToPc, noteAt } from '../../theory';
 import { findItemId, type Item, type Skill } from '../model';
-import { FRETS_0_12, itemsOf, memo, naturalsOnString, noteItems } from './helpers';
+import { FRETS_0_12, itemsOf, memo, noteItems } from './helpers';
 
 /**
  * C2: all notes on all strings, including accidentals (research/03), in both
@@ -34,107 +34,73 @@ import { FRETS_0_12, itemsOf, memo, naturalsOnString, noteItems } from './helper
 // D16 (play-the-note) finds the note on a real guitar, in mic mode only.
 const DRILLS = ['name-the-note', 'find-the-note', 'play-the-note', 'hear-it-find-it'];
 
-const ACCIDENTAL_PCS = Array.from({ length: 12 }, (_, c) => chromaToPc(c)).filter(
-  (pc) => !NATURAL_PCS.includes(pc),
-);
+const PCS = Array.from({ length: 12 }, (_, c) => chromaToPc(c));
 
-/** Name each natural on the string, and find each on it (as F2). */
-function naturals(skillId: string, string: number) {
-  return [
-    ...noteItems(skillId, naturalsOnString(string)),
-    ...itemsOf(
-      skillId,
-      NATURAL_PCS.map((pc) => findItemId(pc, string)),
-    ),
-  ];
-}
-
-/** Name each sharp or flat on the strings, and find each, a string at a time. */
-function accidentals(skillId: string, strings: readonly number[]) {
+/**
+ * Name each natural (or each sharp or flat) on the strings, and find each
+ * on them, a string at a time: the notes up the string, then the finds.
+ */
+function stringItems(skillId: string, strings: readonly number[], natural: boolean): Item[] {
+  const keep = (pc: string) => NATURAL_PCS.includes(pc) === natural;
   return strings.flatMap((string) => [
     ...noteItems(
       skillId,
-      FRETS_0_12.map((fret) => ({ string, fret })).filter(
-        (p) => !NATURAL_PCS.includes(noteAt(p).pc),
-      ),
+      FRETS_0_12.map((fret) => ({ string, fret })).filter((p) => keep(noteAt(p).pc)),
     ),
     ...itemsOf(
       skillId,
-      ACCIDENTAL_PCS.map((pc) => findItemId(pc, string)),
+      PCS.filter(keep).map((pc) => findItemId(pc, string)),
     ),
   ]);
 }
 
 interface Stage {
   id: string;
-  title: string;
-  prerequisites: readonly string[];
+  strings: readonly number[];
+  /** The sharps and flats; a naturals stage is titled by its string. */
+  title?: string;
   softPrerequisites?: readonly string[];
-  skipPlacement?: boolean;
-  items: (skillId: string) => Item[];
+  /** Probed in placement (above); the other stages skip it. */
+  probe?: boolean;
 }
 
 // Skill IDs are literals: e2e/helpers/skills.ts reads them from the source.
+// Each stage needs the one before practising; the first, F2's strings.
 const STAGES: readonly Stage[] = [
-  {
-    id: 'C2.string1-naturals',
-    title: 'Natural notes on string 1',
-    prerequisites: ['F2.string6-naturals', 'F2.string5-naturals'],
-    skipPlacement: true,
-    items: (id) => naturals(id, 1),
-  },
-  {
-    id: 'C2.string4-naturals',
-    title: 'Natural notes on string 4',
-    prerequisites: ['C2.string1-naturals'],
-    // Reached from string 6 by the octave shape two strings up.
-    softPrerequisites: ['C1.octaves'],
-    skipPlacement: true,
-    items: (id) => naturals(id, 4),
-  },
-  {
-    id: 'C2.string3-naturals',
-    title: 'Natural notes on string 3',
-    prerequisites: ['C2.string4-naturals'],
-    skipPlacement: true,
-    items: (id) => naturals(id, 3),
-  },
+  { id: 'C2.string1-naturals', strings: [1] },
+  // Reached from string 6 by the octave shape two strings up.
+  { id: 'C2.string4-naturals', strings: [4], softPrerequisites: ['C1.octaves'] },
+  { id: 'C2.string3-naturals', strings: [3] },
+  // Reached from string 4 by the octave shape across the G–B shift.
   {
     id: 'C2.string2-naturals',
-    title: 'Natural notes on string 2',
-    prerequisites: ['C2.string3-naturals'],
-    // Reached from string 4 by the octave shape across the G–B shift.
+    strings: [2],
     softPrerequisites: ['C1.octaves-gb-shift'],
-    items: (id) => naturals(id, 2),
+    probe: true,
   },
+  { id: 'C2.low-accidentals', strings: [6, 5], title: 'Sharps and flats on strings 6 and 5' },
+  // The ID predates the stages: drills, fixtures and saved progress name it.
   {
-    id: 'C2.low-accidentals',
-    title: 'Sharps and flats on strings 6 and 5',
-    prerequisites: ['C2.string2-naturals'],
-    skipPlacement: true,
-    items: (id) => accidentals(id, [6, 5]),
-  },
-  {
-    // The ID predates the stages: drills, fixtures and saved progress name it.
     id: 'C2.all-notes',
+    strings: [1, 4, 3, 2],
     title: 'Sharps and flats on strings 4 to 1',
-    prerequisites: ['C2.low-accidentals'],
-    items: (id) => accidentals(id, [1, 4, 3, 2]),
+    probe: true,
   },
 ];
+
+export const C2_STAGE_IDS: readonly string[] = STAGES.map((s) => s.id);
 
 export const skills: Skill[] = STAGES.map((s, i) => ({
   id: s.id,
   topic: 'C2',
   order: 1200 + i * 10,
-  title: s.title,
-  prerequisites: s.prerequisites,
+  title: s.title ?? `Natural notes on string ${s.strings[0]}`,
+  prerequisites: i
+    ? [C2_STAGE_IDS[i - 1] as string]
+    : ['F2.string6-naturals', 'F2.string5-naturals'],
   softUnlock: true,
   ...(s.softPrerequisites ? { softPrerequisites: s.softPrerequisites } : {}),
-  ...(s.skipPlacement ? { skipPlacement: true } : {}),
+  ...(s.probe ? {} : { skipPlacement: true }),
   drillTypes: DRILLS,
-  items: memo(() => s.items(s.id)),
+  items: memo(() => stringItems(s.id, s.strings, !s.title)),
 }));
-
-/** The C2 stages in teaching order: "Whole neck" needs every one mastered. */
-export const C2_STAGE_IDS: readonly string[] = STAGES.map((s) => s.id);
