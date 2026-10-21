@@ -1,0 +1,14 @@
+.wheel {
+  max-width: 12rem;
+  margin: 0 auto;
+}
+
+/* A 13-fret window can be wider than a phone: scroll it, never the page. */
+.neck {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.fretboard {
+  min-width: 28rem;
+}
