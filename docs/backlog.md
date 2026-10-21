@@ -1128,6 +1128,51 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Deps:** M6-01, M6-02, M6-03, M6-04, M6-05, M6-06, M6-07, M6-08, M6-09
 - **Owns:** `docs/progress.md`
 
+### M6-11 · Degree shapes and labelled targets in guided prompts and worked examples
+- **Status:** todo
+- **Priority:** high (M6 QA findings 1 and 2: design §8 "shape as well as colour")
+- **Deps:** M6-10
+- **Design:** §8 markers; research/02 rules 8 and 10; `docs/progress.md` "M6 definition of done" findings 1 and 2
+- **Owns:** `app/src/drills/d8-chord-tone/**`, `app/src/drills/d18-inversions/**`, `app/src/drills/d19-voice-leading/**`, `app/src/drills/d-pentatonic-box/**`, `app/e2e/m6-11.spec.ts`
+- **Acceptance:**
+  - D8's guided prompt markers use each tone's degree shape (`d8DegreeStyle`), matching the context panel's legend; degrees and letter names are never mixed on one neck.
+  - The `target` treatment (ring, emphasis) is added on top of the degree shape, never instead of it: D18's 5th is a triangle before it's tapped, I7 (`ScaleView.tsx`) draws 3rds and 5ths with their shapes as C7 does, D19's root is the root square.
+  - Every worked-example target carries a label: C7's box targets (`BoxView.tsx:109`), the relative-minor "Tap each F" targets (labelled F), D19's targets (`D19View.tsx:133`). The prompt says how many to tap, and the count matches.
+  - I7's worked-example hint names the notes to tap (the ringed 4ths and 7ths), not "the dots are major box 1".
+  - Unit tests on each view's marker builder (shape per degree, label on every target); an e2e check on one worked example per drill.
+
+### M6-12 · D20 grid: equal beat cells, Start under the prompt, readable late marks
+- **Status:** todo
+- **Deps:** M6-10
+- **Design:** §6 D20; `docs/progress.md` "M6 definition of done" finding 3
+- **Owns:** `app/src/drills/d20-rhythm/**`, `app/e2e/m6-12.spec.ts`
+- **Acceptance:**
+  - Every grid cell is the same size; beat grouping is shown without shrinking boxes (box size reads as accent in a rhythm drill).
+  - Start sits under the prompt column and is above the fold on a sideways phone.
+  - Feedback marks where the click was and shows early/late with a glyph that doesn't read as a play button.
+
+### M6-13 · D21 becomes optional mental practice, with clearer feedback
+- **Status:** todo
+- **Priority:** high (research/02 rule 14)
+- **Deps:** M6-10
+- **Design:** §6 D21; research/02 rules 12 and 14; `docs/progress.md` "M6 definition of done" "For the PM" and finding 6
+- **Owns:** `app/src/drills/d21-visualise/**`, `app/src/drills/types.ts` `mental`, `app/src/session/drill-picker.ts`, `app/src/screens/settings/SettingsGroups.tsx`, `app/src/screens/settings/SettingsGroups.test.tsx`, `app/e2e/m6-13.spec.ts`
+- **Acceptance:**
+  - PM decision (2026-10-21, rule 14): a "Mental practice" setting, on by default (D21 adds a context for the same fact, rule 12), that the learner can switch off. Drill meta gets a `mental` flag, read in `drill-picker.ts` the way `requiresMic` and `requiresSound` are. With it off, D21 never takes a turn and nothing gates on it.
+  - D21's feedback draws the missed root as the root square at full strength, found roots turn green as in the pentatonic-box drill, and the explanation names the note ("You tapped G♯") instead of a string and fret the blank neck doesn't show. Flat keys spell with flats (B♭, not A♯).
+  - Unit tests for the picker with the setting on and off; e2e: switch it off, and a C6 whole-shape session never serves D21.
+
+### M6-14 · M6 drill polish: D18 portrait window, function-drill repeats, small layout points
+- **Status:** todo
+- **Deps:** M6-10
+- **Design:** `docs/progress.md` "M6 definition of done" findings 4, 5 and 9
+- **Owns:** `app/src/drills/d-function/**`, `app/src/screens/progress/ProgressScreen.tsx`, `app/e2e/m6-14.spec.ts`
+- **After:** M6-11
+- **Acceptance:**
+  - D18 in iPad portrait shows 12 frets with the nut and string names, like the other portrait drills; the portrait neck drills (C7, D18, D19, D21) don't float in a tall empty band (finding 4). D18, D19 and pentatonic-box view CSS is M6-11's: do this after it ships and widen Owns then.
+  - The function drill doesn't repeat its guided fact in feedback, the prompt doesn't still say "Tap E to continue" after answering, and the I5 panel states the function roles once (finding 5). PM decision: the "IV in C major" cue line stays (the card tests numeral → function).
+  - Finding 9: no needless scroll on iPad landscape and mini for the relative-minor, I7 and D19 prompts; I7's open-string markers don't cover the nut names; Progress's achievement toast doesn't cover the h1, and fret ranges use a non-breaking dash.
+
 ---
 
 ## M7: Accounts and sync (deferred)
