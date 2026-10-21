@@ -10,6 +10,7 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 
 export { D1_ID, D1_SCOPE, d1CanTest, d1ConceptOf } from './meta';
@@ -23,6 +24,7 @@ export interface D1Prompt {
   expectedName: string;
   /** Answer buttons, in musical order. */
   choices: string[];
+  pref: AccidentalPref;
 }
 
 /** The answer is a pitch class, as typed or tapped. */
@@ -43,6 +45,7 @@ export function d1MakePrompt(item: Item, ctx: DrillContext): D1Prompt {
     expectedPc: note.pc,
     expectedName: note.name,
     choices: d1Choices(note.pc, ctx.scopeLevel, ctx.accidentalPref),
+    pref: ctx.accidentalPref,
   };
 }
 
@@ -54,11 +57,17 @@ function sameChroma(a: string, b: string): boolean {
   }
 }
 
+/**
+ * `expected` is what the feedback bar prints (`That was F♯.`); the confusion
+ * matrix keeps the ASCII pitch class as its concept.
+ */
 export function d1Check(prompt: D1Prompt, answer: D1Answer): DrillCheck {
   const correct = sameChroma(answer, prompt.expectedPc);
+  const expected = displayPc(prompt.expectedPc);
+  const concept = prompt.expectedPc;
   return correct
-    ? { correct, expected: prompt.expectedPc }
-    : { correct, expected: prompt.expectedPc, confusedWith: answer };
+    ? { correct, expected, concept }
+    : { correct, expected, concept, confusedWith: answer };
 }
 
 /** The sounding pitch of the chosen answer, in the same octave region as the target. */
@@ -110,6 +119,49 @@ export function d1FeedbackPositions(
   return { expected, given: best ? [best] : [] };
 }
 
+const frets = (n: number) => (n === 1 ? 'one fret' : `${n} frets`);
+
+/**
+ * How to find the target from the nearest landmark on its string: the open
+ * string up to fret 6, its octave at fret 12 beyond that. Counting from the
+ * nearer one keeps the walk short; always counting up from the nut is the
+ * habit F2 is meant to replace (research/03, F2 misconceptions).
+ */
+export function d1CountLine(prompt: D1Prompt, tuning: Tuning): string {
+  const { string, fret } = prompt.position;
+  const name = (f: number) => displayPc(noteAt({ string, fret: f }, tuning, prompt.pref).pc);
+  if (fret === 0) return `${name(0)} is the open string ${string}.`;
+  if (fret === 12) return `Fret 12 is the open string's note again: ${name(12)}.`;
+  const from = fret > 6 ? 12 : 0;
+  const step = fret > from ? 1 : -1;
+  const walk: string[] = [];
+  for (let f = from; f !== fret + step; f += step) walk.push(name(f));
+  const start = from === 0 ? `the open ${name(0)}` : `fret 12, ${name(12)}`;
+  return `Count ${step > 0 ? 'up' : 'down'} from ${start}: ${walk.join(' ')}.`;
+}
+
+/**
+ * The line under the prompt once answered (design §6 D1). A miss says where
+ * the chosen note really is on this string, then how to reach the target
+ * from a landmark; a correct answer gets one short confirming line.
+ */
+export function d1Explain(prompt: D1Prompt, fb: DrillFeedback<D1Answer>, tuning: Tuning): string {
+  const { string, fret } = prompt.position;
+  const target = displayPc(prompt.expectedPc);
+  if (fb.result.correct) {
+    return fret === 0
+      ? `${target}: string ${string}, played open.`
+      : `${target}: fret ${fret} on string ${string}.`;
+  }
+  const count = d1CountLine(prompt, tuning);
+  const pos = d1FeedbackPositions(prompt, fb, tuning).given[0];
+  if (!pos) return count;
+  const given = displayPc(fb.answer);
+  const diff = pos.fret - fret;
+  const at = pos.fret === 0 ? 'the open string' : `fret ${pos.fret}`;
+  return `You said ${given}. ${given} is ${frets(Math.abs(diff))} ${diff < 0 ? 'lower' : 'higher'}, at ${at}. ${count}`;
+}
+
 export interface D1GuideMark extends Position {
   /** `root`: the string's open note again; `ghost`: a labelled natural. */
   style: 'root' | 'ghost';
@@ -141,9 +193,10 @@ export function d1GuideMarkers(
   for (let fret = Math.max(1, range.from); fret <= range.to; fret++) {
     const note = noteAt({ string, fret }, tuning, pref);
     if (note.chroma === target) continue;
-    if (note.chroma === open) marks.push({ string, fret, style: 'root', label: note.pc });
+    const label = displayPc(note.pc);
+    if (note.chroma === open) marks.push({ string, fret, style: 'root', label });
     else if (level >= 3 && isNatural(note.pc)) {
-      marks.push({ string, fret, style: 'ghost', label: note.pc });
+      marks.push({ string, fret, style: 'ghost', label });
     }
   }
   return marks;

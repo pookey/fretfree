@@ -5,6 +5,8 @@ import {
   d1Check,
   d1Choices,
   d1ConceptOf,
+  d1CountLine,
+  d1Explain,
   d1FeedbackPositions,
   d1GuideMarkers,
   d1KeyToAnswer,
@@ -47,13 +49,18 @@ describe('D1 prompts', () => {
 describe('D1 checking', () => {
   const p = d1MakePrompt(item('note@s6f6'), { ...ctx, scopeLevel: 1 });
 
-  it('accepts enharmonic spellings', () => {
-    expect(d1Check(p, 'A#')).toEqual({ correct: true, expected: 'A#' });
+  it('accepts enharmonic spellings, and shows the answer with ♯', () => {
+    expect(d1Check(p, 'A#')).toEqual({ correct: true, expected: 'A♯', concept: 'A#' });
     expect(d1Check(p, 'Bb').correct).toBe(true);
   });
 
   it('reports what the learner confused it with', () => {
-    expect(d1Check(p, 'B')).toEqual({ correct: false, expected: 'A#', confusedWith: 'B' });
+    expect(d1Check(p, 'B')).toEqual({
+      correct: false,
+      expected: 'A♯',
+      concept: 'A#',
+      confusedWith: 'B',
+    });
     expect(d1Check(p, 'garbage').correct).toBe(false);
   });
 });
@@ -157,7 +164,70 @@ describe('D1 guide markers (design §3.5)', () => {
       '8B',
       '9C',
       '11D',
-      '12*Eb',
+      '12*E♭',
     ]);
+  });
+});
+
+describe('D1 explanations (design §6 D1)', () => {
+  const p = (id: string, pref: 'sharp' | 'flat' = 'sharp') =>
+    d1MakePrompt(item(id), { ...ctx, accidentalPref: pref, scopeLevel: 1 });
+  const explain = (id: string, answer: string, pref: 'sharp' | 'flat' = 'sharp') => {
+    const prompt = p(id, pref);
+    return d1Explain(prompt, { answer, result: d1Check(prompt, answer) }, STANDARD_TUNING);
+  };
+
+  it('a miss by one fret: where the chosen note is, then the count from the open string', () => {
+    expect(explain('note@s6f4', 'G')).toBe(
+      'You said G. G is one fret lower, at fret 3. Count up from the open E: E F F♯ G G♯.',
+    );
+    expect(explain('note@s6f4', 'A')).toBe(
+      'You said A. A is one fret higher, at fret 5. Count up from the open E: E F F♯ G G♯.',
+    );
+  });
+
+  it('E–F: no fret between them, so F is one fret above E', () => {
+    expect(explain('note@s6f1', 'F#')).toBe(
+      'You said F♯. F♯ is one fret higher, at fret 2. Count up from the open E: E F.',
+    );
+  });
+
+  it('a chosen note at the nut is the open string', () => {
+    expect(explain('note@s5f2', 'A')).toBe(
+      'You said A. A is 2 frets lower, at the open string. Count up from the open A: A A♯ B.',
+    );
+  });
+
+  it('spells the walk with the flat preference', () => {
+    expect(explain('note@s5f2', 'C', 'flat')).toBe(
+      'You said C. C is one fret higher, at fret 3. Count up from the open A: A B♭ B.',
+    );
+  });
+
+  it('counts down from fret 12 past fret 6, and up from it beyond', () => {
+    expect(d1CountLine(p('note@s6f10'), STANDARD_TUNING)).toBe(
+      'Count down from fret 12, E: E D♯ D.',
+    );
+    expect(d1CountLine(p('note@s6f14'), STANDARD_TUNING)).toBe('Count up from fret 12, E: E F F♯.');
+    expect(d1CountLine(p('note@s6f6'), STANDARD_TUNING)).toBe(
+      'Count up from the open E: E F F♯ G G♯ A A♯.',
+    );
+  });
+
+  it('names the landmark itself at the nut and at fret 12', () => {
+    expect(d1CountLine(p('note@s5f0'), STANDARD_TUNING)).toBe('A is the open string 5.');
+    expect(d1CountLine(p('note@s6f12'), STANDARD_TUNING)).toBe(
+      "Fret 12 is the open string's note again: E.",
+    );
+  });
+
+  it('an answer it cannot place still gets the count', () => {
+    expect(explain('note@s6f4', 'zz')).toBe('Count up from the open E: E F F♯ G G♯.');
+  });
+
+  it('a correct answer gets one confirming line', () => {
+    expect(explain('note@s6f4', 'G#')).toBe('G♯: fret 4 on string 6.');
+    expect(explain('note@s6f4', 'Ab')).toBe('G♯: fret 4 on string 6.');
+    expect(explain('note@s5f0', 'A')).toBe('A: string 5, played open.');
   });
 });

@@ -13,6 +13,7 @@ function prompt(position: Position, expectedPc: string, octave: number): D1Promp
     expectedPc,
     expectedName: `${expectedPc}${octave}`,
     choices: d1Choices(expectedPc, 0, 'sharp'),
+    pref: 'sharp',
   };
 }
 
@@ -141,5 +142,51 @@ describe('<D1View> guide levels (design §3.5)', () => {
     expect(v.labels('marker-wrong')).toEqual(['A']);
     expect(v.inlays()).toBe(0);
     expect(screen.getByRole('button', { name: 'G' })).toHaveAttribute('data-state', 'expected');
+  });
+});
+
+describe('<D1View> ♯/♭ and the explanation line (M10-05)', () => {
+  // String 6, fret 4: G♯, with all 12 buttons.
+  const GS: D1Prompt = {
+    ...prompt({ string: 6, fret: 4 }, 'G#', 2),
+    choices: d1Choices('G#', 1, 'sharp'),
+  };
+
+  it('shows sharps as ♯ on the buttons and the worked example, but answers ASCII', () => {
+    const onAnswer = vi.fn();
+    render(
+      <D1View
+        prompt={GS}
+        guideLevel={3}
+        guided
+        handedness="right"
+        sizeClass="regular-wide"
+        tuning={STANDARD_TUNING}
+        feedback={null}
+        onAnswer={onAnswer}
+      />,
+    );
+    expect(screen.getByText(/^This is/)).toHaveTextContent('This is G♯. Tap G♯ to continue.');
+    expect(screen.queryByRole('button', { name: 'G#' })).toBeNull();
+    screen.getByRole('button', { name: 'G♯' }).click();
+    expect(onAnswer).toHaveBeenCalledWith('G#');
+    expect(screen.getByTestId('d1-explain')).toBeEmptyDOMElement();
+  });
+
+  it('a miss explains itself under the prompt, with ♯ on the neck labels', () => {
+    const feedback = { answer: 'G', result: d1Check(GS, 'G') };
+    const v = renderD1(GS, { guideLevel: 1, feedback });
+    expect(feedback.result.expected).toBe('G♯');
+    expect(screen.getByTestId('d1-explain')).toHaveTextContent(
+      'You said G. G is one fret lower, at fret 3. Count up from the open E: E F F♯ G G♯.',
+    );
+    expect(v.labels('marker-correct')).toEqual(['G♯']);
+    expect(v.labels('marker-wrong')).toEqual(['G']);
+  });
+
+  it('a correct answer gets one confirming line', () => {
+    const feedback = { answer: 'G#', result: d1Check(GS, 'G#') };
+    renderD1(GS, { guideLevel: 1, feedback });
+    expect(screen.getByTestId('d1-explain')).toHaveTextContent('G♯: fret 4 on string 6.');
   });
 });

@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import { neckWindow } from '../../shell/size-class';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillRenderProps } from '../types';
 import {
+  d1Explain,
   d1FeedbackPositions,
   d1GuideMarkers,
   d1KeyToAnswer,
@@ -25,7 +27,9 @@ export function D1View({
   aside,
   blindMode = false,
 }: DrillRenderProps<D1Prompt, D1Answer>) {
-  const pref = prompt.choices.some((c) => c.includes('b')) ? 'flat' : 'sharp';
+  const { pref } = prompt;
+  // Answers stay ASCII (`F#`); everything the learner reads says F♯.
+  const target = displayPc(prompt.expectedPc);
 
   useEffect(() => {
     if (feedback) return;
@@ -52,13 +56,13 @@ export function D1View({
       ...pos.expected.map((p): FretMarker => ({
         ...p,
         style: 'correct',
-        label: prompt.expectedPc,
+        label: target,
         forceLabel: true,
       })),
       ...pos.given.map((p): FretMarker => ({
         ...p,
         style: 'wrong',
-        label: feedback.answer,
+        label: displayPc(feedback.answer),
         forceLabel: true,
       })),
     ];
@@ -68,7 +72,7 @@ export function D1View({
     markers = [
       ...d1GuideMarkers(prompt, level, range, tuning, pref),
       guided
-        ? { ...prompt.position, style: 'target', label: prompt.expectedPc, forceLabel: true }
+        ? { ...prompt.position, style: 'target', label: target, forceLabel: true }
         : { ...prompt.position, style: 'target' },
     ];
   }
@@ -80,11 +84,14 @@ export function D1View({
           <p className={styles.prompt} id="drill-prompt">
             {guided ? (
               <>
-                This is <strong>{prompt.expectedPc}</strong>. Tap {prompt.expectedPc} to continue.
+                This is <strong>{target}</strong>. Tap {target} to continue.
               </>
             ) : (
               'Name the highlighted note'
             )}
+          </p>
+          <p className={styles.explain} data-testid="d1-explain">
+            {feedback && d1Explain(prompt, feedback, tuning)}
           </p>
           <div className={styles.choices} role="group" aria-labelledby="drill-prompt">
             {prompt.choices.map((c, i) => {
@@ -107,7 +114,7 @@ export function D1View({
                   onClick={() => onAnswer(c)}
                   aria-keyshortcuts={String(i + 1)}
                 >
-                  {c}
+                  {displayPc(c)}
                 </button>
               );
             })}
