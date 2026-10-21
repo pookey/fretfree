@@ -5,6 +5,7 @@ import { DRILLS } from '../../drills/registry';
 import { SKILLS, type CardRecord, type Goal, type SkillStatus } from '../../engine';
 import type { StatusOverlay } from '../../engine/overlay';
 import { latestOutcomes } from '../../engine/progress';
+import { startWithSoundSkills } from '../../engine/start-with-sound';
 import { GOAL_OPTIONS } from '../../onboarding/options';
 import { createDrillPicker } from '../../session/drill-picker';
 import { ScreenLayout } from '../../shell/ScreenLayout';
@@ -104,18 +105,21 @@ function ModuleCard({
  */
 export function LearnScreen() {
   const goal = useAppStore((s) => s.settings.goal);
+  const startWithSound = useAppStore((s) => s.settings.startWithSound);
+  // Gated as the session runner gates them ("start with sound" opens the ear track).
+  const skills = useMemo(() => startWithSoundSkills(SKILLS, startWithSound), [startWithSound]);
   const update = useAppStore((s) => s.update);
   const sizeClass = useSizeClass();
   const compact = sizeClass === 'compact';
   const [params] = useSearchParams();
   const [version, setVersion] = useState(0);
   const data = useLearnData(version);
-  const statuses = useMemo(() => data && skillStatuses(SKILLS, data.stored), [data]);
+  const statuses = useMemo(() => data && skillStatuses(skills, data.stored), [skills, data]);
   const overlay = useOverlay();
   const map = useMemo(
     () =>
       buildMap({
-        skills: SKILLS,
+        skills,
         goal,
         stored: data?.stored ?? new Map(),
         cards: data?.cards ?? [],
@@ -123,7 +127,7 @@ export function LearnScreen() {
         canServe: PICKER.canServe,
         overlay,
       }),
-    [goal, data, overlay],
+    [skills, goal, data, overlay],
   );
   const picked = map.find((m) => m.module.id === params.get('module'));
   const selected = picked ?? (compact ? undefined : defaultModule(map));

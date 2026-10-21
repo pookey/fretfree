@@ -132,6 +132,8 @@ export interface Settings {
   /** Per-user FSRS weights, refit after ~1,000 reviews (engine/refit.ts); `null` = defaults. */
   fsrsParams: FittedFsrsParams | null;
   timingOffsets: TimingOffsets;
+  /** "Start with sound" (design §4): the ear track opens on day one and leads the path. */
+  startWithSound: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -149,6 +151,7 @@ export const DEFAULT_SETTINGS: Settings = {
   blindMode: false,
   fsrsParams: null,
   timingOffsets: { tap: null, mic: null },
+  startWithSound: false,
 };
 
 // --- Item IDs -------------------------------------------------------------

@@ -31,6 +31,7 @@ import {
 } from '../engine';
 import type { CardKind, GamificationEvent } from '../engine/gamification';
 import { orderFrontier } from '../engine/frontier';
+import { leadWithSound, startWithSoundSkills } from '../engine/start-with-sound';
 import { overlayStatus, type StatusOverlay } from '../engine/overlay';
 import { SessionGuides } from '../engine/guides';
 import type { AnyDrillType, DrillCheck, DrillSounds } from '../drills/types';
@@ -249,7 +250,8 @@ export class SessionRunner {
     const frontierSkills = new Set<string>();
     const frontierInOrder: Skill[] = [];
     const sandbox = new Set<string>();
-    for (const skill of deps.skills) {
+    // "Start with sound" (design §4) opens the ear track's first sets on day one.
+    for (const skill of startWithSoundSkills(deps.skills, deps.settings.startWithSound)) {
       const status = deriveStatus(skill, statuses, statuses.get(skill.id));
       statuses.set(skill.id, status);
       if (!isFrontier(overlayStatus(status, deps.overlay))) continue;
@@ -257,12 +259,14 @@ export class SessionRunner {
       frontierSkills.add(skill.id);
       frontierInOrder.push(skill);
     }
-    // The goal profile reorders frontier skills (design §3.3 step 2).
+    // The goal profile reorders frontier skills (design §3.3 step 2), and
+    // "start with sound" puts the ear track first.
     const frontier: Item[] = deps.reviewOnly
       ? []
-      : orderFrontier(frontierInOrder, deps.settings.goal).flatMap((skill) =>
-          skill.items().filter(serves),
-        );
+      : leadWithSound(
+          orderFrontier(frontierInOrder, deps.settings.goal),
+          deps.settings.startWithSound,
+        ).flatMap((skill) => skill.items().filter(serves));
     const tuning = getTuning(deps.settings.tuning);
     const ctx = { tuning, accidentalPref: deps.settings.accidentalPref };
 
