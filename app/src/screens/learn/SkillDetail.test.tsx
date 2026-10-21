@@ -66,7 +66,7 @@ describe('<SkillDetail>', () => {
 
   it('shows neither action for a mastered skill with no example', async () => {
     await loadWorkedExamples();
-    renderSkill('F3.markers', 'mastered');
+    renderSkill('C1.double-octaves', 'mastered');
     expect(screen.getByText('Mastered. Reviews keep it fresh.')).toBeInTheDocument();
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.queryByRole('link')).toBeNull();
@@ -74,7 +74,7 @@ describe('<SkillDetail>', () => {
 
   it('offers practice without an example', async () => {
     await loadWorkedExamples();
-    renderSkill('F3.markers', 'practising');
+    renderSkill('C1.double-octaves', 'practising');
     expect(screen.queryByRole('button', { name: 'Worked example' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Practise this now' })).toBeInTheDocument();
   });
