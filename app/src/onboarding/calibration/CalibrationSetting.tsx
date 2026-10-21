@@ -8,6 +8,7 @@ export function CalibrationSetting() {
   const baseline = useAppStore((s) => s.settings.latencyBaselineMs);
   const [open, setOpen] = useState(false);
   const panel = useId();
+  const hint = useId();
   return (
     <div className={styles.setting}>
       <div className={styles.settingRow}>
@@ -22,11 +23,16 @@ export function CalibrationSetting() {
           className={styles.settingButton}
           aria-expanded={open}
           aria-controls={panel}
+          aria-describedby={hint}
           onClick={() => setOpen(!open)}
         >
           {open ? 'Close' : baseline === null ? 'Measure' : 'Recalibrate'}
         </button>
       </div>
+      <p id={hint} className={styles.muted}>
+        How long a tap takes you on this screen. Answers are timed from here, so a slow screen never
+        counts against you.
+      </p>
       {open && (
         <div id={panel} className={styles.settingPanel}>
           <Calibration

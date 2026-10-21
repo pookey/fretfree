@@ -43,8 +43,8 @@ export function PrivacyScreen() {
               <strong>The app itself.</strong> Its files are cached so FretFree works offline.
             </li>
             <li>
-              <strong>One small preference.</strong> Whether you dismissed the &ldquo;add to home
-              screen&rdquo; hint, kept in local storage.
+              <strong>One small preference.</strong> Whether you dismissed the &ldquo;Add to Home
+              Screen&rdquo; hint, kept in local storage.
             </li>
             <li>
               <strong>Deleting it.</strong> Clear this site&rsquo;s data in your browser settings.

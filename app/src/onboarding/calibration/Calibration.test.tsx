@@ -161,6 +161,8 @@ describe('<CalibrationSetting>', { timeout: 20_000 }, () => {
   it('offers to measure when there is no tap time yet', () => {
     render(<CalibrationSetting />);
     expect(screen.getByTestId('latency-baseline')).toHaveTextContent('not measured');
-    expect(screen.getByRole('button', { name: 'Measure' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Measure' })).toHaveAccessibleDescription(
+      /how long a tap takes you on this screen/i,
+    );
   });
 });
