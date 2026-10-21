@@ -16,7 +16,7 @@ test.describe('M1-16 Learn screen', () => {
     await openLearn(page);
     const map = page.getByRole('region', { name: 'Modules' });
     const detail = page.getByTestId('module-detail');
-    await expect(map.getByTestId('mastery-ring')).toHaveCount(19);
+    await expect(map.getByTestId('mastery-ring')).toHaveCount(20);
     await expect(detail.getByRole('heading', { level: 2 })).toHaveText('Neck basics');
 
     // Side by side: the detail pane starts to the right of the map.

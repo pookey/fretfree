@@ -486,6 +486,7 @@ describe('laneQuotas', () => {
     ];
     const pools = (n: number): number[][] =>
       n === 0 ? [[]] : pools(n - 1).flatMap((p) => POOL_SIZES.map((size) => [...p, size]));
+    const bad: string[] = [];
     for (let lanes = 1; lanes <= 4; lanes++) {
       for (const sizes of pools(lanes)) {
         for (const shares of SHARES.map((sh) => sh.slice(0, lanes))) {
@@ -493,21 +494,21 @@ describe('laneQuotas', () => {
             for (let count = 1; count <= 24; count++) {
               const out = laneQuotas(sizes, shares, count, { unit: 2, rank });
               const dealt = out.reduce((n, q) => n + q, 0);
-              const why = JSON.stringify({ sizes, shares, rank, count, out });
-              expect(dealt, why).toBeLessThanOrEqual(count);
-              // At most an odd remainder of one is left for another day.
               const room = sizes.reduce((n, size) => n + size, 0);
-              expect(dealt, why).toBeGreaterThanOrEqual(Math.min(count, room) - 1);
-              out.forEach((q, i) => {
-                expect(q, why).toBeLessThanOrEqual(sizes[i]!);
-                // None, a full block, or the lane's last item(s).
-                expect(q === 0 || q >= 2 || q === sizes[i], why).toBe(true);
-              });
+              // No more than asked; at most an odd remainder of one left for
+              // another day; each lane none, a full block, or its last item(s).
+              const ok =
+                dealt <= count &&
+                dealt >= Math.min(count, room) - 1 &&
+                out.every((q, i) => q <= sizes[i]! && (q === 0 || q >= 2 || q === sizes[i]));
+              if (!ok) bad.push(JSON.stringify({ sizes, shares, rank, count, out }));
             }
           }
         }
       }
     }
+    // Collected, not asserted per case, so about 75,000 cases stay fast under load.
+    expect(bad).toEqual([]);
   });
 });
 
