@@ -41,7 +41,8 @@ import { itemsOf, memo } from './helpers';
  * Nashville numbers are the same facts in another notation, so they open
  * softly, split the same way: each stage once its Roman stage is practising.
  * Only stage 1 is probed in placement; the later stages are the same skill
- * in more keys, and a learner who knows them meets them as reviews.
+ * in more keys. They open from stage 1 and arrive as new cards, which a
+ * fluent learner's first Easy answers space out quickly.
  */
 
 const DRILLS = ['numerals'];
