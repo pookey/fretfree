@@ -59,7 +59,12 @@ describe('skillStatuses', () => {
 describe('buildMap', () => {
   it('lists every module, in goal order, with the registered skills', () => {
     const map = buildMap({ skills: SKILLS, goal: 'general', stored: stored(), cards: [] });
-    expect(map.map((m) => m.module.id)).toEqual(MODULES.map((m) => m.id));
+    // Modules not built yet come last (M10-07), in their own default order.
+    const soon = ['advanced', 'meter', 'reading'];
+    expect(map.map((m) => m.module.id)).toEqual([
+      ...MODULES.map((m) => m.id).filter((id) => !soon.includes(id)),
+      ...soon,
+    ]);
     const notes1 = map[0]!;
     expect(notes1.state).toBe('open');
     expect(notes1.skills.map((s) => s.skill.topic)).toContain('F2');

@@ -116,7 +116,7 @@ export function buildMap(input: MapInput): ModuleView[] {
     });
     byModule.set(moduleId, list);
   }
-  return orderModules(input.goal, input.modules).map((module) => {
+  const views = orderModules(input.goal, input.modules).map((module) => {
     const skills = byModule.get(module.id) ?? [];
     const items = skills.reduce((n, s) => n + s.itemCount, 0);
     const weighted = (of: (s: SkillView) => number) =>
@@ -130,6 +130,9 @@ export function buildMap(input: MapInput): ModuleView[] {
       masteredSkills: skills.filter((s) => s.status === 'mastered').length,
     };
   });
+  // Modules with no skills yet go after every open, locked and mastered one,
+  // so a goal that promotes one (jazz → Reading) doesn't lead with it.
+  return [...views.filter((m) => m.state !== 'soon'), ...views.filter((m) => m.state === 'soon')];
 }
 
 /**
