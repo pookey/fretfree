@@ -108,6 +108,31 @@ describe('the new-item cap', () => {
     expect(next.some((c) => c.entry.kind === 'new')).toBe(true);
   });
 
+  it('treats less than a lane block left as spent, and ends with the reason', async () => {
+    // Introduce 3 of the 5-minute cap of 4 (the worked examples), then quit mid-block.
+    const first = await SessionRunner.start(deps());
+    for (let i = 0; i < 3; i++) {
+      const cur = first.currentPrompt()!;
+      expect(cur.entry).toMatchObject({ kind: 'new', guided: true });
+      clock = new Date(clock.getTime() + 5_000);
+      await first.answer(correct(cur), 900);
+      first.next();
+    }
+    await first.finish();
+
+    // The same day, one new item is left: no plan can open a lane with it.
+    clock = new Date(clock.getTime() + 30_000);
+    const again = await SessionRunner.start(deps());
+    expect(again.capSpent).toBe(true);
+    const served = await playOut(again);
+    expect(served.some((c) => c.entry.kind === 'new')).toBe(false);
+    expect(again.remainingMs).toBeGreaterThan(0);
+    const summary = await again.finish();
+    expect(summary.enoughNew).toBe(true);
+    expect(summary.itemsSeen).toBeGreaterThan(0);
+    expect(summary.goalMet).toBe(true);
+  });
+
   it('leaves placement-seeded cards out of the cap', async () => {
     const scheduler = createScheduler({ enableFuzz: false });
     // Placement seeded string 6's first few items this morning, with no session answer.

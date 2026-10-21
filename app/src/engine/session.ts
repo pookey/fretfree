@@ -373,6 +373,8 @@ function laneBlocks(
     if (left < 1) break;
     const take = group.slice(0, left);
     left -= take.length;
+    // A lone partner joins the lead block too, so a block can hold both
+    // directions of one fact; the block's width still spaces them apart.
     if (take.length === 1 && groups.length > 0) groups.at(-1)!.push(...take);
     else groups.push(take);
   }
@@ -477,8 +479,10 @@ export function buildSession(input: SessionPlanInput): SessionEntry[] {
   const placed = quotas.reduce((n, q) => n + q, 0);
   const slots = total - reviews.length - placed * perItem;
 
-  // Top up with further due reviews unless new items were left out for want of time.
-  const timeShort = count < maxNew && placed < fresh;
+  // Top up with further due reviews unless new items were left out for want of
+  // time. When the block rule leaves some of `count` out (placed < count), the
+  // slots it frees go to reviews.
+  const timeShort = count < maxNew && placed === count && placed < fresh;
   if (slots > 0 && !timeShort && due.length > reviews.length) {
     for (const c of due.slice(reviews.length, reviews.length + slots)) {
       reviews.push({ itemId: c.itemId, skillId: c.skillId, kind: 'review', guided: false });

@@ -274,7 +274,8 @@ describe('buildSession', () => {
       maxItems: 20,
     });
     expect(plan.filter((e) => e.kind === 'new')).toHaveLength(0);
-    expect(plan.filter((e) => e.kind === 'review')).toHaveLength(14);
+    // The block rule, not time, left it out, so due reviews take its 6 slots.
+    expect(plan.filter((e) => e.kind === 'review')).toHaveLength(20);
   });
 
   it('tops up with extra reviews when the frontier is empty', () => {

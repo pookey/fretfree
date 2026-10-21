@@ -425,9 +425,16 @@ export class SessionRunner {
     return Math.max(0, this.newCap - this.newEarlier - this.newItems.size);
   }
 
-  /** Today's new-item cap is spent: no more new material until tomorrow. */
+  /**
+   * Today's new-item cap is spent: no more new material until tomorrow. Less
+   * than one lane block left counts, since no plan opens a lane with it.
+   */
   get capSpent(): boolean {
-    return !this.deps.reviewOnly && this.newLeft === 0 && this.newEarlier + this.newItems.size > 0;
+    return (
+      !this.deps.reviewOnly &&
+      this.newLeft < ENGINE_CONFIG.session.minLaneBlock &&
+      this.newEarlier + this.newItems.size > 0
+    );
   }
 
   private now(): Date {
