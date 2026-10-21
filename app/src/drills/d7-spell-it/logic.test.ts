@@ -12,6 +12,7 @@ import {
   d7ConceptOf,
   d7DescribeAnswer,
   d7Expected,
+  d7Formula,
   d7Explain,
   d7GradedResponseMs,
   d7Guides,
@@ -25,6 +26,7 @@ import {
   enharmonicTwins,
   letterRun,
   pretty,
+  prettyDegree,
   spoken,
   withOctaves,
   type D7Answer,
@@ -100,11 +102,19 @@ describe('D7 prompts', () => {
   it('spells a chord root first, labelled by formula', () => {
     const p = prompt('spell-chord:m7b5@F#');
     expect(p.kind).toBe('chord');
-    expect(p.subject).toBe('F♯m7b5');
+    expect(p.subject).toBe('F♯m7♭5');
     expect(p.slots.map((s) => s.note)).toEqual(['F#', 'A', 'C', 'E']);
     expect(p.slots.map((s) => s.label)).toEqual(['1', 'b3', 'b5', 'b7']);
+    expect(d7Formula(p)).toBe('1 ♭3 ♭5 ♭7');
     expect(p.steps).toEqual([]);
-    expect(d7Task(p)).toBe('Spell F♯m7b5');
+    expect(d7Task(p)).toBe('Spell F♯m7♭5');
+  });
+
+  it('shows formula degrees with ♭ and ♯', () => {
+    expect(prettyDegree('b3')).toBe('♭3');
+    expect(prettyDegree('#11')).toBe('♯11');
+    expect(prettyDegree('bb7')).toBe('♭♭7');
+    expect(prettyDegree('5')).toBe('5');
   });
 
   it('asks for one degree, or which degree a note is', () => {
@@ -363,9 +373,9 @@ describe('D7 wording and guides', () => {
 
   it('explains the worked example for each kind', () => {
     expect(d7WorkedExample(prompt('spell-key:F'))).toBe(
-      'F major uses each letter once, in steps W W H W W W H: F G A B♭ C D E.',
+      'F major uses each letter once, going up in whole and half steps (W W H W W W H): F G A B♭ C D E.',
     );
-    expect(d7WorkedExample(prompt('spell-chord:7@D'))).toBe('D7 is 1 3 5 b7 from D: D F♯ A C.');
+    expect(d7WorkedExample(prompt('spell-chord:7@D'))).toBe('D7 is 1 3 5 ♭7 from D: D F♯ A C.');
     expect(d7WorkedExample(prompt('degree:6@Eb'))).toBe(
       'C is the 6th of E♭ major: count letters up from E♭: E F G A B C.',
     );

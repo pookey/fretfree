@@ -55,7 +55,10 @@ describe('<SpellingContextPanel>', () => {
     const p = prompt();
     const { container } = panel(p, { guideLevel: 1 });
     expect(screen.getByRole('heading', { name: 'Major scale' })).toBeInTheDocument();
-    expect(container).toHaveTextContent('W W H W W W H');
+    expect(container).toHaveTextContent(
+      'Steps up from the key note: whole, whole, half, whole, whole, whole, half (W W H W W W H). ' +
+        'A whole step is two frets, a half step one.',
+    );
     expect(container).toHaveTextContent(d7Hint(p));
     expect(container).not.toHaveTextContent('B–C');
   });
@@ -63,7 +66,7 @@ describe('<SpellingContextPanel>', () => {
   it('shows a chord’s formula, with the half-step rule from level 2', () => {
     const { container } = panel(prompt('spell-chord:m7@B'), { guideLevel: 2 });
     expect(screen.getByRole('heading', { name: 'Chord formula' })).toBeInTheDocument();
-    expect(container).toHaveTextContent('Bm7 = 1 b3 5 b7');
+    expect(container).toHaveTextContent('Bm7 = 1 ♭3 5 ♭7');
     expect(container).toHaveTextContent('B–C');
   });
 

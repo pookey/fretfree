@@ -1,6 +1,6 @@
 import { DiatonicChords } from '../../session/context/DiatonicChords';
 import type { DrillContextPanelProps } from '../types';
-import { d7Hint, type D7Answer, type D7Prompt } from './logic';
+import { d7Formula, d7Hint, type D7Answer, type D7Prompt } from './logic';
 import styles from './ContextPanel.module.css';
 
 /**
@@ -24,12 +24,14 @@ export function SpellingContextPanel({
       <h2>{prompt.kind === 'chord' ? 'Chord formula' : 'Major scale'}</h2>
       {prompt.kind === 'chord' ? (
         <p>
-          <strong>{prompt.subject}</strong> = {prompt.slots.map((s) => s.label).join(' ')}
+          <strong>{prompt.subject}</strong> = {d7Formula(prompt)}
         </p>
       ) : (
         // One paragraph with the hint, so the key's chords fit above an iPad mini's neck.
         <p>
-          Steps from the tonic: <strong>W W H W W W H</strong>. {d7Hint(prompt)}
+          Steps up from the key note: whole, whole, half, whole, whole, whole, half (
+          <strong>W W H W W W H</strong>). A whole step is two frets, a half step one.{' '}
+          {d7Hint(prompt)}
         </p>
       )}
       {prompt.kind === 'chord' && <p>{d7Hint(prompt)}</p>}

@@ -18,6 +18,7 @@ import {
   spellChord,
   type SpellingVerdict,
 } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { D7_SCOPE } from './meta';
 
@@ -97,6 +98,19 @@ export function pretty(note: string): string {
   return letterOf(note) + acc;
 }
 
+/**
+ * Display form of a formula degree: `b3` → `♭3`, `#11` → `♯11`, `bb7` → `♭♭7`.
+ * The slot labels stay ASCII; this is what the learner reads.
+ */
+export function prettyDegree(label: string): string {
+  return label.replace(/b/g, '♭').replace(/#/g, '♯');
+}
+
+/** Formula: `1 ♭3 5 ♭7`. */
+export function d7Formula(prompt: D7Prompt): string {
+  return prompt.slots.map((s) => prettyDegree(s.label)).join(' ');
+}
+
 const SPOKEN: Record<string, string> = {
   bb: ' double flat',
   b: ' flat',
@@ -140,7 +154,7 @@ function parse(item: Item): Omit<D7Prompt, 'itemId' | 'choices' | 'degreeChoices
     const formula = chordFormula(chord.chord);
     return {
       kind: 'chord',
-      subject: pretty(chord.root) + chordKindInfo(chord.chord).suffix,
+      subject: displayPc(pretty(chord.root) + chordKindInfo(chord.chord).suffix),
       tonic: chord.root,
       slots: spellChord(chord.root, chord.chord).map((note, i) => ({
         label: formula[i] as string,
@@ -361,9 +375,9 @@ export function d7WorkedExample(prompt: D7Prompt): string {
   const target = prompt.slots[1] as D7Slot;
   switch (prompt.kind) {
     case 'key':
-      return `${subject} uses each letter once, in steps W W H W W W H: ${notes}.`;
+      return `${subject} uses each letter once, going up in whole and half steps (W W H W W W H): ${notes}.`;
     case 'chord':
-      return `${subject} is ${prompt.slots.map((s) => s.label).join(' ')} from ${pretty(prompt.tonic)}: ${notes}.`;
+      return `${subject} is ${d7Formula(prompt)} from ${pretty(prompt.tonic)}: ${notes}.`;
     case 'degree':
     case 'degree-of':
       return `${pretty(target.note)} is ${slotPhrase(prompt, target)}: ${letterReason(prompt, target)}.`;

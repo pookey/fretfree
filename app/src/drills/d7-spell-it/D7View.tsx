@@ -13,6 +13,7 @@ import {
   d7Verdicts,
   d7WorkedExample,
   pretty,
+  prettyDegree,
   spoken,
   type D7Answer,
   type D7Prompt,
@@ -104,7 +105,7 @@ export function D7View({
 
   let blank = 0;
   const slots = prompt.slots.map((slot, i) => {
-    const label = isDegreeOf && !slot.given ? '?' : slot.label;
+    const label = isDegreeOf && !slot.given ? '?' : prettyDegree(slot.label);
     const step = guides.steps && i > 0 ? prompt.steps[i - 1] : undefined;
     let content: string;
     let state: string;

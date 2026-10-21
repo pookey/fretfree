@@ -94,6 +94,14 @@ describe('<D7View>', () => {
     expect(screen.queryByText('7')).toBeNull();
   });
 
+  it('labels a chord’s slots with ♭ degrees', () => {
+    renderView(prompt('spell-chord:m7@B'), { guideLevel: 1 });
+    expect(slots()[1]).toHaveAccessibleName('♭3: empty');
+    expect(slots()[3]).toHaveAccessibleName('♭7: empty');
+    expect(screen.getByText('♭3')).toBeInTheDocument();
+    expect(screen.queryByText('b3')).toBeNull();
+  });
+
   it('fades guides: labels, then step marks, then letters', () => {
     const p = prompt();
     const { rerender } = renderView(p, { guideLevel: 1 });
