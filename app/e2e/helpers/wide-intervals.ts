@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { focusSession } from './focus';
 import { C3_SKILLS, SKILLS_BEFORE_C3 } from './intervals';
+import { d5ButtonName } from './interval-names';
 
 // D5 at its widest scope: every interval from m2 to P8 on the buttons. The
 // scope widens within a session once the rolling accuracy is high enough, so
@@ -123,7 +124,7 @@ export async function answerD5(page: Page, right: boolean): Promise<void> {
   const names = await choices(page).allInnerTexts();
   const name = right ? answer : (names.map((n) => n.trim()).find((n) => n !== answer) as string);
   await choices(page)
-    .and(page.getByRole('button', { name, exact: true }))
+    .and(page.getByRole('button', { name: d5ButtonName(name), exact: true }))
     .click();
   if (right) {
     await expect(page.getByTestId('feedback-correct')).toBeVisible();

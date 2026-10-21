@@ -107,6 +107,11 @@ describe('<D39View>', () => {
     );
     expect(markers('correct').map((m) => m.getAttribute('data-fret'))).toEqual(['7']);
     expect(markers('wrong').map((m) => m.getAttribute('data-fret'))).toEqual(['9']);
+    // A miss teaches the count from the nut, in place of the hint.
+    expect(screen.queryByTestId('d39-hint')).toBeNull();
+    expect(screen.getByTestId('d39-explain')).toHaveTextContent(
+      'Count the dots from the nut: 3, 5, 7.',
+    );
   });
 
   it('finds a marker by tapping any string on its fret', () => {
@@ -206,6 +211,7 @@ describe('<D39View>', () => {
     const labels = (style: string) => markers(style).map((m) => m.textContent);
     expect(labels('root')).toEqual(['G', 'D', 'A#', 'F', 'C', 'G']);
     expect(labels('correct')).toEqual(labels('root'));
+    expect(screen.getByTestId('d39-explain')).toHaveTextContent('the neck repeats every 12 frets.');
   });
 
   it('labels the open string and leaves the nut to name it', () => {

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart } from './helpers';
 import { focusSession } from './helpers/focus';
+import { d5ButtonName } from './helpers/interval-names';
 
 // M2-16: "test out" of a locked module (design §3.4, research/02 rule 7).
 // Chords needs Intervals and Keys mastered. That gate stays, but an
@@ -67,7 +68,7 @@ type Answer =
 async function solve(page: Page, itemId: string): Promise<Answer> {
   // D5 names the interval the two dots make.
   const named = /^interval-name:([mMPT][1-8T])@s\d→s\d$/.exec(itemId);
-  if (named) return { kind: 'button', label: named[1]! };
+  if (named) return { kind: 'button', label: d5ButtonName(named[1]!) };
   // D6 taps the interval above the shown root, on the item's upper string.
   const tap = /^interval:([mMPT][1-8T])@s(\d)→s(\d)$/.exec(itemId);
   if (tap) {

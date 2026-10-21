@@ -38,6 +38,8 @@ export interface D5Prompt {
   rootPc: string;
   rootMidi: number;
   rootName: string;
+  /** The upper note's pitch class, for feedback. */
+  upperPc: string;
   upperName: string;
   /** True when the shape crosses the G–B pair (one fret off the all-fourths shape). */
   gbShift: boolean;
@@ -107,6 +109,7 @@ export function d5MakePrompt(item: Item, ctx: DrillContext): D5Prompt {
     rootPc: rootNote.pc,
     rootMidi: rootNote.midi,
     rootName: rootNote.name,
+    upperPc: upperNote.pc,
     upperName: upperNote.name,
     gbShift: crossesGBShift(from, to, ctx.tuning),
     choices: d5Choices(interval, ctx.scopeLevel, ctx.rng),
@@ -121,10 +124,53 @@ export function d5Check(prompt: D5Prompt, answer: D5Answer): DrillCheck {
     : { correct, expected: prompt.interval, confusedWith: answer };
 }
 
+/** `F#` → `F♯`, `Bb` → `B♭`: pitch names as the learner reads them. */
+function display(pc: string): string {
+  return pc.replace('#', '♯').replace(/(?<=^[A-G])b/, '♭');
+}
+
+/** `major 3rd`, `tritone`: an interval's name in words. */
+export function d5LongName(name: IntervalName): string {
+  return intervalInfo(name).long;
+}
+
+/** A button's accessible name: its short label first, then the name in words. */
+export function d5ChoiceLabel(name: IntervalName): string {
+  return `${name}, ${d5LongName(name)}`;
+}
+
 /** The worked-example line for the first, guided rep of a new item. */
 export function d5WorkedExample(prompt: D5Prompt): string {
   const info = intervalInfo(prompt.interval);
-  return `This is a ${info.long} (${info.name}), ${prompt.semitones} half steps up from ${prompt.rootPc}.`;
+  return `This is a ${info.long} (${info.name}), ${prompt.semitones} half steps up from ${display(prompt.rootPc)}.`;
+}
+
+/**
+ * Crossing G–B, a shape is a half step smaller than the same frets on any
+ * other pair (research/03 C3): read as all-4ths, it names the next interval up.
+ */
+const GB_RULE =
+  'This shape crosses the G and B strings, which are a major 3rd apart, not a 4th, so it is a half step smaller than the same shape elsewhere.';
+
+/**
+ * The feedback line under the prompt (research/02 rule 9; research/03 C3).
+ * A wrong answer says what the chosen name means in half steps, then counts
+ * the shape, so a miss teaches the method rather than just the answer. A
+ * wrong answer one half step too big on a G–B shape names the shift.
+ */
+export function d5Explain(prompt: D5Prompt, fb: DrillFeedback<D5Answer>): string {
+  const long = d5LongName(prompt.interval);
+  const root = display(prompt.rootPc);
+  const n = prompt.semitones;
+  if (fb.result.correct) {
+    return `${long[0]!.toUpperCase()}${long.slice(1)}: ${n} half steps up from ${root}.`;
+  }
+  const count = `From ${root} up to ${display(prompt.upperPc)} is ${n} half steps: a ${long}, ${prompt.interval}.`;
+  if (!isIntervalName(fb.answer)) return count;
+  const given = intervalInfo(fb.answer);
+  const chose = `You chose ${given.name} (a ${given.long}, ${given.semitones} half steps).`;
+  const shift = prompt.gbShift && given.semitones === n + 1 ? ` ${GB_RULE}` : '';
+  return `${chose} ${count}${shift}`;
 }
 
 /** Where the chosen interval would sit on the upper note's string, or null off the neck. */

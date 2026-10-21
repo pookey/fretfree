@@ -5,6 +5,8 @@ import { neckWindow } from '../../shell/size-class';
 import type { DrillRenderProps } from '../types';
 import {
   D5_FRETS,
+  d5ChoiceLabel,
+  d5Explain,
   d5FeedbackPositions,
   d5KeyFor,
   d5KeyToAnswer,
@@ -104,10 +106,17 @@ export function D5View({
               'Name the interval'
             )}
           </p>
-          <p className={styles.hint} data-testid="d5-hint">
-            {/* A guide like the others: gone at level 0, the independent stage (rule 9). */}
-            {!feedback && level >= 1 && 'From the square (the lower note) up to the round dot.'}
-          </p>
+          {feedback ? (
+            // Feedback teaches the count, at every guide level (rule 9).
+            <p className={styles.hint} data-testid="d5-explain">
+              {d5Explain(prompt, feedback)}
+            </p>
+          ) : (
+            <p className={styles.hint} data-testid="d5-hint">
+              {/* A guide like the others: gone at level 0, the independent stage (rule 9). */}
+              {level >= 1 && 'From the square (the lower note) up to the round dot.'}
+            </p>
+          )}
           <div className={styles.choices} role="group" aria-labelledby="drill-prompt">
             {choices.map((c, i) => {
               const state = !feedback
@@ -127,6 +136,7 @@ export function D5View({
                   data-state={state}
                   disabled={Boolean(feedback)}
                   onClick={() => onAnswer(c)}
+                  aria-label={d5ChoiceLabel(c)}
                   aria-keyshortcuts={d5KeyFor(i)}
                 >
                   {c}

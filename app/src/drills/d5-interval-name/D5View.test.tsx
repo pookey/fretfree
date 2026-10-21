@@ -71,7 +71,7 @@ describe('<D5View>', () => {
     const group = screen.getByRole('group', { name: 'Name the interval' });
     const buttons = within(group).getAllByRole('button');
     expect(buttons.map((b) => b.textContent)).toEqual(['m2', 'M2', 'm3', 'M3']);
-    fireEvent.click(within(group).getByRole('button', { name: 'M3' }));
+    fireEvent.click(within(group).getByRole('button', { name: 'M3, major 3rd' }));
     expect(onAnswer).toHaveBeenCalledWith('M3');
   });
 
@@ -79,7 +79,7 @@ describe('<D5View>', () => {
     renderView(prompt('interval-name:P5@s5→s4', 2));
     const group = screen.getByRole('group', { name: 'Name the interval' });
     expect(within(group).getAllByRole('button')).toHaveLength(12);
-    expect(within(group).getByRole('button', { name: 'P8' })).toHaveAttribute(
+    expect(within(group).getByRole('button', { name: 'P8, perfect octave' })).toHaveAttribute(
       'aria-keyshortcuts',
       '=',
     );
@@ -103,7 +103,7 @@ describe('<D5View>', () => {
   it('names the interval in the worked example', () => {
     renderView(prompt(), { guided: true, guideLevel: 0 });
     expect(screen.getByTestId('d5-drill')).toHaveTextContent(
-      'This is a major 3rd (M3), 4 half steps up from F#. Tap M3 to continue.',
+      'This is a major 3rd (M3), 4 half steps up from F♯. Tap M3 to continue.',
     );
     expect(markers('target')).toEqual([{ string: 5, fret: 1, text: 'M3' }]);
   });
@@ -113,8 +113,15 @@ describe('<D5View>', () => {
     renderView(p, { feedback: fb(p, 'M3') });
     expect(markers('correct')).toEqual([{ string: 5, fret: 1, text: 'M3' }]);
     expect(markers('wrong')).toEqual([]);
-    expect(screen.getByRole('button', { name: 'M3' })).toHaveAttribute('data-state', 'correct');
-    expect(screen.getByTestId('d5-hint')).toBeEmptyDOMElement();
+    expect(screen.getByRole('button', { name: 'M3, major 3rd' })).toHaveAttribute(
+      'data-state',
+      'correct',
+    );
+    // The hint gives way to one confirming line.
+    expect(screen.queryByTestId('d5-hint')).toBeNull();
+    expect(screen.getByTestId('d5-explain')).toHaveTextContent(
+      'Major 3rd: 4 half steps up from F♯.',
+    );
   });
 
   it('marks a wrong answer where it would be, and the right one', () => {
@@ -122,8 +129,28 @@ describe('<D5View>', () => {
     renderView(p, { feedback: fb(p, 'm3') });
     expect(markers('correct')).toEqual([{ string: 5, fret: 1, text: 'M3' }]);
     expect(markers('wrong')).toEqual([{ string: 5, fret: 0, text: 'm3' }]);
-    expect(screen.getByRole('button', { name: 'm3' })).toHaveAttribute('data-state', 'wrong');
-    expect(screen.getByRole('button', { name: 'M3' })).toHaveAttribute('data-state', 'expected');
+    expect(screen.getByRole('button', { name: 'm3, minor 3rd' })).toHaveAttribute(
+      'data-state',
+      'wrong',
+    );
+    expect(screen.getByRole('button', { name: 'M3, major 3rd' })).toHaveAttribute(
+      'data-state',
+      'expected',
+    );
+  });
+
+  it('explains a wrong answer under the prompt, even at guide level 0', () => {
+    const p = prompt();
+    renderView(p, { guideLevel: 0, feedback: fb(p, 'm3') });
+    expect(screen.getByTestId('d5-explain')).toHaveTextContent(
+      'You chose m3 (a minor 3rd, 3 half steps). From F♯ up to A♯ is 4 half steps: a major 3rd, M3.',
+    );
+  });
+
+  it('keeps the short names on the buttons, with the name in words in the accessible name', () => {
+    renderView(prompt());
+    const button = screen.getByRole('button', { name: 'm3, minor 3rd' });
+    expect(button).toHaveTextContent(/^m3$/);
   });
 
   it('fades the hint with the other guides: gone at level 0', () => {

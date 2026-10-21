@@ -9,6 +9,7 @@ import {
   d39ChoiceLabel,
   d39ConceptOf,
   d39DescribeAnswer,
+  d39Explain,
   d39FeedbackPositions,
   d39FeedbackRange,
   d39FretLook,
@@ -125,7 +126,7 @@ describe('D39 grading and feedback', () => {
     const p = prompt('marker:f7');
     expect(d39Check(p, 7)).toEqual({ correct: true, expected: 'fret 7' });
     expect(d39Check(p, 9)).toEqual({ correct: false, expected: 'fret 7', confusedWith: 'fret:9' });
-    expect(d39Check(prompt('repeat:-12@f12'), 0).expected).toBe('fret 0 (open)');
+    expect(d39Check(prompt('repeat:-12@f12'), 0).expected).toBe('the open strings');
     expect(d39DescribeAnswer(9)).toBe('f9');
   });
 
@@ -166,9 +167,67 @@ describe('D39 grading and feedback', () => {
   });
 });
 
+describe('D39 explanations', () => {
+  it('counts the dots from the nut when a marker is missed', () => {
+    const p = prompt('marker:f7');
+    expect(d39Explain(p, fb(p, 5))).toBe('Count the dots from the nut: 3, 5, 7.');
+    expect(d39Explain(p, fb(p, 9))).toBe('Count the dots from the nut: 3, 5, 7.');
+  });
+
+  it('names the double dot at 12, and the first dot on its own', () => {
+    const twelve = prompt('marker:f12');
+    expect(d39Explain(twelve, fb(twelve, 9))).toBe(
+      'Count the dots from the nut: 3, 5, 7, 9, then the double dot, 12.',
+    );
+    const three = prompt('marker:f3');
+    expect(d39Explain(three, fb(three, 5))).toBe('The first dot from the nut is fret 3.');
+  });
+
+  it('says when the chosen fret has no dot (a near miss at the wider scope)', () => {
+    const p = prompt('marker:f7', 1);
+    expect(d39Explain(p, fb(p, 6))).toBe(
+      'Fret 6 has no dot. Count the dots from the nut: 3, 5, 7.',
+    );
+  });
+
+  it('counts the dots for a find prompt too, but says nothing of the open strings', () => {
+    const p = prompt('find-marker:f5');
+    expect(d39Explain(p, fb(p, 4))).toBe('Fret 4 has no dot. Count the dots from the nut: 3, 5.');
+    expect(d39Explain(p, fb(p, 0))).toBe('Count the dots from the nut: 3, 5.');
+  });
+
+  it('confirms a right marker answer with the same count', () => {
+    const p = prompt('marker:f9');
+    expect(d39Explain(p, fb(p, 9))).toBe('Count the dots from the nut: 3, 5, 7, 9.');
+  });
+
+  it('restates the 12-fret repeat, and does the sum on a miss', () => {
+    const up = prompt('repeat:+12@f3');
+    const rule =
+      'Fret 15 has the same notes as fret 3, an octave higher: the neck repeats every 12 frets.';
+    expect(d39Explain(up, fb(up, 15))).toBe(rule);
+    expect(d39Explain(up, fb(up, 17))).toBe(`${rule} 3 + 12 = 15.`);
+    const down = prompt('repeat:-12@f17');
+    expect(d39Explain(down, fb(down, 7))).toBe(
+      'Fret 5 has the same notes as fret 17, an octave lower: the neck repeats every 12 frets. 17 − 12 = 5.',
+    );
+  });
+
+  it('skips the sum when one end is the open strings', () => {
+    const p = prompt('repeat:-12@f12');
+    expect(d39Explain(p, fb(p, 5))).toBe(
+      'The open strings have the same notes as fret 12, an octave lower: the neck repeats every 12 frets.',
+    );
+    const open = prompt('repeat:+12@f0');
+    expect(d39Explain(open, fb(open, 24))).toBe(
+      'Fret 12 has the same notes as the open strings, an octave higher: the neck repeats every 12 frets.',
+    );
+  });
+});
+
 describe('D39 labels', () => {
   it('names frets and ordinals', () => {
-    expect(d39FretName(0)).toBe('fret 0 (open)');
+    expect(d39FretName(0)).toBe('the open strings');
     expect(d39FretName(12)).toBe('fret 12');
     expect(d39ChoiceLabel(0)).toBe('Open');
     expect(d39ChoiceLabel(7)).toBe('7');

@@ -60,9 +60,9 @@ function frets(range: FretRange): number[] {
   return Array.from({ length: range.to - range.from + 1 }, (_, i) => range.from + i);
 }
 
-/** `fret 7`; the open string is fret 0. Used for feedback and the review log. */
+/** `fret 7`, or `the open strings` for fret 0. Used for feedback and the review log. */
 export function d39FretName(fret: number): string {
-  return fret === 0 ? 'fret 0 (open)' : `fret ${fret}`;
+  return fret === 0 ? 'the open strings' : `fret ${fret}`;
 }
 
 /** The label on a fret button. */
@@ -141,6 +141,37 @@ export function d39WorkedExample(prompt: D39Prompt): string {
       return `${at} the same notes as ${start}, an octave ${way}: the neck repeats every 12 frets.`;
     }
   }
+}
+
+/**
+ * How to find a marker: count the dots from the nut (research/03 F3). The
+ * 12th fret's double dot is named, since it is the one that looks different.
+ */
+function countDots(fret: number): string {
+  const dots = D39_MARKERS.filter((f) => f <= fret);
+  if (dots.length <= 1) return `The first dot from the nut is fret ${fret}.`;
+  const last = fret === 12 ? 'then the double dot, 12' : String(fret);
+  return `Count the dots from the nut: ${[...dots.slice(0, -1), last].join(', ')}.`;
+}
+
+/**
+ * The feedback line under the prompt (research/02 rule 9; research/03 F3).
+ * Markers teach the count from the nut, and say when the chosen fret has no
+ * dot at all. A repeat restates the worked example, the 12-fret rule, and on
+ * a miss does the sum.
+ */
+export function d39Explain(prompt: D39Prompt, fb: DrillFeedback<D39Answer>): string {
+  if (prompt.mode === 'repeat') {
+    const rule = d39WorkedExample(prompt);
+    const { from, expected } = prompt;
+    if (fb.result.correct || from === 0 || expected === 0) return rule;
+    const sum = expected > from ? `${from} + 12 = ${expected}` : `${from} − 12 = ${expected}`;
+    return `${rule} ${sum}.`;
+  }
+  const count = countDots(prompt.expected);
+  if (fb.result.correct) return count;
+  const noDot = fb.answer > 0 && !D39_MARKERS.includes(fb.answer);
+  return noDot ? `Fret ${fb.answer} has no dot. ${count}` : count;
 }
 
 export function d39Check(prompt: D39Prompt, answer: D39Answer): DrillCheck {

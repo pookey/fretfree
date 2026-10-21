@@ -10,7 +10,9 @@ import {
   d5Check,
   d5Choices,
   d5ConceptOf,
+  d5ChoiceLabel,
   d5DescribeAnswer,
+  d5Explain,
   d5FeedbackPositions,
   d5GivenPosition,
   d5KeyFor,
@@ -164,7 +166,7 @@ describe('d5Check and answers', () => {
   });
 
   it('writes the worked example', () => {
-    expect(d5WorkedExample(p)).toBe('This is a major 3rd (M3), 4 half steps up from F#.');
+    expect(d5WorkedExample(p)).toBe('This is a major 3rd (M3), 4 half steps up from F♯.');
   });
 
   it('plays both notes, plus the root and the chosen note when wrong', () => {
@@ -187,6 +189,63 @@ describe('d5Check and answers', () => {
     expect(d5GivenPosition(p, 'm2', STANDARD_TUNING)).toBeNull();
     expect(d5FeedbackPositions(p, fb(p, 'm2'), STANDARD_TUNING).given).toEqual([]);
     expect(d5GivenPosition(p, 'X' as D5Answer, STANDARD_TUNING)).toBeNull();
+  });
+});
+
+describe('d5Explain', () => {
+  // M3 from string 5 to 4 with its root at fret 3: C up to E.
+  const c = prompt('interval-name:M3@s5→s4', { rng: () => 0.1 });
+
+  it('the C-to-E example is what it says', () => {
+    expect(c.root).toEqual({ string: 5, fret: 3 });
+    expect([c.rootPc, c.upperPc]).toEqual(['C', 'E']);
+  });
+
+  it('says what the chosen name means, then counts the shape', () => {
+    expect(d5Explain(c, fb(c, 'm3'))).toBe(
+      'You chose m3 (a minor 3rd, 3 half steps). From C up to E is 4 half steps: a major 3rd, M3.',
+    );
+    // A wider miss: the count is the same method.
+    expect(d5Explain(c, fb(c, 'P5'))).toBe(
+      'You chose P5 (a perfect 5th, 7 half steps). From C up to E is 4 half steps: a major 3rd, M3.',
+    );
+  });
+
+  it('confirms a right answer in one short line', () => {
+    expect(d5Explain(c, fb(c, 'M3'))).toBe('Major 3rd: 4 half steps up from C.');
+    const tt = prompt('interval-name:TT@s5→s4');
+    expect(d5Explain(tt, fb(tt, 'TT'))).toMatch(/^Tritone: 6 half steps up from /);
+  });
+
+  it('names the G–B shift when a shape across it is read a half step too big', () => {
+    const gb = prompt('interval-name:M3@s3→s2');
+    expect(gb.gbShift).toBe(true);
+    const line = d5Explain(gb, fb(gb, 'P4'));
+    expect(line).toMatch(/^You chose P4 \(a perfect 4th, 5 half steps\)\. From \S+ up to \S+ is 4/);
+    expect(line).toContain('crosses the G and B strings');
+    // Too small is a different slip: no G–B note.
+    expect(d5Explain(gb, fb(gb, 'm3'))).not.toContain('G and B');
+    // Off the G–B pair, a P4 for an M3 is a plain miscount.
+    expect(d5Explain(c, fb(c, 'P4'))).not.toContain('G and B');
+  });
+
+  it('spells sharps and flats as ♯ and ♭', () => {
+    const p = prompt('interval-name:M3@s6→s5');
+    expect(d5Explain(p, fb(p, 'M3'))).toBe('Major 3rd: 4 half steps up from F♯.');
+    expect(d5Explain(p, fb(p, 'm3'))).toContain('From F♯ up to A♯ is 4 half steps');
+    const flat = prompt('interval-name:M3@s6→s5', { accidentalPref: 'flat' });
+    expect(d5Explain(flat, fb(flat, 'm3'))).toContain('From G♭ up to B♭');
+  });
+
+  it('only counts the shape for an answer that is not an interval', () => {
+    expect(d5Explain(c, fb(c, 'X' as D5Answer))).toBe(
+      'From C up to E is 4 half steps: a major 3rd, M3.',
+    );
+  });
+
+  it('labels a button with its short name, then the name in words', () => {
+    expect(d5ChoiceLabel('M3')).toBe('M3, major 3rd');
+    expect(d5ChoiceLabel('TT')).toBe('TT, tritone');
   });
 });
 

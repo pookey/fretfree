@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, firstLaunch, noteName } from './helpers';
 import { skipInstallTip } from './helpers/install';
+import { d5ButtonName } from './helpers/interval-names';
 
 // M2-15: the placement test, retaken from Settings (design §3.4, §4 step 6).
 // A learner who skipped it in onboarding opens it again from Settings, and
@@ -76,7 +77,7 @@ async function solve(page: Page, itemId: string): Promise<Answer | null> {
   const note = /^note@s(\d)f(\d+)$/.exec(itemId);
   if (note) return { kind: 'button', label: noteName(Number(note[1]), Number(note[2])) };
   const interval = /^interval-name:([mMPT][1-8T])@s\d→s\d$/.exec(itemId);
-  if (interval) return { kind: 'button', label: interval[1]! };
+  if (interval) return { kind: 'button', label: d5ButtonName(interval[1]!) };
   const tap = /^interval:([mMPT][1-8T])@s(\d)→s(\d)$/.exec(itemId);
   if (tap) {
     const root = dialog(page).getByTestId('marker-root').first();

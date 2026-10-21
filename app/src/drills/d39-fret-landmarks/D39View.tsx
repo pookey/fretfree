@@ -6,6 +6,7 @@ import type { DrillRenderProps } from '../types';
 import {
   d39ChoiceLabel,
   d39Column,
+  d39Explain,
   d39FeedbackPositions,
   d39FeedbackRange,
   d39FretLook,
@@ -204,7 +205,11 @@ export function D39View({
           : `Fretboard, fret ${prompt.from} marked`;
 
   return (
-    <div className={styles.drill} data-size-class={sizeClass}>
+    <div
+      className={styles.drill}
+      data-size-class={sizeClass}
+      data-answered={Boolean(feedback) || undefined}
+    >
       <div className={styles.upper}>
         <div className={styles.top}>
           <p className={styles.prompt} id="drill-prompt">
@@ -223,14 +228,20 @@ export function D39View({
               question
             )}
           </p>
-          <p className={styles.hint} data-testid="d39-hint" aria-live="polite">
-            {!feedback &&
-              (mode === 'find-marker'
+          {feedback ? (
+            // Feedback teaches the method: count the dots, or add 12 (rule 9).
+            <p className={styles.explain} data-testid="d39-explain">
+              {d39Explain(prompt, feedback)}
+            </p>
+          ) : (
+            <p className={styles.hint} data-testid="d39-hint" aria-live="polite">
+              {mode === 'find-marker'
                 ? 'Tap anywhere on that fret, or use the arrow keys and Enter.'
                 : typed
                   ? `Typed ${typed}. Press Enter to answer.`
-                  : '')}
-          </p>
+                  : ''}
+            </p>
+          )}
           {choices.length > 0 && (
             <div className={styles.choices} role="group" aria-labelledby="drill-prompt">
               {choices.map((c) => {

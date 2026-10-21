@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { freshStart, noteName } from './helpers';
 import { focusSession } from './helpers/focus';
+import { d5ButtonName } from './helpers/interval-names';
 import { seedDueItems } from './helpers/octaves';
 
 // M1-28: after a wrong answer, "That was …" and its Continue sat below the
@@ -82,7 +83,7 @@ const CASES: DrillCase[] = [
       const names = await page
         .locator('[role="group"][aria-labelledby="drill-prompt"] button')
         .allTextContents();
-      return choice(page, names.find((n) => n.trim() !== 'M3')!.trim());
+      return choice(page, d5ButtonName(names.find((n) => n.trim() !== 'M3')!.trim()));
     },
   },
   {

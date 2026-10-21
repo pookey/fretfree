@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, firstLaunch, noteName } from './helpers';
 import { skipInstallTip } from './helpers/install';
+import { d5ButtonName } from './helpers/interval-names';
 
 // M2-09: the placement test (design §3.4, §4 step 6). An adaptive probe of
 // F1, F2, C2 and C3 (every topic a drill can serve) at the end of onboarding
@@ -62,7 +63,7 @@ async function solve(page: Page, itemId: string): Promise<Answer | null> {
   if (note) return { kind: 'button', label: noteName(Number(note[1]), Number(note[2])) };
   // D5 names the interval the two dots make; its buttons are the interval names.
   const interval = /^interval-name:([mMPT][1-8T])@s\d→s\d$/.exec(itemId);
-  if (interval) return { kind: 'button', label: interval[1]! };
+  if (interval) return { kind: 'button', label: d5ButtonName(interval[1]!) };
   // D6 taps the interval above the shown root, on the item's upper string.
   const tap = /^interval:([mMPT][1-8T])@s(\d)→s(\d)$/.exec(itemId);
   if (tap) {

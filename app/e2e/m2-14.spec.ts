@@ -4,6 +4,7 @@ import { focusSession } from './helpers/focus';
 import { skipInstallTip } from './helpers/install';
 import { C3_SKILLS, SKILLS_BEFORE_C3, seedIntervals } from './helpers/intervals';
 import { seedDueItems } from './helpers/octaves';
+import { d5ButtonName } from './helpers/interval-names';
 
 // M2-14: the M2 milestone QA (design §11: C1, C3 via D4–D6, G–B shift
 // content, confusable pairing, placement test). One session serves due
@@ -178,7 +179,7 @@ async function answer(page: Page, drill: Drill): Promise<void> {
     const name = await d5Answer(page);
     await page
       .getByRole('group', { name: /interval|continue/i })
-      .getByRole('button', { name, exact: true })
+      .getByRole('button', { name: d5ButtonName(name), exact: true })
       .click();
   } else {
     await cellAt(page, await d6Answer(page)).click();

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart } from './helpers';
+import { d5ButtonName } from './helpers/interval-names';
 import { skillsExcept } from './helpers/skills';
 
 // M2-05: D5 "Name the interval from two dots". A choice drill whose
@@ -112,7 +113,9 @@ async function solve(page: Page): Promise<string> {
 }
 
 async function choose(page: Page, name: string): Promise<void> {
-  await choices(page).getByRole('button', { name, exact: true }).click();
+  await choices(page)
+    .getByRole('button', { name: d5ButtonName(name), exact: true })
+    .click();
 }
 
 /**

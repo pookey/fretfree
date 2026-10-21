@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart } from './helpers';
 import { focusSession } from './helpers/focus';
 import { C3_SKILLS } from './helpers/intervals';
+import { d5ButtonName } from './helpers/interval-names';
 import { answerToWideD5, d5CorrectAnswer, reachWideD5, seedWideD5 } from './helpers/wide-intervals';
 
 // M2-22: D5 at its widest scope (all 12 intervals) packs the legend into
@@ -90,7 +91,7 @@ test.describe('M2-22 D5 at its widest scope', () => {
     const answer = await d5CorrectAnswer(page);
     const wrong = answer === 'P8' ? 'm2' : 'P8';
     await choices(page)
-      .and(page.getByRole('button', { name: wrong, exact: true }))
+      .and(page.getByRole('button', { name: d5ButtonName(wrong), exact: true }))
       .click();
     await expect(page.getByTestId('feedback-wrong')).toBeVisible();
     const expected = legend(page).locator(`[data-interval="${answer}"]`);
