@@ -134,7 +134,7 @@ test.describe('M10-11 the later drills say what they mean', () => {
 
   test('the pentatonic box says how a round ends, even on a worked example', async ({ page }) => {
     await freshStart(page);
-    await masterSkills(page, ['C6.minor-shapes']);
+    await masterSkills(page, ['C6.minor-cores', 'C6.minor-shapes']);
     await focusSession(page, 'C7.minor-boxes');
     // The first card is a worked example: one clear instruction, no Done clause.
     await expect(prompt(page)).toContainText('Tap each note to continue.');
