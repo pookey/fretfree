@@ -6,7 +6,7 @@ import { expectNoHorizontalOverflow, freshStart, masterSkills } from './helpers'
 // colours its root, 3rd, 5th and 7th by shape as well as colour.
 
 const NOTE_SKILLS =
-  '/session?skill=F2.string6-naturals&skill=F2.string5-naturals&skill=C2.all-notes';
+  '/session?skill=F2.string6-naturals&skill=F2.string5-naturals&skill=C2.string1-naturals&skill=C2.string4-naturals&skill=C2.string3-naturals&skill=C2.string2-naturals&skill=C2.low-accidentals&skill=C2.all-notes';
 
 async function pick(page: Page, root: string, show: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Root' }).selectOption({ label: root });

@@ -6,7 +6,7 @@ import { focusSession } from './helpers/focus';
 // this now" in Learn. A fresh, unfocused session opens on the F1 note wheel.
 
 const NOTE_SKILLS =
-  /\/session\?skill=F2\.string6-naturals&skill=F2\.string5-naturals&skill=C2\.all-notes$/;
+  /\/session\?skill=F2\.string6-naturals&skill=F2\.string5-naturals&skill=C2\.string1-naturals&skill=C2\.string4-naturals&skill=C2\.string3-naturals&skill=C2\.string2-naturals&skill=C2\.low-accidentals&skill=C2\.all-notes$/;
 
 /** Answer the D1 prompt on screen correctly; returns the string it was on. */
 async function answerCorrectly(page: Page): Promise<number> {

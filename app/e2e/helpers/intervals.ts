@@ -15,6 +15,11 @@ export const SKILLS_BEFORE_C3 = [
   'C1.octaves-gb-shift',
   'C1.double-octaves',
   'C1.every-octave',
+  'C2.string1-naturals',
+  'C2.string4-naturals',
+  'C2.string3-naturals',
+  'C2.string2-naturals',
+  'C2.low-accidentals',
   'C2.all-notes',
 ];
 
