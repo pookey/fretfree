@@ -118,7 +118,7 @@ export function D3View({
           {/* One slot: the input hint while open, then the explanation (D6's pattern). */}
           <p
             className={styles.hint}
-            data-testid="d3-explain"
+            data-testid="d3-hint"
             data-explaining={feedback ? true : undefined}
           >
             {feedback

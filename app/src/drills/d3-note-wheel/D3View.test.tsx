@@ -116,7 +116,7 @@ describe('<D3View>', () => {
   it('answers by tapping the note on any string of the neck', () => {
     const p = prompt('step:+2@E');
     const { onAnswer } = renderView(p);
-    expect(screen.getByTestId('d3-explain')).toHaveTextContent(/Tap the note on any string/);
+    expect(screen.getByTestId('d3-hint')).toHaveTextContent(/Tap the note on any string/);
     // String 4 fret 4 is F#: a different string from the drawn step.
     fireEvent.pointerDown(cell(4, 4));
     fireEvent.keyDown(cell(3, 0), { key: 'Enter' });
@@ -143,7 +143,7 @@ describe('<D3View>', () => {
     const { onAnswer } = renderView(p, { feedback: tapFeedback(p, 4, 4) });
     fireEvent.pointerDown(cell(4, 5));
     expect(onAnswer).not.toHaveBeenCalled();
-    expect(screen.getByTestId('d3-explain')).not.toHaveTextContent(/Tap the note on any string/);
+    expect(screen.getByTestId('d3-hint')).not.toHaveTextContent(/Tap the note on any string/);
   });
 
   it('marks a wrong tap as wrong and the answer as correct', () => {
@@ -206,13 +206,11 @@ describe('<D3View>', () => {
   it('explains a miss under the prompt, and confirms a correct answer', () => {
     const p = prompt('step:+2@E');
     const { unmount } = renderView(p, { feedback: { answer: 'F', result: d3Check(p, 'F') } });
-    expect(screen.getByTestId('d3-explain')).toHaveTextContent(
+    expect(screen.getByTestId('d3-hint')).toHaveTextContent(
       "You said F, a half step above E. There's no sharp between E and F: a half step above E is F. A whole step is two frets: E F F♯.",
     );
     unmount();
     renderView(p, { feedback: { answer: 'F#', result: d3Check(p, 'F#') } });
-    expect(screen.getByTestId('d3-explain')).toHaveTextContent(
-      'E to F♯ is two frets on one string.',
-    );
+    expect(screen.getByTestId('d3-hint')).toHaveTextContent('E to F♯ is two frets on one string.');
   });
 });

@@ -94,7 +94,8 @@ async function answerRight(page: Page, itemId: string): Promise<boolean> {
   if (a.kind === 'button') {
     await dialog(page)
       .locator('[role="group"][aria-labelledby="drill-prompt"]')
-      .getByRole('button', { name: a.label, exact: true })
+      // D1 and D3 buttons spell sharps with ♯ (M10-05).
+      .getByRole('button', { name: a.label.replace('#', '♯'), exact: true })
       .click();
   } else {
     await dialog(page)

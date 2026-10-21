@@ -129,6 +129,14 @@
   font-size: 0.875rem;
 }
 
+/* A phone on its side has no room for an empty line above the letterboxed
+   neck; the explanation still shows once answered (Continue is pinned). */
+@media (max-height: 499px) {
+  .drill[data-size-class='compact'] .explain:empty {
+    display: none;
+  }
+}
+
 .drill[data-size-class='compact'] .choice {
   min-width: 2.9rem;
   min-height: 2.9rem;

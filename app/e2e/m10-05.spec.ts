@@ -182,10 +182,10 @@ test.describe('M10-05 D3 fades the wheel and teaches on a miss', () => {
       .getByRole('button', { name: said, exact: true })
       .click();
     await expect(page.getByTestId('feedback-wrong')).toContainText(`That was ${expected}.`);
-    await expect(page.getByTestId('d3-explain')).toContainText(
+    await expect(page.getByTestId('d3-hint')).toContainText(
       'The musical alphabet runs A B C D E F G, then A again.',
     );
-    await expect(page.getByTestId('d3-explain')).toContainText(
+    await expect(page.getByTestId('d3-hint')).toContainText(
       `${which === 'after' ? 'After' : 'Before'} ${from} comes ${expected}.`,
     );
     expect((await wheelNames(page)).sort()).toEqual([from!, expected, said].sort());
@@ -215,7 +215,7 @@ test.describe('M10-05 D3 fades the wheel and teaches on a miss', () => {
       .getByRole('button', { name: pretty(half), exact: true })
       .click();
     await expect(page.getByTestId('feedback-wrong')).toContainText(`That was ${pretty(expected)}.`);
-    const explain = page.getByTestId('d3-explain');
+    const explain = page.getByTestId('d3-hint');
     await expect(explain).toContainText(`You said ${pretty(half)}, a half step ${dir} ${from}.`);
     const walk = [from!, half, expected].map(pretty).join(' ');
     await expect(explain).toContainText(`A whole step is two frets: ${walk}.`);
