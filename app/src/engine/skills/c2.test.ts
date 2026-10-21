@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { noteAt } from '../../theory';
 import { gatesOf } from '../mastery';
 import { parseItemId } from '../model';
+import { placementGroups } from '../../placement/algorithm';
 import { C2_STAGE_IDS, skills } from './c2';
+import { SKILLS } from './index';
 
 const byId = (id: string) => skills.find((s) => s.id === id)!;
 const ids = (id: string) =>
@@ -71,9 +73,33 @@ describe('C2 stages (M10-12)', () => {
       expect(gates.mastered).toEqual([]);
       expect(gates.practising[0]).toBe(C2_STAGE_IDS[i - 1]);
     }
+    // The probed stages also name the probed stage before, so placement,
+    // which leaves the others out, skips them when that isn't known.
+    expect(byId('C2.string2-naturals').prerequisites).toEqual([
+      'C2.string3-naturals',
+      'F2.string6-naturals',
+      'F2.string5-naturals',
+    ]);
+    expect(byId('C2.all-notes').prerequisites).toEqual([
+      'C2.low-accidentals',
+      'C2.string2-naturals',
+    ]);
+    expect(byId('C2.string3-naturals').prerequisites).toEqual(['C2.string4-naturals']);
     // Strings 4 and 2 are reached by octave shapes (C1).
     expect(gatesOf(byId('C2.string4-naturals')).practising).toContain('C1.octaves');
     expect(gatesOf(byId('C2.string2-naturals')).practising).toContain('C1.octaves-gb-shift');
+  });
+
+  it('probes string 2’s naturals and the last stage in placement, each after the one before', () => {
+    expect(skills.filter((s) => !s.skipPlacement).map((s) => s.id)).toEqual([
+      'C2.string2-naturals',
+      'C2.all-notes',
+    ]);
+    const groups = placementGroups(SKILLS, () => true).filter((g) => g.id.startsWith('C2.'));
+    expect(groups.map((g) => [g.id, g.prerequisites])).toEqual([
+      ['C2.string2-naturals', ['F2.string6-naturals', 'F2.string5-naturals']],
+      ['C2.all-notes', ['C2.string2-naturals']],
+    ]);
   });
 
   it('keeps every drill, hearing included, on every stage', () => {

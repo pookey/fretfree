@@ -202,7 +202,7 @@ test.describe('M2-09 placement test', () => {
     const known = page.getByRole('list', { name: 'Already known' });
     await expect(known).toContainText('The musical alphabet');
     await expect(known).toContainText('Natural notes on string 6');
-    await expect(known).toContainText('Every note on every string');
+    await expect(known).toContainText('Sharps and flats on strings 4 to 1');
     await expect(known).toContainText('Interval shapes: 3rds');
 
     const db = await stored(page);

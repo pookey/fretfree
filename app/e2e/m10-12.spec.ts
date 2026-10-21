@@ -66,7 +66,7 @@ test.describe('M10-12 C2 by string', () => {
     for (const id of C2_STAGES.slice(1))
       await expect(skillRow(page, id)).toHaveAttribute('data-status', 'locked');
     await expect(skillRow(page, 'C2.string4-naturals')).toContainText(
-      "once you're practising Natural notes on string 1",
+      "once you're practising:Natural notes on string 1",
     );
     await expectNoHorizontalOverflow(page);
 

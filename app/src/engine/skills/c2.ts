@@ -65,7 +65,6 @@ interface Stage {
 }
 
 // Skill IDs are literals: e2e/helpers/skills.ts reads them from the source.
-// Each stage needs the one before practising; the first, F2's strings.
 const STAGES: readonly Stage[] = [
   { id: 'C2.string1-naturals', strings: [1] },
   // Reached from string 6 by the octave shape two strings up.
@@ -90,14 +89,27 @@ const STAGES: readonly Stage[] = [
 
 export const C2_STAGE_IDS: readonly string[] = STAGES.map((s) => s.id);
 
+const F2_STRINGS = ['F2.string6-naturals', 'F2.string5-naturals'];
+
+/**
+ * The stage before, practising. A probed stage also names the probed stage
+ * before it (or F2), which it implies anyway: placement leaves the stages
+ * between out, and this keeps a beginner who doesn't know F2 from being
+ * asked about string 2 or the sharps and flats.
+ */
+function prerequisitesOf(i: number): string[] {
+  if (i === 0) return F2_STRINGS;
+  if (!STAGES[i]?.probe) return [C2_STAGE_IDS[i - 1] as string];
+  const probed = C2_STAGE_IDS.slice(0, i).filter((_, j) => STAGES[j]?.probe);
+  return [C2_STAGE_IDS[i - 1] as string, ...(probed.length ? probed.slice(-1) : F2_STRINGS)];
+}
+
 export const skills: Skill[] = STAGES.map((s, i) => ({
   id: s.id,
   topic: 'C2',
   order: 1200 + i * 10,
   title: s.title ?? `Natural notes on string ${s.strings[0]}`,
-  prerequisites: i
-    ? [C2_STAGE_IDS[i - 1] as string]
-    : ['F2.string6-naturals', 'F2.string5-naturals'],
+  prerequisites: prerequisitesOf(i),
   softUnlock: true,
   ...(s.softPrerequisites ? { softPrerequisites: s.softPrerequisites } : {}),
   ...(s.probe ? {} : { skipPlacement: true }),
