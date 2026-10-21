@@ -1,6 +1,7 @@
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import type { GuideLevel } from '../../engine/model';
 import type { FretRange, Position } from '../../theory';
+import { spokenDegree } from '../../theory/pitch-display';
 import type { DrillRenderProps } from '../types';
 import {
   d6DegreeAt,
@@ -46,7 +47,17 @@ export function D6View({
     onAnswer(pos);
   };
 
-  const root: FretMarker = { ...prompt.root, style: 'root', label: 'R', forceLabel: true };
+  const root: FretMarker = {
+    ...prompt.root,
+    style: 'root',
+    label: 'R',
+    spokenLabel: 'root',
+    forceLabel: true,
+  };
+  const degree = (p: Position) => {
+    const label = d6DegreeAt(prompt, p);
+    return { label, spokenLabel: label === 'R' ? 'root' : spokenDegree(label) };
+  };
   let markers: FretMarker[] = [root];
   if (feedback) {
     const pos = d6FeedbackPositions(prompt, feedback);
@@ -55,13 +66,13 @@ export function D6View({
       ...pos.expected.map((p): FretMarker => ({
         ...p,
         style: 'correct',
-        label: d6DegreeAt(prompt, p),
+        ...degree(p),
         forceLabel: true,
       })),
       ...pos.given.map((p): FretMarker => ({
         ...p,
         style: 'wrong',
-        label: d6DegreeAt(prompt, p),
+        ...degree(p),
         forceLabel: true,
       })),
     ];
@@ -70,7 +81,7 @@ export function D6View({
     markers.push({
       ...prompt.shapeTarget,
       style: 'target',
-      label: d6DegreeAt(prompt, prompt.shapeTarget),
+      ...degree(prompt.shapeTarget),
       forceLabel: true,
     });
   }

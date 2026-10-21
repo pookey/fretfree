@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { displayPc, spokenPc } from './pitch-display';
+import { displayPc, spokenDegree, spokenPc } from './pitch-display';
 
 describe('displayPc', () => {
   it('spells sharps and flats with the music glyphs', () => {
@@ -58,5 +58,22 @@ describe('spokenPc', () => {
     expect(spokenPc('E')).toBe('E');
     expect(spokenPc('Bm')).toBe('Bm');
     expect(spokenPc('')).toBe('');
+  });
+});
+
+describe('spokenDegree', () => {
+  it('says a degree’s accidental in words, glyph or ASCII', () => {
+    expect(spokenDegree('♭3')).toBe('flat 3');
+    expect(spokenDegree('b7')).toBe('flat 7');
+    expect(spokenDegree('♯4')).toBe('sharp 4');
+    expect(spokenDegree('#11')).toBe('sharp 11');
+    expect(spokenDegree('♭♭7')).toBe('double flat 7');
+    expect(spokenDegree('bb7')).toBe('double flat 7');
+    expect(spokenDegree('𝄪5')).toBe('double sharp 5');
+  });
+
+  it('leaves plain degrees and other labels alone', () => {
+    expect(spokenDegree('5')).toBe('5');
+    expect(spokenDegree('R')).toBe('R');
   });
 });

@@ -161,6 +161,10 @@ describe('<D6View>', () => {
     expect(markers('correct')).toContainEqual({ ...p.shapeTarget, text: '♭7' });
     expect(markers('wrong')).toEqual([{ ...m3, text: '♭3' }]);
     expect(screen.getByTestId('d6-explain')).toHaveTextContent('You tapped the ♭3 (minor 3rd).');
+    // Screen readers hear the degree in words, not the glyph.
+    expect(screen.getByRole('img', { name: 'flat 3' })).toBe(screen.getByTestId('marker-wrong'));
+    expect(screen.getAllByRole('img', { name: 'flat 7' }).length).toBeGreaterThan(0);
+    expect(screen.getByRole('img', { name: 'root' })).toBe(screen.getByTestId('marker-root'));
   });
 
   it('names a forgotten G–B shift', () => {

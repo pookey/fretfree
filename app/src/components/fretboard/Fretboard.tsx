@@ -42,6 +42,8 @@ export interface FretMarker extends Position {
    * A `target` is the queried cell, so only this can label it.
    */
   forceLabel?: boolean;
+  /** The label as a screen reader should say it (`flat 3` for `♭3`), when the glyph may not be read. */
+  spokenLabel?: string;
   /** Shape-outline group, e.g. a CAGED shape ID. */
   group?: string;
 }
@@ -289,6 +291,8 @@ export function Fretboard({
             data-testid={`marker-${m.style}`}
             data-string={m.string}
             data-fret={m.fret}
+            role={text && m.spokenLabel ? 'img' : undefined}
+            aria-label={text && m.spokenLabel ? m.spokenLabel : undefined}
           >
             {m.style === 'root' ? (
               <rect x={cell.cx - 17} y={cy - 17} width={34} height={34} rx={7} />

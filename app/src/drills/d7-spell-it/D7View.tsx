@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { GuideLevel } from '../../engine/model';
 import { degreeOrdinal, type SpellingVerdict } from '../../theory';
+import { spokenDegree } from '../../theory/pitch-display';
 import type { DrillRenderProps } from '../types';
 import {
   alterNote,
@@ -129,7 +130,12 @@ export function D7View({
         else if (guides.letters) ghost = slot.note.charAt(0);
       }
     }
-    const what = isDegreeOf && !slot.given ? 'note' : guides.labels ? label : `note ${i + 1}`;
+    const what =
+      isDegreeOf && !slot.given
+        ? 'note'
+        : guides.labels
+          ? spokenDegree(slot.label)
+          : `note ${i + 1}`;
     const said = heard === undefined ? 'empty' : spoken(heard);
     return (
       <li key={i} className={styles.slotItem}>

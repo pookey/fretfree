@@ -40,3 +40,26 @@ export function spokenPc(name: string): string {
   };
   return `${letter}${said[accidental] ?? ''}${rest}`;
 }
+
+/**
+ * A formula or scale degree as a screen reader should say it, which not
+ * every voice does for the glyphs: `♭3` or `b3` → `flat 3`, `♯4` → `sharp 4`,
+ * `𝄫7` or `bb7` → `double flat 7`. A plain degree is unchanged.
+ */
+export function spokenDegree(degree: string): string {
+  const m = /^(##|𝄪|#|♯|bb|𝄫|♭♭|b|♭)?(\d+)$/u.exec(degree);
+  if (!m) return degree;
+  const [, accidental = '', number = ''] = m;
+  const said: Record<string, string> = {
+    '##': 'double sharp ',
+    '𝄪': 'double sharp ',
+    '#': 'sharp ',
+    '♯': 'sharp ',
+    bb: 'double flat ',
+    '𝄫': 'double flat ',
+    '♭♭': 'double flat ',
+    b: 'flat ',
+    '♭': 'flat ',
+  };
+  return `${said[accidental] ?? ''}${number}`;
+}
