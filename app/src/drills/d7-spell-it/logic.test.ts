@@ -239,7 +239,11 @@ describe('D7 grading', () => {
       'Chord tones are spelled by letter: root, 3rd, 5th and 7th skip a letter each time, whatever accidental that needs.',
     ]);
     expect(d7Explain(p, notes('D F# A#'))).toEqual([
-      "A♯ isn't the 7th of Bm7: it's A, 10 half steps above B.",
+      "A♯ isn't the ♭7th of Bm7: it's A, 10 half steps above B.",
+    ]);
+    // The chord tone keeps its flat, as the slot label beside it does.
+    expect(d7Explain(p, notes('D# F# A'))).toEqual([
+      "D♯ isn't the ♭3rd of Bm7: it's D, 3 half steps above B.",
     ]);
     const add9 = prompt('spell-chord:add9@C');
     expect(d7Explain(add9, notes('E G Eb'))[0]).toMatch(/^E♭ isn't the 9th of Cadd9: it's D/);

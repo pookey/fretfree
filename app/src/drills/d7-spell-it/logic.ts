@@ -275,12 +275,13 @@ function ordinalWord(n: number): string {
   return `${n}${n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}`;
 }
 
-/** A chord tone by its formula number (`b3` → `3rd`), a key degree by its own. */
+/** A chord tone by its formula degree (`b7` → `♭7th`), a key degree by its own. */
 function toneWord(label: string): string {
-  return ordinalWord(Number(label.replace(/[#b]/g, '')));
+  const accidental = label.replace(/\d+$/, '');
+  return prettyDegree(accidental) + ordinalWord(Number(label.slice(accidental.length)));
 }
 
-/** `the 7th of F♯ major`, `the 3rd of Bm7`. */
+/** `the 7th of F♯ major`, `the ♭3rd of Bm7`. */
 function slotPhrase(prompt: D7Prompt, slot: D7Slot): string {
   return `the ${toneWord(slot.label)} of ${prompt.subject}`;
 }
