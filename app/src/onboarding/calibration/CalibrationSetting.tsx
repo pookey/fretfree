@@ -29,7 +29,7 @@ export function CalibrationSetting() {
           {open ? 'Close' : baseline === null ? 'Measure' : 'Recalibrate'}
         </button>
       </div>
-      <p id={hint} className={styles.muted}>
+      <p id={hint} className={styles.settingHint}>
         How long a tap takes you on this screen. Answers are timed from here, so a slow screen never
         counts against you.
       </p>
