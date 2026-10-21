@@ -13,6 +13,7 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { D2_SCOPES, type D2Scope } from './meta';
 
@@ -85,15 +86,21 @@ function pcAt(prompt: D2Prompt, pos: Position): string {
   return noteAt(pos, prompt.tuning, prompt.accidentalPref).pc;
 }
 
+/**
+ * `expected` is what the feedback bar prints (`That was F♯.`); the confusion
+ * matrix keeps the ASCII pitch class as its concept.
+ */
 export function d2Check(prompt: D2Prompt, answer: D2Answer): DrillCheck {
+  const expected = displayPc(prompt.pc);
+  const concept = prompt.pc;
   if (prompt.targets.some((t) => samePosition(t, answer))) {
-    return { correct: true, expected: prompt.pc };
+    return { correct: true, expected, concept };
   }
   const given = d2IsLive(prompt, answer) ? pcAt(prompt, answer) : null;
   // The right note on the wrong string is a string error, not a note confusion.
   return given && chromaOf(given) !== chromaOf(prompt.pc)
-    ? { correct: false, expected: prompt.pc, confusedWith: given }
-    : { correct: false, expected: prompt.pc };
+    ? { correct: false, expected, concept, confusedWith: given }
+    : { correct: false, expected, concept };
 }
 
 export function d2DescribeAnswer(answer: D2Answer): string {
@@ -136,10 +143,10 @@ function fretList(frets: readonly number[]): string {
 
 /** One line of feedback naming every right fret, so octave repeats are seen too. */
 export function d2Explain(prompt: D2Prompt, fb: DrillFeedback<D2Answer>): string {
-  const where = `${prompt.pc} is at ${fretList(prompt.targets.map((t) => t.fret))} on string ${prompt.string}.`;
+  const where = `${displayPc(prompt.pc)} is at ${fretList(prompt.targets.map((t) => t.fret))} on string ${prompt.string}.`;
   if (fb.result.correct) return where;
   const { string, fret } = fb.answer;
-  return `You tapped ${pcAt(prompt, fb.answer)} (string ${string}, fret ${fret}). ${where}`;
+  return `You tapped ${displayPc(pcAt(prompt, fb.answer))} (string ${string}, fret ${fret}). ${where}`;
 }
 
 /**

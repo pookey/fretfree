@@ -115,6 +115,21 @@ describe('<D2View>', () => {
     expect(onAnswer).not.toHaveBeenCalled();
   });
 
+  it('names sharps and flats with ♯ and ♭ in the prompt, markers and feedback', () => {
+    const p = prompt('find:F#@s6');
+    const { rerender, props } = view(p, { guided: true });
+    expect(screen.getByTestId('d2-prompt')).toHaveTextContent('This is F♯ on string 6');
+    expect(screen.getAllByTestId('marker-target')[0]).toHaveTextContent('F♯');
+    rerender(<D2View {...props} guided={false} />);
+    expect(screen.getByTestId('d2-prompt')).toHaveTextContent('Find F♯ on string 6');
+    rerender(<D2View {...props} guided={false} feedback={fb(p, { string: 6, fret: 1 })} />);
+    expect(screen.getAllByTestId('marker-correct')[0]).toHaveTextContent('F♯');
+    expect(screen.getByTestId('d2-explain')).toHaveTextContent(
+      'You tapped F (string 6, fret 1). F♯ is at fret 2 on string 6.',
+    );
+    expect(screen.queryByText(/#/)).toBeNull();
+  });
+
   it('moves a focus cell with the arrow keys and taps it with Enter', () => {
     const p = prompt('find:G@s5', 1);
     const { onAnswer } = view(p);

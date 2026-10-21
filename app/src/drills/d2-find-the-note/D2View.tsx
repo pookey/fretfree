@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import { noteAt, type FretRange, type Position } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { DrillRenderProps } from '../types';
 import {
   d2Explain,
@@ -126,7 +127,8 @@ export function D2View({
       ?.focus({ preventScroll: true });
   }, [state.focus, state.win]);
 
-  const pcAt = (p: Position) => noteAt(p, tuning, prompt.accidentalPref).pc;
+  const pcAt = (p: Position) => displayPc(noteAt(p, tuning, prompt.accidentalPref).pc);
+  const pc = displayPc(prompt.pc);
   let markers: FretMarker[] = [];
   if (feedback) {
     const pos = d2FeedbackPositions(prompt, feedback);
@@ -134,7 +136,7 @@ export function D2View({
       ...pos.expected.map((p): FretMarker => ({
         ...p,
         style: 'correct',
-        label: prompt.pc,
+        label: pc,
         forceLabel: true,
       })),
       ...pos.given.map((p): FretMarker => ({
@@ -149,7 +151,7 @@ export function D2View({
     markers = prompt.targets.map((p): FretMarker => ({
       ...p,
       style: 'target',
-      label: prompt.pc,
+      label: pc,
       forceLabel: true,
     }));
   }
@@ -186,11 +188,11 @@ export function D2View({
           <p className={styles.prompt} id="drill-prompt" data-testid="d2-prompt">
             {guided ? (
               <>
-                This is <strong>{prompt.pc}</strong> on string {prompt.string}. Tap it to continue.
+                This is <strong>{pc}</strong> on string {prompt.string}. Tap it to continue.
               </>
             ) : (
               <>
-                Find <strong>{prompt.pc}</strong> on string {prompt.string}
+                Find <strong>{pc}</strong> on string {prompt.string}
               </>
             )}
           </p>

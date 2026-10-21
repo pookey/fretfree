@@ -101,18 +101,23 @@ describe('D2 prompts', () => {
 describe('D2 checking', () => {
   it('accepts any target cell', () => {
     const p = prompt('find:E@s6');
-    expect(d2Check(p, at(6, 0))).toEqual({ correct: true, expected: 'E' });
+    expect(d2Check(p, at(6, 0))).toEqual({ correct: true, expected: 'E', concept: 'E' });
     expect(d2Check(p, at(6, 12)).correct).toBe(true);
   });
 
   it('records the note tapped instead as the confusion', () => {
     const p = prompt('find:F@s6');
-    expect(d2Check(p, at(6, 0))).toEqual({ correct: false, expected: 'F', confusedWith: 'E' });
+    expect(d2Check(p, at(6, 0))).toEqual({
+      correct: false,
+      expected: 'F',
+      concept: 'F',
+      confusedWith: 'E',
+    });
   });
 
   it('treats the right note on the wrong string as a string error, not a confusion', () => {
     const p = prompt('find:G@s5', 1);
-    expect(d2Check(p, at(6, 3))).toEqual({ correct: false, expected: 'G' });
+    expect(d2Check(p, at(6, 3))).toEqual({ correct: false, expected: 'G', concept: 'G' });
   });
 
   it('marks dimmed cells inert and never correct', () => {
@@ -120,9 +125,22 @@ describe('D2 checking', () => {
     expect(d2IsLive(p, at(5, 4))).toBe(true);
     expect(d2IsLive(p, at(4, 4))).toBe(false);
     expect(d2IsLive(p, at(5, 13))).toBe(false);
-    expect(d2Check(p, at(6, 3))).toEqual({ correct: false, expected: 'G' });
+    expect(d2Check(p, at(6, 3))).toEqual({ correct: false, expected: 'G', concept: 'G' });
     // G on string 5 at fret 22 is out of range, and so not a target.
     expect(d2Check(p, at(5, 15)).correct).toBe(false);
+  });
+
+  it('shows the expected note with ♯/♭ and keeps the ASCII concept', () => {
+    const p = prompt('find:F#@s6');
+    expect(d2Check(p, at(6, 2))).toEqual({ correct: true, expected: 'F♯', concept: 'F#' });
+    expect(d2Check(p, at(6, 1))).toEqual({
+      correct: false,
+      expected: 'F♯',
+      concept: 'F#',
+      confusedWith: 'F',
+    });
+    const flat = prompt('find:A#@s5', 0, { accidentalPref: 'flat' });
+    expect(d2Check(flat, at(5, 1)).expected).toBe('B♭');
   });
 
   it('describes the tapped cell for the review log', () => {
@@ -163,6 +181,14 @@ describe('D2 feedback', () => {
     const g = prompt('find:G@s5');
     expect(d2Explain(g, feedback(g, at(5, 8)))).toBe(
       'You tapped F (string 5, fret 8). G is at fret 10 on string 5.',
+    );
+    const fs = prompt('find:F#@s6');
+    expect(d2Explain(fs, feedback(fs, at(6, 3)))).toBe(
+      'You tapped G (string 6, fret 3). F♯ is at fret 2 on string 6.',
+    );
+    const c = prompt('find:C@s5');
+    expect(d2Explain(c, feedback(c, at(5, 1)))).toBe(
+      'You tapped A♯ (string 5, fret 1). C is at fret 3 on string 5.',
     );
     const none: D2Prompt = { ...g, targets: [] };
     expect(d2Explain(none, feedback(none, at(5, 8)))).toMatch(/G is at fret – on/);
