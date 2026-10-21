@@ -447,7 +447,10 @@ describe('laneQuotas', () => {
     expect(laneQuotas([20, 20, 20, 20], [2, 1, 0.5, 0.5], 8)).toEqual([4, 2, 1, 1]);
     expect(laneQuotas([1, 20, 20], [2, 1, 1], 8)).toEqual([1, 4, 3]);
     expect(laneQuotas([3], [1], 8)).toEqual([3]);
-    expect(laneQuotas([5, 5], [0, 1], 8)).toEqual([0, 5]);
+    // A share-0 lane waits until no other lane can take more.
+    expect(laneQuotas([5, 5], [0, 1], 4)).toEqual([0, 4]);
+    expect(laneQuotas([5, 5], [0, 1], 8)).toEqual([3, 5]);
+    expect(laneQuotas([5, 5], [0, 1], 8, { unit: 2 })).toEqual([3, 5]);
     expect(laneQuotas([], [], 8)).toEqual([]);
   });
 
@@ -676,6 +679,24 @@ describe('buildSession lanes', () => {
           }
   });
 
+  it('serves an unpromoted optional track only when nothing else can take it', () => {
+    const tab = SKILLS.find((x) => x.id === 'TAB.string1')!;
+    const f2 = SKILLS.find((x) => x.id === 'F2.string6-naturals')!;
+    const plan = (skills: typeof SKILLS) =>
+      new Set(
+        buildSession({
+          now,
+          minutes: 10,
+          cards: [],
+          lanes: toLanes(frontierLanes(skills, 'general')),
+          scheduler: s,
+        }).map((e) => e.skillId),
+      );
+    expect(plan([f2, tab])).toEqual(new Set([f2.id]));
+    // A Tab focus, or a frontier of Tab alone, still serves it.
+    expect(plan([tab])).toEqual(new Set([tab.id]));
+  });
+
   it('gives both tracks a block when the cap has room', () => {
     const plan = buildSession({
       now,
@@ -811,6 +832,8 @@ describe.each<Goal>(['songs', 'improvise', 'jazz', 'general'])(
       expect(modules).toContain('keys');
       expect(modules).toContain('ear');
       expect(modules).toContain('rhythm');
+      // Tab opens with F3 but isn't promoted: it waits behind every other lane.
+      expect(modules).not.toContain('tab');
       for (const plan of days) {
         const fresh = plan.filter((e) => e.kind === 'new');
         const sizes = new Map<string, Set<string>>();

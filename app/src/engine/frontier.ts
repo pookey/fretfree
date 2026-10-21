@@ -304,6 +304,9 @@ export interface LaneOptions {
  * - `neck`: the neck modules, Neck basics then Whole neck.
  * - one lane per open parallel track (Ear, Rhythm), sharing the parallel
  *   share, so both tracks get a turn when both are open.
+ * - `later`: optional and future modules the goal doesn't promote (Tab
+ *   until M9-05 promotes it for tab learners). Share 0: dealt only once no
+ *   other lane can take more, as they came after everything in one queue.
  *
  * Lanes come in the order of their first skill, so the goal still decides
  * what a session opens with. Only lanes with skills are returned; the
@@ -322,12 +325,27 @@ export function frontierLanes(
   for (const skill of ordered) {
     const m = moduleOfTopic(skill.topic);
     if (m?.track === 'parallel' && holdParallel) continue;
-    const id = m?.track === 'parallel' ? m.id : m && NECK_MODULES.has(m.id) ? 'neck' : 'goal';
+    const later =
+      (m?.track === 'optional' || m?.track === 'future') && !GOAL_PROFILES[goal].includes(m.id);
+    const id =
+      m?.track === 'parallel'
+        ? m.id
+        : m && NECK_MODULES.has(m.id)
+          ? 'neck'
+          : later
+            ? 'later'
+            : 'goal';
     if (m?.track === 'parallel') parallel.add(id);
     lanes.set(id, [...(lanes.get(id) ?? []), skill]);
   }
   const shareOf = (id: string) =>
-    parallel.has(id) ? shares.parallel / parallel.size : id === 'neck' ? shares.neck : shares.goal;
+    parallel.has(id)
+      ? shares.parallel / parallel.size
+      : id === 'neck'
+        ? shares.neck
+        : id === 'later'
+          ? 0
+          : shares.goal;
   return [...lanes].map(([id, laneSkills]) => ({
     id,
     share: shareOf(id),

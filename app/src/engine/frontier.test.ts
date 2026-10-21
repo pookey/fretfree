@@ -200,6 +200,19 @@ describe('frontierLanes', () => {
     ]);
   });
 
+  it('puts optional and future modules the goal doesn’t promote last, with no share', () => {
+    const tab = skill('TAB.string1', 'TAB', 2700);
+    const reading = skill('R1.staff', 'R1', 3000);
+    const general = frontierLanes([f1, c3, tab, reading], 'general');
+    expect(lane(general, 'later')).toMatchObject({ share: 0 });
+    expect(ids(lane(general, 'later')!.skills)).toEqual([reading.id, tab.id]);
+    expect(general.at(-1)?.id).toBe('later');
+    // Jazz promotes Reading, so it joins the goal lane; Tab still waits.
+    const jazz = frontierLanes([f1, c3, tab, reading], 'jazz');
+    expect(ids(lane(jazz, 'goal')!.skills)).toContain(reading.id);
+    expect(ids(lane(jazz, 'later')!.skills)).toEqual([tab.id]);
+  });
+
   it('leaves out empty lanes', () => {
     expect(frontierLanes([], 'general')).toEqual([]);
     expect(frontierLanes([c4], 'jazz').map((l) => l.id)).toEqual(['goal']);

@@ -115,6 +115,8 @@ export interface QuotaOptions {
  * take goes to the others. Lanes owed the same go in `rank` order, so a
  * caller can rotate who goes first when units are short.
  *
+ * A lane with share 0 is dealt only once no other lane can take more.
+ *
  * A lane gets none, at least `unit`, or its whole pool: never a few items
  * short of a block. So a lane's block is never one item unless that item is
  * the last in its pool, and fewer than `count` may be dealt.
@@ -128,12 +130,15 @@ export function laneQuotas(
   const out = sizes.map(() => 0);
   const credit = sizes.map(() => 0);
   for (let left = count; left > 0;) {
-    const open = sizes.flatMap((n, i) => (out[i]! < n && shares[i]! > 0 ? [i] : []));
+    const room = sizes.flatMap((n, i) => (out[i]! < n ? [i] : []));
+    const sharing = room.filter((i) => shares[i]! > 0);
+    const open = sharing.length > 0 ? sharing : room;
     if (open.length === 0) break;
-    const total = open.reduce((sum, i) => sum + shares[i]!, 0);
+    const shareOf = (i: number) => (sharing.length > 0 ? shares[i]! : 1);
+    const total = open.reduce((sum, i) => sum + shareOf(i), 0);
     let best = open[0]!;
     for (const i of open) {
-      credit[i]! += shares[i]!;
+      credit[i]! += shareOf(i);
       const ahead = credit[i]! - credit[best]!;
       if (ahead > 0 || (ahead === 0 && rank[i]! < rank[best]!)) best = i;
     }
