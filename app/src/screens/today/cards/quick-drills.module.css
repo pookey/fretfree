@@ -10,3 +10,8 @@
 .row p {
   flex: 1 1 14rem;
 }
+
+/* The warm-up and "Ear only" rows, one above the other. */
+.row + .row {
+  margin-top: var(--space-3);
+}

@@ -15,6 +15,7 @@ import { createDrillPicker } from '../../../session/drill-picker';
 import { focusFilter, focusHref, type SessionFocus } from '../../../session/focus';
 import type { SessionOptions } from '../../../session/options';
 import { allCards, getDb } from '../../../storage';
+import { EarOnlyDrill } from '../ear-only';
 import screens from '../../screens.module.css';
 import styles from './quick-drills.module.css';
 
@@ -104,6 +105,7 @@ export function Card() {
           <p data-testid="warmup-copy">{warmupCopy(plan.due)}</p>
         </div>
       )}
+      <EarOnlyDrill />
     </section>
   );
 }
