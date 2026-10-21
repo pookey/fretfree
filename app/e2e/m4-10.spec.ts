@@ -38,11 +38,22 @@ async function saveSettings(page: Page, patch: Record<string, unknown>): Promise
   await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 }
 
-/** Skip onboarding steps until `heading` (a step title, or Today) is on screen. */
+/**
+ * Skip onboarding steps until `heading` (a step title, or Today) is on screen.
+ * After each skip, wait for the next step or the target before looking
+ * again: under load, Today can render after the last skip, and a blind
+ * extra click then waits for a Skip button that is gone.
+ */
 async function skipTo(page: Page, heading: string): Promise<void> {
   const target = page.getByRole('heading', { name: heading, level: 1 });
-  for (let n = 0; n < 12 && !(await target.isVisible()); n++)
+  const progress = page.getByTestId('onboarding-progress');
+  for (let n = 0; n < 12 && !(await target.isVisible()); n++) {
+    const step = (await progress.textContent())!;
     await choice(page).getByRole('button', { name: 'Skip this step' }).click();
+    // Either one means the step moved on; on a later step both are on screen.
+    const moved = target.or(progress.filter({ hasNotText: new RegExp(`^${step}$`) }));
+    await expect(moved.first()).toBeVisible();
+  }
   await expect(target).toBeVisible();
 }
 
