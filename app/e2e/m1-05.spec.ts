@@ -114,7 +114,7 @@ test.describe('D3 "Note-wheel steps"', () => {
     for (const [question, key, shown] of [
       ['A whole step above C?', 'd', 'D'],
       ['A whole step above D?', 'e', 'E'],
-      ['A whole step above E?', 'Shift+F', 'F#'],
+      ['A whole step above E?', 'Shift+F', 'F♯'],
     ] as const) {
       await expect(promptText(page)).toHaveText(question);
       expect(await neckTexts(page)).not.toContain(shown);
