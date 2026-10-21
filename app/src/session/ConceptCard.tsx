@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useId, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type MouseEvent } from 'react';
 import { useAppStore } from '../app-store';
+import { ENGINE_CONFIG } from '../engine';
 import { IntroDiagram } from '../learn/intros/Diagram';
 import type { ConceptIntro } from '../learn/intros/types';
 import styles from './ConceptCard.module.css';
 
 export interface ConceptCardProps {
   intro: ConceptIntro;
-  /** Called once, on a tap anywhere on the card, Enter or Space. */
+  /**
+   * Called once: on a tap anywhere on the card (after `intros.tapGuardMs`),
+   * or Enter or Space unless they're aimed at a control outside the card.
+   */
   onDismiss(): void;
 }
 
@@ -21,6 +25,8 @@ export function ConceptCard({ intro, onDismiss }: ConceptCardProps) {
   const titleId = useId();
   const cardRef = useRef<HTMLElement>(null);
   const done = useRef(false);
+  // Ready for taps once a tap aimed at the prompt before can no longer land here.
+  const [ready, setReady] = useState(false);
   const latest = useRef(onDismiss);
   useEffect(() => {
     latest.current = onDismiss;
@@ -34,19 +40,32 @@ export function ConceptCard({ intro, onDismiss }: ConceptCardProps) {
   useEffect(() => {
     // The card sits where the drill will be: focusing it must not scroll the page.
     cardRef.current?.focus({ preventScroll: true });
+    const timer = window.setTimeout(() => setReady(true), ENGINE_CONFIG.intros.tapGuardMs);
     const onKey = (e: KeyboardEvent) => {
+      // A focused control outside the card ("End session", "Show help") keeps its keys.
+      const target = e.target instanceof Element ? e.target : null;
+      const control = target?.closest('button, a, input, select, textarea');
+      if (control && !cardRef.current?.contains(control)) return;
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
         dismiss();
       }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('keydown', onKey);
+    };
   }, [dismiss]);
+
+  // A keyboard or screen-reader click (detail 0) is deliberate: never guarded.
+  const onClick = (e: MouseEvent) => {
+    if (ready || e.detail === 0) dismiss();
+  };
 
   return (
     // A tap anywhere dismisses it; keys go through the window listener above,
-    // wherever focus is, so the button is for show and for screen readers.
+    // so the button is for show and for screen readers.
     <section
       ref={cardRef}
       className={styles.card}
@@ -55,7 +74,8 @@ export function ConceptCard({ intro, onDismiss }: ConceptCardProps) {
       data-testid="concept-card"
       data-intro={intro.id}
       data-diagram={intro.diagram?.kind}
-      onClick={dismiss}
+      data-ready={ready || undefined}
+      onClick={onClick}
     >
       <p className={styles.kicker}>New idea</p>
       <h2 id={titleId} className={styles.title}>

@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { useAppStore } from '../app-store';
-import { DEFAULT_SETTINGS } from '../engine';
+import { DEFAULT_SETTINGS, ENGINE_CONFIG } from '../engine';
 import { INTROS } from '../learn/intros';
 import { getDb } from '../storage';
 import { ConceptCard } from './ConceptCard';
@@ -52,6 +52,43 @@ describe('<ConceptCard>', () => {
     // A key that also clicks the focused button, or a second tap, changes nothing.
     act();
     fireEvent.keyDown(window, { key: 'Enter' });
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a tap that lands as it appears, then takes one', () => {
+    vi.useFakeTimers();
+    try {
+      const onDismiss = vi.fn();
+      render(<ConceptCard intro={intro('f4-pulse')} onDismiss={onDismiss} />);
+      const card = screen.getByTestId('concept-card');
+      // A pointer tap (detail 1) aimed at the prompt that just auto-advanced.
+      fireEvent.click(screen.getByText(/The pulse is/), { detail: 1 });
+      expect(onDismiss).not.toHaveBeenCalled();
+      expect(card).not.toHaveAttribute('data-ready');
+      act(() => vi.advanceTimersByTime(ENGINE_CONFIG.intros.tapGuardMs));
+      expect(card).toHaveAttribute('data-ready', 'true');
+      fireEvent.click(screen.getByText(/The pulse is/), { detail: 1 });
+      expect(onDismiss).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('leaves Enter and Space to a focused control outside the card', () => {
+    const onDismiss = vi.fn();
+    render(
+      <>
+        <button type="button">End session</button>
+        <ConceptCard intro={intro('f4-pulse')} onDismiss={onDismiss} />
+      </>,
+    );
+    const end = screen.getByRole('button', { name: 'End session' });
+    end.focus();
+    fireEvent.keyDown(end, { key: 'Enter' });
+    fireEvent.keyDown(end, { key: ' ' });
+    expect(onDismiss).not.toHaveBeenCalled();
+    // Its own button, or the card itself, still go on.
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Got it' }), { key: 'Enter' });
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
