@@ -106,12 +106,7 @@ describe('leadWithSound', () => {
 
   it('is stable within each group', () => {
     const skills = [skill('a', 'F1'), skill('b', 'I6'), skill('c', 'F2'), skill('d', 'I6')];
-    const cfg = { topics: ['I6'], openPrerequisites: [], leading: ['d'] } as const;
-    expect(leadWithSound(skills, true, cfg as never).map((s) => s.id)).toEqual([
-      'd',
-      'b',
-      'a',
-      'c',
-    ]);
+    const cfg = { topics: ['I6'], openPrerequisites: [], leading: ['d'] };
+    expect(leadWithSound(skills, true, cfg).map((s) => s.id)).toEqual(['d', 'b', 'a', 'c']);
   });
 });

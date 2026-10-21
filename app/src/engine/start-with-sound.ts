@@ -17,10 +17,13 @@ import type { Skill } from './model';
  * Both are the identity when the setting is off.
  */
 
-type Config = typeof ENGINE_CONFIG.startWithSound;
+interface Config {
+  readonly topics: readonly string[];
+  readonly openPrerequisites: readonly string[];
+  readonly leading: readonly string[];
+}
 
-const isEar = (skill: Skill, cfg: Config) =>
-  (cfg.topics as readonly string[]).includes(skill.topic);
+const isEar = (skill: Skill, cfg: Config) => cfg.topics.includes(skill.topic);
 
 /** The skills as gating sees them: ear skills drop their day-one neck prerequisites. */
 export function startWithSoundSkills(
@@ -29,7 +32,7 @@ export function startWithSoundSkills(
   cfg: Config = ENGINE_CONFIG.startWithSound,
 ): readonly Skill[] {
   if (!on) return skills;
-  const open = new Set<string>(cfg.openPrerequisites);
+  const open = new Set(cfg.openPrerequisites);
   return skills.map((skill) => {
     if (!isEar(skill, cfg) || !skill.prerequisites.some((p) => open.has(p))) return skill;
     return { ...skill, prerequisites: skill.prerequisites.filter((p) => !open.has(p)) };
@@ -47,7 +50,7 @@ export function leadWithSound(
   cfg: Config = ENGINE_CONFIG.startWithSound,
 ): Skill[] {
   if (!on) return [...frontier];
-  const leading: readonly string[] = cfg.leading;
+  const { leading } = cfg;
   const rank = (skill: Skill) => {
     const i = leading.indexOf(skill.id);
     if (i >= 0) return i;
