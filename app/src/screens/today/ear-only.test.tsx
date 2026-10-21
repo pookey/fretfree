@@ -13,7 +13,7 @@ import {
 } from '../../engine';
 import { DRILLS } from '../../drills/registry';
 import type { AnyDrillType } from '../../drills/types';
-import { getDb, getSettings } from '../../storage';
+import { getDb, getSettings, saveSettings } from '../../storage';
 import { Card } from './cards/quick-drills';
 import { earOnlyPlan } from './ear-only';
 
@@ -181,7 +181,10 @@ describe('Quick drills card: Ear only', () => {
   });
 
   it('asks for sound when it is off, and turns it on', async () => {
-    useAppStore.setState({ settings: { ...useAppStore.getState().settings, soundOn: false } });
+    // Stored too: turning sound on saves over the stored settings, and a
+    // store-only "start with sound" would revert and close the ear track.
+    const settings = await saveSettings(getDb(), { startWithSound: true, soundOn: false });
+    useAppStore.setState({ settings });
     renderCard();
     const turnOn = await screen.findByRole('button', { name: 'Turn sound on' }, SLOW);
     expect(screen.getByTestId('ear-only-copy')).toHaveTextContent('needs sound');
