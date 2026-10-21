@@ -19,7 +19,8 @@ export const explanation = (
     </p>
     <p>
       What you already read gets drills that link it to the neck. What you want to learn gets its
-      reading track moved up. Tick both, one or neither: every reading track stays open to try.
+      reading track moved up (the reading track is coming later). Tick both, one or neither: every
+      reading track stays open to try.
     </p>
   </>
 );

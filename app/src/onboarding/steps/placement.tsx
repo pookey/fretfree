@@ -12,7 +12,8 @@ export const explanation = (
   <>
     <p>
       A short test finds what you already know, so you don’t practise it from scratch. It adapts as
-      you go: right answers move on to harder questions, and anything you don’t know is skipped.
+      you go: right answers move on to harder questions, and it stops asking about anything you
+      don’t know yet.
     </p>
     <p>
       What you know quickly comes back for a check-up in about{' '}

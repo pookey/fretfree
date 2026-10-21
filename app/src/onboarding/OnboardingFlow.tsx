@@ -101,7 +101,7 @@ export function OnboardingFlow({
             <p className={styles.lead}>
               {steps.filter((s) => s.question !== false).length} quick questions so your practice
               fits you. It takes under 3 minutes, and you can skip any of them or change them later
-              in Progress.
+              in Settings.
             </p>
             <button
               type="button"

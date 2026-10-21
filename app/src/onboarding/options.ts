@@ -10,8 +10,12 @@ export interface Option<T> {
 }
 
 export const HANDEDNESS_OPTIONS: readonly Option<Settings['handedness']>[] = [
-  { value: 'right', label: 'Right-handed', detail: 'Fretting hand on the left' },
-  { value: 'left', label: 'Left-handed', detail: 'The neck is drawn mirrored' },
+  { value: 'right', label: 'Right-handed', detail: 'You fret with your left hand' },
+  {
+    value: 'left',
+    label: 'Left-handed',
+    detail: 'You fret with your right hand; the neck is drawn mirrored',
+  },
 ];
 
 export const GOAL_OPTIONS: readonly Option<Goal>[] = [
