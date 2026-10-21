@@ -1679,7 +1679,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): the learner-facing word is "card" everywhere ("12 cards learning, 40 stable"): it matches the one-prompt-at-a-time flashcard model the app actually uses and works for every drill type, while "note" collides with musical notes and "item" is jargon. Don't use "lesson": a skill is practised, not lectured; concept intros are "intro" cards.
 
 ### M10-10 · Copy fixes: onboarding, Today, Progress and Settings
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user\'s top priority; after M10-01 to M10-06)
 - **Deps:** none
 - **Design:** copy audit (screens) §1, §4, §6, §7, "smaller fixes"
