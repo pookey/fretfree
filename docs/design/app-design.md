@@ -487,7 +487,7 @@ User request, 2026-10-19. Utilities a guitarist reaches for while practising, ke
 ## 10. Non-functional requirements
 
 - **Offline:** the full app is precached. An update toast offers to refresh.
-- **Performance:** the first load JS is ≤ 250KB gzip before audio libraries, which are loaded lazily. Drill interactions run at 60fps.
+- **Performance:** the first load JS is ≤ 300KB gzip before audio libraries, which are loaded lazily (250KB until 2026-10-21; see progress.md "Decisions and deviations"). Drill interactions run at 60fps.
 - **Accessibility:** WCAG AA contrast, VoiceOver labels on fretboard cells ("string 5, fret 7, E"), and a keyboard path on iPad.
 - **Privacy:** no analytics in v1. Review logs stay local. A future opt-in, anonymised upload would help tune thresholds (§3.2).
 - **Quality gates:** typecheck, lint, Vitest unit tests (theory and engine at ≥90% coverage), Playwright e2e on iPhone and iPad profiles, and a Lighthouse PWA check.

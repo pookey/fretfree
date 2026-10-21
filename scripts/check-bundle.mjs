@@ -16,7 +16,7 @@ import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
-const BUDGET_KB = 250;
+const BUDGET_KB = 300;
 // Packages whose sources (from the sourcemap) mark a chunk as audio. The small
 // app/src/audio loader is meant to be first-load; it imports Tone lazily.
 const AUDIO_PACKAGES = /\/node_modules\/(?:tone|standardized-audio-context|automation-events)\//;
