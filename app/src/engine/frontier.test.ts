@@ -181,6 +181,7 @@ describe('frontierLanes', () => {
       ['rhythm', 0.5],
       ['ear', 0.5],
     ]);
+    expect(lanes.map((l) => l.group)).toEqual([undefined, undefined, 'parallel', 'parallel']);
     const one = frontierLanes([f1, c3, i6], 'general');
     expect(lane(one, 'ear')?.share).toBe(1);
   });

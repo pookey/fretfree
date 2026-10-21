@@ -22,6 +22,11 @@ export const session = {
    * tracks (Ear, Rhythm), split between those open (design §5, `frontierLanes`).
    */
   lanes: { goal: 2, neck: 1, parallel: 1 },
+  /**
+   * Lanes get new items in units of this many, so a lane's block is never a
+   * lone item repeated back to back (research/02 rules 4 and 6).
+   */
+  minLaneBlock: 2,
 } as const;
 
 declare module './index' {

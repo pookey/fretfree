@@ -281,6 +281,8 @@ export interface FrontierLane {
   readonly id: string;
   readonly share: number;
   readonly skills: readonly Skill[];
+  /** `parallel` for the Ear and Rhythm tracks, which take turns when the cap is short. */
+  readonly group?: string;
 }
 
 export interface LaneOptions {
@@ -326,5 +328,10 @@ export function frontierLanes(
   }
   const shareOf = (id: string) =>
     parallel.has(id) ? shares.parallel / parallel.size : id === 'neck' ? shares.neck : shares.goal;
-  return [...lanes].map(([id, laneSkills]) => ({ id, share: shareOf(id), skills: laneSkills }));
+  return [...lanes].map(([id, laneSkills]) => ({
+    id,
+    share: shareOf(id),
+    skills: laneSkills,
+    ...(parallel.has(id) ? { group: 'parallel' } : {}),
+  }));
 }

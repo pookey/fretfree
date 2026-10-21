@@ -35,6 +35,11 @@ export interface SessionLane {
   id: string;
   share: number;
   items: readonly Item[];
+  /**
+   * Lanes in one group (the parallel tracks) share a turn: when the cap can't
+   * give each a full block, the ones introduced least recently go first.
+   */
+  group?: string;
 }
 
 export interface SessionPlanInput {
@@ -71,6 +76,7 @@ type SessionConfig = {
   maxNewPerSession: number;
   newCapMinutes: number;
   newCapRaise: number;
+  minLaneBlock: number;
 };
 
 /** Number of prompts that fit the time budget. */
@@ -95,31 +101,92 @@ export function newItemCap(
   return Math.max(cfg.newBlockSize, Math.round(base * raise));
 }
 
+export interface QuotaOptions {
+  /** Deal in units of this many items, so no lane gets a lone item while more fit. */
+  unit?: number;
+  /** Tie-break between equally owed lanes: lower goes first (default: lane order). */
+  rank?: readonly number[];
+}
+
 /**
  * How many of `count` new items each lane gets: a smooth weighted
- * round-robin by `shares`, so 2:1:1 deals goal, neck, parallel, goal… A lane
- * never gets more than its `sizes`; what it can't take goes to the others.
+ * round-robin by `shares` in units of `unit`, so 2:1:1 deals goal, neck,
+ * parallel, goal… A lane never gets more than its `sizes`; what it can't
+ * take goes to the others. Lanes owed the same go in `rank` order, so a
+ * caller can rotate who goes first when units are short.
  */
 export function laneQuotas(
   sizes: readonly number[],
   shares: readonly number[],
   count: number,
+  { unit = 1, rank = sizes.map((_, i) => i) }: QuotaOptions = {},
 ): number[] {
   const out = sizes.map(() => 0);
   const credit = sizes.map(() => 0);
-  for (let k = 0; k < count; k++) {
+  for (let left = count; left > 0;) {
     const open = sizes.flatMap((n, i) => (out[i]! < n && shares[i]! > 0 ? [i] : []));
     if (open.length === 0) break;
     const total = open.reduce((sum, i) => sum + shares[i]!, 0);
     let best = open[0]!;
     for (const i of open) {
       credit[i]! += shares[i]!;
-      if (credit[i]! > credit[best]!) best = i;
+      const ahead = credit[i]! - credit[best]!;
+      if (ahead > 0 || (ahead === 0 && rank[i]! < rank[best]!)) best = i;
     }
     credit[best]! -= total;
-    out[best]!++;
+    const take = Math.min(unit, sizes[best]! - out[best]!, left);
+    out[best]! += take;
+    left -= take;
   }
   return out;
+}
+
+/**
+ * Lanes in a group whose share of `count` can't give each a full `unit`
+ * keep only as many as it can, introduced least recently first (`rank`),
+ * and they take the whole group's share. The rest drop out for this plan.
+ */
+function thinGroups<L extends { share: number; group?: string }>(
+  lanes: readonly L[],
+  count: number,
+  unit: number,
+  rank: readonly number[],
+): L[] {
+  const total = lanes.reduce((n, l) => n + l.share, 0);
+  const groups = new Map<string, number[]>();
+  lanes.forEach((l, i) => {
+    if (l.group !== undefined) groups.set(l.group, [...(groups.get(l.group) ?? []), i]);
+  });
+  const keep = lanes.map((l) => ({ ...l }));
+  const dropped = new Set<number>();
+  for (const members of groups.values()) {
+    const share = members.reduce((n, i) => n + lanes[i]!.share, 0);
+    const fit = Math.max(1, Math.floor((count * share) / total / unit));
+    if (fit >= members.length) continue;
+    const kept = [...members].sort((a, b) => rank[a]! - rank[b]!).slice(0, fit);
+    for (const i of members) {
+      if (kept.includes(i)) keep[i]!.share = share / fit;
+      else dropped.add(i);
+    }
+  }
+  return keep.filter((_, i) => !dropped.has(i));
+}
+
+/**
+ * Lanes ranked by their latest introduction (a card's `createdAt`): never
+ * introduced first, then the longest ago; ties by lane order.
+ */
+function staleness(lanes: readonly SessionLane[], cards: readonly CardRecord[]): number[] {
+  const created = new Map(cards.map((c) => [c.itemId, c.createdAt.getTime()]));
+  const latest = lanes.map((l) =>
+    l.items.reduce((t, i) => Math.max(t, created.get(i.id) ?? -Infinity), -Infinity),
+  );
+  const order = lanes
+    .map((_, i) => i)
+    .sort((a, b) => (latest[a] === latest[b] ? a - b : latest[a]! < latest[b]! ? -1 : 1));
+  const rank: number[] = [];
+  order.forEach((lane, r) => (rank[lane] = r));
+  return rank;
 }
 
 export interface DueOrder {
@@ -361,16 +428,27 @@ export function buildSession(input: SessionPlanInput): SessionEntry[] {
   }));
 
   const carded = new Set(input.cards.map((c) => c.itemId));
-  const lanes = (input.lanes ?? [{ id: 'frontier', share: 1, items: input.frontier ?? [] }]).map(
-    (l) => ({ ...l, items: l.items.filter((i) => !carded.has(i.id)) }),
-  );
-  const fresh = lanes.reduce((n, l) => n + l.items.length, 0);
+  const given = input.lanes ?? [{ id: 'frontier', share: 1, items: input.frontier ?? [] }];
+  const rankOf = new Map(staleness(given, input.cards).map((r, i) => [given[i]!, r] as const));
+  const open = given
+    .map((l) => ({ lane: l, items: l.items.filter((i) => !carded.has(i.id)) }))
+    .filter((l) => l.items.length > 0)
+    .map(({ lane, items }) => ({ ...lane, items, rank: rankOf.get(lane)! }));
   const perItem = cfg.newBlockReps + 1;
   const maxNew = Math.max(0, input.maxNew ?? newItemCap(input.minutes, null, cfg));
+  const count = Math.min(maxNew, Math.floor((total - reviews.length) / perItem));
+  const lanes = thinGroups(
+    open,
+    count,
+    cfg.minLaneBlock,
+    open.map((l) => l.rank),
+  );
+  const fresh = open.reduce((n, l) => n + l.items.length, 0);
   const quotas = laneQuotas(
     lanes.map((l) => l.items.length),
     lanes.map((l) => l.share),
-    Math.min(maxNew, Math.floor((total - reviews.length) / perItem)),
+    count,
+    { unit: cfg.minLaneBlock, rank: lanes.map((l) => l.rank) },
   );
   const blocks = interleaveLanes(
     lanes.map((l, i) => laneBlocks(l.items, quotas[i]!, cfg, input.factOf)),
