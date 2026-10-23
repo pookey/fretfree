@@ -1912,7 +1912,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - Tests: RTL coverage that every registered body renders with every finish type, plus label tests. There is no new e2e, since this WP has no route.
 
 ### M11-04 · Catalogue: priced parts, neck palettes and mastery finishes
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request 2026-10-23)
 - **Deps:** M11-01
 - **Design:** §3.8
