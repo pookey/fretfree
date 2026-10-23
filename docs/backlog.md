@@ -1235,7 +1235,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `docs/progress.md`
 
 ### M6-11 · Degree shapes and labelled targets in guided prompts and worked examples
-- **Status:** todo
+- **Status:** done
 - **Note:** fix first among the M6 follow-ups (M6 QA findings 1 and 2: design §8 "shape as well as colour")
 - **Deps:** M6-10
 - **Design:** §8 markers; research/02 rules 8 and 10; `docs/progress.md` "M6 definition of done" findings 1 and 2
