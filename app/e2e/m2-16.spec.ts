@@ -207,7 +207,8 @@ test.describe('M2-16 test out of a locked module', () => {
 
     const found = result(page).getByRole('list', { name: 'What the test found' });
     await expect(found).toHaveText(/Intervals: known\.\s*Keys: let’s practise those first\./);
-    await expect(result(page)).toContainText('Chords opens once those are mastered');
+    // The intervals passed; the sharp keys are a soft gate, so they need only be under way.
+    await expect(result(page)).toContainText(/Chords opens once you’re practising .+\./);
     await expect(result(page).getByRole('link')).toHaveCount(0);
     // Chords stays locked (rule 7), but the passed part unlocks what it can.
     await expect(detail(page).getByTestId('module-state')).toHaveText('Locked: preview');

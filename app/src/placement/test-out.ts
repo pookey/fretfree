@@ -96,13 +96,23 @@ export function opensAfter(
   statuses: ReadonlyMap<string, SkillStatus>,
   summary: Pick<PlacementSummary, 'knownSkills' | 'masteredSkills'>,
 ): boolean {
+  const next = statusesAfter(skills, statuses, summary);
+  return moduleSkills(module, skills).some((s) => isFrontier(next.get(s.id) ?? 'locked'));
+}
+
+/** Every skill's status once `summary` is saved, as `opensAfter` derives them. */
+export function statusesAfter(
+  skills: readonly Skill[],
+  statuses: ReadonlyMap<string, SkillStatus>,
+  summary: Pick<PlacementSummary, 'knownSkills' | 'masteredSkills'>,
+): Map<string, SkillStatus> {
   const next = new Map(statuses);
   for (const id of summary.knownSkills) {
     if (summary.masteredSkills.includes(id)) next.set(id, 'mastered');
     else if (next.get(id) !== 'mastered') next.set(id, 'practising');
   }
   for (const s of skills) next.set(s.id, deriveStatus(s, next, next.get(s.id)));
-  return moduleSkills(module, skills).some((s) => isFrontier(next.get(s.id) ?? 'locked'));
+  return next;
 }
 
 /** How a test-out went for one module the probed skills belong to. */

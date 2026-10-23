@@ -194,7 +194,9 @@ describe('TestOut', () => {
     fireEvent.click(within(dialog()).getByRole('button', { name: 'Finish now' }));
     const result = await screen.findByTestId('test-out-result');
     expect(result).toHaveTextContent('Neck basics: let’s practise those first.');
-    expect(result).toHaveTextContent(/Gated opens once those are mastered/);
+    expect(result).toHaveTextContent(
+      /Gated opens once you’ve mastered Natural notes on string 6\./,
+    );
     expect(within(result).queryByRole('link')).not.toBeInTheDocument();
     expect((await getSkillStates(db)).has(STRING6.id)).toBe(false);
   });

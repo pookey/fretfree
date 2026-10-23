@@ -16,6 +16,7 @@ import {
   entrySkills,
   opensAfter,
   reportSentence,
+  statusesAfter,
   testOutGroups,
   testOutReport,
   unmetPrerequisites,
@@ -134,8 +135,11 @@ export function TestOut({
             </p>
           ) : (
             <p>
-              {module.title} opens once those are mastered. What you passed still counts, and
-              nothing you’d already earned went back.
+              {opensOnceText(
+                module.title,
+                waitsFor(module, skills, statusesAfter(skills, started.statuses, summary)),
+              )}{' '}
+              What you passed still counts, and nothing you’d already earned went back.
             </p>
           )}
           {opened && first && (
