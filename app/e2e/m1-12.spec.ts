@@ -11,6 +11,7 @@ import {
 } from './helpers';
 import { C4_SKILLS, I3_SKILLS } from './helpers/keys';
 import { F4_SKILLS } from './helpers/rhythm';
+import { METER_SKILLS } from './helpers/meter';
 import { TAB_SKILLS } from './helpers/tab';
 import { ALL_SKILL_IDS } from './helpers/skills';
 
@@ -174,7 +175,8 @@ test.describe('M1-12 session celebrations', () => {
   test('confetti fires for a milestone and never blocks the summary', async ({ page }) => {
     await freshStart(page);
     // C4 and I6 open once F1 is mastered, I3 once C4 is, TAB once F3 is, and
-    // F4 is open from the start: keep their new cards out of this one-item session.
+    // F4 is open from the start (and opens Meter): keep their new cards out of
+    // this one-item session.
     await masterSkills(page, [
       ...F1_SKILLS,
       ...F3_SKILLS,
@@ -183,6 +185,7 @@ test.describe('M1-12 session celebrations', () => {
       ...I6_SKILLS,
       ...F4_SKILLS,
       ...TAB_SKILLS,
+      ...METER_SKILLS,
     ]);
     await seed(page, { string6Due: true });
     await page.getByTestId('start-session').click();
@@ -203,7 +206,8 @@ test.describe('M1-12 session celebrations', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await freshStart(page);
     // C4 and I6 open once F1 is mastered, I3 once C4 is, TAB once F3 is, and
-    // F4 is open from the start: keep their new cards out of this one-item session.
+    // F4 is open from the start (and opens Meter): keep their new cards out of
+    // this one-item session.
     await masterSkills(page, [
       ...F1_SKILLS,
       ...F3_SKILLS,
@@ -212,6 +216,7 @@ test.describe('M1-12 session celebrations', () => {
       ...I6_SKILLS,
       ...F4_SKILLS,
       ...TAB_SKILLS,
+      ...METER_SKILLS,
     ]);
     await seed(page, { string6Due: true });
     await page.getByTestId('start-session').click();
