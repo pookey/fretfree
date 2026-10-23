@@ -247,6 +247,8 @@ async function put(down: DBCore, trans: DBCoreTransaction, store: string, values
 export async function backfillSyncMeta(tx: Transaction, clock: SyncClock): Promise<void> {
   const now = clock.now();
   for (const name of SYNC_TABLE_NAMES) {
+    // A table added after v2 doesn't exist yet at this step, and has no old rows.
+    if (!tx.idbtrans.objectStoreNames.contains(name)) continue;
     const table = tx.table(name);
     if (tableSpec(name).identity === 'uid') {
       // Content-derived, so a v1 export of the same history imports with the same uids.

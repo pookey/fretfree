@@ -18,6 +18,7 @@ import {
   toSyncData,
   type SyncRecord,
 } from './model';
+import { mergeRecords } from './merge';
 import { SYNC_BOOKKEEPING_TABLES } from './tracking';
 
 describe('the syncable tables', () => {
@@ -47,6 +48,43 @@ describe('the syncable tables', () => {
     for (const spec of Object.values(SYNC_TABLES)) {
       if (spec.merge === 'record') expect(spec).not.toHaveProperty('rules');
     }
+  });
+});
+
+describe('the garage tables', () => {
+  const first = new Date('2026-10-23T09:00:00Z');
+  const second = new Date('2026-10-24T09:00:00Z');
+
+  it('union a part bought on two devices to one row, dated by the first purchase', () => {
+    expect(syncId('garagePurchases', { itemId: 'finish.blue' })).toBe('finish.blue');
+    const bought = (at: Date, updatedAt: number): SyncRecord => ({
+      table: 'garagePurchases',
+      id: 'finish.blue',
+      updatedAt,
+      deleted: false,
+      data: { itemId: 'finish.blue', price: 120, at },
+      fields: { itemId: updatedAt, price: updatedAt },
+    });
+    for (const [a, b] of [
+      [bought(second, 2), bought(first, 1)],
+      [bought(first, 1), bought(second, 2)],
+    ] as const) {
+      expect(mergeRecords(a, b).data).toEqual({ itemId: 'finish.blue', price: 120, at: first });
+    }
+  });
+
+  it('keep the latest equipped build whole', () => {
+    const build = (name: string, updatedAt: number): SyncRecord => ({
+      table: 'garage',
+      id: 'singleton',
+      updatedAt,
+      deleted: false,
+      data: { key: 'singleton', spec: { finish: name }, name },
+    });
+    expect(mergeRecords(build('Mine', 1), build('Theirs', 2)).data?.name).toBe('Theirs');
+    expect(mergeRecords(build('Theirs', 2), build('Mine', 1)).data?.name).toBe('Theirs');
+    const gone: SyncRecord = { ...build('x', 3), deleted: true, data: null };
+    expect(mergeRecords(build('Mine', 1), gone).deleted).toBe(false);
   });
 });
 

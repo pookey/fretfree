@@ -105,6 +105,16 @@ export const SYNC_TABLES = {
   },
   achievements: { keyPath: 'id', identity: 'key', merge: 'fields', rules: { unlockedAt: 'min' } },
   gamificationEvents: { keyPath: 'id', identity: 'uid', merge: 'record', deletable: false },
+  // The Garage (design §3.8). Owning a part is permanent: two devices that
+  // bought it union to one row, dated by the first purchase. The equipped
+  // build is one choice, so the latest wins.
+  garagePurchases: {
+    keyPath: 'itemId',
+    identity: 'key',
+    merge: 'fields',
+    rules: { at: 'min' },
+  },
+  garage: { keyPath: 'key', identity: 'key', merge: 'record', deletable: false },
 } as const satisfies Record<string, TableSpec>;
 
 export type SyncTableName = keyof typeof SYNC_TABLES;

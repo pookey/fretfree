@@ -73,7 +73,9 @@ const RESTAGES: readonly [number, () => Promise<{ restageTables: (t: Tables) => 
 /**
  * Replace all local data with the export's contents. Older exports are
  * written into the current schema; Dexie migrations only run on open, so
- * future versions that change row shapes must transform rows here.
+ * future versions that change row shapes must transform rows here. A table
+ * the file lacks is left empty: a pre-v6 file has no garage, so it imports
+ * with the free starter guitar and no purchases.
  */
 export async function importData(db: FretworkDB, file: ExportFile): Promise<void> {
   let tables = file.tables;

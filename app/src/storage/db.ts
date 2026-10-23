@@ -13,6 +13,7 @@ import type {
   GamificationEventRecord,
   GamificationRecord,
 } from './gamification-model';
+import type { GarageBuild, GaragePurchase } from '../engine/garage/types';
 import {
   OUTBOX,
   SYNC_BOOKKEEPING_TABLES,
@@ -34,6 +35,11 @@ export interface SettingsRow extends Settings {
 }
 
 export interface GamificationRow extends GamificationRecord {
+  key: 'singleton';
+}
+
+/** Design §3.8: the equipped guitar, one row ('singleton'). */
+export interface GarageRow extends GarageBuild {
   key: 'singleton';
 }
 
@@ -105,6 +111,16 @@ export const SCHEMA_VERSIONS: readonly {
     upgrade: (tx) =>
       Dexie.waitFor(import('./migrations/c2-strings')).then((m) => m.upgradeC2Strings(tx)),
   },
+  {
+    // M11-01: the Garage (design §3.8). One row per owned part, keyed by item
+    // ID so two devices buying the same part sync to one row, and the
+    // equipped build. New tables only, so nothing to migrate.
+    version: 6,
+    stores: {
+      garagePurchases: 'itemId',
+      garage: 'key',
+    },
+  },
 ];
 
 export const SCHEMA_VERSION = SCHEMA_VERSIONS.at(-1)?.version ?? 1;
@@ -120,6 +136,8 @@ export class FretworkDB extends Dexie {
   dailyProgress!: EntityTable<DailyProgressRecord, 'date'>;
   achievements!: EntityTable<AchievementRecord, 'id'>;
   gamificationEvents!: EntityTable<WithUid<GamificationEventRecord>, 'id'>;
+  garagePurchases!: EntityTable<GaragePurchase, 'itemId'>;
+  garage!: EntityTable<GarageRow, 'key'>;
   syncMeta!: Dexie.Table<SyncMetaRow, [string, string]>;
   outbox!: Dexie.Table<OutboxRow, [string, string]>;
   syncState!: EntityTable<SyncStateRow, 'key'>;

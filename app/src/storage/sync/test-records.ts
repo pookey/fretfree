@@ -48,6 +48,8 @@ export const RECORD_IDS: Record<SyncTableName, string> = {
   dailyProgress: '2026-10-18',
   achievements: 'string-6-master',
   gamificationEvents: 'event-1',
+  garagePurchases: 'finish.blue',
+  garage: 'singleton',
 };
 
 export function randomData(table: SyncTableName, rng: Rng): SyncData {
@@ -131,6 +133,14 @@ export function randomData(table: SyncTableName, rng: Rng): SyncData {
       return { id: 'string-6-master', unlockedAt: pick(rng, DATES) };
     case 'gamificationEvents':
       return { type: 'answer', at: pick(rng, DATES), data: { xp: pick(rng, [5, 10]) } };
+    case 'garagePurchases':
+      return { itemId: 'finish.blue', price: pick(rng, [100, 120]), at: pick(rng, DATES) };
+    case 'garage':
+      return {
+        key: 'singleton',
+        spec: { body: 'body.s-style', finish: pick(rng, ['finish.red', 'finish.blue']) },
+        name: pick(rng, ['My guitar', 'Blue Moon']),
+      };
   }
 }
 
