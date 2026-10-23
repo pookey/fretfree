@@ -99,18 +99,24 @@ const outline = smoothClosed(OUTLINE);
 const lesPaul: BodyShape = {
   name: 'Les Paul',
   outline,
-  // A small raised teardrop beside the pickups, under the cutaway, ending
-  // about level with the bridge pickup.
+  // A broad raised teardrop: its top tucked against the treble edge of the
+  // board's end and under the cutaway, its inner edge along the pickup
+  // rings, its outer edge running nearly straight to a point by the bridge
+  // pickup.
   pickguard: smoothClosed([
-    [50, J + 40],
-    [64, J + 34],
-    [78, J + 42],
-    [84, J + 70],
-    [83, J + 112],
-    [77, J + 158],
-    [64, SCALE - 46],
-    [53, J + 176],
-    [50, J + 120],
+    [31, J + 52],
+    [40, J + 36],
+    [58, J + 30],
+    [76, J + 30],
+    [88, J + 38],
+    [86, J + 80],
+    [78, J + 130],
+    [68, J + 176],
+    [57, SCALE - 40],
+    [48, SCALE - 52],
+    [47, J + 150],
+    [47, J + 100],
+    [44, J + 80],
   ]),
   pickups: [
     { type: 'humbucker', x: 0, y: SCALE - 152 },

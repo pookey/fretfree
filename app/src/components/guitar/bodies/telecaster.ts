@@ -12,7 +12,8 @@ import type { BodyShape } from '../types';
  * domain), Fig. 3. That figure is a back view drawn upside down, so it is
  * flipped top to bottom. Its contour was traced, the strap buttons and
  * neck plate removed, then rescaled to the dimension table, resampled and
- * smoothed (outline method, `outline.ts`). The headstock is our own.
+ * smoothed (outline method, `outline.ts`); the bass shoulder and the
+ * cutaway's exit from the pocket are eased by hand. The headstock is our own.
  *
  * Dimensions, in inches: 12.75 wide × 15.75 long, the tail 136 mm behind
  * the saddles. The points start at the tail and run clockwise. The jack is
@@ -53,15 +54,16 @@ const OUTLINE: readonly Pt[] = [
   [-123.5, 388.5],
   [-106.0, 388.0],
   [-89.0, 388.0],
-  [-72.0, 388.0],
-  [-55.0, 392.0],
-  [-38.5, 395.0],
-  [-21.0, 395.0],
-  [-4.0, 395.5],
-  [13.0, 396.0],
-  [30.5, 397.0],
-  [38.5, 410.0],
-  [39.5, 427.0],
+  [-72.0, 388.5],
+  [-55.0, 390.0],
+  [-38.5, 392.5],
+  [-21.0, 394.5],
+  [-4.0, 396.0],
+  [13.0, 397.0],
+  // The cutaway leaves the pocket in one curve.
+  [28.5, 399.5],
+  [33.5, 415.0],
+  [40.5, 430.0],
   [51.0, 438.5],
   [66.5, 433.0],
   [79.0, 421.5],

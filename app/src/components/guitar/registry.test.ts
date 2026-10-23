@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { flattenPath, footprints, margin } from './footprint';
 import { DEFAULT_FRETS, NECK_JOINT_Y, SCALE, boardEnd, boardHalfWidth } from './geometry';
 import { BODIES, bodyFor, collectBodies } from './registry';
+import { BODY_SHAPES, hasBody } from './shapes';
 import type { BodyShape } from './types';
 
 /** Every coordinate pair in a path, control points too: a slightly generous bounding box. */
@@ -33,6 +34,12 @@ describe('body registry', () => {
     expect(() => collectBodies({ './bodies/x.ts': undefined as unknown as BodyShape })).toThrow(
       /bodies\/x\.ts/,
     );
+  });
+
+  it('lists the drawn shapes without loading them', () => {
+    expect([...BODY_SHAPES].sort()).toEqual([...BODIES.keys()].sort());
+    expect(hasBody('les-paul')).toBe(true);
+    expect(hasBody('sg')).toBe(false);
   });
 
   it('falls back for an unknown shape', () => {
@@ -82,6 +89,15 @@ describe('body registry', () => {
       expect(exposed.length).toBeGreaterThan(10);
       const worst = Math.min(...exposed.map((p) => margin(p, outline)));
       expect(worst).toBeGreaterThanOrEqual(GUARD_MARGIN);
+    });
+
+    it('keeps its pickguard out of the horns, below the neck joint', () => {
+      if (!body.pickguard) return;
+      const end = boardEnd(body.frets ?? DEFAULT_FRETS);
+      const exposed = flattenPath(body.pickguard).filter(
+        (p) => !(p.y <= end && Math.abs(p.x) <= boardHalfWidth(p.y) + 2),
+      );
+      expect(Math.min(...exposed.map((p) => p.y))).toBeGreaterThan(body.neckJoint.y - 10);
     });
   });
 });

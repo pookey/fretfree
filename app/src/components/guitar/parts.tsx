@@ -236,10 +236,18 @@ export function Controls({ at, paints }: { at: ControlAnchors; paints: Paints })
         </g>
       )}
       {at.switch?.type === 'toggle' && (
+        // A ring washer with a short lever leaning to its tip.
         <g transform={rotate(at.switch)}>
-          <circle r={TOGGLE.rx} fill={HOLE} opacity={0.6} />
+          <circle r={TOGGLE.rx - 1} fill={HOLE} opacity={0.5} />
           <circle r={7} fill={paints.metal} stroke={SHADOW} />
-          <circle r={3.5} fill={paints.plastic} stroke={SHADOW} />
+          <circle r={3} fill={darken(paints.colour, 0.35)} />
+          <path
+            d="M 0 0 L 3.5 -5.5"
+            stroke={paints.metal}
+            strokeWidth={2.4}
+            strokeLinecap="round"
+          />
+          <circle cx={4} cy={-6.2} r={2.8} fill={paints.plastic} stroke={SHADOW} />
         </g>
       )}
       {at.knobs.map((k) => (

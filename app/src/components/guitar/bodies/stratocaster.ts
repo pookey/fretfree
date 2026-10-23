@@ -93,9 +93,24 @@ const OUTLINE: readonly Pt[] = [
 const J = NECK_JOINT_Y;
 const outline = smoothClosed(OUTLINE);
 
-/** The guard follows the rim 13 mm in, from the bass waist over both horns and down the treble side. */
+/**
+ * The guard follows the rim 13 mm in, but not into the horns: on the bass
+ * side it climbs the outside and the horn's inner edge only to the neck
+ * joint, and on the treble side it keeps to the cutaway, crossing the
+ * horn's root to rejoin the edge below it.
+ */
 const RIM = insetOutline(OUTLINE, 13);
-const GUARD_RIM = RIM.filter(([x, y]) => (x < 0 ? y < SCALE - 72 : y < SCALE + 40));
+const TREBLE_HORN_ROOT = J + 80;
+const rim = (keep: (x: number, y: number) => boolean) =>
+  RIM.filter((_, i) => keep(...(OUTLINE[i] as [number, number])));
+/** Up the bass side to the neck joint (the points run tail first, clockwise). */
+const BASS_SIDE = rim((x, y) => x < -100 && y > J - 4 && y < SCALE - 72);
+/** Round the bass cutaway, under the board, and round the treble cutaway. */
+const CUTAWAYS = rim(
+  (x, y) => x >= -100 && y < J + 100 && (x < 0 ? y > J - 4 : x < 90 && y > J + 32),
+);
+/** Down the treble side, from below the horn to past the controls. */
+const TREBLE_SIDE = rim((x, y) => x >= 90 && y > TREBLE_HORN_ROOT && y < SCALE + 40);
 
 const JACK_Y = SCALE + 98;
 
@@ -103,7 +118,13 @@ const stratocaster: BodyShape = {
   name: 'Stratocaster',
   outline,
   pickguard: smoothClosed([
-    ...GUARD_RIM,
+    ...BASS_SIDE,
+    // Across the bass horn's root, level with the neck joint.
+    [-100, J - 2],
+    ...CUTAWAYS,
+    // Across the treble horn's root.
+    [104, J + 64],
+    ...TREBLE_SIDE,
     // Round the controls, then across the top of the tremolo.
     [128, SCALE + 66],
     [112, SCALE + 80],
