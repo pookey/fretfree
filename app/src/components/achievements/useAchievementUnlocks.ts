@@ -1,5 +1,6 @@
 import { liveQuery } from 'dexie';
 import { useCallback, useEffect, useState } from 'react';
+import { useAppStore } from '../../app-store';
 import { ACHIEVEMENTS } from '../../engine/gamification/achievements';
 import type { AchievementDefinition } from '../../engine/gamification/types';
 import { getDb, type FretworkDB } from '../../storage';
@@ -23,12 +24,16 @@ export function useAchievementUnlocks({
   now?: () => Date;
 } = {}): { unlocked: AchievementDefinition[]; dismiss(): void } {
   const [unlocked, setUnlocked] = useState<AchievementDefinition[]>([]);
+  // Speed demon's tap time, from the loaded settings rather than a live read
+  // of the settings table (see `loadAchievementContext`).
+  const latencyBaselineMs = useAppStore((s) => s.settings.latencyBaselineMs);
 
   useEffect(() => {
     let live = true;
     // Serialise syncs so a burst of changes is checked in order.
     let chain = Promise.resolve();
-    const sub = liveQuery(() => loadAchievementContext(db)).subscribe({
+    const load = () => loadAchievementContext(db, undefined, latencyBaselineMs);
+    const sub = liveQuery(load).subscribe({
       next: (ctx) => {
         chain = chain
           .then(() => syncAchievements(db, definitions, now(), ctx))
@@ -43,7 +48,7 @@ export function useAchievementUnlocks({
       live = false;
       sub.unsubscribe();
     };
-  }, [db, definitions, now]);
+  }, [db, definitions, now, latencyBaselineMs]);
 
   const dismiss = useCallback(() => setUnlocked([]), []);
   return { unlocked, dismiss };

@@ -3,7 +3,7 @@ import { checkAchievements } from '../engine/gamification/achievements/check';
 import type { AchievementContext, AchievementDefinition } from '../engine/gamification/types';
 import type { FretworkDB } from './db';
 import { getUnlockedAchievements, unlockAchievements } from './gamification-repo';
-import { getGamification, getSettings, getSkillStates } from './repository';
+import { getGamification, getSkillStates } from './repository';
 
 /**
  * Glue between the stored data and the pure `checkAchievements` (design §3.7
@@ -16,23 +16,24 @@ export async function latestReviews(db: FretworkDB, limit: number) {
   return (await db.reviewLogs.orderBy('at').reverse().limit(limit).toArray()).reverse();
 }
 
-/** Everything an achievement predicate may look at, read from the database. */
+/**
+ * Everything an achievement predicate may look at, read from the database.
+ * The tap time comes from the caller's already-loaded settings, not the
+ * settings table: the achievement watch re-runs on every write to what it
+ * reads, and a settings write (the FSRS refit, at session end) must not
+ * wake it.
+ */
 export async function loadAchievementContext(
   db: FretworkDB,
   recentLimit: number = ENGINE_CONFIG.gamification.achievements.recentReviews,
+  latencyBaselineMs: number | null = null,
 ): Promise<AchievementContext> {
-  const [skillStates, gamification, recentReviews, settings] = await Promise.all([
+  const [skillStates, gamification, recentReviews] = await Promise.all([
     getSkillStates(db),
     getGamification(db),
     latestReviews(db, recentLimit),
-    getSettings(db),
   ]);
-  return {
-    skillStates,
-    gamification,
-    recentReviews,
-    latencyBaselineMs: settings.latencyBaselineMs,
-  };
+  return { skillStates, gamification, recentReviews, latencyBaselineMs };
 }
 
 /**

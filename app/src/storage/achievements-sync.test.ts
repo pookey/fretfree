@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Rating } from 'ts-fsrs';
 import { ACHIEVEMENTS } from '../engine/gamification/achievements';
 import type { ReviewLogRecord } from '../engine/model';
@@ -93,14 +93,24 @@ describe('syncAchievements', () => {
     ]);
   });
 
-  it('times speed demon against the calibrated tap time from settings', async () => {
+  it('times speed demon against the tap time it is given', async () => {
     await db.reviewLogs.bulkAdd(Array.from({ length: 30 }, (_, i) => log(i, { responseMs: 1500 })));
     expect(await syncAchievements(db, ACHIEVEMENTS, now)).toEqual([]);
-    await saveSettings(db, { latencyBaselineMs: 1100 });
-    expect((await loadAchievementContext(db)).latencyBaselineMs).toBe(1100);
-    expect((await syncAchievements(db, ACHIEVEMENTS, now)).map((d) => d.id)).toEqual([
+    const ctx = await loadAchievementContext(db, undefined, 1100);
+    expect(ctx.latencyBaselineMs).toBe(1100);
+    expect((await syncAchievements(db, ACHIEVEMENTS, now, ctx)).map((d) => d.id)).toEqual([
       'speed-demon',
     ]);
+  });
+
+  it('never reads the settings table, so a settings write cannot wake the watch', async () => {
+    await saveSettings(db, { latencyBaselineMs: 1100 });
+    const get = vi.spyOn(db.settings, 'get');
+    const toArray = vi.spyOn(db.settings, 'toArray');
+    const ctx = await loadAchievementContext(db);
+    expect(ctx.latencyBaselineMs).toBeNull();
+    expect(get).not.toHaveBeenCalled();
+    expect(toArray).not.toHaveBeenCalled();
   });
 
   it('keeps earned badges when the data later regresses', async () => {

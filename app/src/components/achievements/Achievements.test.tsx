@@ -3,7 +3,10 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { ACHIEVEMENTS } from '../../engine/gamification/achievements';
 import { FretworkDB } from '../../storage/db';
 import { getUnlockedAchievements, saveGamification } from '../../storage/gamification-repo';
-import { putSkillState } from '../../storage/repository';
+import { putSkillState, saveSettings } from '../../storage/repository';
+import { useAppStore } from '../../app-store';
+import { DEFAULT_SETTINGS } from '../../engine/model';
+import { Rating } from 'ts-fsrs';
 import { AchievementList } from './AchievementList';
 import { AchievementToast, TOAST_MS } from './AchievementToast';
 import { BadgeIcon } from './BadgeIcon';
@@ -110,6 +113,7 @@ describe('useAchievementUnlocks', () => {
   });
 
   afterEach(async () => {
+    useAppStore.setState({ settings: DEFAULT_SETTINGS });
     await db.delete();
   });
 
@@ -138,6 +142,41 @@ describe('useAchievementUnlocks', () => {
     );
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('String 6 master'));
     expect(screen.getByRole('status')).not.toHaveTextContent('7-day streak');
+  });
+
+  it('times speed demon against the loaded settings’ tap time', async () => {
+    // 1.5 s answers: too slow for the default 700 ms tap time, fluent for 1,100 ms.
+    await db.reviewLogs.bulkAdd(
+      Array.from({ length: 30 }, (_, i) => ({
+        itemId: `note@s6f${i % 13}`,
+        skillId: 'F2.string6-naturals',
+        drillType: 'name-the-note',
+        correct: true,
+        responseMs: 1500,
+        rating: Rating.Good,
+        hintUsed: false,
+        answerGiven: 'E',
+        at: new Date(at.getTime() + i * 1000),
+      })),
+    );
+    render(<Probe />);
+    await act(() => new Promise((r) => setTimeout(r, 50)));
+    expect(screen.queryByRole('status')).toBeNull();
+    act(() => useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 1100 } }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Speed demon'));
+  });
+
+  it('is not woken by a settings write, such as the refit at session end', async () => {
+    const reads = vi.spyOn(db.skillStates, 'toArray');
+    render(<Probe />);
+    await waitFor(() => expect(reads).toHaveBeenCalled());
+    await act(() => new Promise((r) => setTimeout(r, 50)));
+    const settled = reads.mock.calls.length;
+    await act(async () => {
+      await saveSettings(db, { latencyBaselineMs: 900, soundOn: false });
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(reads).toHaveBeenCalledTimes(settled);
   });
 
   it('does not toast badges unlocked before it mounted', async () => {
