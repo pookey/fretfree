@@ -114,6 +114,9 @@ export interface TimingOffsets {
   mic: number | null;
 }
 
+/** How far off the click a rhythm hit may land and still count (`ENGINE_CONFIG.rhythm.windows`). */
+export type TimingWindow = 'strict' | 'standard' | 'relaxed';
+
 export interface Settings {
   handedness: Handedness;
   tuning: string;
@@ -132,6 +135,7 @@ export interface Settings {
   /** Per-user FSRS weights, refit after ~1,000 reviews (engine/refit.ts); `null` = defaults. */
   fsrsParams: FittedFsrsParams | null;
   timingOffsets: TimingOffsets;
+  timingWindow: TimingWindow;
   /** "Start with sound" (design §4): the ear track opens on day one and leads the path. */
   startWithSound: boolean;
 }
@@ -151,6 +155,7 @@ export const DEFAULT_SETTINGS: Settings = {
   blindMode: false,
   fsrsParams: null,
   timingOffsets: { tap: null, mic: null },
+  timingWindow: 'standard',
   startWithSound: false,
 };
 

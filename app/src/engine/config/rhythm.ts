@@ -1,3 +1,5 @@
+import type { TimingWindow } from '../model';
+
 /**
  * The F4 rhythm track (D20 "Tap and strum rhythm"): its timing windows,
  * tempos and guides. The click and the grade are the timing engine's
@@ -5,19 +7,29 @@
  */
 export const rhythm = {
   /**
-   * D20's timing grade (`gradeTiming`), in the shape of design §3.2. The
-   * ±30 ms target is F4's "tap within ±30ms of a click" (research/03):
-   * inside it is Good, inside `fluentMs` Easy. A hit up to `onTimeMs` off
-   * still counts but is loose (Hard), so the grade keeps all four ratings
-   * (research/02 rule 2); past it, the hit is wrong.
+   * D20's timing grade (`gradeTiming`), in the shape of design §3.2: the
+   * parts every timing window shares. A hit further than `matchMs` from every
+   * click is a stray, not a late one.
    */
   grade: {
-    onTimeMs: 50,
     passRate: 0.8,
-    targetMs: 30,
-    fluentMs: 15,
     matchMs: 150,
   },
+  /**
+   * The learner's timing window (`settings.timingWindow`). Strict is F4's
+   * "tap within ±30ms of a click" (research/03): within `targetMs` is Good,
+   * within `fluentMs` Easy, and a hit up to `onTimeMs` off still counts but
+   * is loose (Hard), so the grade keeps all four ratings (research/02 rule
+   * 2); past it, the hit is wrong. A touchscreen adds jitter a guitar
+   * doesn't, so the wider windows are for learners who fail on time they
+   * can hear is right. Every `onTimeMs` stays under `grade.matchMs` and half
+   * an eighth at the top tempo.
+   */
+  windows: {
+    strict: { onTimeMs: 50, targetMs: 30, fluentMs: 15 },
+    standard: { onTimeMs: 80, targetMs: 45, fluentMs: 25 },
+    relaxed: { onTimeMs: 120, targetMs: 70, fluentMs: 40 },
+  } satisfies Record<TimingWindow, { onTimeMs: number; targetMs: number; fluentMs: number }>,
   /**
    * Adaptive scope (research/02 rule 5): the tempo band, in BPM, per scope
    * level. A prompt picks its tempo from the band (rule 12: the same rhythm

@@ -99,7 +99,7 @@ test.describe('M6-08 D20 tap and strum rhythm', () => {
       { timeout: 30_000 },
     );
     await expect(drill.getByTestId('d20-explain')).toHaveText(
-      'Your hits were 90 ms off on average, all late. Within 50 ms counts.',
+      'Your hits were 90 ms off on average, all late. Within 80 ms counts.',
     );
     const results = drill.getByTestId('d20-results');
     for (const bar of ['Bar 1', 'Bar 2']) {
@@ -108,6 +108,12 @@ test.describe('M6-08 D20 tap and strum rhythm', () => {
       await expect(cells.first()).toHaveAccessibleName('1: too late, 90 ms late');
       await expect(cells.nth(1)).toHaveAccessibleName('& of 1: too late, 90 ms late');
     }
+    // The timing window can be widened from here, for the reps after this one.
+    const timing = drill.getByTestId('d20-window').getByRole('combobox', { name: 'Rhythm timing' });
+    await expect(timing).toHaveValue('standard');
+    await timing.selectOption('relaxed');
+    await expect(timing).toHaveValue('relaxed');
+    await expect(drill.getByTestId('d20-window')).toContainText('the widest window');
     await expectNoHorizontalOverflow(page);
 
     // Continue goes on to the next rep, ready to start.

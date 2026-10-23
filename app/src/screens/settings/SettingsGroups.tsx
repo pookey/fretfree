@@ -17,6 +17,7 @@ import {
 import { ENGINE_CONFIG } from '../../engine/config';
 import { TUNINGS } from '../../theory';
 import { TimingCalibrationSetting } from '../../timing/TimingCalibration';
+import { TimingWindowSelect } from '../../timing/TimingWindowSelect';
 import { DeveloperTools } from './DeveloperTools';
 import { MicSettings } from './MicSettings';
 import styles from '../screens.module.css';
@@ -257,6 +258,7 @@ function ReadingSettings({ settings, update }: SettingsProps) {
 
 function GuideSettings({ settings, update }: SettingsProps) {
   const blindHint = useId();
+  const windowHint = useId();
   return (
     <Group title="Guides and timing">
       <label className={`${styles.toggle} ${local.row}`}>
@@ -273,6 +275,14 @@ function GuideSettings({ settings, update }: SettingsProps) {
       </Hint>
       <CalibrationSetting />
       <TimingCalibrationSetting />
+      <label className={local.row}>
+        Rhythm timing
+        <TimingWindowSelect aria-describedby={windowHint} />
+      </label>
+      <Hint id={windowHint}>
+        How far off the click a tap or strum can land and still count. Check your tap timing first:
+        a slow screen or speaker makes every hit late.
+      </Hint>
     </Group>
   );
 }

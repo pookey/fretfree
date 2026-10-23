@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Rating } from 'ts-fsrs';
 import { ENGINE_CONFIG } from '../../engine/config';
 import { STRUM_PATTERNS, TAP_PATTERNS } from '../../engine/items/rhythm-pattern';
+import type { TimingWindow } from '../../engine/model';
 import { getTuning } from '../../theory';
 import type { DrillContext } from '../types';
 import {
@@ -35,14 +36,19 @@ const ctx = (scopeLevel = 0, rng = () => 0): DrillContext => ({
 const prompt = (id: string, scopeLevel = 0) =>
   d20MakePrompt({ id, skillId: 'F4.pulse' }, ctx(scopeLevel));
 
-/** Targets every 500 ms (120 BPM quarters), onsets each `offset` ms off. */
-function take(p: D20Prompt, offsets: readonly (number | null)[], extra: number[] = []): D20Answer {
+/** Targets every 500 ms (120 BPM quarters), onsets each `offset` ms off; strict unless told. */
+function take(
+  p: D20Prompt,
+  offsets: readonly (number | null)[],
+  extra: number[] = [],
+  window: TimingWindow = 'strict',
+): D20Answer {
   const targetsMs = p.pulses.map((pulse) => 10_000 + pulse * 500);
   const onsetsMs = targetsMs.flatMap((t, i) => {
     const o = offsets[i % offsets.length];
     return o === null || o === undefined ? [] : [t + o];
   });
-  return { input: 'tap', targetsMs, onsetsMs: [...onsetsMs, ...extra] };
+  return { input: 'tap', targetsMs, onsetsMs: [...onsetsMs, ...extra], window };
 }
 
 describe('D20 patterns', () => {
@@ -121,6 +127,37 @@ describe('d20 grading', () => {
     expect(d20Rating(p, take(p, [40, -45]), { hintUsed: false })).toBe(Rating.Hard);
     expect(d20Rating(p, take(p, [80, 5]), { hintUsed: false })).toBe(Rating.Again);
     expect(d20Rating(p, take(p, [null]), { hintUsed: false })).toBe(Rating.Again);
+  });
+
+  it('widens every threshold with the learner’s timing window', () => {
+    const rate = (offsets: number[], window: TimingWindow) =>
+      d20Rating(p, take(p, offsets, [], window), { hintUsed: false });
+    expect(rate([70, -70], 'strict')).toBe(Rating.Again);
+    expect(rate([70, -70], 'standard')).toBe(Rating.Hard);
+    expect(rate([40, -40], 'standard')).toBe(Rating.Good);
+    expect(rate([100, -100], 'standard')).toBe(Rating.Again);
+    expect(rate([100, -100], 'relaxed')).toBe(Rating.Hard);
+    expect(rate([60, -60], 'relaxed')).toBe(Rating.Good);
+    expect(rate([35, -35], 'relaxed')).toBe(Rating.Easy);
+    const loose = take(p, [100], [], 'relaxed');
+    expect(d20Check(p, loose)).toEqual({ correct: true, expected: '8 of 8 on time' });
+    expect(d20Marks(p, loose).every((m) => m.verdict === 'on')).toBe(true);
+    expect(d20GradedResponseMs(p, take(p, [60], [], 'relaxed'), 9000)).toBe(60);
+    expect(
+      d20Explain(p, { answer: take(p, [130], [], 'relaxed'), result: d20Check(p, loose) }),
+    ).toBe('Your hits were 130 ms off on average, all late. Within 120 ms counts.');
+  });
+
+  it('keeps every window inside the stray-hit match and half an eighth at the top tempo', () => {
+    const { grade, windows, tempoBands } = ENGINE_CONFIG.rhythm;
+    const topBpm = tempoBands.at(-1)![1];
+    const halfEighthMs = 60_000 / topBpm / 2 / 2;
+    for (const w of Object.values(windows)) {
+      expect(w.onTimeMs).toBeLessThanOrEqual(grade.matchMs);
+      expect(w.onTimeMs).toBeLessThan(halfEighthMs);
+      expect(w.fluentMs).toBeLessThan(w.targetMs);
+      expect(w.targetMs).toBeLessThan(w.onTimeMs);
+    }
   });
 
   it('caps a worked example at Hard', () => {

@@ -28,6 +28,7 @@ function take(p: D20Prompt, offset: number | null): D20Answer {
     input: 'tap',
     targetsMs,
     onsetsMs: offset === null ? [] : targetsMs.map((t) => t + offset),
+    window: 'strict',
   };
 }
 

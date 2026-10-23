@@ -164,6 +164,19 @@ describe('<SettingsGroups>', () => {
     expect((await getSettings(db)).blindMode).toBe(false);
   });
 
+  it('saves how far off the click a rhythm hit may land', async () => {
+    renderPanel();
+    const timing = within(group('Guides and timing')).getByRole('combobox', {
+      name: 'Rhythm timing',
+    });
+    expect(timing).toHaveValue('standard');
+    expect(timing).toHaveAccessibleDescription(/still count/);
+    expect(within(timing).getByRole('option', { name: 'Relaxed: within 120 ms' })).toBeVisible();
+    await userEvent.selectOptions(timing, 'relaxed');
+    await waitFor(async () => expect((await getSettings(db)).timingWindow).toBe('relaxed'));
+    expect(timing).toHaveValue('relaxed');
+  });
+
   it('offers a calibration re-run', () => {
     renderPanel();
     expect(

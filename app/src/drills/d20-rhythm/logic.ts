@@ -1,8 +1,14 @@
 import { Rating, type Grade } from 'ts-fsrs';
 import { ENGINE_CONFIG } from '../../engine/config';
 import { parseRhythmPatternItemId, type RhythmPattern } from '../../engine/items/rhythm-pattern';
-import type { Item } from '../../engine/model';
-import { alignOnsets, gradeTiming, summariseTiming, type TimingSummary } from '../../timing/grade';
+import type { Item, TimingWindow } from '../../engine/model';
+import {
+  alignOnsets,
+  gradeTiming,
+  summariseTiming,
+  type TimingGradeConfig,
+  type TimingSummary,
+} from '../../timing/grade';
 import type { OnsetKind } from '../../timing/latency';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { PATTERNS, STEPS_PER_BAR, STEPS_PER_PULSE } from './patterns';
@@ -16,10 +22,10 @@ export { D20_ID, D20_SCOPE, d20CanTest, d20ConceptOf } from './meta';
  *
  * Grading is the timing engine's (`timing/grade.ts`): each hit is matched to
  * the learner's nearest onset, and `gradeTiming` turns the offsets into the
- * FSRS rating with D20's windows (`ENGINE_CONFIG.rhythm.grade`, ±30 ms
- * target). That rating replaces the speed grade (`DrillLogic.rating`). The
+ * FSRS rating with the learner's timing window (`ENGINE_CONFIG.rhythm.windows`,
+ * ±30 ms target when strict). That rating replaces the speed grade (`DrillLogic.rating`). The
  * logged response time is the typical timing error (the median |offset| of
- * the on-time hits) for a rep within the ±30 ms target, and the time the rep
+ * the on-time hits) for a rep within the window's target, and the time the rep
  * took otherwise. So a Good or Easy rep is fluent for mastery and guide
  * fading (rule 9), and a loose (Hard) or failed one is not. Speed measures
  * across drills leave D20 out (`engine/speed.ts`).
@@ -51,6 +57,13 @@ export interface D20Answer {
   targetsMs: number[];
   /** The learner's onsets in the run, latency taken off, audio-clock ms. */
   onsetsMs: number[];
+  /** The timing window the rep is graded with: `settings.timingWindow` when it was played. */
+  window: TimingWindow;
+}
+
+/** The grade for a timing window: its on-time, target and fluent windows, and the shared rest. */
+export function d20GradeConfig(window: TimingWindow): TimingGradeConfig {
+  return { ...CFG.grade, ...CFG.windows[window] };
 }
 
 /** A tempo from the scope level's band, a multiple of `tempoStep` (rule 12). */
@@ -101,7 +114,7 @@ export interface D20Result {
 }
 
 export function d20Result(answer: D20Answer): D20Result {
-  const cfg = CFG.grade;
+  const cfg = d20GradeConfig(answer.window);
   const { offsets, extras } = alignOnsets(answer.targetsMs, answer.onsetsMs, cfg.matchMs);
   const summary = summariseTiming(offsets, cfg, extras.length);
   return {
@@ -136,7 +149,10 @@ export function d20Rating(
   { hintUsed }: { hintUsed: boolean },
 ): Grade {
   const r = d20Result(answer);
-  return gradeTiming(r.offsets, CFG.grade, { extras: r.extras, hintUsed });
+  return gradeTiming(r.offsets, d20GradeConfig(answer.window), {
+    extras: r.extras,
+    hintUsed,
+  });
 }
 
 /**
@@ -149,7 +165,8 @@ export function d20GradedResponseMs(
   elapsedMs: number,
 ): number {
   const { medianAbsMs } = d20Result(answer).summary;
-  return medianAbsMs !== null && medianAbsMs <= CFG.grade.targetMs ? medianAbsMs : elapsedMs;
+  const { targetMs } = CFG.windows[answer.window];
+  return medianAbsMs !== null && medianAbsMs <= targetMs ? medianAbsMs : elapsedMs;
 }
 
 /** Each hit's offset, for the review log: `+12 -5 miss +30, 1 extra hit`. */
@@ -180,7 +197,7 @@ export interface HitMark {
 /** Every hit of the run with how it landed, for the feedback grid. */
 export function d20Marks(prompt: D20Prompt, answer: D20Answer): HitMark[] {
   const { offsets } = d20Result(answer);
-  const { onTimeMs } = CFG.grade;
+  const { onTimeMs } = CFG.windows[answer.window];
   return offsets.map((o, i) => {
     const bar = Math.floor(i / prompt.hits.length);
     const step = prompt.hits[i % prompt.hits.length]!;
@@ -207,6 +224,7 @@ export function d20DescribeOffset(ms: number): string {
 export function d20Explain(prompt: D20Prompt, feedback: DrillFeedback<D20Answer>): string {
   const r = d20Result(feedback.answer);
   const { medianAbsMs, meanOffsetMs, misses } = r.summary;
+  const { onTimeMs, targetMs, fluentMs } = CFG.windows[feedback.answer.window];
   const parts: string[] = [];
   const matched = r.offsets.filter((o): o is number => o !== null);
   if (matched.length === 0) {
@@ -218,12 +236,10 @@ export function d20Explain(prompt: D20Prompt, feedback: DrillFeedback<D20Answer>
       : matched.every((o) => o < 0)
         ? ', all early'
         : '';
-    parts.push(
-      `Your hits were ${off} ms off on average${lean}. Within ${CFG.grade.onTimeMs} ms counts.`,
-    );
+    parts.push(`Your hits were ${off} ms off on average${lean}. Within ${onTimeMs} ms counts.`);
   } else {
-    parts.push(`Typically ${Math.round(medianAbsMs)} ms off (aim for ${CFG.grade.targetMs}).`);
-    if (meanOffsetMs !== null && Math.abs(meanOffsetMs) > CFG.grade.fluentMs) {
+    parts.push(`Typically ${Math.round(medianAbsMs)} ms off (aim for ${targetMs}).`);
+    if (meanOffsetMs !== null && Math.abs(meanOffsetMs) > fluentMs) {
       parts.push(
         meanOffsetMs < 0
           ? `You’re rushing: ${Math.round(-meanOffsetMs)} ms early on average.`

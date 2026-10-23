@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppStore } from '../../app-store';
-import { DEFAULT_SETTINGS, type GuideLevel } from '../../engine/model';
+import { DEFAULT_SETTINGS, type GuideLevel, type Settings } from '../../engine/model';
 import { getTuning } from '../../theory';
 import { createFakeMetronome, type FakeMetronome } from '../../timing/fake-metronome';
 import type { OnsetKind } from '../../timing/latency';
@@ -19,10 +19,13 @@ const prompt = (id: string): D20Prompt =>
     { tuning: getTuning('standard'), accidentalPref: 'sharp', scopeLevel: 0, rng: () => 0 },
   );
 
+const { update: saveToDb } = useAppStore.getState();
+
 beforeEach(() => {
   useAppStore.setState({
     settings: { ...DEFAULT_SETTINGS, timingOffsets: { tap: 0, mic: 0 } },
     loaded: true,
+    update: saveToDb,
   });
 });
 
@@ -149,6 +152,7 @@ describe('<RhythmDrill>', () => {
     expect(onAnswer).toHaveBeenCalledTimes(1);
     const answer = onAnswer.mock.calls[0]![0];
     expect(answer.input).toBe('tap');
+    expect(answer.window).toBe(DEFAULT_SETTINGS.timingWindow);
     expect(answer.targetsMs).toHaveLength(8);
     expect(answer.onsetsMs).toEqual(answer.targetsMs.map((t) => t + 12));
     expect(d20Check(p, answer)).toEqual({ correct: true, expected: '8 of 8 on time' });
@@ -312,6 +316,7 @@ describe('<RhythmDrill>', () => {
       input: 'tap',
       targetsMs,
       onsetsMs: [targetsMs[0]! + 6, targetsMs[1]! - 80, targetsMs[2]! + 70],
+      window: 'strict',
     };
     setup({ id: 'tap-rhythm:half-notes', feedback: { answer } });
     expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
@@ -334,6 +339,37 @@ describe('<RhythmDrill>', () => {
     expect(screen.getByTestId('d20-explain')).toHaveTextContent(
       'Typically 6 ms off (aim for 30). 1 missed.',
     );
+  });
+
+  it('offers a wider timing window after a failed rep, and not after a passed one', async () => {
+    const p = prompt('tap-rhythm:quarters');
+    const targetsMs = p.pulses.map((pulse) => 10_000 + pulse * 1000);
+    const late = (offset: number): D20Answer => ({
+      input: 'tap',
+      targetsMs,
+      onsetsMs: targetsMs.map((t) => t + offset),
+      window: 'standard',
+    });
+    const update = vi.fn((patch: Partial<Settings>) => {
+      useAppStore.setState((s) => ({ settings: { ...s.settings, ...patch } }));
+      return Promise.resolve();
+    });
+    useAppStore.setState({ update });
+
+    const { view } = setup({ feedback: { answer: late(10) } });
+    expect(screen.queryByTestId('d20-window')).toBeNull();
+    view.unmount();
+
+    setup({ feedback: { answer: late(100) } });
+    const note = screen.getByTestId('d20-window');
+    const timing = within(note).getByRole('combobox', { name: 'Rhythm timing' });
+    expect(timing).toHaveValue('standard');
+    expect(timing).toHaveAccessibleDescription(/within 80 ms of the click.*widen it/);
+    fireEvent.change(timing, { target: { value: 'relaxed' } });
+    expect(update).toHaveBeenCalledWith({ timingWindow: 'relaxed' });
+    await flush();
+    expect(timing).toHaveValue('relaxed');
+    expect(timing).toHaveAccessibleDescription(/within 120 ms .* the widest window/);
   });
 
   it('degrades to compact with the panel below', () => {

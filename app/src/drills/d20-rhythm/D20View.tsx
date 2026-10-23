@@ -3,6 +3,7 @@ import { useAppStore } from '../../app-store';
 import { ENGINE_CONFIG } from '../../engine/config';
 import type { GuideLevel } from '../../engine/model';
 import { TimingCalibration, errorCopy } from '../../timing/TimingCalibration';
+import { TimingWindowSelect } from '../../timing/TimingWindowSelect';
 import { createToneTapSource, liveCompensation } from '../../timing/device';
 import { fakeOnsetsForE2E } from '../../timing/e2e-hook';
 import type { OnsetKind } from '../../timing/latency';
@@ -180,7 +181,11 @@ export function RhythmDrill({
           return setPhase(lost ? { name: 'error', reason: lost.reason } : { name: 'ready' });
         }
         setPhase({ name: 'done' });
-        onAnswer({ input: next.kind, ...take });
+        onAnswer({
+          input: next.kind,
+          ...take,
+          window: useAppStore.getState().settings.timingWindow,
+        });
       },
       (err: unknown) => {
         if (run.current !== r) return;
@@ -217,7 +222,10 @@ export function RhythmDrill({
                 : prompt.hint}
           </p>
           {feedback ? (
-            <ResultGrid prompt={prompt} feedback={feedback} />
+            <>
+              <ResultGrid prompt={prompt} feedback={feedback} />
+              {!feedback.result.correct && <WindowNote />}
+            </>
           ) : (
             <PatternGrid
               prompt={prompt}
@@ -325,6 +333,29 @@ export function RhythmDrill({
       )}
       {/* iPad portrait: the context panel sits below; compact styles it as a sheet. */}
       {sizeClass !== 'regular-wide' && aside}
+    </div>
+  );
+}
+
+/**
+ * After a failed rep: how wide the timing window is, and the setting to widen
+ * it in place, for a learner whose screen or speaker is slower than their ear.
+ */
+function WindowNote() {
+  const chosen = useAppStore((s) => s.settings.timingWindow);
+  const hint = useId();
+  const { onTimeMs } = CFG.windows[chosen];
+  return (
+    <div className={styles.window} data-testid="d20-window">
+      <label className={styles.windowRow}>
+        Rhythm timing
+        <TimingWindowSelect className={styles.select} aria-describedby={hint} />
+      </label>
+      <p id={hint} className={styles.note}>
+        {chosen === 'relaxed'
+          ? `Hits count within ${onTimeMs} ms of the click, the widest window. If every hit lands late, check your tap timing in Settings.`
+          : `Hits count within ${onTimeMs} ms of the click. If you’re in time but it doesn’t count, widen it for your next reps. It’s also in Settings.`}
+      </p>
     </div>
   );
 }
