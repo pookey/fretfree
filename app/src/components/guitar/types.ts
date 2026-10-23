@@ -88,7 +88,8 @@ export interface ControlAnchors {
   switch?: Point & { type: 'blade' | 'toggle'; angle?: number };
   /** A metal control plate the knobs sit on, as a path. */
   plate?: string;
-  jack?: Point;
+  /** The output jack on the top; `plate` sets it in a recessed oval plate. */
+  jack?: Point & { plate?: boolean; angle?: number };
 }
 
 /**

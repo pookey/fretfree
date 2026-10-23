@@ -1,4 +1,15 @@
 import { darken, lighten } from './colour';
+import {
+  BLADE,
+  BRIDGE,
+  JACK,
+  JACK_PLATE,
+  KNOB,
+  PICKUP,
+  TAILPIECE,
+  TOGGLE,
+  type Box,
+} from './footprint';
 import { stringX } from './geometry';
 import type { BridgeAnchor, ControlAnchors, PickupAnchor, Point, TailpieceAnchor } from './types';
 
@@ -22,6 +33,11 @@ function rotate(p: { x: number; y: number; angle?: number }): string {
   return `translate(${p.x} ${p.y}) rotate(${p.angle ?? 0})`;
 }
 
+/** A box from `footprint.ts` as rect attributes. */
+function rect(b: Box) {
+  return { x: b.x0, y: b.y0, width: b.x1 - b.x0, height: b.y1 - b.y0 };
+}
+
 /** Each pole sits under its string: x relative to the anchor. */
 function poles(at: Point): number[] {
   return STRINGS.map((s) => stringX(s, at.y) - at.x);
@@ -31,7 +47,7 @@ export function Pickup({ at, paints }: { at: PickupAnchor; paints: Paints }) {
   if (at.type === 'humbucker') {
     return (
       <g transform={rotate(at)}>
-        <rect x={-45} y={-23} width={90} height={46} rx={6} fill={HOLE} />
+        <rect {...rect(PICKUP.humbucker)} rx={6} fill={HOLE} />
         <rect x={-40} y={-19} width={80} height={38} rx={3} fill={paints.metal} />
         <rect x={-40} y={-19} width={80} height={38} rx={3} fill="none" stroke={SHADOW} />
         {poles(at).map((x) => (
@@ -42,7 +58,7 @@ export function Pickup({ at, paints }: { at: PickupAnchor; paints: Paints }) {
   }
   return (
     <g transform={rotate(at)}>
-      <rect x={-37.5} y={-10.5} width={75} height={21} rx={10.5} fill="rgba(0,0,0,0.55)" />
+      <rect {...rect(PICKUP.single)} rx={10.5} fill="rgba(0,0,0,0.55)" />
       <rect x={-36} y={-9} width={72} height={18} rx={9} fill={paints.plastic} />
       {poles(at).map((x) => (
         <circle key={x} cx={x} cy={0} r={2.1} fill={paints.metal} />
@@ -58,24 +74,26 @@ export function BridgeBase({ at, paints }: { at: BridgeAnchor; paints: Paints })
     case 'tremolo':
       return (
         <g transform={t}>
-          <rect x={-37} y={-15} width={74} height={50} rx={3} fill={paints.metal} />
-          <rect x={-37} y={-15} width={74} height={50} rx={3} fill="none" stroke={SHADOW} />
+          <rect {...rect(BRIDGE.tremolo)} rx={3} fill={paints.metal} />
+          <rect {...rect(BRIDGE.tremolo)} rx={3} fill="none" stroke={SHADOW} />
           {[-30, -18, -6, 6, 18, 30].map((x) => (
             <circle key={x} cx={x} cy={-10} r={1.6} fill={SHADOW} />
           ))}
         </g>
       );
-    case 'plate':
+    case 'plate': {
+      const { x0, x1, y0, y1 } = BRIDGE.plate;
       return (
         <g transform={t}>
           <path
-            d="M -46 -78 L 46 -78 L 46 30 C 46 42 38 46 28 46 L -28 46 C -38 46 -46 42 -46 30 Z"
+            d={`M ${x0} ${y0} L ${x1} ${y0} L ${x1} ${y1 - 16} C ${x1} ${y1 - 4} ${x1 - 8} ${y1} ${x1 - 18} ${y1} L ${x0 + 18} ${y1} C ${x0 + 8} ${y1} ${x0} ${y1 - 4} ${x0} ${y1 - 16} Z`}
             fill={paints.metal}
             stroke={SHADOW}
           />
           <path d="M -40 -12 L 40 -12" stroke={SHADOW} strokeWidth={1.2} />
         </g>
       );
+    }
     case 'acoustic':
       return (
         <g transform={t}>
@@ -192,7 +210,7 @@ export function Tailpiece({ at, paints }: { at: TailpieceAnchor; paints: Paints 
   }
   return (
     <g transform={`translate(${at.x} ${at.y})`}>
-      <rect x={-46} y={-7} width={92} height={14} rx={7} fill={paints.metal} stroke={SHADOW} />
+      <rect {...rect(TAILPIECE.stop)} rx={7} fill={paints.metal} stroke={SHADOW} />
       <circle cx={-41} cy={0} r={3} fill={darken(paints.colour, 0.3)} />
       <circle cx={41} cy={0} r={3} fill={darken(paints.colour, 0.3)} />
     </g>
@@ -205,20 +223,28 @@ export function Controls({ at, paints }: { at: ControlAnchors; paints: Paints })
       {at.plate && <path d={at.plate} fill={paints.metal} stroke={SHADOW} />}
       {at.switch?.type === 'blade' && (
         <g transform={rotate(at.switch)}>
-          <rect x={-2} y={-16} width={4} height={32} rx={2} fill={HOLE} />
-          <rect x={-4} y={-11} width={8} height={12} rx={3} fill={paints.plastic} stroke={SHADOW} />
+          <rect x={-2} y={BLADE.y0} width={4} height={BLADE.y1 - BLADE.y0} rx={2} fill={HOLE} />
+          <rect
+            x={BLADE.x0}
+            y={-11}
+            width={BLADE.x1 - BLADE.x0}
+            height={12}
+            rx={3}
+            fill={paints.plastic}
+            stroke={SHADOW}
+          />
         </g>
       )}
       {at.switch?.type === 'toggle' && (
         <g transform={rotate(at.switch)}>
-          <circle r={10} fill={HOLE} opacity={0.6} />
+          <circle r={TOGGLE.rx} fill={HOLE} opacity={0.6} />
           <circle r={7} fill={paints.metal} stroke={SHADOW} />
           <circle r={3.5} fill={paints.plastic} stroke={SHADOW} />
         </g>
       )}
       {at.knobs.map((k) => (
         <g key={`${k.x},${k.y}`} transform={`translate(${k.x} ${k.y})`}>
-          <circle cx={1.5} cy={2} r={11.5} fill={SHADOW} />
+          <circle cx={KNOB.dx} cy={KNOB.dy} r={KNOB.rx} fill={SHADOW} />
           <circle r={11} fill={paints.metal} />
           <circle
             r={11}
@@ -230,8 +256,21 @@ export function Controls({ at, paints }: { at: ControlAnchors; paints: Paints })
         </g>
       ))}
       {at.jack && (
-        <g transform={`translate(${at.jack.x} ${at.jack.y})`}>
-          <circle r={8} fill={paints.metal} stroke={SHADOW} />
+        <g transform={rotate(at.jack)}>
+          {at.jack.plate && (
+            <g>
+              <ellipse rx={JACK_PLATE.rx} ry={JACK_PLATE.ry} fill={HOLE} opacity={0.5} />
+              <ellipse
+                rx={JACK_PLATE.rx - 1.5}
+                ry={JACK_PLATE.ry - 1.5}
+                fill={paints.metal}
+                stroke={SHADOW}
+              />
+              <circle cy={-JACK_PLATE.ry + 5} r={1.3} fill={SHADOW} />
+              <circle cy={JACK_PLATE.ry - 5} r={1.3} fill={SHADOW} />
+            </g>
+          )}
+          <circle r={at.jack.plate ? 6 : JACK.rx} fill={paints.metal} stroke={SHADOW} />
           <circle r={3.5} fill={HOLE} />
         </g>
       )}
