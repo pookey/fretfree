@@ -321,8 +321,8 @@ export class SessionRunner {
     // order, still capped; lanes take over after, ear-find with its own
     // (M4-16). With sound off there is nothing to lead with: lanes as usual.
     const ordered = orderFrontier(frontierInOrder, deps.settings.goal);
-    const { startWithSound } = deps.settings;
-    const led = leadWithSound(ordered, startWithSound && deps.settings.soundOn, statuses);
+    const bySound = deps.settings.startWithSound && deps.settings.soundOn;
+    const led = leadWithSound(ordered, bySound, statuses);
     const leading = led.some((skill, i) => skill !== ordered[i]);
     const itemsOf = (skills: readonly Skill[]) =>
       skills.flatMap((skill) => skill.items().filter(serves));
@@ -334,7 +334,7 @@ export class SessionRunner {
             frontierLanes(frontierInOrder, deps.settings.goal, {
               firstSession: cards.length === 0 && !deps.focus,
             }),
-            startWithSound,
+            bySound,
           ).map((lane) => ({
             id: lane.id,
             share: lane.share,

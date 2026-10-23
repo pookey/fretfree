@@ -52,18 +52,18 @@ export function firstLessonSkill(
   const itemsOf = (ss: readonly Skill[]): Item[] =>
     ss.flatMap((skill) => skill.items().filter((item) => picker.canServe(item)));
   const ordered = orderFrontier(frontier, settings.goal);
-  const led = leadWithSound(ordered, settings.startWithSound && settings.soundOn, statuses);
+  const bySound = settings.startWithSound && settings.soundOn;
+  const led = leadWithSound(ordered, bySound, statuses);
   const lanes: SessionLane[] = led.some((skill, i) => skill !== ordered[i])
     ? [{ id: 'lead', share: 1, items: itemsOf(led) }]
-    : keepLeadLane(
-        frontierLanes(frontier, settings.goal, { firstSession: true }),
-        settings.startWithSound,
-      ).map((lane) => ({
-        id: lane.id,
-        share: lane.share,
-        items: itemsOf(lane.skills),
-        ...(lane.group !== undefined ? { group: lane.group } : {}),
-      }));
+    : keepLeadLane(frontierLanes(frontier, settings.goal, { firstSession: true }), bySound).map(
+        (lane) => ({
+          id: lane.id,
+          share: lane.share,
+          items: itemsOf(lane.skills),
+          ...(lane.group !== undefined ? { group: lane.group } : {}),
+        }),
+      );
   const [first] = buildSession({
     now,
     minutes: settings.sessionMinutes,
