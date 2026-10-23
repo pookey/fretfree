@@ -4,12 +4,13 @@ import type { BodyShape } from '../types';
 const J = NECK_JOINT_Y;
 
 /**
- * T-style: a slab with one cutaway on the treble side, a rounded bass
+ * Telecaster: a slab with one cutaway on the treble side, a rounded bass
  * shoulder, two single coils, a bridge plate that holds the bridge pickup
- * and a control plate. An original outline.
+ * and a control plate. The outline is an original drawing, not a
+ * trace of the product; only the name is the model's.
  */
-const tStyle: BodyShape = {
-  name: 'T-style',
+const telecaster: BodyShape = {
+  name: 'Telecaster',
   outline: [
     `M -28 ${J}`,
     // Bass side: a round shoulder, a nearly straight side.
@@ -58,4 +59,4 @@ const tStyle: BodyShape = {
   neckJoint: { y: J },
 };
 
-export default tStyle;
+export default telecaster;

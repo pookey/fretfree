@@ -4,11 +4,12 @@ import type { BodyShape } from '../types';
 const J = NECK_JOINT_Y;
 
 /**
- * S-style: a contoured double cutaway, the bass horn longer than the
- * treble, three single coils and a tremolo. An original outline.
+ * Stratocaster: a contoured double cutaway, the bass horn longer than the
+ * treble, three single coils and a tremolo. The outline is an original drawing, not a
+ * trace of the product; only the name is the model's.
  */
-const sStyle: BodyShape = {
-  name: 'S-style',
+const stratocaster: BodyShape = {
+  name: 'Stratocaster',
   outline: [
     `M -28 ${J}`,
     // Bass horn: up the inside, close to the neck, to a tip leaning inwards.
@@ -70,4 +71,4 @@ const sStyle: BodyShape = {
   neckJoint: { y: J },
 };
 
-export default sStyle;
+export default stratocaster;

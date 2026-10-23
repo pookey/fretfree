@@ -102,7 +102,7 @@ export interface BodyDetail {
 
 /** One body shape: a file in `bodies/`, registered by its file name. */
 export interface BodyShape {
-  /** The generic name, for the accessible label when no part name is given. */
+  /** The model name, for the accessible label when no part name is given. */
   name: string;
   /** The body's outline, as a closed path. */
   outline: string;

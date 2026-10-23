@@ -19,7 +19,7 @@ function bbox(d: string) {
 describe('body registry', () => {
   it('registers the first three shapes by file name', () => {
     expect([...BODIES.keys()]).toEqual(
-      expect.arrayContaining(['s-style', 't-style', 'single-cut']),
+      expect.arrayContaining(['stratocaster', 'telecaster', 'les-paul']),
     );
   });
 
@@ -30,7 +30,7 @@ describe('body registry', () => {
   });
 
   it('falls back for an unknown shape', () => {
-    expect(bodyFor('no-such-shape')).toBe(BODIES.get('s-style'));
+    expect(bodyFor('no-such-shape')).toBe(BODIES.get('stratocaster'));
   });
 
   describe.each([...BODIES.entries()])('%s', (_id, body) => {

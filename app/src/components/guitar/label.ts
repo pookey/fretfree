@@ -6,7 +6,10 @@ const INLAY_WORD: Record<InlayShape, string> = {
   trapezoids: 'trapezoid',
 };
 
-/** "Cherry sunburst" → "cherry sunburst", but "S-style" stays as it is. */
+/**
+ * "Cherry sunburst" → "cherry sunburst", but an initialism like "ABS" stays.
+ * The body's model name ("Les Paul") never comes through here.
+ */
 function lowerFirst(s: string): string {
   return /^[A-Z][a-z]/.test(s) ? s[0]!.toLowerCase() + s.slice(1) : s;
 }
@@ -18,7 +21,7 @@ function named(name: string, noun: string): string {
 }
 
 /**
- * The accessible name of a guitar, e.g. "Single-cut guitar, cherry
+ * The accessible name of a guitar, e.g. "Les Paul guitar, cherry
  * sunburst, cream pickguard, gold hardware, rosewood neck with block
  * inlays".
  */

@@ -16,7 +16,7 @@ const valueImport = (module: string) =>
 describe('<Guitar> (lazy)', () => {
   it('holds a labelled box, then the drawing', async () => {
     render(<Guitar spec={look()} size={12} />);
-    const name = /^Single-cut guitar, cherry sunburst/;
+    const name = /^Les Paul guitar, cherry sunburst/;
     expect(screen.getByRole('img', { name }).tagName).toBe('SPAN');
     await waitFor(() => expect(screen.getByRole('img', { name }).tagName).toBe('svg'), {
       timeout: 5000,

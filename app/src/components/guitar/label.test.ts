@@ -5,7 +5,7 @@ import { look } from './test/fixtures';
 describe('guitarLabel', () => {
   it('names every part in order', () => {
     expect(guitarLabel(look())).toBe(
-      'Single-cut guitar, cherry sunburst, cream pickguard, gold hardware, rosewood neck with block inlays',
+      'Les Paul guitar, cherry sunburst, cream pickguard, gold hardware, rosewood neck with block inlays',
     );
   });
 
@@ -14,22 +14,24 @@ describe('guitarLabel', () => {
     expect(label).toContain(', no pickguard,');
   });
 
-  it('keeps an initialism like S-style as it is', () => {
-    const label = guitarLabel(look({ body: { name: 'S-style', render: { shape: 's-style' } } }));
-    expect(label).toMatch(/^S-style guitar, /);
+  it('keeps the model name as it is', () => {
+    const label = guitarLabel(
+      look({ body: { name: 'Stratocaster', render: { shape: 'stratocaster' } } }),
+    );
+    expect(label).toMatch(/^Stratocaster guitar, /);
   });
 
   it("doesn't repeat a noun the part's name already has", () => {
     const label = guitarLabel(
       look({
-        body: { name: 'T-style guitar', render: { shape: 't-style' } },
+        body: { name: 'Telecaster guitar', render: { shape: 'telecaster' } },
         pickguard: { name: 'Black pickguard', render: { colour: '#111111' } },
         hardware: { name: 'Chrome hardware', render: { colour: '#c9ccd1' } },
         board: { name: 'Maple board', render: look().board.render },
       }),
     );
     expect(label).toBe(
-      'T-style guitar, cherry sunburst, black pickguard, chrome hardware, maple neck with block inlays',
+      'Telecaster guitar, cherry sunburst, black pickguard, chrome hardware, maple neck with block inlays',
     );
   });
 

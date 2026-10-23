@@ -2,7 +2,7 @@ import type { BodyShape } from './types';
 
 /**
  * Body shapes, one file per shape in `bodies/`, keyed by file name
- * (`bodies/s-style.ts` → `s-style`). A new shape is a new file.
+ * (`bodies/les-paul.ts` → `les-paul`). A new shape is a new file.
  */
 const modules = import.meta.glob<BodyShape>(['./bodies/*.ts', '!./bodies/*.test.ts'], {
   eager: true,
@@ -24,7 +24,7 @@ export const BODIES = collectBodies(modules);
 
 /** The body for `shape`, or the first registered one when it isn't known. */
 export function bodyFor(shape: string): BodyShape {
-  const body = BODIES.get(shape) ?? BODIES.get('s-style') ?? [...BODIES.values()][0];
+  const body = BODIES.get(shape) ?? BODIES.get('stratocaster') ?? [...BODIES.values()][0];
   if (!body) throw new Error('no guitar bodies are registered');
   return body;
 }

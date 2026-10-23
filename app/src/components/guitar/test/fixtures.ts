@@ -38,7 +38,7 @@ export const FINISHES: Record<FinishType, { name: string; render: RenderData['fi
 
 export function look(overrides: Partial<GuitarLook> = {}): GuitarLook {
   return {
-    body: { name: 'Single-cut', render: { shape: 'single-cut' } },
+    body: { name: 'Les Paul', render: { shape: 'les-paul' } },
     finish: FINISHES.sunburst,
     pickguard: { name: 'Cream', render: { colour: '#efe3c8' } },
     hardware: { name: 'Gold', render: { colour: '#d4b15a' } },

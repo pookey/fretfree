@@ -4,12 +4,13 @@ import type { BodyShape } from '../types';
 const J = NECK_JOINT_Y;
 
 /**
- * Single-cut: a rounded bass bout, one pointed cutaway on the treble
+ * Les Paul: a rounded bass bout, one pointed cutaway on the treble
  * side, a bound top, two humbuckers, a bar bridge with a stop tailpiece
- * and four knobs. An original outline.
+ * and four knobs. The outline is an original drawing, not a
+ * trace of the product; only the name is the model's.
  */
-const singleCut: BodyShape = {
-  name: 'Single-cut',
+const lesPaul: BodyShape = {
+  name: 'Les Paul',
   outline: [
     `M -28 ${J}`,
     // Bass side: one rounded upper bout, a gentle waist, a full lower bout.
@@ -56,4 +57,4 @@ const singleCut: BodyShape = {
   binding: true,
 };
 
-export default singleCut;
+export default lesPaul;
