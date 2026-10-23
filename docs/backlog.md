@@ -1010,7 +1010,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `app/src/screens/today/cards/ear-only.tsx`, `app/src/onboarding/steps/start-with-sound.tsx`
 
 ### M4-11 · M4 milestone QA
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-01, M4-02, M4-03, M4-04, M4-05, M4-06, M4-07, M4-08, M4-09, M4-10
 - **Owns:** `docs/progress.md`, `app/e2e/m4-11.spec.ts`
 
@@ -1412,7 +1412,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - Exhaustive tests. Exported from `theory/index.ts` as an append-only edit.
 
 ### M8-04 · [contract] Meter and rhythm theory (pure)
-- **Status:** todo
+- **Status:** done
 - **Deps:** —
 - **After:** M6-10
 - **Owns:** `app/src/theory/meter.ts`, `app/src/theory/rhythm.ts`, `app/src/theory/meter.test.ts`, `app/src/theory/rhythm.test.ts`
