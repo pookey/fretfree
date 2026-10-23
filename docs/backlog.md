@@ -901,6 +901,17 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - If the cause is in app code (a key handler attached late), report it to the PM rather than editing a drill outside Owns.
   - Proof in the report: each of the three tests passes `--repeat-each 10` on ipad-landscape under 5 workers, before-and-after numbers.
 
+### M1-46 · Serve test-slot waiters in arrival order
+- **Status:** todo
+- **Deps:** none
+- **Design:** none (tooling; CLAUDE.md "Commands")
+- **Owns:** `scripts/slot-lib.sh`, `scripts/slot-lib.test.sh` (new)
+- **Acceptance:**
+  - Found by the PM, 2026-10-23 19:47: on the remote runner (one e2e slot, `FRETWORK_SLOT_FLOCK=1`) waiters poll every 2 s with no order, so the oldest waiters starved (M11-02 waited 52 min and M11-06 42 min while newer runs got through, and the Mac's two slots sat idle).
+  - `acquire_slot` serves waiters in arrival order: each waiter takes a numbered ticket in the lock dir and takes a slot only when it is the oldest live non-lane ticket. The lane (`FRETWORK_LANE=1`) still goes first. Tickets of dead processes are cleared (pid check, as for slots), in both lock-dir and flock modes, locally and in the runner's container (`/locks`).
+  - The waiting message prints the real number of slots and the waiter's place in the queue ("waiting for an e2e slot: 2 of 2 in use, 3rd in line").
+  - A shell test (`scripts/slot-lib.test.sh`, run by `pnpm verify:static` or a documented command) starts several fake waiters with staggered start times on one slot and checks they get it in arrival order, the lane jumps the queue, and a killed waiter's ticket doesn't block the next one.
+
 ### M3-18 · Lazy-load drill views and the onboarding and placement routes
 - **Status:** done
 - **Deps:** M3-16
