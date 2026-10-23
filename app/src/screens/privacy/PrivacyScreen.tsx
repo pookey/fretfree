@@ -4,7 +4,7 @@ import screens from '../screens.module.css';
 import styles from '../about/About.module.css';
 
 export const LAST_UPDATED = '18 October 2026';
-const ISSUES_URL = 'https://github.com/pookey/fretwork/issues';
+const ISSUES_URL = 'https://github.com/pookey/fretfree/issues';
 
 /** The context panel: the policy in four lines. */
 function InShort() {

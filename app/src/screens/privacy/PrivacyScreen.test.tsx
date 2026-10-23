@@ -36,7 +36,7 @@ describe('<PrivacyScreen>', () => {
     expect(screen.getByRole('region', { name: 'Copies hosted by others' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
       'href',
-      'https://github.com/pookey/fretwork/issues',
+      'https://github.com/pookey/fretfree/issues',
     );
     expect(screen.getByText(/Last updated/)).toBeInTheDocument();
   });
