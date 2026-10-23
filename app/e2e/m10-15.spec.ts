@@ -52,7 +52,11 @@ test.describe('M10-15 Today on day one', () => {
     await page.getByRole('link', { name: 'Settings' }).first().click();
     const practice = page.getByRole('main').getByRole('group', { name: 'Practice' });
     await practice.getByRole('combobox', { name: 'Session length' }).selectOption('5');
-    await page.goto('/');
+    // In-app, not a reload: a reload can land before the setting is saved.
+    await page
+      .getByRole('navigation', { name: 'Sections' })
+      .getByRole('link', { name: 'Today' })
+      .click();
     await expect(hero(page).getByTestId('first-day')).toHaveText(
       /^Your first session takes about 5 minutes and starts with /,
     );
