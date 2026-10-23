@@ -379,4 +379,23 @@ describe('<Fretboard> ♯/♭ labels (M10-18)', () => {
     expect(screen.getByRole('img', { name: 'minor 3rd' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'string 1, fret 2, F sharp' })).toBeInTheDocument();
   });
+
+  it('rings an emphasised marker on top of its own degree shape', () => {
+    const { container } = render(
+      <Fretboard
+        fretRange={{ from: 0, to: 5 }}
+        markers={[
+          { string: 3, fret: 2, style: 'fifth', label: '5', forceLabel: true, emphasis: true },
+          { string: 2, fret: 3, style: 'fifth', label: '5', forceLabel: true },
+        ]}
+      />,
+    );
+    const [ringed, plain] = screen.getAllByTestId('marker-fifth');
+    expect(ringed).toHaveAttribute('data-emphasis', 'true');
+    expect(ringed).toHaveClass(styles.emphasis!);
+    expect(ringed!.querySelector('polygon')).not.toBeNull();
+    expect(ringed).toHaveTextContent('5');
+    expect(plain).not.toHaveAttribute('data-emphasis');
+    expect(container.querySelectorAll(`.${styles.emphasis}`)).toHaveLength(1);
+  });
 });

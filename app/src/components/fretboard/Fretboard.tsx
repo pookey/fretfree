@@ -48,6 +48,11 @@ export interface FretMarker extends Position {
   spokenLabel?: string;
   /** Shape-outline group, e.g. a CAGED shape ID. */
   group?: string;
+  /**
+   * Ring and pulse the marker as a worked example's target, on top of its own
+   * shape and colour (a 5th stays a triangle). `target` is for a cell with no degree.
+   */
+  emphasis?: boolean;
 }
 
 export interface FretboardProps {
@@ -295,8 +300,9 @@ export function Fretboard({
         return (
           <g
             key={`m${m.string}-${m.fret}-${m.style}`}
-            className={`${styles.marker} ${styles[m.style]}`}
+            className={`${styles.marker} ${styles[m.style]}${m.emphasis ? ` ${styles.emphasis}` : ''}`}
             data-testid={`marker-${m.style}`}
+            data-emphasis={m.emphasis || undefined}
             data-string={m.string}
             data-fret={m.fret}
             role={spoken ? 'img' : undefined}

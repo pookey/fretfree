@@ -184,6 +184,15 @@
   fill: var(--chord-seventh);
 }
 
+/* A worked example's target that keeps its degree shape: the target's ring and pulse on top. */
+.emphasis > :first-child {
+  stroke: #fff;
+  stroke-width: 3.5;
+  animation: pulse 1.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
 .marker text.longLabel {
   font-size: 13px;
 }
