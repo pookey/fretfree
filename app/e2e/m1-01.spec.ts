@@ -61,6 +61,7 @@ test.describe('M1-01 registries', () => {
       'topics',
       'stats',
       'calendar',
+      'guitar',
       'achievements',
       'account',
     ]);
