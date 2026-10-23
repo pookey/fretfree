@@ -3,7 +3,7 @@ import { ScreenLayout } from '../../shell/ScreenLayout';
 import screens from '../screens.module.css';
 import styles from '../about/About.module.css';
 
-export const LAST_UPDATED = '18 October 2026';
+export const LAST_UPDATED = '23 October 2026';
 const ISSUES_URL = 'https://github.com/pookey/fretfree/issues';
 
 /** The context panel: the policy in four lines. */
@@ -74,6 +74,11 @@ export function PrivacyScreen() {
             <li>
               <strong>Mic mode listens, but doesn&rsquo;t record.</strong> The sound is analysed on
               this device to find the pitch, and it&rsquo;s never saved or sent.
+            </li>
+            <li>
+              <strong>Sharing your guitar is up to you.</strong> Nothing is shared unless you tap
+              &ldquo;Share my guitar&rdquo; in the Garage. The picture is made on this device and
+              goes only where you send it.
             </li>
           </ul>
         </section>
