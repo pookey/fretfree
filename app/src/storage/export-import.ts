@@ -62,9 +62,13 @@ type Tables = ExportFile['tables'];
  * The schema versions that moved rows to new skills, each with its frozen
  * restage, in version order: v3 staged D8's chord tones (M3-17), v4 C8's
  * harmony by key (M10-02), and v5 C2's notes by string (M10-12). Loaded on
- * demand, as the upgrades are.
+ * demand, as the upgrades are. The sync engine runs pulled rows through the
+ * same list (sync/engine.ts), so a new restage is added here once.
  */
-const RESTAGES: readonly [number, () => Promise<{ restageTables: (t: Tables) => Tables }>][] = [
+export const RESTAGES: readonly [
+  number,
+  () => Promise<{ restageTables: (t: Tables) => Tables }>,
+][] = [
   [3, () => import('./migrations/c5-tone-stages')],
   [4, () => import('./migrations/c8-stages')],
   [5, () => import('./migrations/c2-strings')],
