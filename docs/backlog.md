@@ -1248,7 +1248,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Unit tests on each view's marker builder (shape per degree, label on every target); an e2e check on one worked example per drill.
 
 ### M6-12 · D20 grid: equal beat cells, Start under the prompt, readable late marks
-- **Status:** todo
+- **Status:** done
 - **Deps:** M6-10
 - **Design:** §6 D20; `docs/progress.md` "M6 definition of done" finding 3
 - **Owns:** `app/src/drills/d20-rhythm/**`, `app/e2e/m6-12.spec.ts`
