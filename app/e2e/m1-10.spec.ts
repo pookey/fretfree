@@ -110,7 +110,7 @@ test.describe('M1-10 daily progress wiring', () => {
 
     // Two missed days: the freeze covers the first, the second breaks the streak.
     await expect(hero(page).getByTestId('streak-count')).toHaveText('0');
-    await expect(hero(page).getByTestId('freezes')).toHaveText('No streak freezes held');
+    await expect(hero(page).getByTestId('freezes')).toHaveCount(0);
     await expect(page.getByTestId('sidebar-streak-count')).toHaveText('0');
     expect(await storedDay(page, await localDate(page, -2))).toMatchObject({ freezeUsed: true });
 

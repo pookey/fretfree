@@ -62,7 +62,7 @@ test.describe('M1-11 Today hero and sidebar streak', () => {
     await expect(
       hero(page).getByRole('img', { name: 'Daily goal: 0 of 10 minutes' }),
     ).toBeVisible();
-    await expect(hero(page).getByTestId('freezes')).toHaveText('No streak freezes held');
+    await expect(hero(page).getByTestId('freezes')).toHaveCount(0);
     await expect(page.getByTestId('due-count')).toHaveText(/^\d+$/);
     await expect(page.getByTestId('new-count')).toHaveText(/^\d+$/);
 

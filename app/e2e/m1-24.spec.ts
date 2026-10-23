@@ -243,7 +243,7 @@ test.describe('M1-24 the first week', () => {
 
     // No practice on Saturday or Sunday, and no freeze held: the amulet holds the streak.
     await openOnDay(page, 5);
-    await expect(hero(page).getByTestId('freezes')).toHaveText('No streak freezes held');
+    await expect(hero(page).getByTestId('freezes')).toHaveCount(0);
     await expectStreak(page, info, 3);
     await expect(
       hero(page).getByRole('img', { name: 'Daily goal: 0 of 10 minutes' }),
