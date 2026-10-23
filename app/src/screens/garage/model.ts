@@ -122,17 +122,17 @@ export function tryOnSummary(tryOn: TryOn): string {
 }
 
 /**
- * The preview's height in rem. The guitar stands upright, so its height sets
- * its size: on iPad it fills the window below the title; on a phone it takes
- * the top of the screen, above where the parts sheet opens.
+ * The preview's height in rem on iPad portrait and phones. The guitar stands
+ * upright, so its height sets its size. On regular-wide the stylesheet sizes
+ * it instead (`.frame` in `Garage.module.css`), since how it fits there
+ * depends on the width of the main pane.
  */
-export function previewHeightRem(sizeClass: SizeClass, viewportHeight: number): number {
+export function previewHeightRem(
+  sizeClass: Exclude<SizeClass, 'regular-wide'>,
+  viewportHeight: number,
+): number {
   const vh = viewportHeight / REM;
   switch (sizeClass) {
-    // Beside the parts panel: the window's height, less the title, the back
-    // link and the stage's padding.
-    case 'regular-wide':
-      return clamp(vh - 17, 24, 52);
     // The parts panel sits below, so leave some of it in view.
     case 'regular':
       return clamp(vh * 0.45, 24, 36);

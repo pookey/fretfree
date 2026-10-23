@@ -147,12 +147,6 @@ describe('trying parts on', () => {
 });
 
 describe('previewHeightRem', () => {
-  it('fills the iPad window beside the parts panel', () => {
-    expect(previewHeightRem('regular-wide', 834)).toBeCloseTo(834 / 16 - 17);
-    expect(previewHeightRem('regular-wide', 300)).toBe(24);
-    expect(previewHeightRem('regular-wide', 2000)).toBe(52);
-  });
-
   it('leaves room for the parts panel below on iPad portrait', () => {
     expect(previewHeightRem('regular', 1194)).toBeCloseTo((1194 / 16) * 0.45);
     expect(previewHeightRem('regular', 2000)).toBe(36);

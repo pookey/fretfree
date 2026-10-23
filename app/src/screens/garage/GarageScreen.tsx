@@ -133,16 +133,23 @@ export function GarageScreen({ now = () => new Date() }: { now?: () => Date }) {
         )}
         <div className={styles.stage}>
           <div className={styles.spot}>
-            <Guitar
-              spec={look}
-              size={previewHeightRem(sizeClass, viewportHeight)}
-              label={`${build.name}: ${guitarLabel(look)}`}
-              className={styles.preview}
-            />
+            {/* On regular-wide the frame's CSS sizes the guitar to the window. */}
+            <div className={styles.frame}>
+              <Guitar
+                spec={look}
+                size={
+                  sizeClass === 'regular-wide'
+                    ? 'fill'
+                    : previewHeightRem(sizeClass, viewportHeight)
+                }
+                label={`${build.name}: ${guitarLabel(look)}`}
+                className={styles.preview}
+              />
+            </div>
           </div>
           <div className={styles.info}>
             <GuitarName name={build.name} />
-            <p className={styles.balance} data-testid="garage-balance">
+            <p className={styles.balance} data-testid="garage-wallet">
               <strong>{toSpend.toLocaleString('en')}</strong> to spend
             </p>
             <p className={styles.tryOnNote} aria-live="polite">

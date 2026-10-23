@@ -5,6 +5,43 @@
   gap: var(--space-4);
 }
 
+/*
+ * Regular-wide: the guitar and the parts panel share the page's scroller, so
+ * this block sticks while the panel scrolls to a lower swatch, and a try-on
+ * is always in view. It is never taller than the window.
+ */
+.main[data-size-class='regular-wide'] {
+  container: garage / inline-size;
+  position: sticky;
+  top: var(--space-4);
+}
+
+.main[data-size-class='regular-wide'] .stage {
+  flex-wrap: nowrap;
+}
+
+.main[data-size-class='regular-wide'] .spot {
+  flex: none;
+  padding: var(--space-3);
+}
+
+.main[data-size-class='regular-wide'] .info {
+  flex: 1 1 10rem;
+}
+
+/*
+ * The guitar's width: from the window's height (less the title, back link
+ * and padding; 370 / 1010 is the drawing's aspect), or narrower when the main
+ * pane is (iPad mini), leaving the stage's padding, the gap, the spot's
+ * padding and a 10rem name column beside it.
+ */
+.main[data-size-class='regular-wide'] .frame {
+  width: min(
+    calc(clamp(20rem, 100dvh - 17rem, 52rem) * 0.3663),
+    calc(100cqi - 2.125rem - 1.5rem - 1.5rem - 10rem)
+  );
+}
+
 .back {
   display: inline-flex;
   align-items: center;
@@ -203,13 +240,24 @@
   }
 }
 
+/*
+ * The selected part and its Buy button or badge link stay at the top of the
+ * panel (or sheet) while the swatches scroll under it, so the action is next
+ * to the swatch just tapped.
+ */
 .selected {
+  position: sticky;
+  top: var(--space-2);
+  z-index: 2;
   display: grid;
   gap: var(--space-2);
   margin-bottom: var(--space-4);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-m);
   background: var(--surface);
+  box-shadow:
+    0 0 0 var(--space-2) var(--bg-raised),
+    0 var(--space-2) var(--space-3) rgb(0 0 0 / 0.25);
 }
 
 .selectedName {
@@ -326,9 +374,18 @@
   width: 2.25rem;
   height: 2.75rem;
   border-radius: 1.1rem 1.1rem 0.4rem 1.4rem;
+  /* A light ring, so a black guard stands out on the dark tile. */
   box-shadow:
-    inset 0 0 0 1px rgb(0 0 0 / 0.2),
+    inset 0 0 0 1px rgb(255 255 255 / 0.25),
     0 1px 3px rgb(0 0 0 / 0.4);
+}
+
+@media (prefers-color-scheme: light) {
+  .guardChip {
+    box-shadow:
+      inset 0 0 0 1px rgb(0 0 0 / 0.2),
+      0 1px 3px rgb(0 0 0 / 0.25);
+  }
 }
 
 /* No pickguard: a dashed outline, struck through. */

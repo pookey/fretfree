@@ -26,10 +26,10 @@ async function renderGarage(xp: number) {
       <GarageScreen now={() => now} />
     </MemoryRouter>,
   );
-  await screen.findByTestId('garage-balance');
+  await screen.findByTestId('garage-wallet');
 }
 
-const balance = () => screen.getByTestId('garage-balance');
+const balance = () => screen.getByTestId('garage-wallet');
 const preview = () => screen.getAllByRole('img', { name: /^[^:]+: \w[\w ]* guitar, / })[0]!;
 const swatch = (name: RegExp) => screen.getByRole('button', { name });
 const panel = () => screen.getByTestId('context-panel');
