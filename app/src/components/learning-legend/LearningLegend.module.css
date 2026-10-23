@@ -1,0 +1,65 @@
+/* Three short lines, muted so they sit under the numbers rather than compete. */
+.legend {
+  text-align: start;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.lines {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+/* Term and meaning flow as one sentence; a wrapped line hangs past the
+   mark (1.5rem plus its 0.5rem margin). */
+.line {
+  padding-inline-start: 2rem;
+  text-indent: -2rem;
+}
+
+.line dt,
+.line dd {
+  display: inline;
+  margin: 0;
+}
+
+.line dt {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.line dt::after {
+  content: ': ';
+}
+
+/* The mastery ring's marks: a thin, light learning arc; a thick, solid stable
+   arc; a tick when mastered. */
+.mark {
+  flex: none;
+  width: 1.5rem;
+  height: 0.75rem;
+  fill: none;
+  margin-right: var(--space-2);
+  vertical-align: middle;
+  stroke: var(--tone);
+}
+
+.mark[data-level='learning'] {
+  stroke-width: 2;
+  stroke-linecap: butt;
+  opacity: 0.7;
+}
+
+.mark[data-level='stable'] {
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.mark[data-level='mastered'] {
+  stroke: var(--correct);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
