@@ -82,6 +82,12 @@ describe('parts', () => {
     ]);
     expect(el.querySelector('path[mask="url(#b1)"]')).not.toBeNull();
     // Lit towards the upper left, shaded towards the lower right: not an even halo.
+    const grad = el.querySelector('linearGradient#b1-light')!;
+    // A true 45° in millimetres, not the stretched diagonal of a tall body's box.
+    expect(grad).toHaveAttribute('gradientUnits', 'userSpaceOnUse');
+    const dx = Number(grad.getAttribute('x2')) - Number(grad.getAttribute('x1'));
+    const dy = Number(grad.getAttribute('y2')) - Number(grad.getAttribute('y1'));
+    expect(dx).toBe(dy);
     const stops = [...el.querySelectorAll('linearGradient#b1-light stop')];
     expect(stops[0]).toHaveAttribute('stop-color', '#fff');
     expect(stops.at(-1)).toHaveAttribute('stop-color', '#000');

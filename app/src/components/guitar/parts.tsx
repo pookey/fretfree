@@ -413,7 +413,7 @@ export function Controls({ at, paints }: { at: ControlAnchors; paints: Paints })
  * path, lit where it faces the upper left and shaded where it faces the
  * lower right, with a dark line where it meets the flat of the top. Both
  * are strokes of the outline clipped to the body, so the band stays even
- * round tight horns; a gradient across the body's box does the lighting,
+ * round tight horns; a gradient at 45° across the body does the lighting,
  * and a mask keeps the line to the band's inner edge.
  */
 export function Bevel({
@@ -433,7 +433,15 @@ export function Bevel({
   return (
     <g clipPath={clip}>
       <defs>
-        <linearGradient id={light} x1="0" y1="0" x2="1" y2="1">
+        {/* At a true 45° in body millimetres, across the frame every body shares. */}
+        <linearGradient
+          id={light}
+          gradientUnits="userSpaceOnUse"
+          x1={-180}
+          y1={380}
+          x2={180}
+          y2={740}
+        >
           <stop offset="0" stopColor="#fff" stopOpacity={0.3} />
           <stop offset="0.4" stopColor="#fff" stopOpacity={0.06} />
           <stop offset="0.6" stopColor="#000" stopOpacity={0.06} />
