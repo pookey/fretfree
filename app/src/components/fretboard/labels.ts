@@ -12,6 +12,8 @@ import { displayPc, spokenDegree, spokenPc } from '../../theory/pitch-display';
 const DEGREE = /^(##|#|bb|b)?(\d+)$/;
 const DEGREE_GLYPH: Readonly<Record<string, string>> = { '##': '𝄪', '#': '♯', bb: '𝄫', b: '♭' };
 const GLYPHS = /[♯♭𝄪𝄫]/u;
+const PITCH_CLASS = /^[A-G](##|#|bb|b|♯|♭|𝄪|𝄫)?$/u;
+const GLYPH_DEGREE = /^(♯|♭|𝄪|𝄫)?\d+$/u;
 
 /** A label as the neck shows it: `F#` → `F♯`, `Bb` → `B♭`, `b3` → `♭3`, `bb7` → `𝄫7`. */
 export function neckText(label: string): string {
@@ -24,15 +26,22 @@ export function neckText(label: string): string {
  * How a screen reader should say neck text, which not every voice does for
  * the glyphs: `F♯` → `F sharp`, `♭3` → `flat 3`, `F♯ / G♭` → `F sharp / G
  * flat`. Undefined when the text reads as written.
+ *
+ * Its inputs are the neck's labels: pitch classes, degrees, fingers and fret
+ * numbers (the last two never carry a glyph). Anything else, such as a chord
+ * name (`B♭m`, `C7♯9`), is undefined too rather than half spoken ("B flatm"):
+ * a caller labelling chords passes the marker's own `spokenLabel`.
  */
 export function spokenNeckText(text: string): string | undefined {
   if (!GLYPHS.test(text)) return undefined;
-  return text
-    .split(/(\s+|\/)/)
-    .map((part) =>
-      DEGREE.test(part) || /^[♯♭𝄪𝄫]/u.test(part) ? spokenDegree(part) : spokenPc(part),
-    )
-    .join('');
+  const parts = text.split(/(\s+|\/)/);
+  const spoken = parts.map((part) => {
+    if (/^(\s+|\/)?$/.test(part)) return part;
+    if (PITCH_CLASS.test(part)) return spokenPc(part);
+    if (GLYPH_DEGREE.test(part) || DEGREE.test(part)) return spokenDegree(part);
+    return null;
+  });
+  return spoken.includes(null) ? undefined : spoken.join('');
 }
 
 /**

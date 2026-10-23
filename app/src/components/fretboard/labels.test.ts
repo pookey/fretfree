@@ -33,6 +33,14 @@ describe('spokenNeckText', () => {
     expect(spokenNeckText('F♯ / G♭')).toBe('F sharp / G flat');
   });
 
+  it('speaks pitch classes and degrees only, never half a chord name', () => {
+    // Outside its inputs it gives no name (the text reads as written), so a
+    // chord label needs the marker's own spokenLabel.
+    for (const chord of ['B♭m', 'C7♯9', 'F♯m7♭5', 'F♯ / B♭m']) {
+      expect(spokenNeckText(chord)).toBeUndefined();
+    }
+  });
+
   it('is undefined when the text reads as written', () => {
     expect(spokenNeckText('E')).toBeUndefined();
     expect(spokenNeckText('R')).toBeUndefined();
