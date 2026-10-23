@@ -5,13 +5,17 @@ import { itemsOf, memo } from './helpers';
 /**
  * T1: what a time signature means (research/03 track T: "read 4/4, 3/4 and
  * 2/4; say what each number means"). In simple time the top number is the
- * beats in a bar and the bottom number the note one beat lasts, so each
- * meter has three cards (research/02 rule 1), one per direction and number:
+ * beats in a bar and the bottom number the note one beat lasts. Each meter
+ * has a card per direction (research/02 rule 1):
  *
  * - `meter:3/4:feltBeats`: how many beats in a bar (3);
- * - `meter:3/4:beatUnit`: what note one beat lasts (a quarter);
  * - `meter:3/4:fromBeats`: the other way round, which time signature has
  *   3 quarter-note beats in a bar.
+ *
+ * The bottom number is one fact here, a 4 is a quarter, so it is one card,
+ * `meter:4/4:beatUnit`: three cards all answered "quarter" would pad the
+ * queue and be answered by reflex (M8-05 review). The beat notes that
+ * differ (dotted quarter, half) are T2's.
  *
  * D32 asks them as choice cards. Sound comes before symbol (design §12):
  * the meter opens once the learner is tapping a pulse (F4), and every card's
@@ -37,9 +41,11 @@ export const skills: Skill[] = [
     items: memo(() =>
       itemsOf(
         'T1.simple-meters',
-        T1_METERS.flatMap((m) =>
-          (['feltBeats', 'beatUnit', 'fromBeats'] as const).map((f) => meterItemId(m, f)),
-        ),
+        T1_METERS.flatMap((m) => [
+          meterItemId(m, 'feltBeats'),
+          ...(m === '4/4' ? [meterItemId(m, 'beatUnit')] : []),
+          meterItemId(m, 'fromBeats'),
+        ]),
       ),
     ),
   },
