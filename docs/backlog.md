@@ -1897,7 +1897,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - RTL tests and an e2e spec, with a `@smoke` check that the balance renders on a phone.
 
 ### M11-03 · Guitar SVG renderer and the first three bodies
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request 2026-10-23)
 - **Deps:** M11-01
 - **Design:** §3.8
