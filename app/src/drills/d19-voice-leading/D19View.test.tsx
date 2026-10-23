@@ -128,6 +128,11 @@ describe('<D19View>', () => {
     // The held C is a target, so only E and G stay as rings.
     expect(markers('ghost').map((m) => m.label)).toEqual(['E', 'G']);
     expect(neck()).toHaveAttribute('data-guide-level', '3');
+    // The count falls as the rings are tapped.
+    tap(at(2, 6));
+    expect(screen.getByTestId('d19-prompt')).toHaveTextContent(
+      'Tap the 2 ringed notes of F to continue.',
+    );
   });
 
   it('shows the whole next chord and the wrong tap in feedback', () => {

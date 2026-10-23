@@ -44,12 +44,12 @@ async function tapAll(page: Page, cells: readonly Mark[]): Promise<void> {
   await expect(page.getByTestId('feedback-correct')).toBeVisible();
 }
 
-/** The count in "Tap the 6 ringed notes", which the prompt must state. */
+/** The count in "Tap the 6 ringed notes" (one: "Tap the ringed F"), which the prompt must state. */
 async function askedCount(prompt: Locator): Promise<number> {
   const text = await prompt.innerText();
-  const m = /Tap the (\d+) ringed/.exec(text);
+  const m = /Tap the (?:(\d+) )?ringed/.exec(text);
   expect(m, text).not.toBeNull();
-  return Number(m![1]);
+  return m![1] === undefined ? 1 : Number(m![1]);
 }
 
 const DEGREE_LABEL = /^(R|♭?\d)$/;

@@ -93,6 +93,8 @@ export function ScaleView({
   };
 
   const run = prompt.mode === 'run';
+  // The rings still to tap: the count falls with each tap (all of them once answered).
+  const left = feedback ? prompt.targets.length : dpsMissed(prompt, taps).length;
   const tonic = dpbDisplay(prompt.tonic);
   const found = dpsFound(prompt, taps);
   const markers = dpsMarkers(prompt, { taps, guided, answered: feedback !== null, tuning });
@@ -105,7 +107,7 @@ export function ScaleView({
     question = guided ? (
       <>
         This is {key} position {prompt.position}, around box {prompt.position} (the {prompt.shape}{' '}
-        shape). Tap the {ringedNotes(prompt.targets.length)} to continue.
+        shape). Tap the {ringedNotes(left)} to continue.
       </>
     ) : (
       <>
@@ -116,8 +118,8 @@ export function ScaleView({
   } else {
     question = guided ? (
       <>
-        This is {key} position {prompt.position} from the {from}. Tap the{' '}
-        {ringedNotes(prompt.targets.length)} in order to continue.
+        This is {key} position {prompt.position} from the {from}. Tap the {ringedNotes(left)} in
+        order to continue.
       </>
     ) : (
       <>

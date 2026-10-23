@@ -89,10 +89,12 @@ export function D19View({
 
   const fromChord = <strong>{from}</strong>;
   const toChord = <strong>{to}</strong>;
+  // The rings still to tap: the count falls with each tap (all of them once answered).
+  const left = feedback ? prompt.targets.length : d19Missed(prompt, taps).length;
   const question = guided ? (
     <>
-      This is {fromChord} to {toChord} on {strings}. Tap the {prompt.targets.length} ringed notes of{' '}
-      {to} to continue.
+      This is {fromChord} to {toChord} on {strings}. Tap the{' '}
+      {left === 1 ? 'ringed note' : `${left} ringed notes`} of {to} to continue.
     </>
   ) : (
     <>

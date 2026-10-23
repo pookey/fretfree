@@ -227,6 +227,13 @@ describe('<BoxView> relative', () => {
       { string: 1, fret: 11, label: 'E♭' },
     ]);
     expect(screen.getByTestId('dpb-count')).toHaveTextContent('Found 0 of 3');
+    // The count falls as the rings are tapped.
+    tap(at(6, 11));
+    expect(screen.getByTestId('dpb-prompt')).toHaveTextContent(
+      'Tap the 2 ringed E♭ notes to continue.',
+    );
+    tap(at(3, 8));
+    expect(screen.getByTestId('dpb-prompt')).toHaveTextContent('Tap the ringed E♭ to continue.');
   });
 
   it('labels the box by degree in feedback, with the wrong tap in place of its dot', () => {

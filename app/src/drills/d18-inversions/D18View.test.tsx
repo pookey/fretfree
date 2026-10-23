@@ -114,6 +114,10 @@ describe('<D18View> build cards', () => {
     expect(markers('fifth').map((m) => m.label)).toEqual(['5']);
     expect(neck().querySelectorAll('[data-emphasis="true"]')).toHaveLength(2);
     expect(neck()).toHaveAttribute('data-guide-level', '3');
+    // The count falls as the rings are tapped.
+    tap(at(2, 5));
+    expect(screen.getByTestId('d18-prompt')).toHaveTextContent('Tap the ringed note to continue.');
+    expect(neck().querySelectorAll('[data-emphasis="true"]')).toHaveLength(1);
   });
 
   it('rings the missed note and marks the ♭3 in feedback', () => {

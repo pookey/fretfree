@@ -98,6 +98,8 @@ export function BoxView({
   };
 
   const overlay = prompt.mode === 'overlay';
+  // The rings still to tap: the count falls with each tap (all of them once answered).
+  const left = feedback ? prompt.targets.length : dpbMissed(prompt, taps).length;
   const root = dpbDisplay(prompt.root);
   const relRoot = dpbDisplay(prompt.relative.root);
   const markers = dpbMarkers(prompt, { taps, guided, answered: feedback !== null, tuning });
@@ -109,7 +111,7 @@ export function BoxView({
     question = guided ? (
       <>
         This is {chord} pentatonic box {prompt.box}, around the {prompt.shape} shape. Tap the{' '}
-        {ringedNotes(prompt.targets.length)} to continue.
+        {ringedNotes(left)} to continue.
       </>
     ) : (
       <>
@@ -121,7 +123,7 @@ export function BoxView({
     question = guided ? (
       <>
         In this {chord} box, the relative {prompt.relative.quality}'s root is {relRoot}. Tap the{' '}
-        {ringedNotes(prompt.targets.length, relRoot)} to continue.
+        {ringedNotes(left, relRoot)} to continue.
       </>
     ) : (
       <>

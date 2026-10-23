@@ -111,10 +111,12 @@ export function D18View({
   let question;
   let hint: string;
   if (build) {
+    // The rings still to tap: the count falls with each tap (all of them once answered).
+    const left = feedback ? prompt.targets.length : d18Missed(prompt, taps).length;
     question = guided ? (
       <>
-        This is {chord} in {shown} on {strings}. Tap the {prompt.targets.length} ringed notes to
-        continue.
+        This is {chord} in {shown} on {strings}. Tap the{' '}
+        {left === 1 ? 'ringed note' : `${left} ringed notes`} to continue.
       </>
     ) : (
       <>
