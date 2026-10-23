@@ -5,7 +5,7 @@ import { guitarLabel } from './label';
 
 export type { GuitarProps } from './GuitarArt';
 export { guitarLabel } from './label';
-export { BODY_SHAPES, hasBody } from './shapes';
+export { BODY_SHAPES, GUARDLESS_SHAPES, hasBody, hasGuard } from './shapes';
 export type * from './types';
 
 /** The renderer's chunk, for callers that need the SVG itself (sharing, M11-09). */

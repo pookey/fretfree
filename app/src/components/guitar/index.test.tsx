@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { Guitar } from './index';
+import { GUARDLESS_SHAPES, Guitar, hasGuard } from './index';
 import { look } from './test/fixtures';
 
 const SOURCES = import.meta.glob<string>(
@@ -42,5 +42,11 @@ describe('<Guitar> (lazy)', () => {
 
   it('loads the renderer with a dynamic import', () => {
     expect(SOURCES['./index.tsx']).toMatch(/import\(['"]\.\/GuitarArt['"]\)/);
+  });
+
+  it('says which bodies draw a guard, without loading the drawings', () => {
+    expect(GUARDLESS_SHAPES).toContain('superstrat');
+    expect(hasGuard('superstrat')).toBe(false);
+    expect(hasGuard('stratocaster')).toBe(true);
   });
 });
