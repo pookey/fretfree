@@ -52,7 +52,7 @@ test.describe('M4-17 M4 QA fixes', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('D13 shades the frets behind the capo, and its panel says each thing once', async ({
+  test('D13 shades the frets behind the capo, and its panel says each thing once @layout', async ({
     page,
   }) => {
     await freshStart(page);
