@@ -890,6 +890,17 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - `BUDGET_KB` stays 250. No behaviour change: the full e2e suite passes unchanged.
   - Coordinate through the PM: drills over budget (M6-06 first) rebase onto it and re-run `pnpm verify:quick --preflight`.
 
+### M1-45 · Settle the hardware-keyboard e2e flakes
+- **Status:** todo
+- **Deps:** none
+- **Design:** §7 (keyboard input)
+- **Owns:** `app/e2e/m3-02.spec.ts`, `app/e2e/m1-04.spec.ts`, `app/e2e/d1-session.spec.ts`, `app/e2e/helpers/keyboard.ts` (new)
+- **Acceptance:**
+  - Found by the PM, 2026-10-23, from `.orchestrator/flaky.log`: three hardware-keyboard tests each failed once and passed on the lane's retry, all on `ipad-landscape` (twice on the remote runner): `m3-02.spec.ts:184` (D7 spells from a hardware keyboard, twice), `m1-04.spec.ts:188` (D2 arrow keys and Enter) and `d1-session.spec.ts:47` (D1 keyboard answers and Space). The common shape is `page.keyboard.press` straight after a prompt appears, so keys can land before the drill's key handler or focus is ready.
+  - Find the real cause from the traces (reproduce under load, e.g. `--repeat-each 10` with `--workers 5`). Fix it with a shared helper that waits for a deterministic readiness signal (focus on the answer surface, or a `data-` attribute the drill already sets) before typing. No fixed sleeps, and no longer timeouts as the fix.
+  - If the cause is in app code (a key handler attached late), report it to the PM rather than editing a drill outside Owns.
+  - Proof in the report: each of the three tests passes `--repeat-each 10` on ipad-landscape under 5 workers, before-and-after numbers.
+
 ### M3-18 · Lazy-load drill views and the onboarding and placement routes
 - **Status:** done
 - **Deps:** M3-16
