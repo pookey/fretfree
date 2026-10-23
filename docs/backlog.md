@@ -2029,7 +2029,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - The existing render tests now cover all registered shapes. Check the drawings visually (render to PNG) before reporting.
 
 ### M11-11 · Acoustic bodies: dreadnought, jumbo, parlour, concert and classical
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request 2026-10-23)
 - **Deps:** M11-03
 - **After:** M11-05
