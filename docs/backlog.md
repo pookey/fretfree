@@ -1922,6 +1922,17 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - PM decision: a learner placed "known" on a later C2 or C8 stage does not get the earlier stages implied (a known string 2 says nothing about string 1). Placement adds one short probe per skipped earlier stage, inside the existing time budget (`placement.budgetMs`), and seeds only what the learner shows.
   - Unit tests: an expert passing a later stage gets probes for the earlier ones; a probe failure leaves that stage as new cards.
 
+### M10-21 · The test-out's "opens once" sentence says "or" when any one opener will do
+- **Status:** todo
+- **Priority:** high (learner-facing copy must be true; follow-up from the M4-16 review)
+- **Deps:** M4-16
+- **Design:** research/02 rule 16 (honest choices); M10-01 (`openers`)
+- **Owns:** `app/src/placement/TestOut.tsx`, `app/src/placement/TestOut.test.tsx`, `app/e2e/m10-21.spec.ts`
+- **Acceptance:**
+  - A module opens when the learner is practising any one of its first skills (`openers`). Where its openers' gates don't overlap, the test-out's waits-for sentence joins them with "or", or names only the nearest opener's gates. It never says "and" when one would do. Example: Ear reads "Ear opens once you're practising The musical alphabet" (or "… or Natural notes on string 6"), not "… and …".
+  - Where several gates really are all needed (one opener with two gates), "and" stays.
+  - Unit tests for both cases; update the M4-16 spec assertion (`app/e2e/m4-16.spec.ts`) if the Ear sentence changes, noting it as an out-of-scope edit.
+
 ---
 
 ## M11: The Garage
