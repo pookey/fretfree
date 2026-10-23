@@ -7,6 +7,36 @@ export const AUDIO = {
   defaultVolume: 0.8,
   /** Plucked voices, one per guitar string, so a strum rings like six strings. */
   voices: 6,
+  /**
+   * Recorded nylon guitar (M4-15): FluidR3 GM, one MP3 per note in
+   * `public/samples/nylon/<midi>.mp3`, fetched by `scripts/fetch-samples.mjs`.
+   * A note plays on the plucked voice below until its sample has decoded.
+   */
+  samples: {
+    path: 'samples/nylon/',
+    /** MIDI range shipped: E2 to E6, the open low E to fret 24 on the high E. */
+    low: 40,
+    high: 88,
+    /** The rendered samples peak near 0.125: this lifts them to the plucked voice's loudness. */
+    gain: 1.3,
+    /** Seconds for a released sample to fade. */
+    release: 0.3,
+  },
+  /** How hard a string is played, so a strum isn't six identical notes. */
+  dynamics: {
+    /** Level of the softest note, against 1 for the hardest. */
+    floor: 0.6,
+    /** A strummed string's velocity, 0–1, is drawn from this range. */
+    strumVelocity: [0.75, 1],
+    /** An up-stroke is played lighter by this much. */
+    upStroke: 0.15,
+    /** Each gap between strings in a strum varies by up to this fraction. */
+    gapJitter: 0.25,
+    /** Chords of more notes than this are turned down, by √(this / notes). */
+    chordNotes: 2.5,
+  },
+  /** A gentle limiter on the whole guitar, so a full strum never clips. */
+  limiter: { threshold: -4, knee: 4, ratio: 8, attack: 0.003, release: 0.15 },
   /** Karplus–Strong pluck (`pluck.ts`), rendered once per note into a buffer. */
   pluck: {
     /** Seconds rendered per note. A string has died away by then, so longer notes just end. */

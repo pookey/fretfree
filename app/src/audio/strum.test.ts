@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AUDIO } from './config';
-import { sortLowToHigh, strumHits } from './strum';
+import { chordLevel, sortLowToHigh, strumHits } from './strum';
 
 const E_MAJOR = ['E2', 'B2', 'E3', 'G#3', 'B3', 'E4'];
 
@@ -27,8 +27,8 @@ describe('strumHits', () => {
   it('defaults to a down-stroke at the configured gap', () => {
     const hits = strumHits(['A2', 'E3']);
     expect(hits).toEqual([
-      { note: 'A2', voice: 0, offset: 0 },
-      { note: 'E3', voice: 1, offset: AUDIO.strum.gap },
+      { note: 'A2', voice: 0, offset: 0, velocity: 1, level: 1 },
+      { note: 'E3', voice: 1, offset: AUDIO.strum.gap, velocity: 1, level: 1 },
     ]);
   });
 
@@ -46,5 +46,42 @@ describe('strumHits', () => {
 
   it('is empty for no notes', () => {
     expect(strumHits([])).toEqual([]);
+  });
+
+  it('plays an up-stroke a little lighter', () => {
+    const { upStroke } = AUDIO.dynamics;
+    const hits = strumHits(E_MAJOR, { direction: 'up' });
+    expect(hits.every((h) => h.velocity === 1 - upStroke)).toBe(true);
+  });
+
+  it('varies velocity and gaps within their ranges, given an rng', () => {
+    const { strumVelocity, gapJitter } = AUDIO.dynamics;
+    const lows = strumHits(E_MAJOR, { gap: 0.02, rng: () => 0 });
+    const highs = strumHits(E_MAJOR, { gap: 0.02, rng: () => 0.999999 });
+    expect(lows.map((h) => h.velocity)).toEqual(Array(6).fill(strumVelocity[0]));
+    expect(highs[0]?.velocity).toBeCloseTo(strumVelocity[1]);
+    expect(lows[5]?.offset).toBeCloseTo(5 * 0.02 * (1 - gapJitter));
+    expect(highs[5]?.offset).toBeCloseTo(5 * 0.02 * (1 + gapJitter), 5);
+    // Still in order: a strum never doubles back.
+    for (const hits of [lows, highs]) {
+      for (let i = 1; i < hits.length; i++) {
+        expect(hits[i]!.offset).toBeGreaterThan(hits[i - 1]!.offset);
+      }
+    }
+  });
+
+  it('turns a full chord down, so six strings are not six times louder', () => {
+    expect(strumHits(E_MAJOR)[0]?.level).toBeCloseTo(chordLevel(6));
+    expect(strumHits(E_MAJOR, { direction: 'up' })[0]?.level).toBeCloseTo(chordLevel(4));
+  });
+});
+
+describe('chordLevel', () => {
+  it('is 1 up to the threshold, then √(threshold / notes)', () => {
+    const { chordNotes } = AUDIO.dynamics;
+    expect(chordLevel(0)).toBe(1);
+    expect(chordLevel(1)).toBe(1);
+    expect(chordLevel(2)).toBe(1);
+    expect(chordLevel(6)).toBeCloseTo(Math.sqrt(chordNotes / 6));
   });
 });

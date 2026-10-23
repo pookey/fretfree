@@ -33,6 +33,7 @@ class FakeGain {
 
 class FakeSource {
   buffer: unknown = null;
+  playbackRate = { value: 1 };
   to: unknown = null;
   started: number[] = [];
   stopped: number[] = [];
@@ -70,9 +71,17 @@ const ctx = {
     this.gains.push(g);
     return g;
   },
+  /** A "decoded" sample: 3 s long, tagged with the bytes' first value. */
+  decodeAudioData: vi.fn(async (bytes: ArrayBuffer) => {
+    const tag = new Uint8Array(bytes)[0];
+    if (tag === 0) throw new Error('EncodingError');
+    return { duration: 3, tag };
+  }),
 };
 
 const filter = { connect: () => filter };
+const limiter = { connect: () => limiter };
+let limiterOptions: unknown = null;
 const connections: [unknown, unknown][] = [];
 const Tone = {
   getContext: () => ctx,
@@ -86,6 +95,12 @@ const Tone = {
       return filter;
     }
   },
+  Compressor: class {
+    constructor(options: unknown) {
+      limiterOptions = options;
+      return limiter;
+    }
+  },
   connect: (from: unknown, to: unknown) => connections.push([from, to]),
 } as unknown as typeof import('tone');
 
@@ -96,8 +111,12 @@ beforeEach(() => {
   ctx.buffers.length = 0;
   ctx.sources.length = 0;
   ctx.gains.length = 0;
+  ctx.decodeAudioData.mockClear();
   connections.length = 0;
 });
+
+/** Every sample decodes, tagged with its MIDI number. */
+const allSamples = (midi: number) => Promise.resolve(Uint8Array.of(midi).buffer);
 
 describe('the guitar voice', () => {
   it('plays a rendered note through a gain envelope into the tone filter', () => {
@@ -203,10 +222,91 @@ describe('the guitar voice', () => {
     expect(ctx.sources).toHaveLength(0);
   });
 
+  it('limits the whole guitar gently', () => {
+    createGuitar(Tone, () => 0.3);
+    expect(limiterOptions).toEqual(AUDIO.limiter);
+  });
+
+  it('scales a note by its velocity and level', () => {
+    const guitar = createGuitar(Tone, () => 0.3);
+    guitar.pluck('A2', 5, 1, 0, { velocity: 0, level: 0.5 });
+    expect(ctx.gains[0]?.gain.calls[0]).toEqual(['set', 0.5 * AUDIO.dynamics.floor, 5]);
+  });
+
   it('uses Math.random for the pick by default', () => {
     const random = vi.spyOn(Math, 'random');
     createGuitar(Tone).pluck('A2', 0, 1, 0);
     expect(random).toHaveBeenCalled();
     random.mockRestore();
+  });
+});
+
+describe('the nylon samples', () => {
+  const { gain: SAMPLE_GAIN, release: SAMPLE_RELEASE } = AUDIO.samples;
+
+  it('decodes one sample per note of the neck, once', async () => {
+    const guitar = createGuitar(Tone, () => 0.3);
+    const fetchSample = vi.fn(allSamples);
+    const first = guitar.loadSamples(fetchSample);
+    expect(guitar.loadSamples(fetchSample)).toBe(first);
+    await first;
+    const { low, high } = AUDIO.samples;
+    expect(fetchSample).toHaveBeenCalledTimes(high - low + 1);
+    expect(ctx.decodeAudioData).toHaveBeenCalledTimes(high - low + 1);
+  });
+
+  it('plays a decoded note from its sample, straight into the limiter', async () => {
+    const guitar = createGuitar(Tone, () => 0.3);
+    await guitar.loadSamples(allSamples);
+    guitar.pluck('A2', 5, 1, 0); // A2 is MIDI 45
+    const [source] = ctx.sources;
+    const [gain] = ctx.gains;
+    expect(ctx.buffers).toHaveLength(0);
+    expect(source?.buffer).toMatchObject({ tag: 45 });
+    expect(source?.playbackRate.value).toBe(1);
+    expect(connections).toEqual([[gain, limiter]]);
+    expect(gain?.gain.calls).toEqual([
+      ['set', SAMPLE_GAIN, 5],
+      ['target', 0, 6, SAMPLE_RELEASE / 4],
+    ]);
+    expect(source?.stopped).toEqual([6 + SAMPLE_RELEASE]);
+  });
+
+  it('fades out before the recording ends, however long the note is held', async () => {
+    const guitar = createGuitar(Tone, () => 0.3);
+    await guitar.loadSamples(allSamples);
+    guitar.pluck('A2', 0, 10, 0);
+    expect(ctx.gains[0]?.gain.calls[1]).toEqual([
+      'target',
+      0,
+      3 - SAMPLE_RELEASE,
+      SAMPLE_RELEASE / 4,
+    ]);
+    expect(ctx.sources[0]?.stopped).toEqual([3]);
+  });
+
+  it('shifts the nearest sample for a note beyond the neck', async () => {
+    const guitar = createGuitar(Tone, () => 0.3);
+    await guitar.loadSamples(allSamples);
+    guitar.pluck('D2', 0, 1, 0); // Two semitones below E2
+    expect(ctx.sources[0]?.buffer).toMatchObject({ tag: AUDIO.samples.low });
+    expect(ctx.sources[0]?.playbackRate.value).toBeCloseTo(Math.pow(2, -2 / 12));
+  });
+
+  it('keeps a note on the plucked voice when its sample fails', async () => {
+    const guitar = createGuitar(Tone, () => 0.3);
+    // A2's sample won't decode; a fetch that fails is the same.
+    await guitar.loadSamples((m) =>
+      m === 45
+        ? Promise.resolve(Uint8Array.of(0).buffer)
+        : m === 46
+          ? Promise.reject(new Error('offline'))
+          : allSamples(m),
+    );
+    guitar.pluck('A2', 0, 1, 0);
+    guitar.pluck('A#2', 0, 1, 1);
+    guitar.pluck('B2', 0, 1, 2);
+    expect(ctx.buffers).toHaveLength(2);
+    expect(connections.map(([, to]) => to)).toEqual([filter, filter, limiter]);
   });
 });

@@ -12,6 +12,7 @@ import {
   type ProgressionTiming,
 } from './progression';
 import { strumHits, type StrumOptions } from './strum';
+import { sampleUrl } from './samples';
 import { silentMode } from './session';
 import { claimTransport } from './transport';
 import { createGuitar, type Guitar } from './voice';
@@ -201,13 +202,24 @@ interface SoundOptions {
   muted?: boolean;
 }
 
+/** A sample's bytes, from the service worker's cache once installed. */
+async function fetchSample(midi: number): Promise<ArrayBuffer> {
+  const res = await fetch(sampleUrl(midi, import.meta.env.BASE_URL));
+  if (!res.ok) throw new Error(`Sample ${midi}: HTTP ${res.status}`);
+  return res.arrayBuffer();
+}
+
 /** Tone and the guitar, once the context is unlocked; `null` while it isn't. */
 async function ready(opts: SoundOptions): Promise<{ Tone: ToneModule; guitar: Guitar } | null> {
   // The first tap starts the unlock and may also be the tap that plays a note.
   while (!unlocked && unlockPromise) await unlockPromise.catch(() => undefined);
   if (!unlocked) return null;
   const Tone = await loadTone();
-  guitar ??= createGuitar(Tone);
+  if (!guitar) {
+    guitar = createGuitar(Tone);
+    // In the background: each note plays synthesised until its sample decodes.
+    void guitar.loadSamples(fetchSample);
+  }
   setAudioOutput(opts.volume === undefined ? {} : { volume: opts.volume });
   return { Tone, guitar };
 }
@@ -246,8 +258,8 @@ export async function strum(notes: readonly string[], opts: StrumChordOptions = 
   if (!audio) return;
   const now = audio.Tone.now();
   const duration = opts.duration ?? AUDIO.strum.duration;
-  for (const hit of strumHits(notes, opts)) {
-    audio.guitar.pluck(hit.note, now + hit.offset, duration, hit.voice);
+  for (const hit of strumHits(notes, { ...opts, rng: Math.random })) {
+    audio.guitar.pluck(hit.note, now + hit.offset, duration, hit.voice, hit);
   }
 }
 
@@ -301,7 +313,7 @@ export async function playProgression(
   const transport = Tone.getTransport();
   const draw = Tone.getDraw();
   const at = (beat: number) => `${Math.round(beat * transport.PPQ)}i`;
-  const strumOpts = { gap: opts.gap, upStrings: opts.upStrings };
+  const strumOpts = { gap: opts.gap, upStrings: opts.upStrings, rng: Math.random };
 
   let finished = false;
   let resolve!: () => void;
@@ -318,7 +330,7 @@ export async function playProgression(
       transport.schedule((time) => {
         const ring = e.length * beatSeconds(transport.bpm.value);
         for (const hit of strumHits(notes, { ...strumOpts, direction: e.direction })) {
-          g.pluck(hit.note, time + hit.offset, ring, hit.voice);
+          g.pluck(hit.note, time + hit.offset, ring, hit.voice, hit);
         }
       }, at(e.beat)),
     );

@@ -1027,7 +1027,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The user re-tests on a real iPad and iPhone, both on silent, after the ship.
 
 ### M4-15 · Nylon-guitar samples for every played note
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-14
 - **Design:** §9 ("small samples of a few notes per string, pitch-shifted")
 - **Owns:** `app/src/audio/**`, `app/public/samples/**`, `app/vite.config.ts` (workbox globPatterns only), `scripts/fetch-samples.mjs` (new), `app/e2e/m4-15.spec.ts`, `NOTICE` or `app/public/samples/LICENSE.txt` (new)

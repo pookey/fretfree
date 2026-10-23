@@ -5,11 +5,24 @@ import { AUDIO } from './config';
 const fake = vi.hoisted(() => {
   const guitar = {
     output: { volume: { value: 0 }, mute: false },
-    plucks: [] as { note: string; dur: number; time: number; voice: number }[],
+    plucks: [] as {
+      note: string;
+      dur: number;
+      time: number;
+      voice: number;
+      dyn?: { velocity: number; level: number };
+    }[],
     damps: [] as number[],
-    pluck(note: string, time: number, dur: number, voice: number) {
-      this.plucks.push({ note, dur, time, voice });
+    pluck(
+      note: string,
+      time: number,
+      dur: number,
+      voice: number,
+      dyn?: { velocity: number; level: number },
+    ) {
+      this.plucks.push({ note, dur, time, voice, dyn });
     },
+    loadSamples: vi.fn((_fetch: (midi: number) => Promise<ArrayBuffer>) => Promise.resolve()),
     damp(time: number) {
       this.damps.push(time);
     },
@@ -78,6 +91,8 @@ vi.mock('./session', () => ({ silentMode }));
 
 const allAttacks = () => fake.guitar.plucks;
 
+let random: ReturnType<typeof vi.spyOn> | null = null;
+
 beforeEach(() => {
   vi.resetModules();
   fake.guitar.plucks.length = 0;
@@ -95,6 +110,13 @@ beforeEach(() => {
   fake.ctx.state = 'running';
   silentMode.keepPlaying.mockClear();
   silentMode.release.mockClear();
+  fake.guitar.loadSamples.mockClear();
+  // Strums vary a little by chance; at 0.5 the gaps come out even.
+  random = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+});
+
+afterEach(() => {
+  random?.mockRestore();
 });
 
 async function unlocked() {
@@ -215,6 +237,23 @@ describe('unlocking', () => {
     expect(fake.start).toHaveBeenCalledTimes(2);
     expect(audio.isAudioUnlocked()).toBe(false);
     await vi.waitFor(() => expect(audio.isAudioUnlocked()).toBe(true));
+  });
+});
+
+describe('samples', () => {
+  it('starts loading the nylon samples once, when the guitar is made', async () => {
+    const fetch = vi.fn(async () => new Response(new ArrayBuffer(8)));
+    vi.stubGlobal('fetch', fetch);
+    const audio = await unlocked();
+    await audio.playNotes(['A2']);
+    await audio.playNotes(['E3']);
+    expect(fake.guitar.loadSamples).toHaveBeenCalledTimes(1);
+    const fetchSample = fake.guitar.loadSamples.mock.calls[0]![0];
+    expect((await fetchSample(40)).byteLength).toBe(8);
+    expect(fetch).toHaveBeenCalledWith('/samples/nylon/40.mp3');
+    fetch.mockResolvedValueOnce(new Response(null, { status: 404 }));
+    await expect(fetchSample(41)).rejects.toThrow('HTTP 404');
+    vi.unstubAllGlobals();
   });
 });
 
@@ -379,6 +418,14 @@ describe('strum', () => {
       ['E3', 1, 10.02, AUDIO.strum.duration],
       ['A3', 2, 10.04, AUDIO.strum.duration],
     ]);
+  });
+
+  it('strikes each string with its own velocity, and trims a big chord', async () => {
+    const audio = await unlocked();
+    await audio.strum(['E2', 'B2', 'E3', 'G#3', 'B3', 'E4']);
+    const dyn = allAttacks().map((a) => a.dyn);
+    expect(dyn.every((d) => d && d.velocity > 0 && d.velocity <= 1)).toBe(true);
+    expect(dyn[0]?.level).toBeLessThan(1);
   });
 
   it('strums up from the top string', async () => {
