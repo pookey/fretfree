@@ -8,7 +8,7 @@ import { checkAchievements } from './check';
 import { C2_STAGE_IDS } from '../../skills/c2';
 import { masteryAchievement, streakAchievement } from './helpers';
 import { ACHIEVEMENTS } from './index';
-import { isSpeedDemon } from './speed-demon';
+import { isSpeedDemon, marginCopy } from './speed-demon';
 
 const at = new Date('2026-10-18T09:00:00Z');
 
@@ -292,13 +292,38 @@ describe('streak badges', () => {
 });
 
 describe('speed demon', () => {
-  const cfg = { medianMs: 1200, minAnswers: 30, minAccuracy: 0.9 };
+  const cfg = { marginMs: 500, minAnswers: 30, minAccuracy: 0.9, defaultBaselineMs: 700 };
   const fast = (c: AchievementContext) =>
     ids(checkAchievements(c, none, ACHIEVEMENTS)).includes('speed-demon');
 
-  it('unlocks when the median correct answer is under 1.2 s', () => {
+  it('unlocks under 1.2 s before calibration: the default 700 ms tap time plus half a second', () => {
     expect(fast(ctx({ recentReviews: reviews(30, { responseMs: 1199 }) }))).toBe(true);
     expect(fast(ctx({ recentReviews: reviews(30, { responseMs: 1200 }) }))).toBe(false);
+    expect(
+      fast(ctx({ latencyBaselineMs: null, recentReviews: reviews(30, { responseMs: 1199 }) })),
+    ).toBe(true);
+  });
+
+  it('measures against the learner’s own calibrated tap time', () => {
+    // Slower hands: a 1,100 ms tap time makes 1.5 s recall fluent.
+    const slowHands = (responseMs: number) =>
+      ctx({ latencyBaselineMs: 1100, recentReviews: reviews(30, { responseMs }) });
+    expect(fast(slowHands(1599))).toBe(true);
+    expect(fast(slowHands(1600))).toBe(false);
+    // Quick hands: a 400 ms tap time asks for recall under 0.9 s.
+    const quickHands = (responseMs: number) =>
+      ctx({ latencyBaselineMs: 400, recentReviews: reviews(30, { responseMs }) });
+    expect(fast(quickHands(899))).toBe(true);
+    expect(fast(quickHands(1100))).toBe(false);
+  });
+
+  it('says so in its copy, from the configured margin', () => {
+    const def = ACHIEVEMENTS.find((a) => a.id === 'speed-demon');
+    expect(def?.description).toContain('within half a second of your own tap time');
+    expect(def?.description).not.toMatch(/1\.2/);
+    expect(marginCopy(500)).toBe('half a second');
+    expect(marginCopy(1000)).toBe('1 second');
+    expect(marginCopy(750)).toBe('0.75 seconds');
   });
 
   it('uses the median, so a few slow answers do not block it', () => {

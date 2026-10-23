@@ -173,6 +173,8 @@ export interface AchievementContext {
   gamification: GamificationRecord;
   /** The most recent reviews (newest last), e.g. for a median-speed badge. */
   recentReviews: readonly ReviewLogRecord[];
+  /** The learner's calibrated tap time (`Settings.latencyBaselineMs`); absent or null before calibration. */
+  latencyBaselineMs?: number | null;
 }
 
 export type AchievementCategory = 'mastery' | 'speed' | 'streak';

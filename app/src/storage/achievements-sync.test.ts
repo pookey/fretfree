@@ -5,7 +5,7 @@ import type { ReviewLogRecord } from '../engine/model';
 import { latestReviews, loadAchievementContext, syncAchievements } from './achievements-sync';
 import { FretworkDB } from './db';
 import { getEvents, getUnlockedAchievements, saveGamification } from './gamification-repo';
-import { putSkillState } from './repository';
+import { putSkillState, saveSettings } from './repository';
 
 const now = new Date('2026-10-18T09:00:00Z');
 let db: FretworkDB;
@@ -59,6 +59,7 @@ describe('loadAchievementContext', () => {
     const ctx = await loadAchievementContext(db);
     expect(ctx.skillStates.size).toBe(0);
     expect(ctx.recentReviews).toEqual([]);
+    expect(ctx.latencyBaselineMs).toBeNull();
     expect(await latestReviews(db, 10)).toEqual([]);
   });
 });
@@ -87,6 +88,16 @@ describe('syncAchievements', () => {
 
   it('unlocks speed demon from the stored review log', async () => {
     await db.reviewLogs.bulkAdd(Array.from({ length: 30 }, (_, i) => log(i)));
+    expect((await syncAchievements(db, ACHIEVEMENTS, now)).map((d) => d.id)).toEqual([
+      'speed-demon',
+    ]);
+  });
+
+  it('times speed demon against the calibrated tap time from settings', async () => {
+    await db.reviewLogs.bulkAdd(Array.from({ length: 30 }, (_, i) => log(i, { responseMs: 1500 })));
+    expect(await syncAchievements(db, ACHIEVEMENTS, now)).toEqual([]);
+    await saveSettings(db, { latencyBaselineMs: 1100 });
+    expect((await loadAchievementContext(db)).latencyBaselineMs).toBe(1100);
     expect((await syncAchievements(db, ACHIEVEMENTS, now)).map((d) => d.id)).toEqual([
       'speed-demon',
     ]);

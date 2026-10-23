@@ -3,7 +3,7 @@ import { checkAchievements } from '../engine/gamification/achievements/check';
 import type { AchievementContext, AchievementDefinition } from '../engine/gamification/types';
 import type { FretworkDB } from './db';
 import { getUnlockedAchievements, unlockAchievements } from './gamification-repo';
-import { getGamification, getSkillStates } from './repository';
+import { getGamification, getSettings, getSkillStates } from './repository';
 
 /**
  * Glue between the stored data and the pure `checkAchievements` (design §3.7
@@ -21,12 +21,18 @@ export async function loadAchievementContext(
   db: FretworkDB,
   recentLimit: number = ENGINE_CONFIG.gamification.achievements.recentReviews,
 ): Promise<AchievementContext> {
-  const [skillStates, gamification, recentReviews] = await Promise.all([
+  const [skillStates, gamification, recentReviews, settings] = await Promise.all([
     getSkillStates(db),
     getGamification(db),
     latestReviews(db, recentLimit),
+    getSettings(db),
   ]);
-  return { skillStates, gamification, recentReviews };
+  return {
+    skillStates,
+    gamification,
+    recentReviews,
+    latencyBaselineMs: settings.latencyBaselineMs,
+  };
 }
 
 /**

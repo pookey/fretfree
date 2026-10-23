@@ -21,10 +21,14 @@ export const gamification = {
     recentReviews: 50,
     /**
      * "Speed demon": the median of correct, unguided answers among the
-     * recent reviews is under `medianMs`. `minAnswers` unguided answers at
-     * `minAccuracy` or better keep it a fluency signal, not luck or guessing.
+     * recent reviews is under the learner's own tap time (the onboarding
+     * latency baseline, or `grading.defaultBaselineMs` before calibration)
+     * plus `marginMs`. Motor speed differs between people, so the bar is
+     * recall time, not hand speed: 500 ms keeps the old 1.2 s for the default
+     * 700 ms baseline. `minAnswers` unguided answers at `minAccuracy` or
+     * better keep it a fluency signal, not luck or guessing.
      */
-    speedDemon: { medianMs: 1200, minAnswers: 30, minAccuracy: 0.9 },
+    speedDemon: { marginMs: 500, minAnswers: 30, minAccuracy: 0.9 },
   },
   /** Daily-goal minutes (design §3.7 engine wiring). */
   daily: {
