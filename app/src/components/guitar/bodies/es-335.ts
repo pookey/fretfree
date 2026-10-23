@@ -129,7 +129,12 @@ function fHole(top: Pt, bottom: Pt, side: 1 | -1): BodyDetail[] {
   ]);
   const eye = (s: number, v: number, r: number) => {
     const [x, y] = at(s, v);
-    return `M ${x - r} ${y} a ${r} ${r} 0 1 0 ${2 * r} 0 a ${r} ${r} 0 1 0 ${-2 * r} 0 Z`;
+    return smoothClosed(
+      Array.from({ length: 12 }, (_, i): Pt => {
+        const t = (i / 12) * 2 * Math.PI;
+        return [x + r * Math.cos(t), y + r * Math.sin(t)];
+      }),
+    );
   };
   const nick = smoothClosed([at(0.47, -6), at(0.5, -6), at(0.53, 6), at(0.5, 6)]);
   return [
@@ -143,41 +148,57 @@ function fHole(top: Pt, bottom: Pt, side: 1 | -1): BodyDetail[] {
 const es335: BodyShape = {
   name: 'ES-335',
   outline,
-  // A long teardrop on the treble side, hand-placed on smooth curves as the
-  // real part: tucked under the board's end and both pickup rings, its
-  // outer edge clear of the f-hole, rounded at its tip by the bridge pickup.
+  // A long teardrop on the treble side, as the real part: a narrow rounded
+  // tip by the board's end, widening steadily beside both pickup rings (its
+  // inner edge tucked under them) to a broad round end, about 58 mm across,
+  // level with the bridge pickup. It stays at least 9 mm clear of the
+  // f-hole and the knobs.
   pickguard: smoothClosed([
-    [30, 452],
-    [40, 446],
-    [52, 443],
-    [64, 444],
-    [73, 449],
-    [77, 459],
-    [77, 472],
-    [76, 486],
-    [74, 501],
-    [72, 516],
-    [69, 531],
-    [66, 546],
-    [64, 559],
-    [62.5, 572],
-    // The rounded foot (r 11.5), level with the bridge pickup's ring.
-    [62.5, 582],
-    [61, 587.8],
-    [56.8, 592],
-    [51, 593.5],
-    [45.2, 592],
-    [41, 587.8],
-    [39.5, 582],
-    [40, 571],
-    [41, 558],
-    [42, 544],
-    [42, 528],
-    [42, 512],
-    [40, 497],
-    [36, 484],
-    [30, 474],
-    [27, 463],
+    // The tip: an arc of radius 11.5 between the two edges' tangents.
+    [36.5, 461.7],
+    [37.6, 456.2],
+    [41.1, 451.8],
+    [46.3, 449.6],
+    [51.8, 450.2],
+    [56.5, 453.3],
+    [59.2, 458.2],
+    // Down the outer edge, beside the f-hole.
+    [60.7, 464],
+    [62.4, 471],
+    [64.6, 484],
+    [67.4, 498],
+    [70.5, 514],
+    [74, 528],
+    [77.5, 542],
+    [81, 556],
+    [84.5, 570],
+    [88, 584],
+    [92, 596],
+    [96.5, 607],
+    // The broad round end.
+    [99.5, 617],
+    [100.5, 627],
+    [98, 637],
+    [91, 644.5],
+    [81, 648],
+    [70, 648.5],
+    [59, 646],
+    [49, 640],
+    // Back up under the pickup rings.
+    [42.5, 630],
+    [41.5, 616],
+    [41.5, 602],
+    [42, 588],
+    [42.5, 574],
+    [43, 560],
+    [43, 546],
+    [42.5, 532],
+    [42, 518],
+    [41, 504],
+    [40, 491],
+    [38.5, 479],
+    [37.6, 473],
+    [36.8, 467.5],
   ]),
   pickups: [
     { type: 'humbucker', x: 0, y: SCALE - 150 },
@@ -206,7 +227,7 @@ const es335: BodyShape = {
   },
   neckJoint: { y: J },
   binding: true,
-  details: [...fHole([84, 470], [92, 582], 1), ...fHole([-84, 470], [-92, 582], -1)],
+  details: [...fHole([92, 472], [100, 580], 1), ...fHole([-92, 472], [-100, 580], -1)],
 };
 
 export default es335;

@@ -34,7 +34,7 @@ const GUARD_SHARE: Record<string, number> = {
   telecaster: 0.24,
   sg: 0.34,
   jazzmaster: 0.53,
-  'es-335': 0.1,
+  'es-335': 0.08,
 };
 const GUARD_SHARE_MAX = 0.55;
 /**
@@ -89,6 +89,8 @@ function bounds(points: readonly Point[], pad: number) {
 
 /** Room between the jack plate and the guard, in mm. */
 const JACK_CLEARANCE = 8;
+/** Room between the guard's edge and a hole in the top, or a control beside the guard. */
+const EDGE_CLEARANCE = 3;
 
 describe('body registry', () => {
   it('registers the electric shapes by file name', () => {
@@ -222,6 +224,29 @@ describe('body registry', () => {
       expect(Math.max(...jack.points.map((p) => margin(p, guard)))).toBeLessThanOrEqual(
         -JACK_CLEARANCE,
       );
+    });
+
+    it('keeps every hole in the top clear of the guard', () => {
+      const holes = (body.details ?? []).filter((d) => d.paint === 'hole');
+      if (!body.pickguard || !holes.length) return;
+      const guard = flattenPath(body.pickguard);
+      for (const h of holes) {
+        // Negative margin: outside the guard, by that much.
+        expect(Math.max(...flattenPath(h.d).map((p) => margin(p, guard)))).toBeLessThanOrEqual(
+          -EDGE_CLEARANCE,
+        );
+      }
+    });
+
+    it('puts each knob and switch fully on the guard or clear of its edge', () => {
+      if (!body.pickguard) return;
+      const guard = flattenPath(body.pickguard);
+      for (const f of footprints(body).filter((f) => /^(knob|switch)/.test(f.part))) {
+        const m = f.points.map((p) => margin(p, guard));
+        const on = Math.min(...m) >= 0;
+        const clear = Math.max(...m) <= -EDGE_CLEARANCE;
+        expect(on || clear, `${f.part} straddles the guard's edge`).toBe(true);
+      }
     });
 
     it('keeps its pickguard out of the horns, below the neck joint', () => {
