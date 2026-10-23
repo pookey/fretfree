@@ -44,6 +44,8 @@ export const TOPIC_TITLES: Readonly<Record<string, string>> = {
   TAB: 'Reading tab',
   T1: 'Time signatures',
   T2: 'Simple and compound meter',
+  T4: 'Meter by ear',
+  T7: 'Odd meters',
 };
 
 /** Card counts: all of them, those learning (stable ones included) and those stable. */
