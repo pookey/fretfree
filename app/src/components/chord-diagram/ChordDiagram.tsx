@@ -205,14 +205,23 @@ export function ChordDiagram({
             const cy = g.fretY(n.fret);
             const style = styleOf(n);
             const text = textOf(n);
+            const onBarre = barres.some(
+              (b) =>
+                b.fret === n.fret &&
+                n.string >= Math.min(b.from, b.to) &&
+                n.string <= Math.max(b.from, b.to),
+            );
             return (
               <g
                 key={`d${n.string}`}
-                className={`${styles.dot} ${styles[style]}`}
+                className={[styles.dot, styles[style], onBarre && styles.onBarre]
+                  .filter(Boolean)
+                  .join(' ')}
                 data-testid="chord-dot"
                 data-string={n.string}
                 data-fret={n.fret}
                 data-style={style}
+                data-on-barre={onBarre || undefined}
               >
                 {style === 'root' ? (
                   <rect

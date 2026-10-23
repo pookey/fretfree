@@ -225,6 +225,12 @@ describe('board skins', async () => {
           { what: 'strings', fg: ['.string', 'stroke'], min: LINE },
           { what: 'fret wire', fg: ['.wire', 'stroke'], min: LINE },
           { what: 'barre', fg: ['.barre', 'fill'], min: LINE },
+          {
+            what: 'ring of a dot on a barre',
+            fg: ['.onBarre circle', 'stroke'],
+            bg: ['.barre', 'fill'],
+            min: LINE,
+          },
           ...chordMarkers.map(([what, sel]) => ({ what, fg: [sel, 'fill'] as Paint, min: LINE })),
           ...chordMarkers.map(([what, sel]) => ({
             what: `${what} label`,

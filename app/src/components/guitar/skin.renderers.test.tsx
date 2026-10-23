@@ -29,6 +29,18 @@ describe('renderers mark what they draw on the wood', () => {
     render(<ChordDiagram voicing={parseVoicing('133211', { fingers: '134211', root: 'F' })} />);
     const barre = screen.getByTestId('chord-barre');
     expect(barre.closest('[data-neck]')).not.toBeNull();
+    // Dots on the barre are ringed, so their shape stands clear of it.
+    const onBarre = screen
+      .getAllByTestId('chord-dot')
+      .filter((d) => d.hasAttribute('data-on-barre'))
+      .map((d) => d.getAttribute('data-string'));
+    expect(onBarre.length).toBeGreaterThan(0);
+    for (const s of onBarre) {
+      const dot = screen
+        .getAllByTestId('chord-dot')
+        .find((d) => d.getAttribute('data-string') === s)!;
+      expect(dot).toHaveAttribute('data-fret', barre.getAttribute('data-fret'));
+    }
   });
 
   it('the heatmap', () => {

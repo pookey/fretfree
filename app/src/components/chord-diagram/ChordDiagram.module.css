@@ -83,6 +83,15 @@
   stroke-width: 2;
 }
 
+/* A dot on a barre gets a label-coloured ring, so its shape stands clear of
+   the barre on every board (skin.contrast.test.ts). */
+.onBarre rect,
+.onBarre circle,
+.onBarre polygon {
+  stroke: var(--marker-text);
+  stroke-width: 2;
+}
+
 .tone circle,
 .third circle {
   fill: var(--tone);
