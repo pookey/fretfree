@@ -10,8 +10,15 @@ import {
   TOGGLE,
   type Box,
 } from './footprint';
-import { stringX } from './geometry';
-import type { BridgeAnchor, ControlAnchors, PickupAnchor, Point, TailpieceAnchor } from './types';
+import { NYLON, neckStringX } from './Neck';
+import type {
+  BridgeAnchor,
+  ControlAnchors,
+  NeckKind,
+  PickupAnchor,
+  Point,
+  TailpieceAnchor,
+} from './types';
 
 /**
  * The hardware and electronics, each drawn at its body anchor. `metal` is
@@ -39,9 +46,47 @@ function rect(b: Box) {
 }
 
 /** Each pole sits under its string: x relative to the anchor. */
-function poles(at: Point): number[] {
-  return STRINGS.map((s) => stringX(s, at.y) - at.x);
+function poles(at: Point, neck: NeckKind = 'electric'): number[] {
+  return STRINGS.map((s) => neckStringX(neck, s, at.y) - at.x);
 }
+
+/** Bridge woods: dark rosewood, with a lit top edge. */
+const BRIDGE_WOOD = '#2b1d16';
+const BONE = '#efe6d6';
+/** Wound bass strings, where a bridge draws their ends. */
+const WOUND = '#cfc9bd';
+
+/**
+ * A steel-string bridge: a long bar with wings that thin towards rounded
+ * ends. Its outline, round the anchor; the footprint is `BRIDGE.acoustic`.
+ */
+const ACOUSTIC_BRIDGE = [
+  'M -50 -15 L 50 -15',
+  'C 58 -15 62 -13.5 66 -10.5',
+  'C 69 -8 70 -5 70 -1.5 L 70 4.5',
+  'C 70 8.5 69 11.5 66 13.5',
+  'C 62 16 58 17 50 17 L -50 17',
+  'C -58 17 -62 16 -66 13.5',
+  'C -69 11.5 -70 8.5 -70 4.5 L -70 -1.5',
+  'C -70 -5 -69 -8 -66 -10.5',
+  'C -62 -13.5 -58 -15 -50 -15 Z',
+].join(' ');
+
+/** A classical bridge: thin wings either side of the saddle, and the tie block behind it. */
+const TIE_BLOCK_BRIDGE = [
+  'M -78 -10 L -46 -12 L 46 -12 L 78 -10',
+  'C 82 -10 84 -9 84 -6 L 84 8',
+  'C 84 11 82 12 78 12 L 46 13 L 46 21',
+  'C 46 23 44 24 42 24 L -42 24',
+  'C -44 24 -46 23 -46 21 L -46 13 L -78 12',
+  'C -82 12 -84 11 -84 8 L -84 -6',
+  'C -84 -9 -82 -10 -78 -10 Z',
+].join(' ');
+
+/** Where each string ties off on a tie block: through a hole, then looped back over the block. */
+const TIE_HOLE_Y = 9;
+/** Behind the saddle: where an acoustic bridge's pins hold the strings. */
+const ACOUSTIC_PIN_Y = 10;
 
 export function Pickup({ at, paints }: { at: PickupAnchor; paints: Paints }) {
   if (at.type === 'humbucker') {
@@ -88,7 +133,7 @@ export function Pickup({ at, paints }: { at: PickupAnchor; paints: Paints }) {
   );
 }
 
-/** What sits under the pickups: the tremolo and bridge plates. */
+/** What sits under the pickups: the tremolo and bridge plates, and wooden bridges. */
 export function BridgeBase({ at, paints }: { at: BridgeAnchor; paints: Paints }) {
   const t = `translate(${at.x} ${at.y})`;
   switch (at.type) {
@@ -116,15 +161,46 @@ export function BridgeBase({ at, paints }: { at: BridgeAnchor; paints: Paints })
       );
     }
     case 'acoustic':
+    case 'tie-block': {
+      const d = at.type === 'acoustic' ? ACOUSTIC_BRIDGE : TIE_BLOCK_BRIDGE;
       return (
         <g transform={t}>
+          <path d={d} transform="translate(2 3)" fill="#000" opacity={0.3} />
+          <path d={d} fill={BRIDGE_WOOD} />
+          {/* Light along the top edge, shade along the bottom. */}
           <path
-            d="M -78 -14 C -60 -18 -40 -14 -30 -14 L 30 -14 C 40 -14 60 -18 78 -14 L 78 16 C 60 20 40 16 30 16 L -30 16 C -40 16 -60 20 -78 16 Z"
-            fill="#2a1c15"
-            stroke={SHADOW}
+            d={d}
+            fill="none"
+            stroke={lighten(BRIDGE_WOOD, 0.25)}
+            strokeWidth={1.2}
+            transform="translate(0 0.8)"
+            opacity={0.6}
           />
+          <path d={d} fill="none" stroke="#000" strokeOpacity={0.5} strokeWidth={0.8} />
+          {at.type === 'tie-block' && (
+            <g>
+              <rect x={-44} y={6} width={88} height={16} rx={2} fill={lighten(BRIDGE_WOOD, 0.08)} />
+              <rect
+                x={-44}
+                y={6}
+                width={88}
+                height={1.4}
+                fill={lighten(BRIDGE_WOOD, 0.3)}
+                opacity={0.7}
+              />
+              {/* A mosaic strip across the block. */}
+              <rect x={-42} y={17.5} width={84} height={2.6} fill="#1a120e" />
+              <path
+                d="M -41 18.8 L 41 18.8"
+                stroke={BONE}
+                strokeWidth={1.4}
+                strokeDasharray="1.4 1.4"
+              />
+            </g>
+          )}
         </g>
       );
+    }
     case 'locking': {
       // The base plate on its two pivot posts, and the block behind it that holds the fine tuners.
       const { x0, x1, y0 } = BRIDGE.locking;
@@ -153,10 +229,18 @@ export function BridgeBase({ at, paints }: { at: BridgeAnchor; paints: Paints })
   }
 }
 
-/** Saddles and bridge bars, over the pickups. */
-export function BridgeTop({ at, paints }: { at: BridgeAnchor; paints: Paints }) {
+/** Saddles and bridge bars, over the pickups; `neck` spaces the strings. */
+export function BridgeTop({
+  at,
+  paints,
+  neck,
+}: {
+  at: BridgeAnchor;
+  paints: Paints;
+  neck?: NeckKind;
+}) {
   const t = `translate(${at.x} ${at.y})`;
-  const xs = poles(at);
+  const xs = poles(at, neck);
   switch (at.type) {
     case 'tremolo':
       return (
@@ -250,13 +334,44 @@ export function BridgeTop({ at, paints }: { at: BridgeAnchor; paints: Paints }) 
           ))}
         </g>
       );
-    case 'acoustic':
+    case 'acoustic': {
+      // A bone saddle, slanted so the bass strings are a little longer, and a pin behind each string.
+      const pins = poles({ x: at.x, y: at.y + ACOUSTIC_PIN_Y }, neck);
       return (
         <g transform={t}>
-          <rect x={-34} y={-6} width={68} height={3.5} rx={1.5} fill="#efe6d6" />
-          {xs.map((x) => (
-            <circle key={x} cx={x} cy={7} r={2.6} fill="#efe6d6" stroke={SHADOW} />
+          <g transform="rotate(-2.5)">
+            <rect x={-38} y={-2.4} width={76} height={4.8} rx={2} fill="#000" opacity={0.45} />
+            <rect x={-37} y={-1.6} width={74} height={3.2} rx={1.5} fill={BONE} />
+          </g>
+          {pins.map((x) => (
+            <g key={x}>
+              <circle cx={x + 0.6} cy={ACOUSTIC_PIN_Y + 0.8} r={3.6} fill="#000" opacity={0.45} />
+              <circle cx={x} cy={ACOUSTIC_PIN_Y} r={3.1} fill={BONE} />
+              <circle cx={x - 0.9} cy={ACOUSTIC_PIN_Y - 0.9} r={1} fill="#fff" opacity={0.8} />
+            </g>
           ))}
+        </g>
+      );
+    }
+    case 'tie-block':
+      // A straight bone saddle; each string runs to a hole in the block and loops back over it.
+      return (
+        <g transform={t}>
+          <rect x={-35} y={-2.2} width={70} height={4.4} rx={2} fill="#000" opacity={0.45} />
+          <rect x={-34} y={-1.6} width={68} height={3.2} rx={1.5} fill={BONE} />
+          {poles({ x: at.x, y: at.y + TIE_HOLE_Y }, neck).map((x, i) => {
+            const colour = i < 3 ? NYLON : WOUND;
+            return (
+              <g key={x} fill="none" strokeLinecap="round">
+                <circle cx={x} cy={TIE_HOLE_Y} r={1.6} fill="#0d0907" />
+                <path
+                  d={`M ${x} ${TIE_HOLE_Y} L ${x} 16 C ${x} 19.5 ${x + 5} 19 ${x + 5.5} 15 C ${x + 6} 12 ${x + 2} 11 ${x - 1.5} 12.5`}
+                  stroke={colour}
+                  strokeWidth={1.3}
+                />
+              </g>
+            );
+          })}
         </g>
       );
   }
@@ -265,8 +380,14 @@ export function BridgeTop({ at, paints }: { at: BridgeAnchor; paints: Paints }) 
 /** Where the strings end, past the saddles. */
 export function stringEnd(bridge: BridgeAnchor, tail?: TailpieceAnchor): number {
   if (tail) return tail.y;
-  const past = { tremolo: 30, plate: 36, locking: 11 } as const;
-  return bridge.y + (past[bridge.type as keyof typeof past] ?? 7);
+  const past = {
+    tremolo: 30,
+    plate: 36,
+    locking: 11,
+    acoustic: ACOUSTIC_PIN_Y,
+    'tie-block': TIE_HOLE_Y,
+  } as const;
+  return bridge.y + (past[bridge.type as keyof typeof past] ?? 0);
 }
 
 export function Tailpiece({ at, paints }: { at: TailpieceAnchor; paints: Paints }) {
@@ -460,6 +581,29 @@ export function Bevel({
         strokeOpacity={0.35}
         strokeWidth={edge}
         mask={`url(#${id})`}
+      />
+    </g>
+  );
+}
+
+/**
+ * A rosette (`BodyDetail` paint `rosette`): a ring `width` mm wide centred
+ * on the path, inlaid in the top: dark purfling at both edges, a cream
+ * line inside each, and a mosaic of short tiles round the middle.
+ */
+export function Rosette({ d, width }: { d: string; width: number }) {
+  const tile = Math.max(1.2, width / 8);
+  return (
+    <g fill="none">
+      <path d={d} stroke="#1d1612" strokeWidth={width} />
+      <path d={d} stroke={BONE} strokeWidth={width - 2.4} />
+      <path d={d} stroke="#2a201a" strokeWidth={width - 4.4} />
+      <path
+        d={d}
+        stroke={BONE}
+        strokeOpacity={0.85}
+        strokeWidth={Math.max(1.2, width - 7.4)}
+        strokeDasharray={`${tile} ${tile}`}
       />
     </g>
   );

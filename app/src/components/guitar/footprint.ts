@@ -33,9 +33,11 @@ export const BRIDGE = {
   // An ashtray about 3.3 × 4.5 in.
   plate: box(42, -70, 44),
   'tune-o-matic': box(45.5, -6, 6),
-  acoustic: box(78, -18, 20),
+  acoustic: box(70, -15, 17),
   // Pivot posts in front, fine tuners behind the saddles.
   locking: box(46, -16, 54),
+  // A classical bridge, its tie block behind the saddle.
+  'tie-block': box(84, -12, 24),
 } as const;
 
 export const TAILPIECE = {

@@ -51,9 +51,10 @@ export interface BridgeAnchor extends Point {
    * pickup, with three barrel saddles. `tune-o-matic`: a bar with six
    * saddles, usually with a tailpiece. `acoustic`: a wooden bridge with a
    * saddle and pins. `locking`: a double-locking tremolo, its saddles
-   * clamping the strings, with fine tuners behind them.
+   * clamping the strings, with fine tuners behind them. `tie-block`: a
+   * classical bridge, the strings tied round a raised block behind the saddle.
    */
-  type: 'tremolo' | 'plate' | 'tune-o-matic' | 'acoustic' | 'locking';
+  type: 'tremolo' | 'plate' | 'tune-o-matic' | 'acoustic' | 'locking' | 'tie-block';
 }
 
 export interface TailpieceAnchor extends Point {
@@ -74,15 +75,25 @@ export interface ControlAnchors {
 
 /**
  * A detail drawn on the top after the finish: `hole` is a dark opening
- * (f-holes, a soundhole), `trim` a cream line (a rosette, purfling) and
- * `bevel` a carved edge: a lit band `width` mm wide inside the path, with
- * a dark line where it meets the flat of the top.
+ * (f-holes, a soundhole), `trim` a cream line (purfling), `rosette` an
+ * inlaid ring `width` mm wide centred on the path, and `bevel` a carved
+ * edge: a lit band `width` mm wide inside the path, with a dark line where
+ * it meets the flat of the top.
  */
 export interface BodyDetail {
   d: string;
-  paint: 'hole' | 'trim' | 'bevel';
+  paint: 'hole' | 'trim' | 'rosette' | 'bevel';
   width?: number;
 }
+
+/** `solid`: a paddle with posts through it. `slotted`: two slots with rollers, as on a classical. */
+export type HeadstockKind = 'solid' | 'slotted';
+
+/**
+ * The neck's width and string spacing: `acoustic` is a steel-string neck a
+ * little wider than `electric`; `classical` is wider and flat, with nylon strings.
+ */
+export type NeckKind = 'electric' | 'acoustic' | 'classical';
 
 /** One body shape: a file in `bodies/`, registered by its file name. */
 export interface BodyShape {
@@ -96,8 +107,16 @@ export interface BodyShape {
   bridge: BridgeAnchor;
   tailpiece?: TailpieceAnchor;
   controls: ControlAnchors;
-  /** Where the neck enters the body: the top of the neck pocket on the centre line. */
+  /**
+   * Where the neck enters the body: the top of the neck pocket on the
+   * centre line. Electrics share `NECK_JOINT_Y`; an acoustic's body starts
+   * at its 12th or 14th fret.
+   */
   neckJoint: { y: number };
+  /** `solid` when unset. */
+  headstock?: HeadstockKind;
+  /** `electric` when unset. */
+  neck?: NeckKind;
   /** Frets on the board; 22 when unset. */
   frets?: number;
   /** A cream binding round the edge of the top. */

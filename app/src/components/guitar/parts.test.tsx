@@ -2,6 +2,7 @@ import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BRIDGE, TAILPIECE } from './footprint';
 import { GuitarArt } from './GuitarArt';
+import { neckStringX } from './Neck';
 import { look } from './test/fixtures';
 import {
   Bevel,
@@ -9,6 +10,7 @@ import {
   BridgeTop,
   Controls,
   Pickup,
+  Rosette,
   Tailpiece,
   stringEnd,
   type Paints,
@@ -53,6 +55,46 @@ describe('parts', () => {
   it('draws an open trapeze with a hole for each string', () => {
     const el = svg(<Tailpiece at={{ type: 'trapeze', x: 0, y: 688 }} paints={PAINTS} />);
     expect(el.querySelectorAll('circle[r="1.4"]')).toHaveLength(6);
+  });
+
+  it('draws a steel-string bridge: a wooden bar, a slanted bone saddle and six pins', () => {
+    const at = { type: 'acoustic', x: 0, y: 648 } as const;
+    const base = svg(<BridgeBase at={at} paints={PAINTS} />);
+    expect(base.querySelector('path[fill="#2b1d16"]')).not.toBeNull();
+    const top = svg(<BridgeTop at={at} paints={PAINTS} neck="acoustic" />);
+    expect(top.querySelector('g[transform="rotate(-2.5)"]')).not.toBeNull();
+    const pins = [...top.querySelectorAll('circle[r="3.1"]')];
+    expect(pins).toHaveLength(6);
+    // Each pin sits under its string, where the strings end.
+    expect(Number(pins[5]!.getAttribute('cx'))).toBeCloseTo(neckStringX('acoustic', 6, 658));
+    expect(stringEnd(at)).toBe(658);
+    // No metal on a wooden bridge.
+    expect(top.innerHTML).not.toContain(PAINTS.metal);
+  });
+
+  it('draws a tie-block bridge with each string tied off on the block', () => {
+    const at = { type: 'tie-block', x: 0, y: 648 } as const;
+    const base = svg(<BridgeBase at={at} paints={PAINTS} />);
+    // The block behind the saddle, with its mosaic strip.
+    expect(base.querySelectorAll('rect').length).toBeGreaterThanOrEqual(3);
+    expect(base.querySelector('path[stroke-dasharray]')).not.toBeNull();
+    const top = svg(<BridgeTop at={at} paints={PAINTS} neck="classical" />);
+    const knots = [...top.querySelectorAll('path')];
+    expect(knots).toHaveLength(6);
+    expect(knots.slice(0, 3).map((k) => k.getAttribute('stroke'))).toEqual(
+      Array(3).fill('#ece2c8'),
+    );
+    expect(stringEnd(at)).toBe(657);
+    expect(BRIDGE['tie-block'].x1).toBeGreaterThan(BRIDGE.acoustic.x1);
+  });
+
+  it('draws a rosette as inlaid rings and a mosaic, centred on its path', () => {
+    const el = svg(<Rosette d="M 0 0 L 10 0" width={8} />);
+    const widths = [...el.querySelectorAll('path')].map(
+      (p) => Math.round(Number(p.getAttribute('stroke-width')) * 10) / 10,
+    );
+    expect(widths).toEqual([8, 5.6, 3.6, 1.2]);
+    expect(el.querySelectorAll('path[stroke-dasharray]')).toHaveLength(1);
   });
 
   it('draws roller wheels at their angle', () => {

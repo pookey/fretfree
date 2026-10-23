@@ -2,15 +2,16 @@ import { useId } from 'react';
 import { darken, lighten, plasticFor } from './colour';
 import { finishPaint } from './finish';
 import { frameBox, frameOf, type GuitarCrop, type GuitarSize } from './frame';
-import { DEFAULT_FRETS, stringWidth, stringX, tunerPost } from './geometry';
+import { DEFAULT_FRETS } from './geometry';
 import { guitarLabel } from './label';
-import { Board, Headstock, HeelShadow } from './Neck';
+import { Board, Headstock, HeelShadow, Strings } from './Neck';
 import {
   Bevel,
   BridgeBase,
   BridgeTop,
   Controls,
   Pickup,
+  Rosette,
   Tailpiece,
   stringEnd,
   type Paints,
@@ -45,6 +46,7 @@ export function GuitarArt({ spec, size, label, crop = 'full', className }: Guita
   const id = (part: string) => `guitar-${uid}-${part}`;
   const body = bodyFor(spec.body.render.shape);
   const frets = body.frets ?? DEFAULT_FRETS;
+  const neck = body.neck ?? 'electric';
   const frame = frameOf(crop);
   const palette = spec.board.render.palette;
   const hardware = spec.hardware.render.colour;
@@ -116,6 +118,8 @@ export function GuitarArt({ spec, size, label, crop = 'full', className }: Guita
             clip={`url(#${id('body')})`}
             id={id(`bevel-${i}`)}
           />
+        ) : d.paint === 'rosette' ? (
+          <Rosette key={i} d={d.d} width={d.width ?? 8} />
         ) : (
           <path
             key={i}
@@ -136,30 +140,20 @@ export function GuitarArt({ spec, size, label, crop = 'full', className }: Guita
       )}
 
       <g clipPath={`url(#${id('body')})`}>
-        <HeelShadow frets={frets} from={body.neckJoint.y} />
+        <HeelShadow frets={frets} from={body.neckJoint.y} neck={neck} />
       </g>
       <BridgeBase at={body.bridge} paints={paints} />
       {body.pickups.map((p) => (
         <Pickup key={`${p.x},${p.y}`} at={p} paints={paints} />
       ))}
-      <BridgeTop at={body.bridge} paints={paints} />
+      <BridgeTop at={body.bridge} paints={paints} neck={neck} />
       {body.tailpiece && <Tailpiece at={body.tailpiece} paints={paints} />}
       <Controls at={body.controls} paints={paints} />
       <path d={body.outline} fill={`url(#${id('gloss')})`} pointerEvents="none" />
 
-      <Board palette={palette} inlay={spec.inlay.render.shape} frets={frets} />
-      <Headstock palette={palette} paints={paints} />
-
-      {[1, 2, 3, 4, 5, 6].map((s) => {
-        const post = tunerPost(s);
-        const d = `M ${post.x} ${post.y} L ${stringX(s, 0)} 0 L ${stringX(s, tailY)} ${tailY}`;
-        return (
-          <g key={s} fill="none" strokeLinejoin="round">
-            <path d={d} stroke="#000" strokeOpacity={0.35} strokeWidth={stringWidth(s) + 0.9} />
-            <path d={d} stroke={palette['--string']} strokeWidth={stringWidth(s)} />
-          </g>
-        );
-      })}
+      <Board palette={palette} inlay={spec.inlay.render.shape} frets={frets} neck={neck} />
+      <Headstock palette={palette} paints={paints} kind={body.headstock} />
+      <Strings palette={palette} end={tailY} neck={neck} headstock={body.headstock} />
     </svg>
   );
 }
