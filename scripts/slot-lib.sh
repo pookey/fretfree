@@ -86,7 +86,17 @@ _take_ticket() {
   last=0
   for n in "$dir"/[0-9]*; do [[ -e "$n" ]] && last=$((10#${n##*/})); done
   n=$((last + 1))
-  until ln "$tmp" "$dir/$(printf '%010d' "$n")" 2>/dev/null; do n=$((n + 1)); done
+  # Only "that number is taken" means try the next one; anything else (the
+  # dir or the temp file gone) would loop forever.
+  until ln "$tmp" "$dir/$(printf '%010d' "$n")" 2>/dev/null; do
+    if [[ ! -e "$dir/$(printf '%010d' "$n")" ]]; then
+      echo "slot-lib: can't take a ticket in $dir" >&2
+      rm -f "$tmp"
+      _drop_ticket
+      return 1
+    fi
+    n=$((n + 1))
+  done
   rm -f "$tmp"
   TICKET_FILE="$dir/$(printf '%010d' "$n")"
 }
@@ -174,13 +184,17 @@ acquire_slot() {
   trap '_release_slot' EXIT
   trap '_release_slot; exit 130' INT
   trap '_release_slot; exit 143' TERM
-  if [[ -n "$lane" ]] && _slot_flock; then exec {LANE_FD}>>"$marker"; fi
+  if [[ -n "$lane" ]] && _slot_flock; then
+    exec {LANE_FD}>>"$marker"
+    # A waiter checking the marker holds its lock for a moment: wait that out.
+    flock -w 1 "$LANE_FD" && lane_locked=1 || true
+  fi
   [[ -z "$lane" ]] && _take_ticket "$root"
   local poll="${FRETWORK_SLOT_POLL:-2}" said="" said_at=0 msg
   while [[ -z "$SLOT_NAME" ]]; do
     if [[ -n "$lane" ]]; then
       if _slot_flock; then
-        # Retried each round: a waiter checking the marker holds its lock for a moment.
+        # Retried each round, in case the wait above timed out.
         [[ -z "$lane_locked" ]] && flock -n "$LANE_FD" && lane_locked=1
       else
         echo $$ > "$marker"
@@ -191,8 +205,11 @@ acquire_slot() {
       if ((QUEUE_PLACE == 1)) && ! _lane_waiting "$marker"; then _try_slots "$root" "$slots" || true; fi
     fi
     [[ -n "$SLOT_NAME" ]] && break
-    # Say it at once, when our place in line changes, and every 30 s.
-    if [[ "$said" != "${QUEUE_PLACE:-lane}" ]] || ((SECONDS - said_at >= 30)); then
+    # Say it at once, when our place in line changes, and every 30 s. A lane
+    # that doesn't hold its marker lock yet isn't next, so it doesn't say so.
+    if [[ -n "$lane" ]] && _slot_flock && [[ -z "$lane_locked" ]]; then
+      :
+    elif [[ "$said" != "${QUEUE_PLACE:-lane}" ]] || ((SECONDS - said_at >= 30)); then
       msg="waiting for $(_slot_noun "$kind"): $(_slots_in_use "$root" "$slots") of $slots in use"
       if [[ -n "$lane" ]]; then
         msg="$msg; the lane goes next"

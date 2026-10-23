@@ -19,11 +19,16 @@ if ! command -v flock >/dev/null; then
   mkdir "$work/bin"
   cat >"$work/bin/flock" <<'PERL'
 #!/usr/bin/perl
-# flock -n <fd> | flock -n <file> <command...>
+# flock -n|-w <secs> <fd> | flock -n <file> <command...>
 use strict;
 use Fcntl qw(:flock O_RDONLY O_CREAT);
-my $nb = 0;
-while (@ARGV && $ARGV[0] =~ /^-/) { $nb = 1 if shift(@ARGV) eq '-n'; }
+use Time::HiRes qw(sleep time);
+my ($nb, $wait) = (0, undef);
+while (@ARGV && $ARGV[0] =~ /^-/) {
+  my $o = shift @ARGV;
+  $nb = 1 if $o eq '-n';
+  $wait = shift @ARGV if $o eq '-w';
+}
 my $target = shift @ARGV;
 my $fh;
 if ($target =~ /^\d+$/) {
@@ -31,7 +36,12 @@ if ($target =~ /^\d+$/) {
 } else {
   sysopen($fh, $target, O_RDONLY | O_CREAT) or die "flock: $target: $!\n";
 }
-flock($fh, LOCK_EX | ($nb ? LOCK_NB : 0)) or exit 1;
+if (defined $wait) {
+  my $deadline = time + $wait;
+  until (flock($fh, LOCK_EX | LOCK_NB)) { exit 1 if time > $deadline; sleep 0.02; }
+} else {
+  flock($fh, LOCK_EX | ($nb ? LOCK_NB : 0)) or exit 1;
+}
 exit 0 unless @ARGV;
 system(@ARGV);
 exit($? >> 8);
