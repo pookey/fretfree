@@ -84,12 +84,36 @@ cd "$root"
 run="run-$(date +%s)-$$-$RANDOM"
 dir="fretwork-runs/$run"
 
+# The audio pass runs here, alongside the runner. Specs that listen to real
+# audio output (app/playwright.config.ts, "quiet") must run on few workers
+# there, where WebKit's audio goes silent under load, and that pass took
+# about a third of a remote verify. On this Mac, nearly idle while the
+# runner works, they pass at the usual 4 workers. Only for the whole gate
+# (`pnpm verify`) and a whole `pnpm e2e`: a command naming its own specs
+# (verify:quick, `e2e <spec>`) runs both passes on the runner as before.
+# REMOTE_AUDIO_HERE=0 turns it off.
+quiet_pid=""
+if [[ "${REMOTE_AUDIO_HERE:-1}" == 1 && -d "$root/app/node_modules" ]] &&
+  [[ "$*" == "pnpm verify:here" || "$*" == "pnpm --filter app e2e" ]]; then
+  quiet_log="$(mktemp "${TMPDIR:-/tmp}/fretwork-audio.XXXXXX")"
+  # Its own process group (set -m), so an interrupt stops its browsers too.
+  set -m
+  # Through pnpm scripts, which put Playwright on PATH.
+  (cd "$root/app" && pnpm build && PW_QUIET_PHASE=quiet pnpm e2e:only --pass-with-no-tests) \
+    >"$quiet_log" 2>&1 </dev/null &
+  quiet_pid=$!
+  set +m
+  echo "remote-run: the audio specs run on this Mac meanwhile (log: $quiet_log)" >&2
+fi
+stop_quiet() { [[ -n "$quiet_pid" ]] && kill -- -"$quiet_pid" 2>/dev/null; true; }
+
 # Slots are shared by every run on the runner (see the top); the lane gets
 # priority in them and more unit-test workers.
 slots="CPU_SLOTS=${REMOTE_CPU_SLOTS:-1} E2E_SLOTS=${REMOTE_E2E_SLOTS:-1} FRETWORK_SLOT_FLOCK=1 FRETWORK_LOCK_DIR=/locks"
 # Separate cores for static gates and Playwright (see the top).
 slots="$slots CPU_SLOT_CPUSET=${REMOTE_CPU_CPUSET:-16-23,40-47} E2E_SLOT_CPUSET=${REMOTE_E2E_CPUSET:-0-15,24-39}"
 pw="PW_WORKERS=${REMOTE_PW_WORKERS:-20} TEST_TIMEOUT_SCALE=${REMOTE_TIMEOUT_SCALE:-3} E2E_RETRIES=${REMOTE_RETRIES:-1} E2E_QUIET_WORKERS=2 PW_TRACE=off LP_NUM_THREADS=0 GST_PLUGIN_FEATURE_RANK=fakeaudiosink:MAX"
+[[ -n "$quiet_pid" ]] && pw="$pw E2E_QUIET_ELSEWHERE=1"
 # ship.sh's weekly safety net runs every test on all three iPads (app/playwright.config.ts).
 [[ "${PW_FULL_MATRIX:-}" == 1 ]] && pw="$pw PW_FULL_MATRIX=1"
 if [[ "${FRETWORK_LANE:-}" == 1 ]]; then
@@ -107,6 +131,7 @@ git ls-files -co --exclude-standard -z |
     mkdir -p '$dir' && tar -xzf - -C '$dir'"
 
 cleanup() {
+  stop_quiet
   ssh "${ssh_opts[@]}" "$remote" "podman rm -f -t 2 '$run' >/dev/null 2>&1; rm -rf '$dir'" 2>/dev/null || true
 }
 trap cleanup EXIT
@@ -135,9 +160,18 @@ ssh -n "${ssh_opts[@]}" "$remote" "
       pnpm install --frozen-lockfile --prefer-offline --reporter=silent || exit 98
       exec bash .cmd'" &
 ssh_pid=$!
-trap 'kill "$ssh_pid" 2>/dev/null; exit 130' INT
-trap 'kill "$ssh_pid" 2>/dev/null; exit 143' TERM
+trap 'kill "$ssh_pid" 2>/dev/null; stop_quiet; exit 130' INT
+trap 'kill "$ssh_pid" 2>/dev/null; stop_quiet; exit 143' TERM
 wait "$ssh_pid"
 rc=$?
+if [[ -n "$quiet_pid" ]]; then
+  wait "$quiet_pid"
+  quiet_rc=$?
+  quiet_pid=""
+  echo "remote-run: audio pass on this Mac (exit $quiet_rc):" >&2
+  cat "$quiet_log" >&2
+  rm -f "$quiet_log"
+  ((rc == 0)) && rc=$quiet_rc
+fi
 set -e
 exit "$rc"

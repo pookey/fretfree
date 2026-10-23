@@ -9,6 +9,8 @@
 # a `playwright test …`, runs twice: every spec but the quiet ones (those that
 # measure audio output, see app/playwright.config.ts) at PW_WORKERS, then the
 # quiet ones on E2E_QUIET_WORKERS workers. It fails if either pass fails.
+# With E2E_QUIET_ELSEWHERE=1 as well, only the first pass runs: remote-run.sh
+# runs the quiet specs on the Mac at the same time.
 # With E2E_SLOT_CPUSET, Playwright and its browsers are pinned to those CPUs.
 # With E2E_RETRIES, Playwright retries a failed test that many times (it
 # reports a test that passed on retry as flaky).
@@ -39,6 +41,10 @@ if [[ -z "${E2E_QUIET_WORKERS:-}" ]]; then
 fi
 rc=0
 PW_QUIET_PHASE=main "$@" --pass-with-no-tests || rc=$?
+if [[ "${E2E_QUIET_ELSEWHERE:-}" == 1 ]]; then
+  echo "e2e-slot: the quiet pass runs on the Mac (remote-run.sh)" >&2
+  exit "$rc"
+fi
 echo "e2e-slot: quiet pass (specs that listen to audio output), $E2E_QUIET_WORKERS workers" >&2
 PW_QUIET_PHASE=quiet PW_WORKERS="$E2E_QUIET_WORKERS" "$@" --pass-with-no-tests || rc=$((rc ? rc : $?))
 exit "$rc"
