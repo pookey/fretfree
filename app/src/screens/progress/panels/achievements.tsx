@@ -22,5 +22,11 @@ export function Panel({ revision }: PanelProps) {
     return () => sub.unsubscribe();
   }, [revision]);
 
+  // The Garage links badge-only parts here (`/progress#achievements`).
+  useEffect(() => {
+    if (location.hash !== '#achievements') return;
+    document.getElementById('progress-panel-achievements')?.scrollIntoView?.({ block: 'start' });
+  }, []);
+
   return <AchievementList definitions={ACHIEVEMENTS} unlocked={unlocked} />;
 }
