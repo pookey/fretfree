@@ -1865,7 +1865,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Tests per view for a soft-gated locked skill.
 
 ### M10-20 · Placement probes for skipped C2 and C8 stages
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user's top priority; follow-up from M10-02 and M10-12)
 - **Deps:** M10-02, M10-12
 - **After:** M10-16
