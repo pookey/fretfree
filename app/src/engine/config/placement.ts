@@ -34,6 +34,7 @@ export const placement = {
    * does at 15 items, and it frees the time the stage probes below take.
    */
   tiers: [
+    // Fits the C2 stage probes in the budget; the fast expert is at 179/180 s, so a new placement topic must free time first.
     { upTo: 5, probes: 1, knownAt: 1 },
     { upTo: 8, probes: 2, knownAt: 2 },
     { upTo: Number.MAX_SAFE_INTEGER, probes: 4, knownAt: 3 },
