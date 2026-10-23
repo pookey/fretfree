@@ -154,6 +154,19 @@
   color: var(--text-muted);
 }
 
+/* The Garage finish a badge unlocks (design §3.8): secondary to the badge's
+   competence copy, so smaller and muted, after it. */
+.badge .unlocks,
+.toastList .unlocks {
+  margin: var(--space-1) 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.unlocks em {
+  color: var(--text);
+}
+
 .dismiss {
   flex: none;
   min-width: var(--tap);

@@ -49,6 +49,25 @@ describe('<AchievementToast>', () => {
     expect(toast).toHaveTextContent('every natural note on the low E string');
   });
 
+  it('names the Garage finish a badge unlocks, after its competence copy', () => {
+    render(<AchievementToast achievements={[byId('whole-neck')]} onDismiss={() => {}} />);
+    const toast = screen.getByRole('status');
+    const line = within(toast).getByTestId('garage-unlock');
+    expect(line).toHaveTextContent('Unlocks the Gold leaf finish in the Garage');
+    expect(within(line).getByText('Gold leaf').tagName).toBe('EM');
+    expect(within(line).queryByRole('link')).toBeNull();
+    // The competence comes first, the finish second.
+    expect(toast.textContent!.indexOf('every note on every string')).toBeLessThan(
+      toast.textContent!.indexOf('Unlocks the'),
+    );
+  });
+
+  it('adds no Garage line to a badge that unlocks nothing', () => {
+    render(<AchievementToast achievements={[byId('streak-7')]} onDismiss={() => {}} />);
+    expect(screen.getByRole('status')).not.toHaveTextContent('Garage');
+    expect(screen.queryByTestId('garage-unlock')).toBeNull();
+  });
+
   it('lists several unlocks and dismisses on tap', () => {
     const onDismiss = vi.fn();
     render(
@@ -100,6 +119,20 @@ describe('<AchievementList>', () => {
     const speed = screen.getByTestId('achievement-speed-demon');
     expect(speed).toHaveAttribute('data-unlocked', 'false');
     expect(speed).toHaveTextContent('Not yet');
+  });
+});
+
+describe('<AchievementList> Garage unlocks', () => {
+  it('names the finish under each badge that unlocks one, earned or not', () => {
+    render(<AchievementList definitions={ACHIEVEMENTS} unlocked={new Map([['whole-neck', at]])} />);
+    expect(
+      within(screen.getByTestId('achievement-whole-neck')).getByTestId('garage-unlock'),
+    ).toHaveTextContent('Unlocks the Gold leaf finish in the Garage');
+    expect(
+      within(screen.getByTestId('achievement-speed-demon')).getByTestId('garage-unlock'),
+    ).toHaveTextContent('Unlocks the Lightning sparkle finish in the Garage');
+    expect(screen.getAllByTestId('garage-unlock')).toHaveLength(6);
+    expect(screen.getByTestId('achievement-streak-7')).not.toHaveTextContent('Garage');
   });
 });
 

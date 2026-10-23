@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { AchievementDefinition } from '../../engine/gamification/types';
 import { BadgeIcon } from './BadgeIcon';
+import { GarageUnlockLine } from './GarageUnlockLine';
 import { useAchievementUnlocks } from './useAchievementUnlocks';
 import styles from './Achievements.module.css';
 
@@ -36,6 +37,7 @@ export function AchievementToast({
               <div>
                 <strong>{a.title}</strong>
                 <span>{a.description}</span>
+                <GarageUnlockLine badgeId={a.id} />
               </div>
             </li>
           ))}

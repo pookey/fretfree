@@ -1,5 +1,6 @@
 import type { AchievementDefinition } from '../../engine/gamification/types';
 import { BadgeIcon } from './BadgeIcon';
+import { GarageUnlockLine } from './GarageUnlockLine';
 import styles from './Achievements.module.css';
 
 const DATE_FORMAT: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' };
@@ -35,6 +36,7 @@ export function AchievementList({
               <div>
                 <h3>{d.title}</h3>
                 <p>{d.description}</p>
+                <GarageUnlockLine badgeId={d.id} />
                 <p className={styles.status}>
                   {at ? (
                     <>
