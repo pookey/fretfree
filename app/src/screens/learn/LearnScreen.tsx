@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useAppStore } from '../../app-store';
 import { LearningLegend } from '../../components/learning-legend/LearningLegend';
 import { DRILLS } from '../../drills/registry';
@@ -135,6 +135,7 @@ export function LearnScreen() {
   const sizeClass = useSizeClass();
   const compact = sizeClass === 'compact';
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const [version, setVersion] = useState(0);
   const data = useLearnData(version);
   const statuses = useMemo(() => data && skillStatuses(skills, data.stored), [skills, data]);
@@ -190,14 +191,20 @@ export function LearnScreen() {
             {testOut && (
               <p className={styles.testOutEntry} data-testid="learn-test-out">
                 <span>Already play some of this?</span>
-                <Link
-                  to={{ search: `?module=${testOut.module.id}` }}
-                  replace={!compact}
-                  className={styles.testOutLink}
-                  onClick={() => setJumpTo(testOut.module.id)}
+                {/* An action, like the offer's own button: it opens the module and its test-out. */}
+                <button
+                  type="button"
+                  className={styles.testOutButton}
+                  onClick={() => {
+                    setJumpTo(testOut.module.id);
+                    void navigate(
+                      { search: `?module=${testOut.module.id}` },
+                      { replace: !compact },
+                    );
+                  }}
                 >
                   Test out of {testOut.module.title}
-                </Link>
+                </button>
               </p>
             )}
             {/* Defined where the numbers first appear (copy audit, screens §9). */}

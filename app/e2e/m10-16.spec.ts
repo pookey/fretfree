@@ -18,11 +18,11 @@ test.describe('M10-16 test out from the Learn map', () => {
   test('the header opens the first locked module’s test-out @smoke @layout', async ({ page }) => {
     // A fresh profile on the general goal: Neck basics is open, Whole neck the first locked.
     await expect(page.getByTestId('module-notes-2')).toHaveAttribute('data-state', 'locked');
-    const link = entry(page).getByRole('link', { name: 'Test out of Whole neck' });
-    await expect(link).toBeVisible();
+    const button = entry(page).getByRole('button', { name: 'Test out of Whole neck' });
+    await expect(button).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
-    await link.click();
+    await button.click();
     await expect(page).toHaveURL(/\?module=notes-2$/);
     await expect(detail(page).getByRole('heading', { name: 'Whole neck', level: 2 })).toBeVisible();
     await expect(offer(page)).toContainText('a short test of');
@@ -39,15 +39,15 @@ test.describe('M10-16 test out from the Learn map', () => {
 
   test('it follows the goal’s order and moves on as modules open', async ({ page }) => {
     await page.getByTestId('goal-select').selectOption('improvise');
-    await expect(entry(page).getByRole('link')).toHaveText('Test out of Pentatonic');
+    await expect(entry(page).getByRole('button')).toHaveText('Test out of Pentatonic');
 
     await page.getByTestId('goal-select').selectOption('general');
-    await expect(entry(page).getByRole('link')).toHaveText('Test out of Whole neck');
+    await expect(entry(page).getByRole('button')).toHaveText('Test out of Whole neck');
     // Whole neck opens once the string 6 and 5 naturals are mastered; the header
     // then offers the next locked module in the goal's order.
     await masterSkills(page, ['F2.string6-naturals', 'F2.string5-naturals']);
     await page.reload();
     await expect(page.getByTestId('module-notes-2')).not.toHaveAttribute('data-state', 'locked');
-    await expect(entry(page).getByRole('link')).toHaveText('Test out of Intervals');
+    await expect(entry(page).getByRole('button')).toHaveText('Test out of Intervals');
   });
 });

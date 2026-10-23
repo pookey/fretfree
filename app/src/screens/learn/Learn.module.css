@@ -343,7 +343,7 @@
   color: var(--text-muted);
 }
 
-.testOutLink {
+.testOutButton {
   display: inline-flex;
   align-items: center;
   min-height: var(--tap);
@@ -352,11 +352,12 @@
   border: 1px solid var(--border);
   background: var(--bg-raised);
   color: var(--text);
+  font: inherit;
   font-weight: 700;
-  text-decoration: none;
+  cursor: pointer;
 }
 
-.testOutLink:focus-visible {
+.testOutButton:focus-visible {
   outline: 3px solid var(--tone);
   outline-offset: 2px;
 }
