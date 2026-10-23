@@ -53,14 +53,16 @@ export function d30Heard(prompt: D30Prompt): string {
   return prompt.signature;
 }
 
-/** "Compound duple: 2 dotted-quarter beats, each split in 3." */
-function fact(ts: TimeSignature): string {
-  return `${describeMeter(ts)}.`;
-}
-
-/** The fact shown with the feedback, for the grouping played: "6/8. Compound duple: …". */
+/**
+ * The fact shown with the feedback, for the grouping played: "6/8 is
+ * compound duple: 2 dotted-quarter beats, each split in 3."
+ */
 export function d30Fact(prompt: D30Prompt): string {
-  return `${d30Heard(prompt)}. ${fact(parseTimeSignature(prompt.signature))}`;
+  const line = describeMeter(parseTimeSignature(prompt.signature));
+  const what = line.startsWith('Odd meter')
+    ? line.replace('Odd meter', 'an odd meter')
+    : line.charAt(0).toLowerCase() + line.slice(1);
+  return `${d30Heard(prompt)} is ${what}.`;
 }
 
 /** The worked example's opening line (rule 8): the meter, named, with what to count. */

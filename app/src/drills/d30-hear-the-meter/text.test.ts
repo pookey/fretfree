@@ -39,10 +39,12 @@ describe('D30 words', () => {
   });
 
   it('states the meter heard, with its grouping', () => {
-    expect(d30Fact(prompt())).toBe('6/8. Compound duple: 2 dotted-quarter beats, each split in 3.');
+    expect(d30Fact(prompt())).toBe(
+      '6/8 is compound duple: 2 dotted-quarter beats, each split in 3.',
+    );
     const odd = prompt({ meter: '7/8', signature: '7/8 (3+2+2)' });
     expect(d30Heard(odd)).toBe('7/8 (3+2+2)');
-    expect(d30Fact(odd)).toBe('7/8 (3+2+2). Odd meter: 3 uneven beats, grouped 3+2+2.');
+    expect(d30Fact(odd)).toBe('7/8 (3+2+2) is an odd meter: 3 uneven beats, grouped 3+2+2.');
     expect(d30WorkedExample(prompt())).toMatch(/^This is 6\/8\. Two big beats/);
   });
 

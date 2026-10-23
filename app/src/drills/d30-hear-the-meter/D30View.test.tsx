@@ -135,7 +135,7 @@ describe('<D30View>', () => {
       'correct',
     );
     expect(screen.getByTestId('d30-feedback')).toHaveTextContent(
-      '6/8. Compound duple: 2 dotted-quarter beats, each split in 3.',
+      '6/8 is compound duple: 2 dotted-quarter beats, each split in 3.',
     );
     const staff = screen.getByRole('group', { name: 'One bar of 6/8: 2 beats' });
     await waitFor(() => expect(staff).toHaveAttribute('data-ready', 'true'));
@@ -183,7 +183,7 @@ describe('<D30View>', () => {
   it('names the grouping an odd meter was played in', () => {
     const p = prompt('7/8', 0, 0.5);
     renderView(p, { feedback: fb(p, '7/8') });
-    expect(screen.getByTestId('d30-feedback')).toHaveTextContent('7/8 (3+2+2). Odd meter');
+    expect(screen.getByTestId('d30-feedback')).toHaveTextContent('7/8 (3+2+2) is an odd meter');
     expect(screen.getByRole('list', { name: 'Counted 1 la li 2 & 3 &' })).toBeInTheDocument();
   });
 
