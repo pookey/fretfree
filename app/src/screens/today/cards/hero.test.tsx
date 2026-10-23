@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { createEmptyCard } from 'ts-fsrs';
 import { useAppStore } from '../../../app-store';
@@ -163,6 +163,7 @@ describe('Today hero streak freezes (M10-15)', () => {
     expect(await screen.findByTestId('first-day')).toBeVisible();
     await saveGamification(getDb(), { streakCurrent: 7, freezesHeld: 1 });
     expect(await screen.findByTestId('freezes-explainer')).toHaveTextContent(EXPLAINER);
-    expect(localStorage.getItem('fretwork.today.freezeExplained')).toBe('1');
+    // The flag is written in an effect after the explainer renders.
+    await waitFor(() => expect(localStorage.getItem('fretwork.today.freezeExplained')).toBe('1'));
   });
 });
