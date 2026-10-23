@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '../../app-store';
 import { COMPACT_WINDOW_FRETS } from '../../shell/size-class';
 import { playNotes } from '../../audio/audio';
-import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
-import { noteAt, samePosition, type Inversion, type Position, type ShapeNote } from '../../theory';
+import { Fretboard } from '../../components/fretboard/Fretboard';
+import { noteAt, samePosition, type Inversion, type Position } from '../../theory';
 import type { DrillRenderProps } from '../types';
 import {
   D18_INVERSIONS,
-  d18DegreeStyle,
   d18Display,
   d18Explain,
   d18Found,
@@ -19,10 +18,10 @@ import {
   d18Subject,
   d18TargetAt,
   d18Window,
-  d18WrongTaps,
   type D18Answer,
   type D18Prompt,
 } from './logic';
+import { d18Markers } from './markers';
 import styles from './D18View.module.css';
 
 interface ViewState {
@@ -31,24 +30,10 @@ interface ViewState {
   taps: Position[];
 }
 
-/** Every dot of the triad shares this group, so the neck outlines it (guide levels 2–3). */
-const GROUP = 'd18-triad';
-
 /** The keys each inversion button answers to. */
 const KEYS: Record<Inversion, string> = { 0: 'R', 1: '1', 2: '2' };
 
 type ButtonState = 'correct' | 'wrong' | 'expected' | undefined;
-
-function degreeMarker(n: ShapeNote, style: FretMarker['style'] = d18DegreeStyle(n.degree)) {
-  return {
-    string: n.string,
-    fret: n.fret,
-    style,
-    label: d18Display(n.degree),
-    forceLabel: true,
-    group: GROUP,
-  };
-}
 
 /**
  * D18 view (design §6 D18, §7). A build card draws the root as a square on
@@ -122,29 +107,14 @@ export function D18View({
   const shown = inversion === 'Root position' ? 'root position' : inversion;
   const reveal = guided || feedback !== null;
 
-  const markers: FretMarker[] = [];
+  const markers = d18Markers(prompt, { taps, guided, answered: feedback !== null, tuning });
   let question;
   let hint: string;
   if (build) {
-    markers.push({ ...prompt.anchor, style: 'root', label: root, forceLabel: true, group: GROUP });
-    markers.push(...d18Found(prompt, taps).map((n) => degreeMarker(n)));
-    const missed = d18Missed(prompt, taps);
-    if (feedback) {
-      markers.push(...missed.map((n) => degreeMarker(n, 'ghost')));
-      markers.push(
-        ...d18WrongTaps(prompt, taps).map((p): FretMarker => ({
-          ...p,
-          style: 'wrong',
-          label: d18Display(noteAt(p, tuning, prompt.accidentalPref).pc),
-          forceLabel: true,
-        })),
-      );
-    } else if (guided) {
-      markers.push(...missed.map((n) => degreeMarker(n, 'target')));
-    }
     question = guided ? (
       <>
-        This is {chord} in {shown} on {strings}. Tap each note to continue.
+        This is {chord} in {shown} on {strings}. Tap the {prompt.targets.length} ringed notes to
+        continue.
       </>
     ) : (
       <>
@@ -153,11 +123,6 @@ export function D18View({
     );
     hint = `The square is the root, ${root}, on string ${prompt.anchor.string}.`;
   } else {
-    markers.push(
-      ...prompt.notes.map((n): FretMarker =>
-        reveal ? degreeMarker(n) : { string: n.string, fret: n.fret, style: 'tone', group: GROUP },
-      ),
-    );
     question = guided ? (
       <>
         This is {chord} in {shown}. Tap <strong>{inversion}</strong>.

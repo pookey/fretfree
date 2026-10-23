@@ -106,9 +106,13 @@ describe('<D18View> build cards', () => {
   it('marks the notes to copy on a guided rep', () => {
     view(prompt('inversion:0@s3/major'), { guided: true });
     expect(screen.getByTestId('d18-prompt')).toHaveTextContent(
-      'This is C in root position on strings 3–1. Tap each note to continue.',
+      'This is C in root position on strings 3–1. Tap the 2 ringed notes to continue.',
     );
-    expect(markers('target').map((m) => m.label)).toEqual(['3', '5']);
+    // The 3rd a circle and the 5th a triangle, ringed on top of their shapes.
+    expect(markers('target')).toEqual([]);
+    expect(markers('third').map((m) => m.label)).toEqual(['3']);
+    expect(markers('fifth').map((m) => m.label)).toEqual(['5']);
+    expect(neck().querySelectorAll('[data-emphasis="true"]')).toHaveLength(2);
     expect(neck()).toHaveAttribute('data-guide-level', '3');
   });
 
