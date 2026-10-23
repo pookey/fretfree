@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { NECK_JOINT_Y, SCALE } from './geometry';
+import { flattenPath, footprints, margin } from './footprint';
+import { DEFAULT_FRETS, NECK_JOINT_Y, SCALE, boardEnd, boardHalfWidth } from './geometry';
 import { BODIES, bodyFor, collectBodies } from './registry';
 import type { BodyShape } from './types';
 
@@ -15,6 +16,11 @@ function bbox(d: string) {
     maxY: Math.max(...ys),
   };
 }
+
+/** Room between a part's drawn edge and the body's edge, in mm. */
+const MIN_MARGIN = 4;
+/** A pickguard follows the edge more closely. */
+const GUARD_MARGIN = 3;
 
 describe('body registry', () => {
   it('registers the first three shapes by file name', () => {
@@ -50,30 +56,32 @@ describe('body registry', () => {
       expect(body.bridge.x).toBe(0);
     });
 
-    it('puts its hardware on the body', () => {
-      const points = [
-        body.bridge,
-        ...body.pickups,
-        ...body.controls.knobs,
-        ...(body.tailpiece ? [body.tailpiece] : []),
-        ...(body.controls.switch ? [body.controls.switch] : []),
-      ];
-      for (const p of points) {
-        expect(p.x).toBeGreaterThan(box.minX);
-        expect(p.x).toBeLessThan(box.maxX);
-        expect(p.y).toBeGreaterThan(body.neckJoint.y);
-        expect(p.y).toBeLessThan(box.maxY);
+    const outline = flattenPath(body.outline);
+
+    it.each(footprints(body).map((f) => [f.part, f] as const))(
+      'keeps its %s fully on the top, at least 4 mm in',
+      (_part, f) => {
+        const worst = Math.min(...f.points.map((p) => margin(p, outline)));
+        expect(worst).toBeGreaterThanOrEqual(MIN_MARGIN);
+      },
+    );
+
+    it('keeps its pickups between the neck and the bridge', () => {
+      for (const p of body.pickups) {
+        expect(p.y).toBeGreaterThan(boardEnd(body.frets ?? DEFAULT_FRETS));
+        expect(p.y).toBeLessThan(body.bridge.y);
       }
-      for (const p of body.pickups) expect(p.y).toBeLessThan(body.bridge.y);
     });
 
-    it('keeps its pickguard inside the outline box', () => {
+    it('keeps its pickguard inside the outline, except under the neck', () => {
       if (!body.pickguard) return;
-      const guard = bbox(body.pickguard);
-      expect(guard.minX).toBeGreaterThanOrEqual(box.minX);
-      expect(guard.maxX).toBeLessThanOrEqual(box.maxX);
-      expect(guard.minY).toBeGreaterThanOrEqual(box.minY);
-      expect(guard.maxY).toBeLessThanOrEqual(box.maxY);
+      const end = boardEnd(body.frets ?? DEFAULT_FRETS);
+      const exposed = flattenPath(body.pickguard).filter(
+        (p) => !(p.y <= end && Math.abs(p.x) <= boardHalfWidth(p.y) + 2),
+      );
+      expect(exposed.length).toBeGreaterThan(10);
+      const worst = Math.min(...exposed.map((p) => margin(p, outline)));
+      expect(worst).toBeGreaterThanOrEqual(GUARD_MARGIN);
     });
   });
 });
