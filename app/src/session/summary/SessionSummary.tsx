@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { Confetti } from '../../components/confetti/Confetti';
 import { LearningLegend } from '../../components/learning-legend/LearningLegend';
+import { GarageBalance, useXp } from '../../components/xp';
 import { ENGINE_CONFIG } from '../../engine';
 import type { Celebration } from './celebrations';
 import {
@@ -39,6 +40,8 @@ export function SessionSummary({
   const note = accuracyNote(c);
   const progress = progressText(c.progress);
   const showCombo = c.bestCombo >= ENGINE_CONFIG.gamification.celebrations.comboShowAt;
+  // Read live, so it already counts this session's XP once the runner has saved it.
+  const xp = useXp();
 
   return (
     <main className={styles.screen} data-testid="session-summary">
@@ -158,6 +161,11 @@ export function SessionSummary({
             <div>
               <dt>XP earned</dt>
               <dd data-testid="summary-xp">{c.xp}</dd>
+              {xp && (
+                <dd className={styles.statDetail}>
+                  <GarageBalance toSpend={xp.toSpend} />
+                </dd>
+              )}
             </div>
           </dl>
           {note && <p className={styles.note}>{note}</p>}

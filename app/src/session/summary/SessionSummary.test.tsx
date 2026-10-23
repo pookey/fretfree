@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
+import { GARAGE_PATH } from '../../components/xp';
+import { getDb, saveGamification } from '../../storage';
 import type { Celebration } from './celebrations';
 import { ComboCounter } from './ComboCounter';
 import { SessionSummary } from './SessionSummary';
@@ -306,5 +308,18 @@ describe('<ComboCounter>', () => {
     expect(screen.queryByTestId('combo')).toBeNull();
     rerender(<ComboCounter combo={1} showAt={1} />);
     expect(screen.getByTestId('combo')).toHaveTextContent('1 in a row');
+  });
+});
+
+describe('<SessionSummary> Garage balance', () => {
+  it('adds what there is to spend under the session XP, as plain text before the Garage', async () => {
+    const db = getDb();
+    await saveGamification(db, { xpTotal: 500 });
+    await db.garagePurchases.add({ itemId: 'finish.blue', price: 120, at: new Date(0) });
+    show();
+    expect(screen.getByTestId('summary-xp')).toHaveTextContent('96');
+    const line = await screen.findByTestId('garage-balance');
+    expect(line).toHaveTextContent('380 to spend in the Garage');
+    if (!GARAGE_PATH) expect(line.tagName).toBe('SPAN');
   });
 });
