@@ -1080,7 +1080,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The user listens on a real iPad after the ship.
 
 ### M4-16 · Ear cards stay out of sound-off sessions, and the Ear module copy matches its gate
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (research/02 §3.7: no grading of mistakes the learner can't avoid; found by the M4-11 QA)
 - **Deps:** none
 - **Design:** research/02 §3.7 and rule 16; design §3.4
