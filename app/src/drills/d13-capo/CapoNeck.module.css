@@ -56,9 +56,11 @@
   border-left: 8px solid var(--inlay);
 }
 
-/* Past the capo nothing rings: the frets the capo cuts off are dimmed. */
-.cell[data-past-capo] {
-  background: var(--dim);
+/* Behind the capo nothing rings: the open strings and the frets the capo
+   cuts off are dimmed, as on the progression player's neck. The counting
+   badges stay on top. A layer, so the nut cell keeps its darker wood. */
+.cell[data-behind-capo] {
+  background-image: linear-gradient(var(--dim), var(--dim));
 }
 
 .note {

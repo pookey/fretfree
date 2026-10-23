@@ -252,6 +252,8 @@ describe('<View>', () => {
     expect(cards()[0]).toHaveAttribute('aria-current', 'step');
     expect(screen.getByTestId('player-neck-chord')).toHaveTextContent('C');
     expect(screen.getByRole('group', { name: 'C voicing' })).toBeInTheDocument();
+    // The legend takes the neck's marker colours, so it matches the neck in both themes.
+    expect(screen.getByRole('list', { name: 'Legend' })).toHaveAttribute('data-neck');
     expect(screen.getByRole('link', { name: 'Quiz me on this' }).getAttribute('href')).toMatch(
       /^\/session\?skill=/,
     );

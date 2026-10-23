@@ -72,7 +72,14 @@ describe('<D13View>', () => {
     expect(cell(3)).toHaveAccessibleName('Fret 3, capo');
     expect(cell(3)).not.toHaveTextContent(/B/);
     expect(within(neck()).getAllByTestId('d13-capo')).toHaveLength(1);
-    expect(cell(4)).toHaveAttribute('data-past-capo', 'true');
+    // The dead frets are behind the capo: the open strings up to fret 2.
+    expect([0, 1, 2, 3, 4].map((f) => cell(f).hasAttribute('data-behind-capo'))).toEqual([
+      true,
+      true,
+      true,
+      false,
+      false,
+    ]);
     // Fret numbers only from guide level 2.
     expect(cell(2)).not.toHaveTextContent('2');
     fireEvent.click(screen.getByRole('button', { name: 'B flat major' }));
@@ -88,6 +95,12 @@ describe('<D13View>', () => {
     view(prompt('capo-fret:G'), { guideLevel: 2 });
     expect(neck()).toHaveAccessibleName('Neck with no capo shown yet');
     expect(within(neck()).queryByTestId('d13-capo')).toBeNull();
+    // No capo yet, so nothing is shaded: the shading would give the fret away.
+    expect(
+      within(neck())
+        .getAllByRole('listitem')
+        .some((li) => li.hasAttribute('data-behind-capo')),
+    ).toBe(false);
     expect(cell(0)).toHaveAccessibleName('Open strings, G shapes');
     expect(cell(3)).toHaveAccessibleName('Fret 3');
     expect(cell(2)).toHaveTextContent('2');
@@ -202,7 +215,11 @@ describe('<CapoContextPanel>', () => {
   it('explains the capo and lists the half steps to count on', () => {
     panel(prompt('capo-shape:G'), 1);
     expect(screen.getByRole('heading', { name: 'How a capo works' })).toBeInTheDocument();
-    expect(screen.getByText(/count down one half step per fret/)).toBeInTheDocument();
+    expect(screen.getByText(/raises every shape/)).toHaveTextContent(
+      'A capo on fret n raises every shape n half steps: you finger the same shapes, and they sound higher.',
+    );
+    // The prompt's own method is the hint under the question, not repeated here.
+    expect(screen.queryByText(/count down one half step/)).toBeNull();
     const steps = within(screen.getByRole('list', { name: 'The twelve half steps' }));
     expect(steps.getAllByRole('listitem')).toHaveLength(12);
     expect(steps.getByText('A♯/B♭')).toBeInTheDocument();

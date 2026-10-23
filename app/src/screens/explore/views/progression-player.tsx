@@ -566,7 +566,10 @@ export function View() {
           {capo > 0 && ` shape, capo ${capo}: sounds ${pretty(chord.sounding.symbol)}`}
         </h3>
         {legend.length > 0 && (
-          <ul className={css.legend} aria-label="Legend">
+          // `data-neck`: the swatches take the neck's marker colours, which
+          // stay the wood's in the light theme (styles/boards.css), so they
+          // match the markers below.
+          <ul className={css.legend} aria-label="Legend" data-neck="">
             {legend.map((s) => (
               <li key={s}>
                 <Swatch style={s} />

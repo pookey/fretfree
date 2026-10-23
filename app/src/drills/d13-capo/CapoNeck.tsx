@@ -65,7 +65,7 @@ export function CapoNeck({ prompt, revealed, fretNumbers, handedness }: Props) {
             data-fret={fret}
             data-capo={capo || undefined}
             data-role={role ?? undefined}
-            data-past-capo={showCapo && fret > prompt.capo ? true : undefined}
+            data-behind-capo={showCapo && fret < prompt.capo ? true : undefined}
             aria-label={words.join(', ')}
           >
             {note && (

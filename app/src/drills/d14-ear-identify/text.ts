@@ -166,7 +166,11 @@ export function d14Explain(prompt: D14Prompt, answer: string): string | null {
       const added = heard.filter((c) => !mine.includes(c));
       const missing = mine.filter((c) => !heard.includes(c));
       if (added.length === 0 && missing.length === 0) {
-        return `${pretty(yours)} uses the same chords in another order: ${pretty(d14Chart(prompt, answer).map((c) => c.symbol).join('–'))}.`;
+        return `${pretty(yours)} uses the same chords in another order: ${pretty(
+          d14Chart(prompt, answer)
+            .map((c) => c.symbol)
+            .join('–'),
+        )}.`;
       }
       const uses = `${pretty(yours)} uses ${list(mine)}.`;
       if (added.length === 0) return `${uses} This one has no ${list(missing)}.`;
