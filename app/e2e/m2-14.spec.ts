@@ -363,8 +363,13 @@ test.describe('M2-14 screenshot pass', () => {
     await firstLaunch(page);
     await page.getByRole('button', { name: 'Get started' }).click();
     const placementStep = page.getByRole('heading', { name: 'Already play a bit?', level: 1 });
+    // Wait for each skip to land before the next, as m10-10 does: a click
+    // fired during a step's transition can hit the next step's buttons.
+    const progress = page.getByTestId('onboarding-progress');
     for (let n = 0; n < 12 && !(await placementStep.isVisible()); n++) {
+      const step = (await progress.textContent()) ?? '';
       await page.getByRole('button', { name: 'Skip this step' }).click();
+      await expect(progress).not.toHaveText(step);
     }
     await expect(placementStep).toBeVisible();
     await shoot(page, info, '01-placement-intro');
