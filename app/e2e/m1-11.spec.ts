@@ -102,7 +102,7 @@ test.describe('M1-11 Today hero and sidebar streak', () => {
       await expect(page.getByRole('heading', { level: 1, name: section })).toBeVisible();
       await expect(badge).toBeVisible();
       await expect(badge).toHaveAccessibleName(
-        '105-day streak. Daily goal: 3 of 10 minutes. 1 streak freeze held',
+        '105-day streak. Daily goal: 3 of 10 minutes. 1 streak freeze held. 0 XP earned',
       );
       await expect(badge.getByTestId('sidebar-streak-count')).toHaveText('105');
       await expect(badge.getByRole('img', { name: 'Daily goal: 3 of 10 minutes' })).toBeVisible();
