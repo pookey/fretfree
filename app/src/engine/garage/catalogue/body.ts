@@ -1,14 +1,14 @@
 import { garage } from '../../config/garage';
 import type { CatalogueItem } from '../types';
 
-/** Body shapes (design §3.8): generic names, original outlines (M11-03). */
+/** Body shapes (design §3.8): model names (user decision 2026-10-23), original outlines (M11-03). */
 const bodies: readonly CatalogueItem<'body'>[] = [
   {
-    id: 'body.s-style',
+    id: 'body.stratocaster',
     category: 'body',
-    name: 'S-style',
-    price: garage.prices['body.s-style'],
-    render: { shape: 's-style' },
+    name: 'Stratocaster',
+    price: garage.prices['body.stratocaster'],
+    render: { shape: 'stratocaster' },
   },
 ];
 

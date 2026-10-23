@@ -5,7 +5,7 @@ export const garage = {
    * never for sale: it is unlocked by its `unlockedBy` badge instead.
    */
   prices: {
-    'body.s-style': 0,
+    'body.stratocaster': 0,
     'finish.red': 0,
     'pickguard.white': 0,
     'hardware.chrome': 0,

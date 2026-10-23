@@ -54,7 +54,7 @@ interface ItemOf<C extends Category> {
   /** Unique across the catalogue: `<category>.<name>`, e.g. `finish.red`. */
   id: string;
   category: C;
-  /** A generic display name, never a brand or model name. */
+  /** The display name. Bodies use model names (user decision 2026-10-23). */
   name: string;
   /**
    * XP price, from `engine/config/garage.ts`. 0 is a free starter part.

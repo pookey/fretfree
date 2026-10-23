@@ -5,7 +5,7 @@ import type { GarageBuild, GuitarSpec } from './types';
  * catalogue item priced 0 in `engine/config/garage.ts`.
  */
 export const STARTER_SPEC: Readonly<GuitarSpec> = {
-  body: 'body.s-style',
+  body: 'body.stratocaster',
   finish: 'finish.red',
   pickguard: 'pickguard.white',
   hardware: 'hardware.chrome',

@@ -138,7 +138,7 @@ export function randomData(table: SyncTableName, rng: Rng): SyncData {
     case 'garage':
       return {
         key: 'singleton',
-        spec: { body: 'body.s-style', finish: pick(rng, ['finish.red', 'finish.blue']) },
+        spec: { body: 'body.stratocaster', finish: pick(rng, ['finish.red', 'finish.blue']) },
         name: pick(rng, ['My guitar', 'Blue Moon']),
       };
   }

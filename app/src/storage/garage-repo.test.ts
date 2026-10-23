@@ -100,9 +100,9 @@ describe('purchases', () => {
   it('lists bought parts oldest first', async () => {
     await ownPart('finish.blue', 120, later);
     await ownPart('finish.green', 80, now);
-    await ownPart('body.t-style', 200, now);
+    await ownPart('body.telecaster', 200, now);
     expect((await listPurchases(db)).map((p) => p.itemId)).toEqual([
-      'body.t-style',
+      'body.telecaster',
       'finish.green',
       'finish.blue',
     ]);
