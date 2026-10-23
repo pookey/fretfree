@@ -39,9 +39,13 @@ export function App() {
   useEffect(() => {
     let uninstall: (() => void) | undefined;
     let gone = false;
-    void import('./storage/sync/engine').then((m) => {
-      if (!gone) uninstall = m.installSync();
-    });
+    // A chunk that fails to load (a navigation cut it off) just means no sync
+    // until the next start: everything stays local, as without an account.
+    import('./storage/sync/engine')
+      .then((m) => {
+        if (!gone) uninstall = m.installSync();
+      })
+      .catch(() => undefined);
     return () => {
       gone = true;
       uninstall?.();

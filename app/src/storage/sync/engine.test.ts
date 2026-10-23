@@ -839,6 +839,20 @@ describe('createSyncEngine', () => {
     ctx.engine.stop();
   });
 
+  it('says nothing about a round that fails after it was stopped', async () => {
+    const server = new FakeServer();
+    const { engine } = engineFor(server);
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    server.api.pull = async () => {
+      engine.stop();
+      throw new Error('Database has been closed');
+    };
+    await engine.syncNow();
+    expect(spy).not.toHaveBeenCalled();
+    expect(engine.status().phase).toBe('syncing');
+    spy.mockRestore();
+  });
+
   it('runs one more round for a request made during a round', async () => {
     const server = new FakeServer();
     const { engine } = engineFor(server);

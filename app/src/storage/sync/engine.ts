@@ -80,8 +80,9 @@ export class SyncError extends Error {
   constructor(
     readonly failure: SyncFailure,
     readonly retryAfterMs?: number,
+    cause?: unknown,
   ) {
-    super(failure);
+    super(failure, { cause });
     this.name = 'SyncError';
   }
 }
@@ -807,6 +808,8 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
       clearTimeout(retry);
       set({ phase: 'synced', lastSyncedAt: now() });
     } catch (error) {
+      // Stopped mid-round (an account delete, or the page tearing down): say nothing.
+      if (stopped) return;
       if (error instanceof SyncAborted) {
         // Signed out or switched mid-round; a switch has asked for its own round.
         if (!deps.auth.account()) set({ phase: 'off', lastSyncedAt: null });
@@ -930,7 +933,14 @@ export function installSync(db: FretworkDB = getDb(), win: Window = window): () 
   const url = syncApiUrl();
   if (!url) return () => undefined;
   let signIn: Promise<SignIn | null> | undefined;
-  const loadSignIn = () => (signIn ??= import('../../account/client').then((m) => m.getSignIn()));
+  const loadSignIn = () =>
+    (signIn ??= import('../../account/client')
+      .then((m) => m.getSignIn())
+      .catch((error: unknown) => {
+        // Not cached: the next round tries to load it again.
+        signIn = undefined;
+        throw new SyncError('offline', undefined, error);
+      }));
   const auth: SyncAuth = {
     account: () => {
       const account = loadAccount();
