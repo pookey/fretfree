@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { Component, useCallback, useState, type ReactNode } from 'react';
 import { ScreenLayout } from '../../shell/ScreenLayout';
 import { PROGRESS_PANELS, type ProgressPanel } from './registry';
 import styles from '../screens.module.css';
@@ -25,10 +25,35 @@ export function ProgressScreen({
                 {title}
               </h2>
             )}
-            <Panel revision={revision} onDataChanged={onDataChanged} />
+            <PanelBoundary>
+              <Panel revision={revision} onDataChanged={onDataChanged} />
+            </PanelBoundary>
           </section>
         ))}
       </div>
     </ScreenLayout>
   );
+}
+
+/**
+ * One panel that throws while rendering (bad stored data, say) shows a note
+ * instead of taking every other panel on the screen down with it.
+ */
+class PanelBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  override componentDidCatch(error: unknown) {
+    console.error('A Progress panel failed', error);
+  }
+
+  override render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <p className={styles.muted}>This panel couldn’t be shown. The rest of Progress is fine.</p>
+    );
+  }
 }
