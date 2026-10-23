@@ -19,6 +19,7 @@ describe('<StreakBadge>', () => {
   });
 
   it('is compact in the icon sidebar', async () => {
+    await saveGamification(getDb(), { xpTotal: 1240 });
     render(<StreakBadge variant="icon" />);
     const badge = await screen.findByTestId('sidebar-streak');
     expect(badge).toHaveAttribute('data-variant', 'icon');
@@ -28,6 +29,7 @@ describe('<StreakBadge>', () => {
   });
 
   it('keeps XP earned live as a session adds to it', async () => {
+    await saveGamification(getDb(), { xpTotal: 1240 });
     render(<StreakBadge variant="full" />);
     expect(await screen.findByTestId('sidebar-xp')).toHaveTextContent('1,240 XP earned');
     await act(async () => {
