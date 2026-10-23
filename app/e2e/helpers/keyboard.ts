@@ -28,6 +28,24 @@ export async function keysReady(page: Page): Promise<void> {
   });
 }
 
+/**
+ * Opt-in proof for `keysReady`: with `PW_DELAY_EFFECTS=<ms>` set, delay every
+ * `MessagePort.postMessage` in the page by that long, so React's effects (and
+ * the key listeners they attach) run late, as on a loaded machine. A spec that
+ * presses keys without `press` then drops them. Call it before the test's
+ * first navigation; it does nothing without the variable.
+ */
+export async function delayEffectsIfAsked(page: Page): Promise<void> {
+  const ms = Number(process.env.PW_DELAY_EFFECTS ?? 0);
+  if (!ms) return;
+  await page.addInitScript((delay) => {
+    const post = MessagePort.prototype.postMessage;
+    MessagePort.prototype.postMessage = function (this: MessagePort, ...args: unknown[]) {
+      setTimeout(() => (post as (...a: unknown[]) => void).apply(this, args), delay);
+    } as typeof post;
+  }, ms);
+}
+
 /** Press each key once the screen listens for it (see `keysReady`). */
 export async function press(page: Page, ...keys: string[]): Promise<void> {
   for (const key of keys) {

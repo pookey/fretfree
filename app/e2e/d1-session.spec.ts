@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { answer, freshStart, targetNote } from './helpers';
 import { focusSession } from './helpers/focus';
-import { press } from './helpers/keyboard';
+import { delayEffectsIfAsked, press } from './helpers/keyboard';
 
 test.describe('D1 "Name the highlighted note" session', () => {
   test('runs a scheduled session, persists answers and survives a reload', async ({ page }) => {
@@ -46,6 +46,7 @@ test.describe('D1 "Name the highlighted note" session', () => {
   });
 
   test('accepts hardware-keyboard answers and Space to continue', async ({ page }) => {
+    await delayEffectsIfAsked(page);
     await freshStart(page);
     await focusSession(page, 'F2.string6-naturals');
     const note = await targetNote(page);

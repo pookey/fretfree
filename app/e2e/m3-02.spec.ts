@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { F1_SKILLS, expectNoHorizontalOverflow, freshStart, masterSkills } from './helpers';
 import { focusSession } from './helpers/focus';
-import { press } from './helpers/keyboard';
+import { delayEffectsIfAsked, press } from './helpers/keyboard';
 
 // M3-02: C4 skills and D7 "Spell it". Keys and degrees are spelled in order
 // from a letter × accidental grid; an enharmonic spelling is wrong and says why.
@@ -183,6 +183,7 @@ test.describe('M3-02 D7 spell it', () => {
   });
 
   test('spells from a hardware keyboard', async ({ page }) => {
+    await delayEffectsIfAsked(page);
     await focusSession(page, 'C4.sharp-keys');
     const key = await subjectKey(page);
     for (const n of (KEYS[key] as string[]).slice(1)) {
