@@ -1860,7 +1860,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 User request, 2026-10-23. XP was earned but its total was never shown and it had no use. The Garage turns it into a cosmetic guitar you build and customise: body shape, finish, pickguard, hardware, fretboard wood and inlays. Most parts are bought from a derived garage balance (lifetime XP is never spent). A few finishes are unlocked only by mastery, speed and mic badges. The guitar also appears in the sidebar and on the drill fretboard, and can be shared as an image. Design §3.8 holds the model and the guardrails, which every WP here must respect: no randomness, scarcity or shop nudges, loss-free copy, never streak-tied, and guide fading always wins over the neck skin.
 
 ### M11-01 · [contract] Garage model, wallet and schema v6
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request 2026-10-23)
 - **Deps:** —
 - **Design:** §3.8
