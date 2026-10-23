@@ -56,6 +56,27 @@ export function Pickup({ at, paints }: { at: PickupAnchor; paints: Paints }) {
       </g>
     );
   }
+  if (at.type === 'wide') {
+    // A flat coil under a broad cover, its poles in one row.
+    return (
+      <g transform={rotate(at)}>
+        <rect {...rect(PICKUP.wide)} rx={8} fill="rgba(0,0,0,0.55)" />
+        <rect x={-43} y={-16} width={86} height={32} rx={5} fill={paints.plastic} />
+        <rect x={-43} y={-16} width={86} height={32} rx={5} fill="none" stroke={SHADOW} />
+        {poles(at).map((x) => (
+          <circle
+            key={x}
+            cx={x}
+            cy={0}
+            r={2.4}
+            fill={paints.metal}
+            stroke={SHADOW}
+            strokeWidth={0.5}
+          />
+        ))}
+      </g>
+    );
+  }
   return (
     <g transform={rotate(at)}>
       <rect {...rect(PICKUP.single)} rx={10.5} fill="rgba(0,0,0,0.55)" />
@@ -104,6 +125,29 @@ export function BridgeBase({ at, paints }: { at: BridgeAnchor; paints: Paints })
           />
         </g>
       );
+    case 'locking': {
+      // The base plate on its two pivot posts, and the block behind it that holds the fine tuners.
+      const { x0, x1, y0 } = BRIDGE.locking;
+      return (
+        <g transform={t}>
+          <rect x={x0 + 6} y={-12} width={x1 - x0 - 12} height={42} rx={4} fill={paints.metal} />
+          <rect x={-34} y={24} width={68} height={28} rx={7} fill={paints.metal} />
+          <rect
+            x={x0 + 6}
+            y={-12}
+            width={x1 - x0 - 12}
+            height={42}
+            rx={4}
+            fill="none"
+            stroke={SHADOW}
+          />
+          <rect x={-34} y={24} width={68} height={28} rx={7} fill="none" stroke={SHADOW} />
+          {[x0 + 4.5, x1 - 4.5].map((x) => (
+            <circle key={x} cx={x} cy={y0 + 7} r={4.5} fill={paints.metal} stroke={SHADOW} />
+          ))}
+        </g>
+      );
+    }
     case 'tune-o-matic':
       return null;
   }
@@ -176,6 +220,36 @@ export function BridgeTop({ at, paints }: { at: BridgeAnchor; paints: Paints }) 
           ))}
         </g>
       );
+    case 'locking':
+      // Six saddles, each clamping its string with a screw, and a fine tuner behind each.
+      return (
+        <g transform={t}>
+          {xs.map((x) => (
+            <g key={x}>
+              <rect
+                x={x - 3.6}
+                y={-8}
+                width={7.2}
+                height={24}
+                rx={1.2}
+                fill={paints.metal}
+                stroke={SHADOW}
+                strokeWidth={0.8}
+              />
+              <circle cx={x} cy={11} r={1.9} fill={SHADOW} />
+              <circle
+                cx={x}
+                cy={40}
+                r={3.6}
+                fill={paints.metal}
+                stroke={SHADOW}
+                strokeWidth={0.8}
+              />
+              <circle cx={x} cy={40} r={1.4} fill={SHADOW} />
+            </g>
+          ))}
+        </g>
+      );
     case 'acoustic':
       return (
         <g transform={t}>
@@ -191,20 +265,58 @@ export function BridgeTop({ at, paints }: { at: BridgeAnchor; paints: Paints }) 
 /** Where the strings end, past the saddles. */
 export function stringEnd(bridge: BridgeAnchor, tail?: TailpieceAnchor): number {
   if (tail) return tail.y;
-  return bridge.y + (bridge.type === 'tremolo' ? 30 : bridge.type === 'plate' ? 36 : 7);
+  const past = { tremolo: 30, plate: 36, locking: 11 } as const;
+  return bridge.y + (past[bridge.type as keyof typeof past] ?? 7);
 }
 
 export function Tailpiece({ at, paints }: { at: TailpieceAnchor; paints: Paints }) {
+  if (at.type === 'vibrato') {
+    // A plate that narrows towards the tail, the strings' anchor bar across
+    // its top, and the arm swinging out from its treble corner.
+    const plate =
+      'M -30 -12 L 30 -12 C 36 -12 38 -8 38 -2 L 34 36 C 33.4 42 30 46 24 46 L -24 46 C -30 46 -33.4 42 -34 36 L -38 -2 C -38 -8 -36 -12 -30 -12 Z';
+    const xs = poles(at);
+    return (
+      <g transform={`translate(${at.x} ${at.y})`}>
+        <path d={plate} fill={paints.metal} stroke={SHADOW} />
+        <rect x={-27} y={-4} width={54} height={8} rx={3} fill={darken(paints.colour, 0.2)} />
+        {xs.map((x) => (
+          <circle key={x} cx={x} cy={0} r={1.6} fill={HOLE} />
+        ))}
+        <circle cx={30} cy={22} r={5} fill={darken(paints.colour, 0.3)} stroke={SHADOW} />
+        <path
+          d="M 30 22 C 42 26 51 34 57 43"
+          fill="none"
+          stroke={paints.metal}
+          strokeWidth={3}
+          strokeLinecap="round"
+        />
+        <circle cx={57.5} cy={43.5} r={3.5} fill={paints.plastic} stroke={SHADOW} />
+      </g>
+    );
+  }
   if (at.type === 'trapeze') {
     return (
       <g transform={`translate(${at.x} ${at.y})`}>
+        {/* An open frame: the strings' bar, two rails and the hinge at the tail. */}
         <path
-          d="M -32 -6 L 32 -6 L 14 70 L -14 70 Z"
-          fill={paints.metal}
+          d="M -25 2 L -10 62 M 25 2 L 10 62"
           stroke={SHADOW}
-          strokeLinejoin="round"
+          strokeWidth={6.5}
+          strokeLinecap="round"
         />
-        <path d="M -22 4 L 22 4 L 10 58 L -10 58 Z" fill={darken(paints.colour, 0.35)} />
+        <path
+          d="M -25 2 L -10 62 M 25 2 L 10 62"
+          stroke={paints.metal}
+          strokeWidth={5}
+          strokeLinecap="round"
+        />
+        <rect x={-13} y={58} width={26} height={12} rx={4} fill={paints.metal} stroke={SHADOW} />
+        <path d="M -9 64 L 9 64" stroke={SHADOW} strokeWidth={1.2} />
+        <rect x={-32} y={-6} width={64} height={12} rx={6} fill={paints.metal} stroke={SHADOW} />
+        {poles(at).map((x) => (
+          <circle key={x} cx={x} cy={0} r={1.4} fill={HOLE} />
+        ))}
       </g>
     );
   }
@@ -221,6 +333,16 @@ export function Controls({ at, paints }: { at: ControlAnchors; paints: Paints })
   return (
     <g>
       {at.plate && <path d={at.plate} fill={paints.metal} stroke={SHADOW} />}
+      {at.rollers?.map((r) => (
+        // A thumb wheel seen edge on: a dark slot and a ridged wheel.
+        <g key={`${r.x},${r.y}`} transform={rotate(r)}>
+          <rect x={-5} y={-11} width={10} height={22} rx={2} fill={HOLE} opacity={0.6} />
+          <rect x={-3.5} y={-9} width={7} height={18} rx={3} fill={darken(paints.colour, 0.15)} />
+          {[-6, -3, 0, 3, 6].map((y) => (
+            <path key={y} d={`M -3.5 ${y} L 3.5 ${y}`} stroke={SHADOW} strokeWidth={0.8} />
+          ))}
+        </g>
+      ))}
       {at.switch?.type === 'blade' && (
         <g transform={rotate(at.switch)}>
           <rect x={-2} y={BLADE.y0} width={4} height={BLADE.y1 - BLADE.y0} rx={2} fill={HOLE} />
@@ -282,6 +404,45 @@ export function Controls({ at, paints }: { at: ControlAnchors; paints: Paints })
           <circle r={3.5} fill={HOLE} />
         </g>
       )}
+    </g>
+  );
+}
+
+/**
+ * A carved edge (`BodyDetail` paint `bevel`): a band `width` mm in from the
+ * path, lit, with a dark line where it meets the flat of the top. Both are
+ * strokes of the outline clipped to the body, so the band stays even round
+ * tight horns, and a mask keeps the line to the band's inner edge.
+ */
+export function Bevel({
+  d,
+  width,
+  clip,
+  id,
+}: {
+  d: string;
+  width: number;
+  clip: string;
+  id: string;
+}) {
+  const band = 2 * width;
+  const edge = band + 1.6;
+  return (
+    <g clipPath={clip}>
+      <mask id={id} maskUnits="userSpaceOnUse" x={-500} y={-500} width={1000} height={1500}>
+        <path d={d} fill="none" stroke="#fff" strokeWidth={edge} />
+        <path d={d} fill="none" stroke="#000" strokeWidth={band} />
+      </mask>
+      <path d={d} fill="none" stroke="#fff" strokeOpacity={0.13} strokeWidth={band} />
+      <path d={d} fill="none" stroke="#fff" strokeOpacity={0.08} strokeWidth={band * 0.45} />
+      <path
+        d={d}
+        fill="none"
+        stroke="#000"
+        strokeOpacity={0.4}
+        strokeWidth={edge}
+        mask={`url(#${id})`}
+      />
     </g>
   );
 }

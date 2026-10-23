@@ -39,7 +39,8 @@ export interface Point {
 }
 
 export interface PickupAnchor extends Point {
-  type: 'single' | 'humbucker';
+  /** `wide`: a flat single coil in a wide cover, as on a Jazzmaster. */
+  type: 'single' | 'humbucker' | 'wide';
   /** Degrees clockwise; a slanted bridge pickup brings its treble end nearer the bridge. */
   angle?: number;
 }
@@ -49,13 +50,15 @@ export interface BridgeAnchor extends Point {
    * `tremolo`: a plate of six saddles. `plate`: a plate that holds the bridge
    * pickup, with three barrel saddles. `tune-o-matic`: a bar with six
    * saddles, usually with a tailpiece. `acoustic`: a wooden bridge with a
-   * saddle and pins.
+   * saddle and pins. `locking`: a double-locking tremolo, its saddles
+   * clamping the strings, with fine tuners behind them.
    */
-  type: 'tremolo' | 'plate' | 'tune-o-matic' | 'acoustic';
+  type: 'tremolo' | 'plate' | 'tune-o-matic' | 'acoustic' | 'locking';
 }
 
 export interface TailpieceAnchor extends Point {
-  type: 'stop' | 'trapeze';
+  /** `vibrato`: a plate the strings anchor to, with an arm on the treble side. */
+  type: 'stop' | 'trapeze' | 'vibrato';
 }
 
 export interface ControlAnchors {
@@ -65,15 +68,20 @@ export interface ControlAnchors {
   plate?: string;
   /** The output jack on the top; `plate` sets it in a recessed oval plate. */
   jack?: Point & { plate?: boolean; angle?: number };
+  /** Thumb-wheel pots seen edge on, drawn over `plate` (a Jazzmaster's rhythm circuit). */
+  rollers?: readonly (Point & { angle?: number })[];
 }
 
 /**
  * A detail drawn on the top after the finish: `hole` is a dark opening
- * (f-holes, a soundhole), `trim` a cream line (a rosette, purfling).
+ * (f-holes, a soundhole), `trim` a cream line (a rosette, purfling) and
+ * `bevel` a carved edge: a lit band `width` mm wide inside the path, with
+ * a dark line where it meets the flat of the top.
  */
 export interface BodyDetail {
   d: string;
-  paint: 'hole' | 'trim';
+  paint: 'hole' | 'trim' | 'bevel';
+  width?: number;
 }
 
 /** One body shape: a file in `bodies/`, registered by its file name. */

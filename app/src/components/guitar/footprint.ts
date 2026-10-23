@@ -25,6 +25,7 @@ const box = (hw: number, y0: number, y1: number): Box => ({ x0: -hw, x1: hw, y0,
 export const PICKUP = {
   single: box(37.5, -10.5, 10.5),
   humbucker: box(45, -23, 23),
+  wide: box(46, -19, 19),
 } as const;
 
 export const BRIDGE = {
@@ -33,11 +34,15 @@ export const BRIDGE = {
   plate: box(42, -70, 44),
   'tune-o-matic': box(45.5, -6, 6),
   acoustic: box(78, -18, 20),
+  // Pivot posts in front, fine tuners behind the saddles.
+  locking: box(46, -16, 54),
 } as const;
 
 export const TAILPIECE = {
   stop: box(46, -7, 7),
   trapeze: box(32, -6, 70),
+  // The plate, and the arm's root out towards the treble side.
+  vibrato: { x0: -38, x1: 62, y0: -14, y1: 48 },
 } as const;
 
 export const KNOB: Ellipse = { rx: 11.5, ry: 11.5, dx: 1.5, dy: 2 };

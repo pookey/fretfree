@@ -6,6 +6,7 @@ import { DEFAULT_FRETS, stringWidth, stringX, tunerPost } from './geometry';
 import { guitarLabel } from './label';
 import { Board, Headstock, HeelShadow } from './Neck';
 import {
+  Bevel,
   BridgeBase,
   BridgeTop,
   Controls,
@@ -106,15 +107,25 @@ export function GuitarArt({ spec, size, label, crop = 'full', className }: Guita
         stroke={darken(spec.finish.render.stops[0]?.colour ?? '#888', 0.55)}
         strokeWidth={1.5}
       />
-      {body.details?.map((d, i) => (
-        <path
-          key={i}
-          d={d.d}
-          fill={d.paint === 'hole' ? '#110d0b' : 'none'}
-          stroke={d.paint === 'trim' ? BINDING : SHADOW}
-          strokeWidth={d.paint === 'trim' ? 2.5 : 1}
-        />
-      ))}
+      {body.details?.map((d, i) =>
+        d.paint === 'bevel' ? (
+          <Bevel
+            key={i}
+            d={d.d}
+            width={d.width ?? 12}
+            clip={`url(#${id('body')})`}
+            id={id(`bevel-${i}`)}
+          />
+        ) : (
+          <path
+            key={i}
+            d={d.d}
+            fill={d.paint === 'hole' ? '#110d0b' : 'none'}
+            stroke={d.paint === 'trim' ? BINDING : SHADOW}
+            strokeWidth={d.paint === 'trim' ? 2.5 : 1}
+          />
+        ),
+      )}
 
       {guard && body.pickguard && (
         <g>
