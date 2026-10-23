@@ -144,7 +144,7 @@ test.describe('M1-14 Progress fretboard heatmap', () => {
     // Tapping a cell shows its stats.
     const detail = map(page).getByTestId('heat-cell-detail');
     await expect(detail).toContainText('Tap a cell');
-    const cell = neck.getByRole('button', { name: 'string 5, fret 7, E: stable for 30 days' });
+    const cell = neck.getByRole('button', { name: 'string 5, fret 7, E: remembered for 30 days' });
     const box = (await cell.boundingBox())!;
     expect(box.width).toBeGreaterThanOrEqual(44);
     expect(box.height).toBeGreaterThanOrEqual(44);
@@ -201,7 +201,7 @@ test.describe('M1-14 Progress fretboard heatmap', () => {
     const neck = map(page).getByRole('group', { name: 'Fretboard mastery map' });
     await expect(neck).toBeVisible();
     await expect(tile(page, 's5f3')).toHaveAttribute('data-band', '2');
-    const cell = neck.getByRole('button', { name: /^string 5, fret 3, C: stable for 10 days$/ });
+    const cell = neck.getByRole('button', { name: /^string 5, fret 3, C: remembered for 10 days$/ });
     await cell.scrollIntoViewIfNeeded();
     const box = (await cell.boundingBox())!;
     expect(box.width).toBeGreaterThanOrEqual(44);

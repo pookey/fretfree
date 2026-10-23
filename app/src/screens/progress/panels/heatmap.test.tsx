@@ -62,7 +62,7 @@ describe('Progress heatmap panel', () => {
       /You'll remember ~\d+% of string 5 next week/,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /^string 5, fret 7, E: stable for/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^string 5, fret 7, E: remembered for/ }));
     expect(screen.getByTestId('heat-cell-detail')).toHaveTextContent('String 5, fret 7 · E');
     expect(screen.getByTestId('heat-answers')).toHaveTextContent('1 of 1 right');
     expect(screen.getByTestId('heat-median')).toHaveTextContent('1.5s');

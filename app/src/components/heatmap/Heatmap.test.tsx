@@ -62,11 +62,11 @@ describe('<FretboardHeatmap>', () => {
     const neck = screen.getByRole('group', { name: 'Fretboard mastery map' });
     expect(within(neck).getAllByRole('button')).toHaveLength(6 * 13);
     fireEvent.click(
-      screen.getByRole('button', { name: 'string 5, fret 7, E: stable for 12 days' }),
+      screen.getByRole('button', { name: 'string 5, fret 7, E: remembered for 12 days' }),
     );
     expect(onSelect).toHaveBeenCalledWith({ string: 5, fret: 7 });
     fireEvent.keyDown(
-      screen.getByRole('button', { name: 'string 6, fret 3, G: stable for under a day, slow' }),
+      screen.getByRole('button', { name: 'string 6, fret 3, G: remembered for under a day, slow' }),
       { key: 'Enter' },
     );
     expect(onSelect).toHaveBeenLastCalledWith({ string: 6, fret: 3 });

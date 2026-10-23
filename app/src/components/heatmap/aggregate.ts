@@ -247,7 +247,7 @@ export function forecastSentence(f: StringForecast, forecastDays: number): strin
   return `You'll remember ~${formatPercent(f.recall)} of string ${f.string} ${when}.`;
 }
 
-/** A cell's accessible name, e.g. "string 5, fret 7, E: stable for 12 days, slow". */
+/** A cell's accessible name, e.g. "string 5, fret 7, E: remembered for 12 days, slow". */
 export function cellSummary(
   cell: HeatCell,
   tuning: Tuning = STANDARD_TUNING,
@@ -255,5 +255,5 @@ export function cellSummary(
 ): string {
   const base = cellLabel(cell, { tuning, pref, revealNote: true });
   if (cell.stabilityDays === null) return `${base}: not practised yet`;
-  return `${base}: stable for ${formatDays(cell.stabilityDays)}${cell.slow ? ', slow' : ''}`;
+  return `${base}: remembered for ${formatDays(cell.stabilityDays)}${cell.slow ? ', slow' : ''}`;
 }

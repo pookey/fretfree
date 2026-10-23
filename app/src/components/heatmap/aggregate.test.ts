@@ -301,7 +301,7 @@ describe('copy', () => {
     const [practised] = heatmap([known('note@s5f7', 12)], [log('note@s5f7', 4000)]).filter(
       (c) => c.string === 5 && c.fret === 7,
     );
-    expect(cellSummary(practised!)).toBe('string 5, fret 7, E: stable for 12 days, slow');
+    expect(cellSummary(practised!)).toBe('string 5, fret 7, E: remembered for 12 days, slow');
     expect(cellSummary(cellAt(heatmap([]), 6, 3))).toBe('string 6, fret 3, G: not practised yet');
     expect(cellSummary(cellAt(heatmap([]), 5, 1), undefined, 'flat')).toBe(
       'string 5, fret 1, Bb: not practised yet',
