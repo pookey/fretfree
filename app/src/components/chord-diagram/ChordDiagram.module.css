@@ -70,7 +70,7 @@
   font-size: 16px;
   font-weight: 700;
   text-anchor: middle;
-  fill: #10141a;
+  fill: var(--marker-text);
 }
 
 .dot text.longLabel {

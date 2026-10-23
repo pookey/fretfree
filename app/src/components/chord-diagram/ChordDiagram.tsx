@@ -176,69 +176,73 @@ export function ChordDiagram({
           />
         ))}
 
-        {barres.map((b) => {
-          const x1 = Math.min(g.stringX(b.from), g.stringX(b.to));
-          const x2 = Math.max(g.stringX(b.from), g.stringX(b.to));
-          const h = DOT_R * 1.5;
-          return (
-            <rect
-              key={`b${b.fret}-${b.from}`}
-              className={styles.barre}
-              x={x1 - h / 2}
-              y={g.fretY(b.fret) - h / 2}
-              width={x2 - x1 + h}
-              height={h}
-              rx={h / 2}
-              data-testid="chord-barre"
-              data-fret={b.fret}
-              data-from={b.from}
-              data-to={b.to}
-            />
-          );
-        })}
+        {/* On the wood: the board's marker colours apply here (`data-neck`,
+            styles/boards.css), but not above the nut, where the page is behind. */}
+        <g data-neck="">
+          {barres.map((b) => {
+            const x1 = Math.min(g.stringX(b.from), g.stringX(b.to));
+            const x2 = Math.max(g.stringX(b.from), g.stringX(b.to));
+            const h = DOT_R * 1.5;
+            return (
+              <rect
+                key={`b${b.fret}-${b.from}`}
+                className={styles.barre}
+                x={x1 - h / 2}
+                y={g.fretY(b.fret) - h / 2}
+                width={x2 - x1 + h}
+                height={h}
+                rx={h / 2}
+                data-testid="chord-barre"
+                data-fret={b.fret}
+                data-from={b.from}
+                data-to={b.to}
+              />
+            );
+          })}
 
-        {fretted.map((n) => {
-          const cx = g.stringX(n.string);
-          const cy = g.fretY(n.fret);
-          const style = styleOf(n);
-          const text = textOf(n);
-          return (
-            <g
-              key={`d${n.string}`}
-              className={`${styles.dot} ${styles[style]}`}
-              data-testid="chord-dot"
-              data-string={n.string}
-              data-fret={n.fret}
-              data-style={style}
-            >
-              {style === 'root' ? (
-                <rect
-                  x={cx - DOT_R}
-                  y={cy - DOT_R}
-                  width={2 * DOT_R}
-                  height={2 * DOT_R}
-                  rx={DOT_R * 0.4}
-                />
-              ) : style === 'fifth' ? (
-                <polygon points={trianglePoints(cx, cy)} />
-              ) : style === 'seventh' ? (
-                <polygon points={hexagonPoints(cx, cy)} />
-              ) : (
-                <circle cx={cx} cy={cy} r={DOT_R} />
-              )}
-              {text && (
-                <text
-                  x={cx}
-                  y={style === 'fifth' ? cy + 3 : cy}
-                  dy="0.35em"
-                  className={text.length > 2 ? styles.longLabel : undefined}
-                >
-                  {text}
-                </text>
-              )}
-            </g>
-          );
-        })}
+          {fretted.map((n) => {
+            const cx = g.stringX(n.string);
+            const cy = g.fretY(n.fret);
+            const style = styleOf(n);
+            const text = textOf(n);
+            return (
+              <g
+                key={`d${n.string}`}
+                className={`${styles.dot} ${styles[style]}`}
+                data-testid="chord-dot"
+                data-string={n.string}
+                data-fret={n.fret}
+                data-style={style}
+              >
+                {style === 'root' ? (
+                  <rect
+                    x={cx - DOT_R}
+                    y={cy - DOT_R}
+                    width={2 * DOT_R}
+                    height={2 * DOT_R}
+                    rx={DOT_R * 0.4}
+                  />
+                ) : style === 'fifth' ? (
+                  <polygon points={trianglePoints(cx, cy)} />
+                ) : style === 'seventh' ? (
+                  <polygon points={hexagonPoints(cx, cy)} />
+                ) : (
+                  <circle cx={cx} cy={cy} r={DOT_R} />
+                )}
+                {text && (
+                  <text
+                    x={cx}
+                    y={style === 'fifth' ? cy + 3 : cy}
+                    dy="0.35em"
+                    className={text.length > 2 ? styles.longLabel : undefined}
+                  >
+                    {text}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+        </g>
 
         {open.map((n) => {
           const cx = g.stringX(n.string);
