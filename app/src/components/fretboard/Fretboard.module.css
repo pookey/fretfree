@@ -184,13 +184,26 @@
   fill: var(--chord-seventh);
 }
 
-/* A worked example's target that keeps its degree shape: the target's ring and pulse on top. */
-.emphasis > :first-child {
+/*
+ * A worked example's target that keeps its degree shape: a copy of the shape
+ * behind it, stroked wide in white, rings it, and the shape's own wood-coloured
+ * edge leaves a gap, so the ring reads apart from a root square's thin border.
+ * The ring pulses, as the target's does; the shape stays still.
+ */
+.emphasis .ring > * {
+  fill: none;
   stroke: #fff;
-  stroke-width: 3.5;
+  stroke-width: 13;
+  stroke-linejoin: round;
   animation: pulse 1.6s ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: center;
+}
+
+.emphasis > :not(.ring, text) {
+  stroke: var(--wood);
+  stroke-width: 5;
+  stroke-linejoin: round;
 }
 
 .marker text.longLabel {

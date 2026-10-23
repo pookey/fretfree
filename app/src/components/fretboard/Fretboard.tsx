@@ -297,6 +297,25 @@ export function Fretboard({
         const cy = g.stringY(m.string);
         const text = labelFor(m);
         const spoken = text && (m.spokenLabel ?? spokenNeckText(text));
+        const shape =
+          m.style === 'root' ? (
+            <rect x={cell.cx - 17} y={cy - 17} width={34} height={34} rx={7} />
+          ) : m.style === 'wrong' ? (
+            <rect
+              x={cell.cx - 16}
+              y={cy - 16}
+              width={32}
+              height={32}
+              rx={4}
+              transform={`rotate(45 ${cell.cx} ${cy})`}
+            />
+          ) : m.style === 'fifth' ? (
+            <polygon points={trianglePoints(cell.cx, cy)} />
+          ) : m.style === 'seventh' ? (
+            <polygon points={hexagonPoints(cell.cx, cy)} />
+          ) : (
+            <circle cx={cell.cx} cy={cy} r={18} />
+          );
         return (
           <g
             key={`m${m.string}-${m.fret}-${m.style}`}
@@ -308,24 +327,13 @@ export function Fretboard({
             role={spoken ? 'img' : undefined}
             aria-label={spoken || undefined}
           >
-            {m.style === 'root' ? (
-              <rect x={cell.cx - 17} y={cy - 17} width={34} height={34} rx={7} />
-            ) : m.style === 'wrong' ? (
-              <rect
-                x={cell.cx - 16}
-                y={cy - 16}
-                width={32}
-                height={32}
-                rx={4}
-                transform={`rotate(45 ${cell.cx} ${cy})`}
-              />
-            ) : m.style === 'fifth' ? (
-              <polygon points={trianglePoints(cell.cx, cy)} />
-            ) : m.style === 'seventh' ? (
-              <polygon points={hexagonPoints(cell.cx, cy)} />
-            ) : (
-              <circle cx={cell.cx} cy={cy} r={18} />
+            {m.emphasis && (
+              // The target's ring, drawn round the marker's own shape (M6-11).
+              <g className={styles.ring} aria-hidden="true">
+                {shape}
+              </g>
             )}
+            {shape}
             {text && (
               // A triangle's centroid sits below its box centre, and it narrows
               // towards the top, so long labels (F##) shrink to fit.

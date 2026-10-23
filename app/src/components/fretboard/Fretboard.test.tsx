@@ -393,7 +393,12 @@ describe('<Fretboard> ♯/♭ labels (M10-18)', () => {
     const [ringed, plain] = screen.getAllByTestId('marker-fifth');
     expect(ringed).toHaveAttribute('data-emphasis', 'true');
     expect(ringed).toHaveClass(styles.emphasis!);
-    expect(ringed!.querySelector('polygon')).not.toBeNull();
+    // The ring is a copy of the triangle behind it, hidden from screen readers.
+    const ring = ringed!.querySelector(`.${styles.ring}`);
+    expect(ring?.querySelector('polygon')).not.toBeNull();
+    expect(ring).toHaveAttribute('aria-hidden', 'true');
+    expect(ringed!.querySelectorAll('polygon')).toHaveLength(2);
+    expect(plain!.querySelectorAll('polygon')).toHaveLength(1);
     expect(ringed).toHaveTextContent('5');
     expect(plain).not.toHaveAttribute('data-emphasis');
     expect(container.querySelectorAll(`.${styles.emphasis}`)).toHaveLength(1);
