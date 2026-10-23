@@ -1914,7 +1914,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - Prices live in `engine/config/garage.ts`. That file holds only the starter prices (0) and the reachability constants that M11-04's test uses.
 
 ### M11-02 · Make XP visible: XP earned and the garage balance
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request 2026-10-23)
 - **Deps:** M11-01
 - **Design:** §3.7, §3.8
@@ -1965,7 +1965,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - Every item ID is unique, and every `unlockedBy` names a registered achievement.
 
 ### M11-05 · Electric bodies: SG, Jazzmaster, ES-335 and Superstrat
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request 2026-10-23)
 - **Deps:** M11-03
 - **Design:** §3.8
@@ -2000,7 +2000,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - Render tests cover every body. Check the drawings visually (render to PNG) before reporting.
 
 ### M11-06 · Garage screen: browse, try on, buy, equip and name
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request 2026-10-23)
 - **Deps:** M11-03, M11-04
 - **Design:** §3.8, §7 Garage
@@ -2035,7 +2035,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - RTL tests, and an e2e test that the avatar and panel reflect a newly equipped part.
 
 ### M11-08 · Neck skin: drills use your board wood and inlays
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request 2026-10-23)
 - **Deps:** M11-04
 - **Design:** §3.8 neck skin, §8
@@ -2060,7 +2060,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - RTL tests with `navigator.share` mocked. An e2e of the download path (WebKit has no share sheet in Playwright).
 
 ### M11-10 · Badge unlocks name their garage finish
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request 2026-10-23)
 - **Deps:** M11-04
 - **Design:** §3.7 achievements, §3.8
