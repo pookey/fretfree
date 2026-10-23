@@ -140,6 +140,7 @@ export function FretboardHeatmap({
             data-fret-from={fretRange.from}
             data-fret-to={fretRange.to}
             data-handedness={handedness}
+            data-neck=""
           >
             <defs>
               {/* Dims slow tiles without shifting their hue, so the band still reads. */}

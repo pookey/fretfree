@@ -111,7 +111,8 @@
 }
 
 .tile {
-  stroke: rgb(255 255 255 / 0.55);
+  stroke: var(--neck-ink, #fff);
+  stroke-opacity: 0.55;
   stroke-width: 1.5;
   pointer-events: none;
 }
@@ -123,7 +124,7 @@
 /* Slow: a dark hatch dims the tile (its hue still shows between the
    stripes) and a dashed outline marks it by shape too. */
 .slow {
-  stroke: var(--text);
+  stroke: var(--neck-ink, var(--text));
   stroke-width: 2.5;
   stroke-dasharray: 6 4;
   pointer-events: none;
@@ -135,7 +136,7 @@
 
 .selected {
   fill: none;
-  stroke: var(--text);
+  stroke: var(--neck-ink, var(--text));
   stroke-width: 3;
   pointer-events: none;
 }

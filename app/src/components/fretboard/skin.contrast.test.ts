@@ -51,13 +51,22 @@ describe('board skins', async () => {
     return {
       ...(scheme === 'dark' ? rootDark : rootLight),
       ...base.get(sel),
+      ...base.get(':root[data-board] [data-neck]'),
       ...(scheme === 'light' ? light.get(':root[data-board] [data-neck]') : {}),
       ...base.get(`${sel} [data-neck]`),
     };
   }
 
   const neckCss = read('./Fretboard.module.css');
-  const neckRules = rules(neckCss.replace(/([\w-]+):\s*([^;]+);/g, '--$1: $2;'));
+  /** Rules with every declaration renamed `--prop`, so `vars` reads properties too. */
+  const declRules = (css: string) =>
+    rules(
+      css.replace(
+        /\{([^{}]*)\}/g,
+        (_, body: string) => `{${body.replace(/([\w-]+):\s*([^;]+);/g, '--$1: $2;')}}`,
+      ),
+    );
+  const neckRules = declRules(neckCss);
   const decl = (selector: string, prop: string) => neckRules.get(selector)?.[`--${prop}`];
 
   function parse(color: string): Rgba {
@@ -180,4 +189,139 @@ describe('board skins', async () => {
       });
     }
   }
+
+  // Every other renderer that paints on the wood follows `data-board` too, so
+  // each pairing it draws there is checked on every board, in both schemes.
+  // A selector's property is resolved through its token (the first `var()`
+  // in the value, or its fallback), with the rule's opacity folded in.
+  describe('every renderer on the wood', () => {
+    type Paint = [selector: string, prop: string] | { token: string };
+    interface Pair {
+      what: string;
+      fg: Paint;
+      /** What it sits on; the wood unless given. */
+      bg?: Paint;
+      min: number;
+    }
+    interface Renderer {
+      css: string;
+      pairs: Pair[];
+    }
+
+    const LINE = 3;
+    const TEXT = 4.5;
+    const chordMarkers = [
+      ['root', '.root rect'],
+      ['3rd', '.third circle'],
+      ['tone', '.tone circle'],
+      ['5th', '.fifth polygon'],
+      ['7th', '.seventh polygon'],
+    ] as const;
+    const RENDERERS: Record<string, Renderer> = {
+      'chord diagram': {
+        css: '../chord-diagram/ChordDiagram.module.css',
+        pairs: [
+          { what: 'nut', fg: ['.nut', 'fill'], min: LINE },
+          { what: 'strings', fg: ['.string', 'stroke'], min: LINE },
+          { what: 'fret wire', fg: ['.wire', 'stroke'], min: LINE },
+          { what: 'barre', fg: ['.barre', 'fill'], min: LINE },
+          ...chordMarkers.map(([what, sel]) => ({ what, fg: [sel, 'fill'] as Paint, min: LINE })),
+          ...chordMarkers.map(([what, sel]) => ({
+            what: `${what} label`,
+            fg: ['.dot text', 'fill'] as Paint,
+            bg: [sel, 'fill'] as Paint,
+            min: TEXT,
+          })),
+        ],
+      },
+      heatmap: {
+        css: '../heatmap/Heatmap.module.css',
+        pairs: [
+          { what: 'nut', fg: ['.nut', 'fill'], min: LINE },
+          // Tiles are viridis, and some bands are close to a wood: the tile's
+          // edge is what separates a tile from an empty cell.
+          { what: 'tile edge', fg: ['.tile', 'stroke'], min: LINE },
+          { what: 'slow outline', fg: ['.slow', 'stroke'], min: LINE },
+          { what: 'selected outline', fg: ['.selected', 'stroke'], min: LINE },
+          { what: 'focus ring', fg: ['.hit:focus-visible', 'stroke'], min: LINE },
+        ],
+      },
+      'capo neck': {
+        css: '../../drills/d13-capo/CapoNeck.module.css',
+        pairs: [
+          { what: 'strings', fg: { token: '--string' }, min: LINE },
+          { what: 'fret wire', fg: ['.cell', 'border-right'], min: LINE },
+          { what: 'nut', fg: [".cell[data-fret='0']", 'border-right'], min: LINE },
+          {
+            what: 'nut on the open strings',
+            fg: [".cell[data-fret='0']", 'border-right'],
+            bg: [".cell[data-fret='0']", 'background'],
+            min: LINE,
+          },
+          { what: 'capo', fg: ['.capo', 'background'], min: LINE },
+          {
+            what: 'shape chip border',
+            fg: [".note[data-role='shape']", 'border-color'],
+            min: LINE,
+          },
+          {
+            what: 'sound chip border',
+            fg: [".note[data-role='sound']", 'border-color'],
+            min: LINE,
+          },
+          {
+            what: 'fret number',
+            fg: ['.number', 'color'],
+            bg: ['.number', 'background'],
+            min: TEXT,
+          },
+        ],
+      },
+    };
+
+    /** The colour a CSS value paints: its first token (or that token's fallback), or a literal. */
+    function colourOf(t: Record<string, string>, value: string): Rgba {
+      const v = /var\((--[\w-]+)(?:,\s*([^()]+(?:\([^()]*\))?))?\)/.exec(value);
+      if (v) {
+        if (t[v[1]!]) return colourOf(t, t[v[1]!]!);
+        if (v[2]) return colourOf(t, v[2].trim());
+        throw new Error(`${v[1]} is not set`);
+      }
+      const literal = /#[0-9a-f]{3,6}\b|rgb\([^)]*\)/i.exec(value);
+      if (!literal) throw new Error(`no colour in ${value}`);
+      return parse(literal[0]);
+    }
+
+    for (const [name, { css, pairs }] of Object.entries(RENDERERS)) {
+      const ruleSet = declRules(read(css));
+      function painted(t: Record<string, string>, p: Paint): Rgba {
+        if ('token' in p) return colourOf(t, `var(${p.token})`);
+        const [selector, prop] = p;
+        const decls = ruleSet.get(selector);
+        const value = decls?.[`--${prop}`];
+        if (!value) throw new Error(`${name}: ${selector} sets no ${prop}`);
+        const [r, g, b, a] = colourOf(t, value);
+        const kind = prop === 'stroke' ? 'stroke-opacity' : 'fill-opacity';
+        const opacity = Number(decls['--opacity'] ?? 1) * Number(decls[`--${kind}`] ?? 1);
+        return [r, g, b, a * opacity];
+      }
+
+      describe(name, () => {
+        for (const board of NECK_BOARDS) {
+          for (const scheme of ['dark', 'light'] as const) {
+            it(`keeps every pairing readable on ${board} (${scheme})`, () => {
+              const t = resolve(board, scheme);
+              const wood = colourOf(t, 'var(--wood)');
+              const failing = pairs.flatMap(({ what, fg, bg, min }) => {
+                const under = bg ? over(painted(t, bg), wood) : wood;
+                const ratio = contrast(over(painted(t, fg), under), under);
+                return ratio < min ? [`${what}: ${ratio.toFixed(2)}:1, under ${min}:1`] : [];
+              });
+              expect(failing).toEqual([]);
+            });
+          }
+        }
+      });
+    }
+  });
 });

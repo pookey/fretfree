@@ -27,6 +27,13 @@
   --dim: rgb(232 223 210 / 0.12);
 }
 
+/* Ink drawn on the wood (outlines, the capo) is the page's --text and
+   --text-muted unless a board is set; then it follows the wood, not the theme. */
+:root[data-board] [data-neck] {
+  --neck-ink: #f7f2ff;
+  --neck-ink-muted: #b4aaca;
+}
+
 /* Marker colours are scoped to the neck renderers (`data-neck`), because
    --tone and --correct also colour page text and charts. The wood doesn't
    change with the theme, so neither do its markers: the light theme's deeper
@@ -49,4 +56,6 @@
   --chord-fifth: #6b6300;
   --chord-seventh: #9c3f7a;
   --marker-text: #fff;
+  --neck-ink: #1a1410;
+  --neck-ink-muted: #4a3b2e;
 }
