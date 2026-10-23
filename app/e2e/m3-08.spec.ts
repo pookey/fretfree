@@ -109,7 +109,7 @@ test.describe('M3-08 CAGED visualiser', () => {
     // Cm E shape at fret 8: its core is Eb–G–C on strings 3–1.
     await page.getByRole('radio', { name: 'Note names' }).check({ force: true });
     await expect(neck(page).getByTestId('marker-root')).toHaveText('C');
-    await expect(neck(page).getByTestId('marker-third')).toHaveText('Eb');
+    await expect(neck(page).getByTestId('marker-third')).toHaveText('E♭');
     await expect(neck(page).getByTestId('marker-fifth')).toHaveText('G');
   });
 

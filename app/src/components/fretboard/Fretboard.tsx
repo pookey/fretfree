@@ -3,7 +3,6 @@ import type { GuideLevel, Handedness } from '../../engine/model';
 import {
   STANDARD_TUNING,
   allStrings,
-  cellLabel,
   inRange,
   noteAt,
   stringCount,
@@ -20,6 +19,7 @@ import {
   type Cell,
   type NeckGeometry,
 } from './geometry';
+import { cellName, neckText, spokenNeckText } from './labels';
 import styles from './Fretboard.module.css';
 
 export type MarkerStyle =
@@ -111,12 +111,16 @@ export function Fretboard({
   const showStringNames = guideLevel >= 2;
   const interactive = Boolean(onTapCell);
 
-  const labelFor = (m: FretMarker) => {
+  const shownLabel = (m: FretMarker) => {
     if (m.forceLabel) return m.label;
     if (m.style === 'target') return undefined;
     if (guideLevel >= 3) return m.label;
     if (guideLevel >= 2 && m.style === 'root') return m.label;
     return undefined;
+  };
+  const labelFor = (m: FretMarker) => {
+    const label = shownLabel(m);
+    return label === undefined ? undefined : neckText(label);
   };
 
   const onKey = (e: KeyboardEvent, pos: Position) => {
@@ -251,19 +255,25 @@ export function Fretboard({
         openCell &&
         strings
           .filter((s) => !hiddenStringNames.has(s))
-          .map((s) => (
-            <text
-              key={`sn${s}`}
-              className={nameClass}
-              x={openCell.cx}
-              y={g.stringY(s)}
-              dy="0.35em"
-              data-testid="string-name"
-              data-string={s}
-            >
-              {openPc(s)}
-            </text>
-          ))}
+          .map((s) => {
+            const name = neckText(openPc(s));
+            const spoken = spokenNeckText(name);
+            return (
+              <text
+                key={`sn${s}`}
+                className={nameClass}
+                x={openCell.cx}
+                y={g.stringY(s)}
+                dy="0.35em"
+                role={spoken ? 'img' : undefined}
+                aria-label={spoken}
+                data-testid="string-name"
+                data-string={s}
+              >
+                {name}
+              </text>
+            );
+          })}
 
       {outlines.map((o) => (
         <rect
@@ -284,6 +294,7 @@ export function Fretboard({
         if (!cell) return null;
         const cy = g.stringY(m.string);
         const text = labelFor(m);
+        const spoken = text && (m.spokenLabel ?? spokenNeckText(text));
         return (
           <g
             key={`m${m.string}-${m.fret}-${m.style}`}
@@ -291,8 +302,8 @@ export function Fretboard({
             data-testid={`marker-${m.style}`}
             data-string={m.string}
             data-fret={m.fret}
-            role={text && m.spokenLabel ? 'img' : undefined}
-            aria-label={text && m.spokenLabel ? m.spokenLabel : undefined}
+            role={spoken ? 'img' : undefined}
+            aria-label={spoken || undefined}
           >
             {m.style === 'root' ? (
               <rect x={cell.cx - 17} y={cy - 17} width={34} height={34} rx={7} />
@@ -333,7 +344,7 @@ export function Fretboard({
           const pos = { string: s, fret: c.fret };
           const name =
             labelCell?.(pos) ??
-            cellLabel(pos, { tuning, pref: accidentalPref, revealNote: revealNotes });
+            cellName(pos, { tuning, pref: accidentalPref, revealNote: revealNotes });
           return (
             <rect
               key={`hit${s}-${c.fret}`}

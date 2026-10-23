@@ -38,7 +38,7 @@ test.describe('M2-12 fretboard explorer', () => {
     await page.getByText('Degrees', { exact: true }).click();
     await expect(page.getByTestId('explorer-name')).toHaveText('A minor key');
     await expect(marker(page, 'root', 6, 5)).toHaveText('1');
-    await expect(marker(page, 'tone', 6, 8)).toHaveText('b3');
+    await expect(marker(page, 'tone', 6, 8)).toHaveText('♭3');
 
     // A chord: G7. Root, 3rd, 5th and 7th each get their own shape and colour.
     await pick(page, 'G', 'Dominant seventh');
@@ -47,8 +47,8 @@ test.describe('M2-12 fretboard explorer', () => {
     await expect(marker(page, 'root', 6, 3)).toHaveText('R');
     await expect(marker(page, 'third', 6, 7)).toHaveText('3');
     await expect(marker(page, 'fifth', 5, 5)).toHaveText('5');
-    await expect(marker(page, 'seventh', 6, 1)).toHaveText('b7');
-    await expect(marker(page, 'seventh', 6, 13)).toHaveText('b7');
+    await expect(marker(page, 'seventh', 6, 1)).toHaveText('♭7');
+    await expect(marker(page, 'seventh', 6, 13)).toHaveText('♭7');
     await expect(page.getByTestId('marker-tone')).toHaveCount(0);
     await expect(marker(page, 'root', 6, 3).locator('rect')).toHaveCount(1);
     await expect(marker(page, 'third', 6, 7).locator('circle')).toHaveCount(1);

@@ -210,7 +210,7 @@ describe('<D39View>', () => {
     expect(neck()).toHaveAttribute('data-fret-from', '3');
     expect(neck()).toHaveAttribute('data-fret-to', '15');
     const labels = (style: string) => markers(style).map((m) => m.textContent);
-    expect(labels('root')).toEqual(['G', 'D', 'A#', 'F', 'C', 'G']);
+    expect(labels('root')).toEqual(['G', 'D', 'A♯', 'F', 'C', 'G']);
     expect(labels('correct')).toEqual(labels('root'));
     expect(screen.getByTestId('d39-explain')).toHaveTextContent('the neck repeats every 12 frets.');
   });

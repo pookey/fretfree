@@ -215,3 +215,57 @@ describe('<Fretboard>', () => {
     expect(svg.querySelectorAll('[data-cell]')).toHaveLength(30);
   });
 });
+
+describe('<Fretboard> ♯/♭ labels (M10-18)', () => {
+  const halfStepDown = {
+    id: 'eb',
+    name: 'Half step down',
+    notes: ['Eb2', 'Ab2', 'Db3', 'Gb3', 'Bb3', 'Eb4'],
+  };
+
+  it('names open strings with glyphs in the learner’s spelling, spoken in words', () => {
+    const { container, rerender } = render(
+      <Fretboard tuning={halfStepDown} fretRange={{ from: 0, to: 5 }} accidentalPref="flat" />,
+    );
+    const names = () =>
+      [...container.querySelectorAll('[data-testid="string-name"]')].map((t) => t.textContent);
+    expect(names()).toEqual(['E♭', 'B♭', 'G♭', 'D♭', 'A♭', 'E♭']);
+    expect(screen.getAllByRole('img', { name: 'E flat' })).toHaveLength(2);
+    rerender(
+      <Fretboard tuning={halfStepDown} fretRange={{ from: 0, to: 5 }} accidentalPref="sharp" />,
+    );
+    expect(names()).toEqual(['D♯', 'A♯', 'F♯', 'C♯', 'G♯', 'D♯']);
+  });
+
+  it('shows guide-level note and degree labels with glyphs, spoken in words', () => {
+    render(
+      <Fretboard
+        fretRange={{ from: 0, to: 5 }}
+        guideLevel={3}
+        markers={[
+          { string: 1, fret: 2, style: 'tone', label: 'F#' },
+          { string: 2, fret: 1, style: 'third', label: 'b3' },
+          { string: 3, fret: 2, style: 'root', label: 'A' },
+        ]}
+      />,
+    );
+    expect(screen.getByRole('img', { name: 'F sharp' })).toHaveTextContent(/^F♯$/);
+    expect(screen.getByRole('img', { name: 'flat 3' })).toHaveTextContent(/^♭3$/);
+    // A natural reads as written, so it keeps its plain text.
+    expect(screen.getByTestId('marker-root')).not.toHaveAttribute('role');
+    expect(screen.getByTestId('marker-root')).toHaveTextContent(/^A$/);
+  });
+
+  it('keeps a caller’s spoken label and says revealed cells in words', () => {
+    render(
+      <Fretboard
+        fretRange={{ from: 0, to: 5 }}
+        markers={[{ string: 1, fret: 1, style: 'third', label: '♭3', spokenLabel: 'minor 3rd' }]}
+        onTapCell={() => {}}
+        revealNotes
+      />,
+    );
+    expect(screen.getByRole('img', { name: 'minor 3rd' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'string 1, fret 2, F sharp' })).toBeInTheDocument();
+  });
+});

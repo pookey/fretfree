@@ -347,7 +347,7 @@ describe('<View>', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Degrees' }));
     expect(
       neck.querySelector('[data-testid="marker-seventh"][data-string="6"][data-fret="1"]'),
-    ).toHaveTextContent('b7');
+    ).toHaveTextContent('♭7');
     fireEvent.click(screen.getByRole('radio', { name: 'Intervals' }));
     expect(
       neck.querySelector('[data-testid="marker-seventh"][data-string="6"][data-fret="1"]'),
@@ -438,7 +438,7 @@ describe('<View>', () => {
     );
     const label = (string: number) =>
       document.querySelector(`[data-string="${string}"][data-fret="1"] text`);
-    expect(label(6)).toHaveTextContent('F##');
+    expect(label(6)).toHaveTextContent('F𝄪');
     expect(label(6)?.getAttribute('class')).toBeTruthy();
     expect(label(5)?.getAttribute('class')).toBeNull();
     expect(label(4)?.getAttribute('class')).toBeNull();
