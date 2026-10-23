@@ -11,6 +11,7 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import type { ExampleStage, ExampleStep, WorkedExample } from './types';
 
 /** Pure state and view logic of a worked example; the view only renders it. */
@@ -132,7 +133,9 @@ export function degreeLabel(degree: Degree): string {
 /**
  * The neck's markers for the current stage. Given notes stay labelled (the
  * prompt names them). The answer shows only on the worked stage, with the
- * shape it replaces as a ghost; later stages reveal it after the tap.
+ * shape it replaces as a ghost; later stages reveal it after the tap. Names
+ * are spelt with ♯/♭, and a trap keeps its own spelling (B♭ from C, not A♯),
+ * so the neck agrees with the feedback.
  */
 export function exampleMarkers(
   example: WorkedExample,
@@ -140,7 +143,7 @@ export function exampleMarkers(
   opts: { tuning?: Tuning; pref?: AccidentalPref } = {},
 ): FretMarker[] {
   const tuning = opts.tuning ?? STANDARD_TUNING;
-  const pc = (p: Position) => noteAt(p, tuning, opts.pref).pc;
+  const pc = (p: Position) => displayPc(noteAt(p, tuning, opts.pref).pc);
   const step = currentStep(example, state);
   const markers: FretMarker[] = step.given.map((p) => ({
     ...p,
@@ -151,11 +154,19 @@ export function exampleMarkers(
   if (state.tapped) {
     markers.push({ ...step.answer, style: 'correct', label: pc(step.answer), forceLabel: true });
     if (!same(state.tapped, step.answer)) {
-      markers.push({ ...state.tapped, style: 'wrong', label: pc(state.tapped), forceLabel: true });
+      const label = outcomeOf(step, state.tapped) === 'trap' && step.trap ? step.trap.name : null;
+      markers.push({
+        ...state.tapped,
+        style: 'wrong',
+        label: label === null ? pc(state.tapped) : displayPc(label),
+        forceLabel: true,
+      });
     }
   } else if (stageOf(state) === 'worked') {
     markers.push({ ...step.answer, style: 'target', label: pc(step.answer), forceLabel: true });
-    if (step.trap) markers.push({ ...step.trap.at, style: 'ghost', label: step.trap.name });
+    if (step.trap) {
+      markers.push({ ...step.trap.at, style: 'ghost', label: displayPc(step.trap.name) });
+    }
   }
   // The shape fills the cells nothing else marks. Before the answer its notes
   // are plain, so neither the root nor the asked degree stands out; after it,

@@ -103,7 +103,7 @@ test.describe('M3-10 worked examples for C4–C6', () => {
 
     await openExample(page, 'chords', 'C5.tones-sevenths');
     await expect(page.getByTestId('example-prompt')).toHaveText('Find the 7th of A7 on string 4.');
-    await expect(neck(page).getByTestId('marker-ghost')).toHaveText('G#');
+    await expect(neck(page).getByTestId('marker-ghost')).toHaveText('G♯');
 
     await openExample(page, 'keys', 'C4.sharp-key-degrees');
     await expect(page.getByTestId('example-prompt')).toHaveText(

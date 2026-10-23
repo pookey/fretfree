@@ -96,7 +96,7 @@ describe('exampleMarkers', () => {
     expect(exampleMarkers(gb, START)).toEqual([
       { string: 4, fret: 5, style: 'root', label: 'G', forceLabel: true },
       { string: 2, fret: 8, style: 'target', label: 'G', forceLabel: true },
-      { string: 2, fret: 7, style: 'ghost', label: 'F#' },
+      { string: 2, fret: 7, style: 'ghost', label: 'F♯' },
     ]);
   });
 
@@ -111,12 +111,43 @@ describe('exampleMarkers', () => {
     const faded = nextStep(answered(START));
     const right = answered(faded);
     expect(exampleMarkers(gb, right).map((m) => m.style)).toEqual(['root', 'correct']);
-    const wrong = tapCell(gb, faded, { string: 1, fret: 4 });
+    const wrong = tapCell(gb, faded, { string: 1, fret: 2 });
     expect(exampleMarkers(gb, wrong, { pref: 'flat' })).toEqual([
       { string: 3, fret: 2, style: 'root', label: 'A', forceLabel: true },
       { string: 1, fret: 5, style: 'correct', label: 'A', forceLabel: true },
-      { string: 1, fret: 4, style: 'wrong', label: 'Ab', forceLabel: true },
+      { string: 1, fret: 2, style: 'wrong', label: 'G♭', forceLabel: true },
     ]);
+    // Fret 4 is the unshifted shape: the trap, a major 7th from A, so G♯
+    // even for a flats learner, as the feedback names it.
+    const trap = tapCell(gb, faded, { string: 1, fret: 4 });
+    expect(exampleMarkers(gb, trap, { pref: 'flat' })).toContainEqual({
+      string: 1,
+      fret: 4,
+      style: 'wrong',
+      label: 'G♯',
+      forceLabel: true,
+    });
+  });
+
+  it('labels a tapped trap with its own spelling, whatever the preference', () => {
+    // C → the major 3rd on the B string. Without the G–B shift the shape
+    // lands a fret low: a minor 3rd, E♭, which a sharps learner would see as D♯.
+    const thirds: WorkedExample = {
+      ...gb,
+      steps: [
+        shapeStep({ string: 3, fret: 5 }, 'M3', 2),
+        shapeStep({ string: 3, fret: 5 }, 'M3', 2),
+        shapeStep({ string: 3, fret: 5 }, 'M3', 2),
+      ],
+    };
+    const faded = nextStep(tapCell(thirds, START, currentStep(thirds, START).answer));
+    const trap = currentStep(thirds, faded).trap;
+    expect(trap?.name).toBe('Eb');
+    const tapped = tapCell(thirds, faded, trap!.at);
+    const wrong = exampleMarkers(thirds, tapped, { pref: 'sharp' }).find(
+      (m) => m.style === 'wrong',
+    );
+    expect(wrong).toMatchObject({ ...trap!.at, label: 'E♭' });
   });
 
   it('marks nothing extra for an example without given notes or traps', () => {

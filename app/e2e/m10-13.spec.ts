@@ -60,7 +60,7 @@ test.describe('M10-13 neck-basics worked examples', () => {
     await expect(prompt(page)).toHaveText('Find the letter after E on string 4.');
     await expect(page.getByTestId('example-hint')).toHaveCount(0);
     await tap(page, 4, 4);
-    await expect(page.getByTestId('example-wrong')).toContainText('That’s F#.');
+    await expect(page.getByTestId('example-wrong')).toContainText('That’s F♯.');
     await expect(page.getByTestId('example-trap')).toContainText(
       'E–F is a half step, with no sharp between them',
     );

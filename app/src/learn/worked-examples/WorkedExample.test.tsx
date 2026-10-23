@@ -73,7 +73,7 @@ describe('<WorkedExample>', () => {
     next();
     tap(1, 4);
     const wrong = screen.getByTestId('example-wrong');
-    expect(wrong).toHaveTextContent('That’s G#.');
+    expect(wrong).toHaveTextContent('That’s G♯.');
     expect(within(wrong).getByRole('complementary', { name: 'Watch out for' })).toHaveTextContent(
       'Fret 4 is the shape without the G–B shift.',
     );
@@ -88,7 +88,7 @@ describe('<WorkedExample>', () => {
     tap(1, 5);
     next();
     tap(3, 8);
-    expect(screen.getByTestId('example-wrong')).toHaveTextContent('That’s D#.');
+    expect(screen.getByTestId('example-wrong')).toHaveTextContent('That’s D♯.');
     expect(screen.queryByTestId('example-trap')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Start again' }));
     expect(stage()).toBe('worked');
@@ -110,12 +110,15 @@ describe('<WorkedExample>', () => {
   it('spells the trap as its interval, whatever the accidental preference', () => {
     useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, accidentalPref: 'sharp' } });
     render(<WorkedExample example={thirds} />);
-    // C → fret 4 on the B string is a minor 3rd: Eb, even for a sharps learner.
-    expect(screen.getByTestId('marker-ghost')).toHaveTextContent('Eb');
+    // C → fret 4 on the B string is a minor 3rd: E♭, even for a sharps learner.
+    expect(screen.getByTestId('marker-ghost')).toHaveTextContent('E♭');
     tap(2, 5);
     next();
     tap(2, 9);
-    expect(screen.getByTestId('example-wrong')).toHaveTextContent('✗ That’s Ab.');
+    expect(screen.getByTestId('example-wrong')).toHaveTextContent('✗ That’s A♭.');
+    // The tapped trap on the neck agrees: A♭, not the sharps learner's G♯.
+    expect(screen.getByTestId('marker-wrong')).toHaveTextContent(/^A♭$/);
+    expect(screen.getByTestId('marker-wrong')).toHaveAccessibleName('A flat');
     expect(screen.getByTestId('example-trap')).toHaveTextContent("That's Ab: a minor 3rd");
   });
 
@@ -125,6 +128,6 @@ describe('<WorkedExample>', () => {
     tap(2, 8);
     next();
     tap(1, 6);
-    expect(screen.getByTestId('example-wrong')).toHaveTextContent('✗ That’s Bb.');
+    expect(screen.getByTestId('example-wrong')).toHaveTextContent('✗ That’s B♭.');
   });
 });

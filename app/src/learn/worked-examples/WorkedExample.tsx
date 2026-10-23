@@ -3,6 +3,7 @@ import { useAppStore } from '../../app-store';
 import { playNotes } from '../../audio/audio';
 import { Fretboard } from '../../components/fretboard/Fretboard';
 import { STANDARD_TUNING, noteAt, type Position } from '../../theory';
+import { displayPc } from '../../theory/pitch-display';
 import {
   START,
   STAGES,
@@ -34,7 +35,7 @@ export function WorkedExample({ example }: { example: Example }) {
   const stage = stageOf(state);
   const step = currentStep(example, state);
   const complete = isComplete(state);
-  const pcAt = (p: Position) => noteAt(p, STANDARD_TUNING, settings.accidentalPref).pc;
+  const pcAt = (p: Position) => displayPc(noteAt(p, STANDARD_TUNING, settings.accidentalPref).pc);
 
   const neckRef = useRef<HTMLDivElement>(null);
   const { tapped } = state;
@@ -66,7 +67,7 @@ export function WorkedExample({ example }: { example: Example }) {
       <div className={styles.wrong} data-testid="example-wrong">
         <p>
           <strong className={styles.wrongLead}>
-            ✗ That’s {outcome === 'trap' && step.trap ? step.trap.name : pcAt(tapped)}.
+            ✗ That’s {outcome === 'trap' && step.trap ? displayPc(step.trap.name) : pcAt(tapped)}.
           </strong>{' '}
           {step.explain}
         </p>
