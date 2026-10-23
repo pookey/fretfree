@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useAppStore } from '../../app-store';
 import { LearningLegend } from '../../components/learning-legend/LearningLegend';
@@ -8,6 +8,7 @@ import type { StatusOverlay } from '../../engine/overlay';
 import { latestOutcomes } from '../../engine/progress';
 import { startWithSoundSkills } from '../../engine/start-with-sound';
 import { GOAL_OPTIONS } from '../../onboarding/options';
+import { testOutGroups, unmetPrerequisites } from '../../placement/test-out';
 import { createDrillPicker } from '../../session/drill-picker';
 import { ScreenLayout } from '../../shell/ScreenLayout';
 import { useSizeClass } from '../../shell/size-class';
@@ -99,10 +100,30 @@ function ModuleCard({
 }
 
 /**
+ * The first locked module, in the map's (goal) order, that has a test-out to
+ * offer: a first skill locked by a prerequisite a drill can test. The same
+ * check `TestOut` makes before it offers one in the module's detail.
+ */
+export function firstTestOut(
+  map: readonly ModuleView[],
+  statuses: ReadonlyMap<string, SkillStatus>,
+): ModuleView | undefined {
+  return map.find(
+    (view) =>
+      view.state === 'locked' &&
+      view.skills.length > 0 &&
+      testOutGroups(unmetPrerequisites(view.module, SKILLS, statuses), SKILLS, PICKER.canServe)
+        .length > 0,
+  );
+}
+
+/**
  * Learn (design §7): the module map with a mastery ring per module, ordered
  * by the learner's goal. Two panes on iPad — the map on the left, the picked
  * module's skill detail on the right; on compact the detail replaces the map.
- * Locked modules open like any other (soft unlocking, §3.4).
+ * Locked modules open like any other (soft unlocking, §3.4). The map's
+ * header offers a test-out of the first locked module (M10-16): it opens that
+ * module with its "Already know this?" offer in view and focused.
  */
 export function LearnScreen() {
   const goal = useAppStore((s) => s.settings.goal);
@@ -110,6 +131,7 @@ export function LearnScreen() {
   // Gated as the session runner gates them ("start with sound" opens the ear track).
   const skills = useMemo(() => startWithSoundSkills(SKILLS, startWithSound), [startWithSound]);
   const update = useAppStore((s) => s.update);
+  const loaded = useAppStore((s) => s.loaded);
   const sizeClass = useSizeClass();
   const compact = sizeClass === 'compact';
   const [params] = useSearchParams();
@@ -133,6 +155,18 @@ export function LearnScreen() {
   const picked = map.find((m) => m.module.id === params.get('module'));
   const selected = picked ?? (compact ? undefined : defaultModule(map));
   const showMap = !compact || !selected;
+  const testOut = loaded && statuses ? firstTestOut(map, statuses) : undefined;
+  // The module whose test-out offer to bring into view once its detail shows.
+  const [jumpTo, setJumpTo] = useState<string | null>(null);
+  const detailPane = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!jumpTo || selected?.module.id !== jumpTo) return;
+    const offer = detailPane.current?.querySelector<HTMLElement>('[data-testid="test-out"]');
+    if (!offer) return;
+    offer.scrollIntoView({ block: 'nearest' });
+    offer.querySelector<HTMLButtonElement>('button')?.focus();
+    setJumpTo(null);
+  }, [jumpTo, selected]);
 
   return (
     <ScreenLayout title="Learn">
@@ -153,6 +187,19 @@ export function LearnScreen() {
                 ))}
               </select>
             </label>
+            {testOut && (
+              <p className={styles.testOutEntry} data-testid="learn-test-out">
+                <span>Already play some of this?</span>
+                <Link
+                  to={{ search: `?module=${testOut.module.id}` }}
+                  replace={!compact}
+                  className={styles.testOutLink}
+                  onClick={() => setJumpTo(testOut.module.id)}
+                >
+                  Test out of {testOut.module.title}
+                </Link>
+              </p>
+            )}
             {/* Defined where the numbers first appear (copy audit, screens §9). */}
             <LearningLegend className={styles.legend} />
             <ul className={styles.modules}>
@@ -168,7 +215,7 @@ export function LearnScreen() {
           </section>
         )}
         {selected && (
-          <div className={styles.detailPane}>
+          <div className={styles.detailPane} ref={detailPane}>
             {compact && (
               <Link to="/learn" replace className={styles.back}>
                 ← All modules

@@ -332,3 +332,31 @@
     transition: none;
   }
 }
+
+/* The map header's "Test out of …" (M10-16): opens the first locked module's test-out. */
+.testOutEntry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-3);
+  color: var(--text-muted);
+}
+
+.testOutLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.testOutLink:focus-visible {
+  outline: 3px solid var(--tone);
+  outline-offset: 2px;
+}
