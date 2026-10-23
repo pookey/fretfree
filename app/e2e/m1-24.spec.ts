@@ -179,8 +179,9 @@ test.describe('M1-24 the first week', () => {
   test('onboarding, three daily sessions, due reviews, the heatmap and a weekend', async ({
     page,
   }, info) => {
-    // A week of sessions in one test.
-    test.slow();
+    // A week of sessions in one test: about a minute on the Mac and twice
+    // that on the remote runner's slower cores, past test.slow()'s 90 s.
+    test.setTimeout(180_000);
     await page.clock.install({ time: WEEK_START });
     await onboard(page);
     await expect(page.getByTestId('start-session')).toBeVisible();
