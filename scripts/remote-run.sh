@@ -90,6 +90,8 @@ slots="CPU_SLOTS=${REMOTE_CPU_SLOTS:-1} E2E_SLOTS=${REMOTE_E2E_SLOTS:-1} FRETWOR
 # Separate cores for static gates and Playwright (see the top).
 slots="$slots CPU_SLOT_CPUSET=${REMOTE_CPU_CPUSET:-16-23,40-47} E2E_SLOT_CPUSET=${REMOTE_E2E_CPUSET:-0-15,24-39}"
 pw="PW_WORKERS=${REMOTE_PW_WORKERS:-20} E2E_RETRIES=${REMOTE_RETRIES:-1} E2E_QUIET_WORKERS=2 PW_TRACE=off LP_NUM_THREADS=0 GST_PLUGIN_FEATURE_RANK=fakeaudiosink:MAX"
+# ship.sh's weekly safety net runs every test on all three iPads (app/playwright.config.ts).
+[[ "${PW_FULL_MATRIX:-}" == 1 ]] && pw="$pw PW_FULL_MATRIX=1"
 if [[ "${FRETWORK_LANE:-}" == 1 ]]; then
   workers="FRETWORK_LANE=1 VITEST_MAX_WORKERS=12 $pw"
 else
