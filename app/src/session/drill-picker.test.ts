@@ -3,7 +3,7 @@ import { getDrill } from '../drills/registry';
 import type { AnyDrillType } from '../drills/types';
 import type { Skill } from '../engine';
 import { getTuning } from '../theory/tunings';
-import { createDrillPicker, factOf } from './drill-picker';
+import { createDrillPicker, factOf, itemNeedsSound } from './drill-picker';
 
 const d1 = getDrill('name-the-note')!;
 const d2 = getDrill('find-the-note')!;
@@ -114,6 +114,32 @@ describe('a drill whose prompt is a sound', () => {
     expect(getDrill('ear-identify')?.requiresSound).toBe(true);
     const picker = createDrillPicker(skills, [d1, ear], { micEnabled: true, soundOn: false });
     expect(picker.candidates(note).map((d) => d.id)).toEqual(['name-the-note']);
+  });
+});
+
+describe('an item heard by ear', () => {
+  // M4-16: D15 serves both C2's named cards and I6's ear cards; only the
+  // ear cards need sound, whatever drill serves them.
+  const d15 = getDrill('hear-it-find-it')!;
+  const ear = { id: 'ear-find:A@s6', skillId: 'sk' };
+  const skills = [skill(['hear-it-find-it'])];
+
+  it('needs sound, unlike its named card', () => {
+    expect(d15.requiresSound).toBeFalsy();
+    expect(itemNeedsSound(ear)).toBe(true);
+    expect(itemNeedsSound(find)).toBe(false);
+    expect(itemNeedsSound({ id: 'not-an-item', skillId: 'sk' })).toBe(false);
+  });
+
+  it('is not served with sound off, while the named card still is', () => {
+    const picker = createDrillPicker(skills, [d15], { soundOn: false });
+    expect(picker.canServe(ear)).toBe(false);
+    expect(picker.pick(ear)).toBeUndefined();
+    expect(picker.pick(find)?.id).toBe('hear-it-find-it');
+  });
+
+  it('is served with sound on', () => {
+    expect(createDrillPicker(skills, [d15]).pick(ear)?.id).toBe('hear-it-find-it');
   });
 });
 

@@ -11,7 +11,9 @@ import { chromaOf, midiAt, stringCount, type Tuning } from '../theory';
  * needs the mic is a candidate only while mic mode is on (design §9), so a
  * learner without one never meets it, and a drill whose prompt is a sound
  * only while sound is on, so no guess at a sound the learner couldn't hear
- * is graded.
+ * is graded (research/02 §3.7). Some items need sound whatever drill serves
+ * them (`SOUND_KINDS`): D15 serves C2's named `find:` cards with sound off,
+ * but never its `ear-find:` cards, which are found by ear alone.
  */
 
 export interface DrillPicker {
@@ -20,6 +22,15 @@ export interface DrillPicker {
   canServe(item: Item): boolean;
   /** The drill for the item's next prompt; `last` is the drill that served it last. */
   pick(item: Item, last?: string): AnyDrillType | undefined;
+}
+
+/** Item kinds whose prompt is a sound in any drill: with sound off, no drill serves them. */
+const SOUND_KINDS: ReadonlySet<string> = new Set(['ear-find']);
+
+/** The item can't be answered without hearing it. */
+export function itemNeedsSound(item: Item): boolean {
+  const kind = parseItemId(item.id)?.kind;
+  return kind !== undefined && SOUND_KINDS.has(kind);
 }
 
 export interface DrillPickerOptions {
@@ -41,7 +52,7 @@ export function createDrillPicker(
   );
   const candidates = (item: Item) => {
     const skill = byId.get(item.skillId);
-    if (!skill) return [];
+    if (!skill || (options.soundOn === false && itemNeedsSound(item))) return [];
     return skill.drillTypes.flatMap((id) => usable.filter((d) => d.id === id && d.canTest(item)));
   };
   return {
