@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { freshStart } from './helpers';
 import { focusSession } from './helpers/focus';
+import { seedString6Reviews } from './helpers/guides';
 
 // M11-08: the neck skin (design §3.8). Drills draw the neck in the equipped
 // board wood and inlay shape, unless "Use my guitar's neck in drills" is off.
@@ -42,6 +43,7 @@ async function equip(page: Page, board: string, inlay: string): Promise<void> {
   );
 }
 
+/** D1 recall prompts on string 6, at guide level 3 so the inlays show. */
 async function openD1(page: Page): Promise<void> {
   await focusSession(page, SKILL);
   await expect(page.locator('#drill-prompt')).toHaveText('Name the highlighted note');
@@ -50,6 +52,7 @@ async function openD1(page: Page): Promise<void> {
 test.describe('M11-08 neck skin', () => {
   test('a drill draws the neck in maple with block inlays @smoke', async ({ page }) => {
     await freshStart(page);
+    await seedString6Reviews(page, 3);
     await equip(page, 'board.maple', 'inlay.blocks');
     await openD1(page);
 
@@ -67,12 +70,15 @@ test.describe('M11-08 neck skin', () => {
 
   test('with the setting off, the neck looks as it always has', async ({ page }) => {
     await freshStart(page);
+    await seedString6Reviews(page, 3);
     await equip(page, 'board.maple', 'inlay.blocks');
     await page.goto('/settings');
     const toggle = page.getByRole('checkbox', { name: "Use my guitar's neck in drills" });
     await expect(toggle).toBeChecked();
     await expect(page.locator('html')).toHaveAttribute('data-board', 'maple');
-    await toggle.uncheck();
+    // The setting saves before the box shows it, so click rather than uncheck().
+    await toggle.click();
+    await expect(toggle).not.toBeChecked();
     await expect(page.locator('html')).not.toHaveAttribute('data-board');
 
     await openD1(page);
