@@ -11,10 +11,13 @@ const explanation = (page: Page) => page.getByTestId('onboarding-explanation');
 /** Skip onboarding steps until the one titled `title`, whatever the order. */
 async function skipTo(page: Page, title: string) {
   const heading = page.getByRole('heading', { name: title, level: 1 });
+  const progress = page.getByTestId('onboarding-progress');
   for (let i = 0; i < 20 && !(await heading.isVisible()); i++) {
-    const progress = await page.getByTestId('onboarding-progress').textContent();
+    const step = (await progress.textContent()) ?? '';
     await choice(page).getByRole('button', { name: 'Skip this step' }).click();
-    await expect(page.getByTestId('onboarding-progress')).not.toHaveText(progress ?? '');
+    // Either one means the step moved on (the same wait as m4-10.spec.ts).
+    const moved = heading.or(progress.filter({ hasNotText: new RegExp(`^${step}$`) }));
+    await expect(moved.first()).toBeVisible();
   }
   await expect(heading).toBeVisible();
 }
