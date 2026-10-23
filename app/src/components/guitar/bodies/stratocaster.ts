@@ -1,5 +1,5 @@
 import { NECK_JOINT_Y, SCALE } from '../geometry';
-import { edgeAngle, inset, insetOutline, smoothClosed, type Pt } from '../outline';
+import { edgeAngle, inset, smoothClosed, type Pt } from '../outline';
 import type { BodyShape } from '../types';
 
 /**
@@ -28,16 +28,18 @@ const OUTLINE: readonly Pt[] = [
   [-151.5, 720.0],
   [-160.5, 701.5],
   [-165.0, 681.5],
-  [-164.0, 661.0],
-  [-160.0, 641.0],
-  [-154.0, 621.5],
-  [-147.0, 602.5],
-  [-139.0, 583.5],
-  [-130.0, 565.5],
-  [-120.5, 547.0],
-  [-113.5, 528.0],
-  [-111.0, 507.5],
-  [-115.0, 487.5],
+  // The bass waist and the swell of the lower bout are eased by hand: the
+  // source runs from one to the other in a straight diagonal.
+  [-165.0, 661.0],
+  [-162.5, 641.0],
+  [-158.5, 621.5],
+  [-152.5, 602.5],
+  [-144.0, 583.5],
+  [-133.0, 565.5],
+  [-121.0, 547.0],
+  [-111.5, 528.0],
+  [-108.5, 507.5],
+  [-113.0, 487.5],
   [-120.5, 468.0],
   [-126.0, 448.0],
   [-131.5, 428.5],
@@ -93,48 +95,67 @@ const OUTLINE: readonly Pt[] = [
 const J = NECK_JOINT_Y;
 const outline = smoothClosed(OUTLINE);
 
-/**
- * The guard follows the rim 13 mm in, but not into the horns: on the bass
- * side it climbs the outside and the horn's inner edge only to the neck
- * joint, and on the treble side it keeps to the cutaway, crossing the
- * horn's root to rejoin the edge below it.
- */
-const RIM = insetOutline(OUTLINE, 13);
-const TREBLE_HORN_ROOT = J + 80;
-const rim = (keep: (x: number, y: number) => boolean) =>
-  RIM.filter((_, i) => keep(...(OUTLINE[i] as [number, number])));
-/** Up the bass side to the neck joint (the points run tail first, clockwise). */
-const BASS_SIDE = rim((x, y) => x < -100 && y > J - 4 && y < SCALE - 72);
-/** Round the bass cutaway, under the board, and round the treble cutaway. */
-const CUTAWAYS = rim(
-  (x, y) => x >= -100 && y < J + 100 && (x < 0 ? y > J - 4 : x < 90 && y > J + 32),
-);
-/** Down the treble side, from below the horn to past the controls. */
-const TREBLE_SIDE = rim((x, y) => x >= 90 && y > TREBLE_HORN_ROOT && y < SCALE + 40);
-
-const JACK_Y = SCALE + 98;
+const JACK_Y = SCALE + 109;
 
 const stratocaster: BodyShape = {
   name: 'Stratocaster',
   outline,
+  // Hand-placed on smooth convex curves, as the real part: 15–20 mm in on
+  // the bass side, curving in to the tremolo's bass end so the lower bass
+  // bout stays bare; across both horn roots and under the cutaways; then
+  // down the treble side and round the knobs, ending clear of the jack.
   pickguard: smoothClosed([
-    ...BASS_SIDE,
-    // Across the bass horn's root, level with the neck joint.
-    [-100, J - 2],
-    ...CUTAWAYS,
-    // Across the treble horn's root.
-    [104, J + 64],
-    ...TREBLE_SIDE,
-    // Round the controls, then across the top of the tremolo.
-    [128, SCALE + 66],
-    [112, SCALE + 80],
-    [88, SCALE + 74],
-    [68, SCALE + 46],
-    [54, SCALE + 8],
-    [44, SCALE - 18],
-    [-44, SCALE - 18],
-    [-84, SCALE - 34],
-    [-112, SCALE - 56],
+    // Top: across the bass horn's root, round the cutaway, under the board.
+    [-111, J + 26],
+    [-102, J + 18],
+    [-86, J + 16],
+    [-70, J + 20],
+    [-52, J + 22],
+    [-34, J + 20],
+    [0, J + 22],
+    [20, J + 33],
+    // Round the treble cutaway and across the treble horn's root.
+    [32, J + 46],
+    [46, J + 60],
+    [64, J + 68],
+    [84, J + 65],
+    [100, J + 64],
+    [114, J + 76],
+    // Down the treble side, about 20–25 mm in.
+    [114, J + 98],
+    [110, J + 116],
+    [107, J + 136],
+    [106, J + 156],
+    [109, J + 176],
+    [115, J + 194],
+    [121, J + 214],
+    [127, J + 232],
+    [136, J + 254],
+    [139, J + 274],
+    [140, J + 292],
+    // The tail, about 20 mm inside the lower treble edge, clear of the jack.
+    [136, J + 307],
+    [125, J + 316],
+    [110, J + 319],
+    // Under the third knob and up past the others.
+    [94, J + 317],
+    [80, J + 307],
+    [70, J + 288],
+    [64, J + 270],
+    // The turn by the tremolo, eased with evenly spaced points.
+    [60, J + 255],
+    [54, J + 244],
+    [46, SCALE - 19],
+    [38, SCALE - 21],
+    [-38, SCALE - 21],
+    [-50, SCALE - 25],
+    // Up the bass side: one convex curve, 15–20 mm in, to the horn's root.
+    [-64, SCALE - 38],
+    [-78, SCALE - 58],
+    [-84, J + 144],
+    [-90, J + 114],
+    [-98, J + 81],
+    [-104, J + 52],
   ]),
   pickups: [
     { type: 'single', x: 0, y: SCALE - 160 },
@@ -144,14 +165,14 @@ const stratocaster: BodyShape = {
   bridge: { type: 'tremolo', x: 0, y: SCALE },
   controls: {
     knobs: [
-      { x: 78, y: SCALE - 12 },
-      { x: 90, y: SCALE + 24 },
-      { x: 100, y: SCALE + 58 },
+      { x: 72, y: SCALE - 22 },
+      { x: 84, y: SCALE + 8 },
+      { x: 94, y: SCALE + 38 },
     ],
     switch: { type: 'blade', x: 72, y: SCALE - 60, angle: 34 },
     // On the top, in a recessed plate on the lower treble bout, below the guard.
     jack: (() => {
-      const [x, y] = inset(outline, 'treble', JACK_Y, 21);
+      const [x, y] = inset(outline, 'treble', JACK_Y, 28);
       return { x, y, plate: true, angle: edgeAngle(outline, 'treble', JACK_Y) };
     })(),
   },

@@ -1,5 +1,5 @@
 import { NECK_JOINT_Y, SCALE } from '../geometry';
-import { along, inset, insetOutline, smoothClosed, stadium, type Pt } from '../outline';
+import { along, inset, smoothClosed, stadium, type Pt } from '../outline';
 import type { BodyShape } from '../types';
 
 /**
@@ -47,18 +47,20 @@ const OUTLINE: readonly Pt[] = [
   [-123.0, 495.5],
   [-129.5, 480.0],
   [-137.0, 464.5],
+  // The shoulder is re-eased by hand to the ~30 mm radius of D164,227 Fig. 3,
+  // its top falling slightly from the pocket towards the corner.
   [-142.5, 448.5],
-  [-144.5, 431.0],
-  [-142.5, 414.0],
-  [-136.5, 398.5],
-  [-123.5, 388.5],
-  [-106.0, 388.0],
-  [-89.0, 388.0],
-  [-72.0, 388.5],
-  [-55.0, 390.0],
-  [-38.5, 392.5],
-  [-21.0, 394.5],
-  [-4.0, 396.0],
+  [-144.5, 428.0],
+  [-142.0, 416.5],
+  [-135.5, 407.0],
+  [-126.0, 400.5],
+  [-114.5, 398.0],
+  [-97.0, 397.5],
+  [-80.0, 397.0],
+  [-63.0, 396.5],
+  [-46.0, 396.0],
+  [-29.0, 395.5],
+  [-12.0, 395.5],
   [13.0, 397.0],
   // The cutaway leaves the pocket in one curve.
   [28.5, 399.5],
@@ -106,13 +108,6 @@ const OUTLINE: readonly Pt[] = [
 const J = NECK_JOINT_Y;
 const outline = smoothClosed(OUTLINE);
 
-/**
- * The guard surrounds the neck pickup and sweeps down the bass side, 13 mm
- * in from the rim; the treble horn and the lower bout stay bare.
- */
-const RIM = insetOutline(OUTLINE, 13);
-const GUARD_RIM = RIM.filter(([x, y]) => x < 56 && y < SCALE - 80);
-
 /** The control plate runs with the strings, inset from the lower treble bout. */
 const PLATE_A = inset(outline, 'treble', SCALE - 52, 56);
 const PLATE_B = inset(outline, 'treble', SCALE + 70, 46);
@@ -120,14 +115,41 @@ const PLATE_B = inset(outline, 'treble', SCALE + 70, 46);
 const telecaster: BodyShape = {
   name: 'Telecaster',
   outline,
+  // Hand-placed on smooth curves, as the real part: about 15 mm in from the
+  // upper bass edge, round the shoulder and down the bass side to the front
+  // of the bridge plate, narrow on the treble side just past the neck
+  // pickup, with only a strip beside the pocket under the cutaway.
   pickguard: smoothClosed([
-    ...GUARD_RIM,
-    // Down beside the neck pickup to the front of the bridge plate.
-    [62, J + 100],
-    [62, J + 140],
-    [52, SCALE - 84],
-    [-52, SCALE - 84],
-    [-96, SCALE - 90],
+    // Along the top, under the board at its right-hand end.
+    [-24, J + 18],
+    [-46, J + 20],
+    [-70, J + 21],
+    [-94, J + 22],
+    // Round the shoulder, concentric with it.
+    [-105, J + 24],
+    [-112, J + 34],
+    [-120, J + 48],
+    // Down the bass side, 15–17 mm in.
+    [-125, J + 63],
+    [-119, J + 80],
+    [-110, J + 98],
+    [-99, J + 116],
+    // Curving in from the waist to the front of the bridge plate.
+    [-94, J + 136],
+    [-80, J + 154],
+    [-60, J + 170],
+    [-44, SCALE - 77],
+    [40, SCALE - 77],
+    // Up the treble side, just past the neck pickup.
+    [46, SCALE - 84],
+    [49, J + 150],
+    [48, J + 118],
+    [45, J + 92],
+    // A strip beside the pocket, under the cutaway.
+    [42, J + 66],
+    [33, J + 50],
+    [29, J + 34],
+    [20, J + 22],
   ]),
   pickups: [
     { type: 'single', x: 0, y: SCALE - 160 },

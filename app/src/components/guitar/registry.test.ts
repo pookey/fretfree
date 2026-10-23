@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flattenPath, footprints, margin } from './footprint';
+import { area, flattenPath, footprints, margin } from './footprint';
 import { DEFAULT_FRETS, NECK_JOINT_Y, SCALE, boardEnd, boardHalfWidth } from './geometry';
 import { BODIES, bodyFor, collectBodies } from './registry';
 import { BODY_SHAPES, hasBody } from './shapes';
@@ -22,6 +22,14 @@ function bbox(d: string) {
 const MIN_MARGIN = 4;
 /** A pickguard follows the edge more closely. */
 const GUARD_MARGIN = 3;
+/**
+ * How much of the top a guard may cover: the real part's share for the
+ * models that have a big one, and the user's outer bound for every body.
+ */
+const GUARD_SHARE: Record<string, number> = { stratocaster: 0.42, telecaster: 0.22 };
+const GUARD_SHARE_MAX = 0.55;
+/** Room between the jack plate and the guard, in mm. */
+const JACK_CLEARANCE = 8;
 
 describe('body registry', () => {
   it('registers the first three shapes by file name', () => {
@@ -46,7 +54,7 @@ describe('body registry', () => {
     expect(bodyFor('no-such-shape')).toBe(BODIES.get('stratocaster'));
   });
 
-  describe.each([...BODIES.entries()])('%s', (_id, body) => {
+  describe.each([...BODIES.entries()])('%s', (id, body) => {
     const box = bbox(body.outline);
 
     it('is a closed outline about 13 inches wide and 15 to 19 long', () => {
@@ -89,6 +97,29 @@ describe('body registry', () => {
       expect(exposed.length).toBeGreaterThan(10);
       const worst = Math.min(...exposed.map((p) => margin(p, outline)));
       expect(worst).toBeGreaterThanOrEqual(GUARD_MARGIN);
+    });
+
+    it('covers no more of the top than the real guard does', () => {
+      if (!body.pickguard) return;
+      const share = area(flattenPath(body.pickguard)) / area(outline);
+      expect(share).toBeLessThanOrEqual(GUARD_SHARE[id] ?? GUARD_SHARE_MAX);
+      expect(share).toBeLessThanOrEqual(GUARD_SHARE_MAX);
+    });
+
+    it('leaves the lower bass bout bare below the bridge', () => {
+      if (!body.pickguard) return;
+      const bass = flattenPath(body.pickguard).filter((p) => p.x < 0);
+      expect(Math.max(...bass.map((p) => p.y))).toBeLessThan(body.bridge.y + 30);
+    });
+
+    it('keeps its jack clear of the guard', () => {
+      const jack = footprints(body).find((f) => f.part === 'jack');
+      if (!jack || !body.pickguard) return;
+      const guard = flattenPath(body.pickguard);
+      // Negative margin: outside the guard, by that much.
+      expect(Math.max(...jack.points.map((p) => margin(p, guard)))).toBeLessThanOrEqual(
+        -JACK_CLEARANCE,
+      );
     });
 
     it('keeps its pickguard out of the horns, below the neck joint', () => {
