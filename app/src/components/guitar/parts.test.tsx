@@ -2,6 +2,7 @@ import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BRIDGE, TAILPIECE } from './footprint';
 import { GuitarArt } from './GuitarArt';
+import { circlePath } from './acoustic';
 import { neckStringX } from './Neck';
 import { look } from './test/fixtures';
 import {
@@ -79,11 +80,22 @@ describe('parts', () => {
     expect(base.querySelectorAll('rect').length).toBeGreaterThanOrEqual(3);
     expect(base.querySelector('path[stroke-dasharray]')).not.toBeNull();
     const top = svg(<BridgeTop at={at} paints={PAINTS} neck="classical" />);
-    const knots = [...top.querySelectorAll('path')];
-    expect(knots).toHaveLength(6);
-    expect(knots.slice(0, 3).map((k) => k.getAttribute('stroke'))).toEqual(
-      Array(3).fill('#ece2c8'),
-    );
+    const ties = [...top.querySelectorAll('g[data-tie]')];
+    expect(ties).toHaveLength(6);
+    for (const [i, tie] of ties.entries()) {
+      // A hole at the block's saddle-side edge, under its string.
+      const hole = tie.querySelector('circle')!;
+      expect(Number(hole.getAttribute('cx'))).toBeCloseTo(neckStringX('classical', i + 1, 657));
+      const d = tie.querySelectorAll('path')[1]!.getAttribute('d')!;
+      // Open strokes only: no closed loops or round bowls that read as letters.
+      expect(d).not.toMatch(/[ZzAaC]/);
+      // A return strand, three diagonal turns and a tail.
+      expect(d.match(/M /g)).toHaveLength(5);
+    }
+    const colour = (tie: Element) => tie.querySelectorAll('path')[1]!.getAttribute('stroke');
+    expect(ties.slice(0, 3).map(colour)).toEqual(Array(3).fill('#ece2c8'));
+    expect(new Set(ties.slice(3).map(colour)).size).toBe(1);
+    expect(colour(ties[3]!)).not.toBe('#ece2c8');
     expect(stringEnd(at)).toBe(657);
     expect(BRIDGE['tie-block'].x1).toBeGreaterThan(BRIDGE.acoustic.x1);
   });
@@ -95,6 +107,18 @@ describe('parts', () => {
     );
     expect(widths).toEqual([8, 5.6, 3.6, 1.2]);
     expect(el.querySelectorAll('path[stroke-dasharray]')).toHaveLength(1);
+  });
+
+  it('fits a whole number of mosaic tiles round a rosette, so it has no seam', () => {
+    const r = 47;
+    const el = svg(<Rosette d={circlePath(0, 480, r)} width={12} />);
+    const [dash] = el
+      .querySelector('path[stroke-dasharray]')!
+      .getAttribute('stroke-dasharray')!
+      .split(' ')
+      .map(Number);
+    const tiles = (2 * Math.PI * r) / (2 * dash!);
+    expect(Math.abs(tiles - Math.round(tiles))).toBeLessThan(0.05);
   });
 
   it('draws roller wheels at their angle', () => {

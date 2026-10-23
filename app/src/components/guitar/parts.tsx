@@ -8,6 +8,7 @@ import {
   PICKUP,
   TAILPIECE,
   TOGGLE,
+  flattenPath,
   type Box,
 } from './footprint';
 import { NYLON, neckStringX } from './Neck';
@@ -354,27 +355,50 @@ export function BridgeTop({
       );
     }
     case 'tie-block':
-      // A straight bone saddle; each string runs to a hole in the block and loops back over it.
+      // A straight bone saddle, and each string tied off on the block.
       return (
         <g transform={t}>
           <rect x={-35} y={-2.2} width={70} height={4.4} rx={2} fill="#000" opacity={0.45} />
           <rect x={-34} y={-1.6} width={68} height={3.2} rx={1.5} fill={BONE} />
-          {poles({ x: at.x, y: at.y + TIE_HOLE_Y }, neck).map((x, i) => {
-            const colour = i < 3 ? NYLON : WOUND;
-            return (
-              <g key={x} fill="none" strokeLinecap="round">
-                <circle cx={x} cy={TIE_HOLE_Y} r={1.6} fill="#0d0907" />
-                <path
-                  d={`M ${x} ${TIE_HOLE_Y} L ${x} 16 C ${x} 19.5 ${x + 5} 19 ${x + 5.5} 15 C ${x + 6} 12 ${x + 2} 11 ${x - 1.5} 12.5`}
-                  stroke={colour}
-                  strokeWidth={1.3}
-                />
-              </g>
-            );
-          })}
+          {poles({ x: at.x, y: at.y + TIE_HOLE_Y }, neck).map((x, i) => (
+            <Tie key={x} x={x} string={i + 1} />
+          ))}
         </g>
       );
   }
+}
+
+/** The tie block's rear edge, where each string's return strand comes over. */
+const TIE_BLOCK_REAR = 21.5;
+
+/**
+ * One classical tie-off, seen from above: the string goes into its hole at
+ * the block's saddle-side edge; its end comes back over the block's rear
+ * edge, a little to one side, and twists round the string just behind the
+ * hole in a few tight diagonal turns, the end of the first turn tucked out
+ * flat past them. Open strokes only, so nothing reads as a letter.
+ */
+function Tie({ x, string }: { x: number; string: number }) {
+  const y0 = TIE_HOLE_Y;
+  // The turns lie tight together, so they read as one twist of round string.
+  const turns = [0, 1, 2].map((k) => y0 + 2.2 + k * 1.45);
+  const last = turns[2]!;
+  const strokes = [
+    // The return strand, from the block's rear edge back to the twist.
+    `M ${x + 2.4} ${TIE_BLOCK_REAR} L ${x + 2.4} ${last + 1}`,
+    // The turns, each across both strands.
+    ...turns.map((y) => `M ${x - 1} ${y + 0.9} L ${x + 3.4} ${y - 0.9}`),
+    // The tail: the first turn's end, tucked out flat past the twist.
+    `M ${x + 3.4} ${turns[0]! - 0.9} L ${x + 5.4} ${turns[0]! - 1.7}`,
+  ];
+  const d = strokes.join(' ');
+  return (
+    <g data-tie={string} fill="none" strokeLinecap="round">
+      <circle cx={x} cy={y0} r={1.5} fill="#0d0907" />
+      <path d={d} stroke="#000" strokeOpacity={0.45} strokeWidth={2.1} />
+      <path d={d} stroke={string <= 3 ? NYLON : WOUND} strokeWidth={1.25} />
+    </g>
+  );
 }
 
 /** Where the strings end, past the saddles. */
@@ -592,7 +616,10 @@ export function Bevel({
  * line inside each, and a mosaic of short tiles round the middle.
  */
 export function Rosette({ d, width }: { d: string; width: number }) {
-  const tile = Math.max(1.2, width / 8);
+  // A whole number of tiles round the ring, so the pattern meets itself without a seam.
+  const length = pathLength(d);
+  const tiles = Math.max(1, Math.round(length / (2 * Math.max(1.2, width / 8))));
+  const tile = length / (2 * tiles);
   return (
     <g fill="none">
       <path d={d} stroke="#1d1612" strokeWidth={width} />
@@ -603,8 +630,21 @@ export function Rosette({ d, width }: { d: string; width: number }) {
         stroke={BONE}
         strokeOpacity={0.85}
         strokeWidth={Math.max(1.2, width - 7.4)}
-        strokeDasharray={`${tile} ${tile}`}
+        strokeDasharray={`${tile.toFixed(3)} ${tile.toFixed(3)}`}
       />
     </g>
   );
+}
+
+/** A path's length, from its flattened polygon (a closed path counts its closing edge). */
+function pathLength(d: string): number {
+  const pts = flattenPath(d, 48);
+  let sum = 0;
+  for (let i = 1; i < pts.length; i++) {
+    sum += Math.hypot(pts[i]!.x - pts[i - 1]!.x, pts[i]!.y - pts[i - 1]!.y);
+  }
+  if (/Z\s*$/i.test(d) && pts.length > 1) {
+    sum += Math.hypot(pts[0]!.x - pts.at(-1)!.x, pts[0]!.y - pts.at(-1)!.y);
+  }
+  return sum;
 }
