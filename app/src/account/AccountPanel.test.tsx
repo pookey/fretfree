@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { getDb } from '../storage';
-import { AccountPanel } from './AccountPanel';
+import { AccountPanel, syncStatusText } from './AccountPanel';
 import type { SignIn } from './flow';
 import { loadAccount, saveAccount, savePending } from './store';
 import { fakeServer, fakeSignIn, TOKENS } from './test-fakes';
@@ -171,5 +171,47 @@ describe('AccountPanel', () => {
     ).toHaveFocus();
     expect(loadAccount()).toBeNull();
     expect(await db.reviewLogs.count()).toBe(1);
+  });
+
+  it('shows how sync is going once signed in', () => {
+    saveAccount({ email: 'me@example.com', tokens: TOKENS, signedInAt: 1 });
+    renderPanel();
+    expect(screen.getByTestId('sync-status')).toHaveTextContent('Syncing your progress…');
+  });
+});
+
+describe('syncStatusText', () => {
+  const now = new Date('2026-10-23T12:00:00Z').getTime();
+  const ago = (ms: number) => new Date(now - ms);
+
+  it('says when progress last synced', () => {
+    expect(syncStatusText({ phase: 'synced', lastSyncedAt: ago(10_000) }, now)).toBe(
+      'Last synced just now.',
+    );
+    expect(syncStatusText({ phase: 'synced', lastSyncedAt: ago(60_000) }, now)).toBe(
+      'Last synced 1 minute ago.',
+    );
+    expect(syncStatusText({ phase: 'synced', lastSyncedAt: ago(5 * 60_000) }, now)).toBe(
+      'Last synced 5 minutes ago.',
+    );
+    expect(syncStatusText({ phase: 'synced', lastSyncedAt: ago(3_600_000) }, now)).toBe(
+      'Last synced 1 hour ago.',
+    );
+    expect(syncStatusText({ phase: 'synced', lastSyncedAt: ago(3 * 86_400_000) }, now)).toMatch(
+      /^Last synced on /,
+    );
+    expect(syncStatusText({ phase: 'synced', lastSyncedAt: null }, now)).toBe('Synced.');
+  });
+
+  it('explains offline and errors, keeping the last sync', () => {
+    expect(syncStatusText({ phase: 'offline', lastSyncedAt: null }, now)).toBe(
+      'Offline. Your progress is saved on this device and syncs when you’re back online.',
+    );
+    expect(syncStatusText({ phase: 'error', lastSyncedAt: ago(7_200_000) }, now)).toBe(
+      'Couldn’t sync just now. FretFree will try again soon. Last synced 2 hours ago.',
+    );
+    expect(syncStatusText({ phase: 'syncing', lastSyncedAt: ago(0) }, now)).toBe(
+      'Last synced just now. Syncing…',
+    );
   });
 });

@@ -35,6 +35,18 @@ export function App() {
   }, [load]);
   // Settle missed days on open and on return to the foreground (design §3.7).
   useEffect(() => installStreakSettle(getDb()), []);
+  // Sync with the learner's account, if they have one (M7-05). Loaded on demand.
+  useEffect(() => {
+    let uninstall: (() => void) | undefined;
+    let gone = false;
+    void import('./storage/sync/engine').then((m) => {
+      if (!gone) uninstall = m.installSync();
+    });
+    return () => {
+      gone = true;
+      uninstall?.();
+    };
+  }, []);
   return (
     <>
       <NeckSkinProvider>

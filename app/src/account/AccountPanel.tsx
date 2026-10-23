@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { getSignIn } from './client';
 import { codeError, startError, waitFor } from './copy';
@@ -6,6 +6,7 @@ import { cooldownLeft, type SignIn } from './flow';
 import { useAccount, useNow, usePending } from './hooks';
 import { SIGN_IN_LIMITS } from './limits';
 import type { PendingSignIn } from './store';
+import { getSyncStatus, subscribeSyncStatus, type SyncStatus } from '../storage/sync/engine';
 import styles from './account.module.css';
 
 /** The anchor Today's offer links to (`/progress#account`). */
@@ -334,6 +335,7 @@ function SignedIn({
         <p role="status">
           Signed in as <strong className={styles.email}>{email}</strong>.
         </p>
+        <SyncStatusLine />
         <p className={styles.muted}>
           Signing out keeps everything on this device: your progress stays here, just as it was.
         </p>
@@ -353,5 +355,41 @@ function SignedIn({
         </button>
       </div>
     </div>
+  );
+}
+
+/** How long ago, in words: "just now", "5 minutes ago", "on 20 Oct". */
+export function syncedAgo(at: Date, now: number): string {
+  const minutes = Math.floor((now - at.getTime()) / 60_000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  return `on ${at.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`;
+}
+
+/** The sync status line (M7-05): when progress last synced, or why it can't now. */
+export function syncStatusText({ phase, lastSyncedAt }: SyncStatus, now: number): string {
+  const last = lastSyncedAt ? `Last synced ${syncedAgo(lastSyncedAt, now)}.` : '';
+  switch (phase) {
+    case 'synced':
+      return last || 'Synced.';
+    case 'offline':
+      return `Offline. Your progress is saved on this device and syncs when you’re back online. ${last}`.trim();
+    case 'error':
+      return `Couldn’t sync just now. FretFree will try again soon. ${last}`.trim();
+    default:
+      return last ? `${last} Syncing…` : 'Syncing your progress…';
+  }
+}
+
+function SyncStatusLine() {
+  const status = useSyncExternalStore(subscribeSyncStatus, getSyncStatus);
+  // "5 minutes ago" moves on while the panel is open.
+  const now = useNow(true);
+  return (
+    <p role="status" className={styles.muted} data-testid="sync-status">
+      {syncStatusText(status, now)}
+    </p>
   );
 }
