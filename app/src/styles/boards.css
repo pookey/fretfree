@@ -1,0 +1,52 @@
+/* The neck skin (design §3.8): `useNeckSkin` (components/guitar/skin.ts) sets
+   `data-board` on the root to the equipped board, unless "Use my guitar's
+   neck in drills" is off. Each block is that board's palette from
+   engine/garage/catalogue/board.ts, plus the nut, the dim overlay and the
+   marker label colour, which only the neck needs (skin.contrast.test.ts keeps
+   the two in step and checks every pairing). Rosewood is the default neck in
+   tokens.css, so it needs no wood block. */
+
+/* Maple is pale: a dark nut, and a lighter dim so dark text still reads on it. */
+:root[data-board='maple'] {
+  --wood: #ecd5a9;
+  --wood-dark: #cdb07c;
+  --string: #3a2d22;
+  --fret-wire: #5c4d3f;
+  --inlay: #1a1410;
+  --nut: #2e241c;
+  --dim: rgb(19 15 28 / 0.25);
+}
+
+/* Darkening barely shows on ebony, so inactive frets are hazed instead. */
+:root[data-board='ebony'] {
+  --wood: #1f1916;
+  --wood-dark: #14100e;
+  --string: #ddd3c4;
+  --fret-wire: #c9c3bb;
+  --inlay: #e8dfd2;
+  --dim: rgb(232 223 210 / 0.12);
+}
+
+/* Marker colours are scoped to the neck renderers (`data-neck`), because
+   --tone and --correct also colour page text and charts. The wood doesn't
+   change with the theme, so neither do its markers: the light theme's deeper
+   shades are made for a pale page, not for the wood. */
+@media (prefers-color-scheme: light) {
+  :root[data-board] [data-neck] {
+    --root: #e69f00;
+    --tone: #56b4e9;
+    --correct: #009e73;
+    --wrong: #d55e00;
+  }
+}
+
+/* Maple's markers are darker shades of the same hues, so labels turn white. */
+:root[data-board='maple'] [data-neck] {
+  --root: #965800;
+  --tone: #0072b2;
+  --correct: #007a59;
+  --wrong: #b84f00;
+  --chord-fifth: #6b6300;
+  --chord-seventh: #9c3f7a;
+  --marker-text: #fff;
+}

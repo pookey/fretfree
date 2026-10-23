@@ -166,6 +166,117 @@ describe('<Fretboard>', () => {
     expect(container.querySelectorAll('circle')).toHaveLength(0);
   });
 
+  describe('inlay shapes (design §3.8 neck skin)', () => {
+    const STYLES = ['dots', 'blocks', 'trapezoids'] as const;
+    const inlays = (container: HTMLElement) => [...container.querySelectorAll('[data-inlay]')];
+
+    it('draws dots by default, with the pair at 12', () => {
+      const { container } = render(<Fretboard fretRange={{ from: 0, to: 12 }} />);
+      expect(container.querySelector('svg')).toHaveAttribute('data-inlay-style', 'dots');
+      expect(inlays(container).map((i) => i.getAttribute('data-fret'))).toEqual([
+        '3',
+        '5',
+        '7',
+        '9',
+        '12',
+      ]);
+      expect(container.querySelectorAll('[data-fret="12"][data-inlay] circle')).toHaveLength(2);
+    });
+
+    it.each(['blocks', 'trapezoids'] as const)(
+      'draws %s as one paler plate per standard fret',
+      (shape) => {
+        const { container } = render(
+          <Fretboard fretRange={{ from: 0, to: 12 }} inlayStyle={shape} />,
+        );
+        const plates = inlays(container);
+        expect(plates.map((i) => i.getAttribute('data-fret'))).toEqual(['3', '5', '7', '9', '12']);
+        for (const plate of plates) {
+          expect(plate.tagName).toBe('polygon');
+          expect(plate).toHaveAttribute('data-inlay', shape);
+          expect(plate).toHaveClass(styles.inlay!, styles.inlayPlate!);
+        }
+      },
+    );
+
+    // The height of a plate's edge nearer the nut and of the far one.
+    const edges = (handedness: 'left' | 'right') => {
+      const { container } = render(
+        <Fretboard
+          fretRange={{ from: 0, to: 12 }}
+          inlayStyle="trapezoids"
+          handedness={handedness}
+        />,
+      );
+      const pts = container
+        .querySelector('[data-inlay][data-fret="5"]')!
+        .getAttribute('points')!
+        .split(' ')
+        .map((p) => p.split(',').map(Number) as [number, number]);
+      // Points run top-left, top-right, bottom-right, bottom-left.
+      const [tl, tr, br, bl] = pts as [
+        (typeof pts)[0],
+        (typeof pts)[0],
+        (typeof pts)[0],
+        (typeof pts)[0],
+      ];
+      const leftH = bl[1] - tl[1];
+      const rightH = br[1] - tr[1];
+      return handedness === 'right' ? [leftH, rightH] : [rightH, leftH];
+    };
+
+    it.each(['right', 'left'] as const)(
+      'narrows trapezoids towards the nut (%s-handed)',
+      (handedness) => {
+        const [nutSide, farSide] = edges(handedness);
+        expect(nutSide).toBeLessThan(farSide!);
+      },
+    );
+
+    it('keeps block plates square', () => {
+      const { container } = render(
+        <Fretboard fretRange={{ from: 0, to: 12 }} inlayStyle="blocks" />,
+      );
+      const ys = container
+        .querySelector('[data-inlay][data-fret="7"]')!
+        .getAttribute('points')!
+        .split(' ')
+        .map((p) => Number(p.split(',')[1]));
+      expect(ys[0]).toBe(ys[1]);
+      expect(ys[2]).toBe(ys[3]);
+    });
+
+    // Guide fading always wins over the skin (design §3.8): the shape never
+    // decides whether inlays show.
+    it.each(STYLES)('shows %s at every level, and hides them only at 0 in blind mode', (shape) => {
+      for (const level of [0, 1, 2, 3] as GuideLevel[]) {
+        for (const blindMode of [false, true]) {
+          const { container, unmount } = render(
+            <Fretboard
+              fretRange={{ from: 0, to: 12 }}
+              guideLevel={level}
+              blindMode={blindMode}
+              inlayStyle={shape}
+            />,
+          );
+          const hidden = level === 0 && blindMode;
+          expect(inlays(container), `level ${level}, blind ${blindMode}`).toHaveLength(
+            hidden ? 0 : 5,
+          );
+          expect(container.querySelectorAll('circle, polygon')).toHaveLength(
+            hidden ? 0 : shape === 'dots' ? 6 : 5,
+          );
+          unmount();
+        }
+      }
+    });
+  });
+
+  it('marks itself as a neck, so the board scopes its marker colours to it', () => {
+    const { container } = render(<Fretboard fretRange={{ from: 0, to: 5 }} />);
+    expect(container.querySelector('svg')).toHaveAttribute('data-neck');
+  });
+
   it('dims frets outside the active range', () => {
     render(<Fretboard fretRange={{ from: 0, to: 15 }} activeRange={{ from: 0, to: 12 }} />);
     expect(screen.getAllByTestId('dimmed-fret')).toHaveLength(3);

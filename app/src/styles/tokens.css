@@ -2,6 +2,9 @@
    (brand/README.md), sunflower on deep plum. Colour-blind-safe highlights use
    the Okabe–Ito palette and never change with the brand. */
 
+/* The equipped board's neck (`data-board` on the root): design §3.8. */
+@import './boards.css';
+
 /* Clear Sans (Intel, Apache-2.0; public/fonts/ClearSans-LICENSE.txt), subset
    to Latin. Precached by the service worker, so it works offline. */
 @font-face {

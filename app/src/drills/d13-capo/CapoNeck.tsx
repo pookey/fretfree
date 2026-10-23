@@ -38,6 +38,7 @@ export function CapoNeck({ prompt, revealed, fretNumbers, handedness }: Props) {
       className={styles.neck}
       data-handedness={handedness}
       data-testid="d13-neck"
+      data-neck=""
       aria-label={
         showCapo ? `Neck with a capo on fret ${prompt.capo}` : 'Neck with no capo shown yet'
       }

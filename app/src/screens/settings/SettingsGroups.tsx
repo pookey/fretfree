@@ -72,6 +72,7 @@ function useGamification(): [
 }
 
 function GuitarSettings({ settings, update }: SettingsProps) {
+  const skinHint = useId();
   return (
     <Group title="Your guitar">
       <label className={local.row}>
@@ -106,6 +107,18 @@ function GuitarSettings({ settings, update }: SettingsProps) {
           <option value="flat">Flats (D♭, G♭)</option>
         </select>
       </label>
+      <label className={`${styles.toggle} ${local.row}`}>
+        <input
+          type="checkbox"
+          checked={settings.neckSkin}
+          aria-describedby={skinHint}
+          onChange={(e) => void update({ neckSkin: e.target.checked })}
+        />
+        <span className={local.grow}>Use my guitar&apos;s neck in drills</span>
+      </label>
+      <Hint id={skinHint}>
+        Drills draw the neck in your Garage guitar&apos;s fretboard wood and inlays.
+      </Hint>
     </Group>
   );
 }

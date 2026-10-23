@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { useAppStore } from './app-store';
 import { guardLoader, ROUTES, type RouteModule } from './routes/registry';
+import { NeckSkinProvider } from './components/guitar/skin';
 import { installStreakSettle } from './session/gamification-bridge';
 import { AppShell } from './shell/AppShell';
 import { UpdateToast } from './shell/UpdateToast';
@@ -36,7 +37,9 @@ export function App() {
   useEffect(() => installStreakSettle(getDb()), []);
   return (
     <>
-      <RouterProvider router={router} />
+      <NeckSkinProvider>
+        <RouterProvider router={router} />
+      </NeckSkinProvider>
       <UpdateToast />
       {import.meta.env.DEV && <DevUnlockBadge />}
     </>

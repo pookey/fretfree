@@ -1,4 +1,5 @@
 import { useMemo, type KeyboardEvent } from 'react';
+import type { InlayShape } from '../../engine/garage/types';
 import type { GuideLevel, Handedness } from '../../engine/model';
 import {
   STANDARD_TUNING,
@@ -11,6 +12,7 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
+import { useInlayStyle } from '../guitar/skin';
 import {
   NUT_W,
   STRING_GAP,
@@ -58,6 +60,12 @@ export interface FretboardProps {
   guideLevel?: GuideLevel;
   /** Level 0 with blind mode also hides the inlays. */
   blindMode?: boolean;
+  /**
+   * The inlay shape (design §3.8 neck skin). Defaults to the equipped
+   * guitar's, from `NeckSkinProvider`, or dots. Only the shape changes: the
+   * guide level and blind mode still decide whether inlays show.
+   */
+  inlayStyle?: InlayShape;
   /** Reveal note names in accessible cell labels (off during quizzes). */
   revealNotes?: boolean;
   accidentalPref?: AccidentalPref;
@@ -94,6 +102,7 @@ export function Fretboard({
   markers = [],
   guideLevel = 3,
   blindMode = false,
+  inlayStyle,
   revealNotes = false,
   accidentalPref = 'sharp',
   onTapCell,
@@ -101,6 +110,8 @@ export function Fretboard({
   label = 'Fretboard',
   className,
 }: FretboardProps) {
+  const skinInlay = useInlayStyle();
+  const inlayShape = inlayStyle ?? skinInlay;
   const strings = allStrings(tuning);
   const g = useMemo(
     () => computeGeometry({ fretRange, stringCount: stringCount(tuning), handedness }),
@@ -165,6 +176,8 @@ export function Fretboard({
       data-fret-to={fretRange.to}
       data-handedness={handedness}
       data-guide-level={guideLevel}
+      data-inlay-style={inlayShape}
+      data-neck=""
     >
       <rect
         className={styles.wood}
@@ -175,23 +188,7 @@ export function Fretboard({
         rx={6}
       />
 
-      {showInlays &&
-        g.inlays.map((inlay) =>
-          inlay.double ? (
-            <g key={inlay.fret} className={styles.inlay}>
-              <circle cx={inlay.cx} cy={g.neckTop + STRING_GAP * 1.5} r={7} />
-              <circle cx={inlay.cx} cy={g.neckBottom - STRING_GAP * 1.5} r={7} />
-            </g>
-          ) : (
-            <circle
-              key={inlay.fret}
-              className={styles.inlay}
-              cx={inlay.cx}
-              cy={(g.neckTop + g.neckBottom) / 2}
-              r={7}
-            />
-          ),
-        )}
+      {showInlays && <Inlays g={g} shape={inlayShape} handedness={handedness} />}
 
       {g.wires.map((w) =>
         w.nut ? (
@@ -364,6 +361,53 @@ export function Fretboard({
         }),
       )}
     </svg>
+  );
+}
+
+/**
+ * The inlays at the standard frets, drawn as `shape`. Dots are the classic
+ * pair at 12; blocks and trapezoids are one plate per fret, as on the
+ * Garage guitar, and paler, because notes and their labels sit on them.
+ */
+function Inlays({
+  g,
+  shape,
+  handedness,
+}: {
+  g: NeckGeometry;
+  shape: InlayShape;
+  handedness: Handedness;
+}) {
+  const cy = (g.neckTop + g.neckBottom) / 2;
+  return (
+    <g data-testid="inlays">
+      {g.inlays.map((inlay) => {
+        const props = { key: inlay.fret, 'data-inlay': shape, 'data-fret': inlay.fret };
+        if (shape === 'dots') {
+          return inlay.double ? (
+            <g {...props} className={styles.inlay}>
+              <circle cx={inlay.cx} cy={g.neckTop + STRING_GAP * 1.5} r={7} />
+              <circle cx={inlay.cx} cy={g.neckBottom - STRING_GAP * 1.5} r={7} />
+            </g>
+          ) : (
+            <circle {...props} className={styles.inlay} cx={inlay.cx} cy={cy} r={7} />
+          );
+        }
+        const cell = g.cell(inlay.fret) as Cell;
+        const half = cell.w * 0.28;
+        const tall = (g.neckBottom - g.neckTop) / 2 - STRING_GAP * 0.35;
+        // Trapezoids narrow towards the nut, which is on the left for a
+        // right-handed player.
+        const short = shape === 'trapezoids' ? tall * 0.62 : tall;
+        const [left, right] = handedness === 'left' ? [tall, short] : [short, tall];
+        const x0 = inlay.cx - half;
+        const x1 = inlay.cx + half;
+        const points = `${x0},${cy - left} ${x1},${cy - right} ${x1},${cy + right} ${x0},${cy + left}`;
+        return (
+          <polygon {...props} className={`${styles.inlay} ${styles.inlayPlate}`} points={points} />
+        );
+      })}
+    </g>
   );
 }
 
