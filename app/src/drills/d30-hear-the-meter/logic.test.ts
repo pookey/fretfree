@@ -39,7 +39,10 @@ const item = (meter: string) => ({ id: `meter-ear:${meter}`, skillId: 'T4.test' 
 
 /** A prompt with every random draw at `r`. */
 const promptFor = (meter: EarMeter, r = 0, scopeLevel = 0) =>
-  d30MakePrompt(item(meter), ctx(() => r, scopeLevel));
+  d30MakePrompt(
+    item(meter),
+    ctx(() => r, scopeLevel),
+  );
 
 const prompt = (over: Partial<D30Prompt> = {}): D30Prompt => ({
   itemId: 'meter-ear:3/4',
@@ -65,7 +68,12 @@ describe('D30 items', () => {
     expect(d30CanTest({ id: 'ear-chord:minor', skillId: 'x' })).toBe(false);
     expect(d30ConceptOf(item('12/8'))).toBe('meter:12/8');
     expect(d30ConceptOf({ id: 'note@s6f0', skillId: 'x' })).toBeNull();
-    expect(() => d30MakePrompt({ id: 'note@s6f0', skillId: 'x' }, ctx(() => 0))).toThrow();
+    expect(() =>
+      d30MakePrompt(
+        { id: 'note@s6f0', skillId: 'x' },
+        ctx(() => 0),
+      ),
+    ).toThrow();
   });
 });
 
@@ -201,15 +209,24 @@ describe('d30Clip', () => {
   });
 
   it('plays a wrong answer’s meter in the same sound and tempo, in its usual grouping', () => {
-    const p = prompt({ meter: '7/8', signature: '7/8 (3+2+2)', style: 'drums', eighthsPerMinute: 210 });
+    const p = prompt({
+      meter: '7/8',
+      signature: '7/8 (3+2+2)',
+      style: 'drums',
+      eighthsPerMinute: 210,
+    });
     const mine = d30Clip(p);
     const yours = d30Clip(p, '5/4');
     expect(yours.style).toBe('drums');
     expect(yours.eighthsPerMinute).toBe(210);
     if (mine.style !== 'drums' || yours.style !== 'drums') throw new Error('drums expected');
     // The answer in the grouping heard (kick on 1 only, snares on 4 and 6); 5/4 as 3+2.
-    expect(mine.hits.filter((h) => h.drum === 'snare' && h.at < 7).map((h) => h.at)).toEqual([3, 5]);
-    expect(yours.hits.filter((h) => h.drum === 'kick' && h.at < 10).map((h) => h.at)).toEqual([0, 6]);
+    expect(mine.hits.filter((h) => h.drum === 'snare' && h.at < 7).map((h) => h.at)).toEqual([
+      3, 5,
+    ]);
+    expect(yours.hits.filter((h) => h.drum === 'kick' && h.at < 10).map((h) => h.at)).toEqual([
+      0, 6,
+    ]);
   });
 
   it('falls back to the first chord for an unknown index', () => {

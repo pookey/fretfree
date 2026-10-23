@@ -170,8 +170,7 @@ export function d30GradedResponseMs(
 ): number {
   const ts = parseTimeSignature(prompt.signature);
   const heard =
-    (d30Bars(ts, prompt.eighthsPerMinute) * eighthsPerBar(ts) * 60_000) /
-      prompt.eighthsPerMinute +
+    (d30Bars(ts, prompt.eighthsPerMinute) * eighthsPerBar(ts) * 60_000) / prompt.eighthsPerMinute +
     CONFIG.listenMs;
   return Math.max(0, elapsedMs - heard);
 }
@@ -315,8 +314,7 @@ function clipAccents(ts: TimeSignature, bars: number): D30Accent[] {
  * (the learner's wrong answer, to compare) is played in its usual grouping.
  */
 export function d30Clip(prompt: D30Prompt, meter: EarMeter = prompt.meter): D30Clip {
-  const signature =
-    meter === prompt.meter ? prompt.signature : (D30_GROUPINGS[meter][0] as string);
+  const signature = meter === prompt.meter ? prompt.signature : (D30_GROUPINGS[meter][0] as string);
   const ts = parseTimeSignature(signature);
   const accents = clipAccents(ts, d30Bars(ts, prompt.eighthsPerMinute));
   const { eighthsPerMinute } = prompt;
