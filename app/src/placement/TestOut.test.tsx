@@ -2,7 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { useAppStore } from '../app-store';
-import { getDrill, preloadDrill } from '../drills/registry';
+import { DRILLS as ALL_DRILLS, getDrill, preloadDrill } from '../drills/registry';
 import {
   DEFAULT_SETTINGS,
   createScheduler,
@@ -11,8 +11,8 @@ import {
   type Skill,
   type SkillStatus,
 } from '../engine';
-import type { Module } from '../engine/frontier';
-import { getSkill } from '../engine/skills';
+import { MODULES, type Module } from '../engine/frontier';
+import { SKILLS as ALL_SKILLS, getSkill } from '../engine/skills';
 import { FretworkDB, getSkillStates } from '../storage';
 import { noteAt } from '../theory';
 import { TestOut, opensOnceText } from './TestOut';
@@ -136,6 +136,27 @@ describe('TestOut', () => {
     expect(offer).toHaveTextContent(/Gated opens once you’ve mastered Natural notes on string 6\./);
     expect(offer).toHaveTextContent(/a short test of Natural notes on string 6/);
     expect(within(offer).getByRole('button', { name: 'Test out' })).toBeInTheDocument();
+  });
+
+  it('leaves out a first skill gated where placement can’t probe (the Ear module, M4-16)', () => {
+    const ear = MODULES.find((m) => m.id === 'ear')!;
+    const statuses = new Map<string, SkillStatus>();
+    for (const s of ALL_SKILLS) statuses.set(s.id, deriveStatus(s, statuses, undefined));
+    // Progression ear is a locked first skill, behind C9 in Progressions.
+    expect(statuses.get('I6.progressions-pop')).toBe('locked');
+    render(
+      <MemoryRouter>
+        <TestOut module={ear} offer statuses={statuses} skills={ALL_SKILLS} drills={ALL_DRILLS} />
+      </MemoryRouter>,
+    );
+    const offer = screen.getByRole('region', { name: 'Already know this?' });
+    expect(offer).toHaveTextContent(
+      /Ear opens once you’re practising The musical alphabet and Natural notes on string 6\./,
+    );
+    expect(offer).toHaveTextContent(
+      /a short test of The musical alphabet and Natural notes on string 6\./,
+    );
+    expect(offer).not.toHaveTextContent(/Progressions/);
   });
 
   it('offers nothing to an open module, before statuses load, or before settings load', () => {

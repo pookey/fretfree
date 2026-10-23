@@ -204,7 +204,11 @@ export const MODULES: readonly Module[] = [
     topics: ['I6'],
     unlocksAfter: null,
     track: 'parallel',
-    summary: 'Recognise intervals, chord types and progressions by ear, from your first day.',
+    // Its first sets open once Neck basics is being practised (I6's DAY_ONE
+    // gate, kept by PM decision 2026-10-23), or at once for a learner who
+    // starts with sound (M4-16).
+    summary:
+      'Recognise intervals, chord types and progressions by ear. It opens after your first session, or straight away if you start with sound.',
   },
   {
     id: 'meter',

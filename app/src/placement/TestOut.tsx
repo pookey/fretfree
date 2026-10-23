@@ -3,8 +3,9 @@ import { Link } from 'react-router';
 import { useAppStore } from '../app-store';
 import { DRILLS } from '../drills/registry';
 import type { AnyDrillType } from '../drills/types';
+import { ENGINE_CONFIG } from '../engine/config';
 import type { Module } from '../engine/frontier';
-import { gatesOf, meetsGate } from '../engine/mastery';
+import { gatesOf, meetsGate, unmetGates } from '../engine/mastery';
 import type { Skill, SkillStatus } from '../engine/model';
 import { SKILLS } from '../engine/skills';
 import { createDrillPicker } from '../session/drill-picker';
@@ -19,13 +20,52 @@ import {
   statusesAfter,
   testOutGroups,
   testOutReport,
-  unmetPrerequisites,
 } from './test-out';
 import styles from './TestOut.module.css';
 
+/** A skill the placement probe covers, so a test-out can prove it. */
+function probeable(skill: Skill | undefined): boolean {
+  return (
+    skill !== undefined &&
+    !skill.skipPlacement &&
+    ENGINE_CONFIG.placement.topics.includes(skill.topic)
+  );
+}
+
+/**
+ * The locked first skills a test-out works towards. A module opens with any
+ * one of them, so one gated far down another track doesn't speak for the
+ * module: the Ear module opens with its interval and ear → fretboard sets,
+ * not with progression ear, which waits for Progressions (C9, which
+ * placement doesn't probe; M4-16). So those whose every unmet gate
+ * placement can probe, or every locked one when none can.
+ */
+function openers(
+  module: Module,
+  skills: readonly Skill[],
+  statuses: ReadonlyMap<string, SkillStatus>,
+): Skill[] {
+  const byId = new Map(skills.map((s) => [s.id, s]));
+  const locked = entrySkills(module, skills).filter((s) => statuses.get(s.id) === 'locked');
+  const provable = locked.filter((s) =>
+    unmetGates(s, statuses).every((p) => probeable(byId.get(p))),
+  );
+  return provable.length > 0 ? provable : locked;
+}
+
+/** The prerequisites the openers still lack, in curriculum order: what the test-out probes. */
+function needsOf(
+  module: Module,
+  skills: readonly Skill[],
+  statuses: ReadonlyMap<string, SkillStatus>,
+): string[] {
+  const unmet = new Set(openers(module, skills, statuses).flatMap((s) => unmetGates(s, statuses)));
+  return skills.filter((s) => unmet.has(s.id)).map((s) => s.id);
+}
+
 /**
  * What a locked module waits for, split by gate (M10-01's wording): the
- * titles to master and the titles to be practising, across its first skills.
+ * titles to master and the titles to be practising, across its openers.
  */
 function waitsFor(
   module: Module,
@@ -33,8 +73,7 @@ function waitsFor(
   statuses: ReadonlyMap<string, SkillStatus>,
 ): { master: string[]; practise: string[] } {
   const unmet = { mastered: new Set<string>(), practising: new Set<string>() };
-  for (const skill of entrySkills(module, skills)) {
-    if (statuses.get(skill.id) !== 'locked') continue;
+  for (const skill of openers(module, skills, statuses)) {
     const gates = gatesOf(skill);
     for (const gate of ['mastered', 'practising'] as const)
       for (const p of gates[gate]) if (!meetsGate(gate, statuses.get(p))) unmet[gate].add(p);
@@ -102,7 +141,7 @@ export function TestOut({
   const [returned, setReturned] = useState(false);
   const picker = useMemo(() => createDrillPicker(skills, drills), [skills, drills]);
   const needs = useMemo(
-    () => (statuses ? unmetPrerequisites(module, skills, statuses) : []),
+    () => (statuses ? needsOf(module, skills, statuses) : []),
     [module, skills, statuses],
   );
   const probed = useMemo(
