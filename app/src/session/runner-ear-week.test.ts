@@ -57,7 +57,12 @@ function correct(cur: CurrentPrompt): unknown {
     case 'tap-strum-rhythm': {
       // Every hit dead on time.
       const targetsMs = (cur.prompt as D20Prompt).pulses.map((p) => 1_000 + p * 250);
-      const answer: D20Answer = { input: 'tap', targetsMs, onsetsMs: targetsMs, window: 'standard' };
+      const answer: D20Answer = {
+        input: 'tap',
+        targetsMs,
+        onsetsMs: targetsMs,
+        window: 'standard',
+      };
       return answer;
     }
     default:

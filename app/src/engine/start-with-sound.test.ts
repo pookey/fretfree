@@ -145,7 +145,12 @@ describe('keepLeadLane', () => {
   );
   const lanes = frontierLanes(open, 'general');
   const summary = (ls: ReturnType<typeof frontierLanes>) =>
-    ls.map((l) => ({ id: l.id, share: l.share, skills: l.skills.map((s) => s.id), group: l.group }));
+    ls.map((l) => ({
+      id: l.id,
+      share: l.share,
+      skills: l.skills.map((s) => s.id),
+      group: l.group,
+    }));
 
   it('leaves the lanes alone when the setting is off', () => {
     expect(keepLeadLane(lanes, false)).toEqual(lanes);
