@@ -44,4 +44,21 @@ describe('<AboutScreen>', () => {
       '/settings',
     );
   });
+
+  it('says what XP is for', () => {
+    renderAbout();
+    const xp = within(screen.getByRole('region', { name: 'What XP is for' }));
+    expect(xp.getByText(/right or wrong.*count most/)).toBeInTheDocument();
+    expect(xp.getByText(/buy parts for your guitar in the Garage/)).toBeInTheDocument();
+  });
+
+  it('notes the guitar trademarks and that FretFree is not affiliated', () => {
+    renderAbout();
+    const note = within(screen.getByRole('region', { name: 'Guitar names' }));
+    expect(
+      note.getByText(
+        'Stratocaster, Telecaster and Jazzmaster are trademarks of Fender Musical Instruments Corporation. Les Paul, SG and ES-335 are trademarks of Gibson Brands, Inc. FretFree isn’t affiliated with or endorsed by either. The guitar drawings are our own.',
+      ),
+    ).toBeInTheDocument();
+  });
 });

@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { XpExplainer } from '../../components/xp';
 import { ScreenLayout } from '../../shell/ScreenLayout';
 import screens from '../screens.module.css';
 import styles from './About.module.css';
@@ -36,6 +37,13 @@ const PRINCIPLES = [
     source: 'Winstein & Schmidt 1990; Keebler et al. 2014',
   },
 ] as const;
+
+/**
+ * The body names the Garage uses (design §3.8) are their owners' trademarks.
+ * This must be on About before any of them ships.
+ */
+const TRADEMARK_NOTE =
+  'Stratocaster, Telecaster and Jazzmaster are trademarks of Fender Musical Instruments Corporation. Les Paul, SG and ES-335 are trademarks of Gibson Brands, Inc. FretFree isn’t affiliated with or endorsed by either. The guitar drawings are our own.';
 
 /** The context panel: the whole page in four lines. */
 function InShort() {
@@ -98,6 +106,8 @@ export function AboutScreen() {
           </p>
         </section>
 
+        <XpExplainer titleClassName={screens.sectionTitle} />
+
         <section aria-labelledby="about-privacy">
           <h2 id="about-privacy" className={screens.sectionTitle}>
             Privacy
@@ -130,6 +140,15 @@ export function AboutScreen() {
             what isn&rsquo;t.
           </p>
           <p className={screens.muted}>FretFree is open source under the MIT licence.</p>
+        </section>
+
+        <section aria-labelledby="about-trademarks">
+          <h2 id="about-trademarks" className={screens.sectionTitle}>
+            Guitar names
+          </h2>
+          <p className={screens.muted} data-testid="trademark-note">
+            {TRADEMARK_NOTE}
+          </p>
         </section>
 
         <p>
