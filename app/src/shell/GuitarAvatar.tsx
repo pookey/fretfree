@@ -1,26 +1,10 @@
-import { liveQuery } from 'dexie';
-import { useEffect, useId, useState } from 'react';
+import { useId } from 'react';
 import { Link } from 'react-router';
 import { Guitar, guitarLabel } from '../components/guitar';
 import { GARAGE_PATH } from '../components/xp';
-import type { GarageBuild } from '../engine/garage';
 import { resolveLook } from '../screens/garage/model';
-import { getDb } from '../storage';
-import { getGarage } from '../storage/garage-repo';
+import { useGarageBuild } from '../screens/garage/useGarageBuild';
 import styles from './GuitarAvatar.module.css';
-
-/** The equipped build, kept live: equipping a part in the Garage redraws it. */
-function useBuild(): GarageBuild | null {
-  const [build, setBuild] = useState<GarageBuild | null>(null);
-  useEffect(() => {
-    const sub = liveQuery(() => getGarage(getDb())).subscribe({
-      next: setBuild,
-      error: (e: unknown) => console.error('Loading your guitar failed', e),
-    });
-    return () => sub.unsubscribe();
-  }, []);
-  return build;
-}
 
 /**
  * The equipped guitar on the iPad sidebar, linking to the Garage (design
@@ -29,7 +13,7 @@ function useBuild(): GarageBuild | null {
  * The parts are read out as the link's description, after its name.
  */
 export function GuitarAvatar({ variant }: { variant: 'full' | 'icon' }) {
-  const build = useBuild();
+  const build = useGarageBuild();
   const describedBy = useId();
   if (!build || !GARAGE_PATH) return null;
   const look = resolveLook(build.spec);
