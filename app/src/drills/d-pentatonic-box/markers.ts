@@ -30,12 +30,11 @@ export function dpbChordStyle(degree: string): Style | null {
 
 /**
  * A worked example's note to tap: named, and ringed on top of its chord-tone
- * shape when it has one (a 5th stays a triangle), else the plain target ring.
+ * shape when it has one (a 5th stays a triangle), else on a plain dot, so
+ * every target on the neck wears the same ring.
  */
 function toTap(at: Position, label: string, shape: Style | null): FretMarker {
-  return shape
-    ? { ...at, style: shape, label, forceLabel: true, emphasis: true }
-    : { ...at, style: 'target', label, forceLabel: true };
+  return { ...at, style: shape ?? 'tone', label, forceLabel: true, emphasis: true };
 }
 
 function wrongMarkers(wrong: Position[], s: PentaMarkerState, prompt: DpbPrompt | DpsPrompt) {

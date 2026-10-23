@@ -221,7 +221,7 @@ describe('<BoxView> relative', () => {
     expect(screen.getByTestId('dpb-prompt')).toHaveTextContent(
       "In this Cm box, the relative major's root is E♭. Tap the 3 ringed E♭ notes to continue.",
     );
-    expect(markers('target')).toEqual([
+    expect(ringed()).toEqual([
       { string: 6, fret: 11, label: 'E♭' },
       { string: 3, fret: 8, label: 'E♭' },
       { string: 1, fret: 11, label: 'E♭' },

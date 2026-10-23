@@ -22,7 +22,7 @@ const state = (over: { taps?: Position[]; guided?: boolean; answered?: boolean }
 });
 
 /** The markers a worked example asks to tap: the target ring, or a shape ringed on top. */
-const ringed = (ms: FretMarker[]) => ms.filter((m) => m.style === 'target' || m.emphasis);
+const ringed = (ms: FretMarker[]) => ms.filter((m) => m.emphasis);
 const at = (ms: FretMarker[], p: Position) => ms.find((m) => samePosition(m, p));
 
 const BOXES = [1, 2, 3, 4, 5].flatMap((b) => [`${b}@minor`, `${b}@major`]);
@@ -37,8 +37,9 @@ describe('dpbMarkers: overlay worked example', () => {
       expect(m.forceLabel).toBe(true);
       expect(m.label).toBe(t.degree === '1' ? dpbDisplay(p.root) : dpbDisplay(t.degree));
       const shape = dpbChordStyle(t.degree);
-      expect(m).toMatchObject(shape ? { style: shape, emphasis: true } : { style: 'target' });
+      expect(m).toMatchObject({ style: shape ?? 'tone', emphasis: true });
     }
+    expect(ms.some((m) => m.style === 'target')).toBe(false);
   });
 
   it('keeps a target 5th a triangle where a box holds a chord tone off the shape', () => {
@@ -86,9 +87,10 @@ describe('dpbMarkers: relative worked example', () => {
       p.targets.map((t) => ({
         string: t.string,
         fret: t.fret,
-        style: 'target',
+        style: 'tone',
         label: rel,
         forceLabel: true,
+        emphasis: true,
       })),
     );
   });
@@ -122,9 +124,10 @@ describe('dpsMarkers (I7)', () => {
       p.targets.map((t) => ({
         string: t.string,
         fret: t.fret,
-        style: 'target',
+        style: 'tone',
         label: dpsDegreeLabel(t.degree),
         forceLabel: true,
+        emphasis: true,
       })),
     );
   });
@@ -137,7 +140,7 @@ describe('dpsMarkers (I7)', () => {
       const m = at(ms, t)!;
       expect(m.label).toBe(t.degree === 1 ? dpbDisplay(p.tonic) : dpsDegreeLabel(t.degree));
       const shape = dpsStyle(t.degree);
-      expect(m).toMatchObject(shape ? { style: shape, emphasis: true } : { style: 'target' });
+      expect(m).toMatchObject({ style: shape ?? 'tone', emphasis: true });
     }
   });
 
@@ -163,7 +166,7 @@ describe('worked-example copy', () => {
 
   it("names a position's added notes by degree and name", () => {
     expect(dpsAddedLine(scale('scale-position:1'))).toBe(
-      'The ringed notes are the 4ths (F) and the 7ths (B): they fill box 1 out to the scale.',
+      'The ringed notes are the 4ths (F) and 7ths (B).',
     );
   });
 });

@@ -123,11 +123,12 @@ describe('<ScaleView> position', () => {
     expect(screen.getByTestId('dpb-prompt')).toHaveTextContent(
       'This is C major position 1, around box 1 (the E shape). Tap the 5 ringed notes to continue.',
     );
-    expect(markers('target').map((m) => m.label)).toEqual(['7', '4', '7', '4', '7']);
+    expect(ringed().map((m) => m.label)).toEqual(['7', '4', '7', '4', '7']);
+    expect(markers('target')).toEqual([]);
     expect(screen.getByTestId('dpb-count')).toHaveTextContent('Found 0 of 5');
     // The hint names what to tap, not the box it's given.
     expect(screen.getByTestId('dpb-explain')).toHaveTextContent(
-      'The squares are the roots, C. The ringed notes are the 4ths (F) and the 7ths (B): they fill box 1 out to the scale.',
+      'The squares are the roots, C. The ringed notes are the 4ths (F) and 7ths (B).',
     );
     expect(markers('fifth').map((m) => m.label)).toEqual(['5', '5']);
   });
@@ -208,7 +209,7 @@ describe('<ScaleView> run', () => {
     );
     // Each note named, the root a square and the 3rd and 5ths in their shapes, all ringed.
     expect(ringed().map((m) => m.label)).toEqual(['5', '6', '7', 'C', '2', '3', '4', '5']);
-    expect(markers('target').map((m) => m.label)).toEqual(['6', '7', '2', '4']);
+    expect(markers('target')).toEqual([]);
     expect(markers('fifth').map((m) => m.label)).toEqual(['5', '5']);
     expect(cells('root')).toEqual(['s6f8', 's4f10', 's1f8']);
     expect(screen.getByTestId('dpb-count')).toHaveTextContent('Played 0 of 8');
