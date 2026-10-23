@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { answer, freshStart, targetNote } from './helpers';
 import { focusSession } from './helpers/focus';
+import { press } from './helpers/keyboard';
 
 test.describe('D1 "Name the highlighted note" session', () => {
   test('runs a scheduled session, persists answers and survives a reload', async ({ page }) => {
@@ -48,14 +49,16 @@ test.describe('D1 "Name the highlighted note" session', () => {
     await freshStart(page);
     await focusSession(page, 'F2.string6-naturals');
     const note = await targetNote(page);
-    await page.keyboard.press(note.length === 1 ? note.toLowerCase() : `Shift+${note[0]}`);
+    await press(page, note.length === 1 ? note.toLowerCase() : `Shift+${note[0]}`);
     await expect(page.getByTestId('feedback-correct')).toBeVisible();
 
     await expect(page.getByTestId('feedback-correct')).toBeHidden();
     const next = await targetNote(page);
-    await page.keyboard.press(next === 'C' ? 'd' : 'c');
+    await press(page, next === 'C' ? 'd' : 'c');
     await expect(page.getByTestId('feedback-wrong')).toBeVisible();
-    await page.keyboard.press('Space');
+    // The session focuses Continue as it starts listening for Space.
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeFocused();
+    await press(page, 'Space');
     await expect(page.getByTestId('feedback-wrong')).toBeHidden();
   });
 });

@@ -7,6 +7,7 @@ import {
   masterSkills,
   noteName,
 } from './helpers';
+import { press } from './helpers/keyboard';
 
 // D2 "Find the note" (design §6 D2, §7 session, §8): tap the named note on
 // the named string.
@@ -189,20 +190,22 @@ test.describe('M1-04 D2 "Find the note"', () => {
     await startFindSession(page);
     const { string, frets } = await ask(page);
     // The first arrow key puts the focus cell on the open string.
-    await page.keyboard.press('ArrowRight');
+    await press(page, 'ArrowRight');
     await expect(cell(page, string, 0)).toBeFocused();
-    for (let f = 0; f < frets[0]!; f++) await page.keyboard.press('ArrowRight');
-    await page.keyboard.press('ArrowDown');
+    for (let f = 0; f < frets[0]!; f++) await press(page, 'ArrowRight');
+    await press(page, 'ArrowDown');
     await expect(cell(page, string, frets[0]!)).toBeFocused();
-    await page.keyboard.press('Enter');
+    await press(page, 'Enter');
     await expect(page.getByTestId('feedback-correct')).toBeVisible();
 
     await expect(page.getByTestId('feedback-correct')).toBeHidden();
     const next = await ask(page);
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.press('Enter');
+    await press(page, 'ArrowRight');
+    await press(page, 'Enter');
     await expect(page.getByTestId('feedback-wrong')).toContainText(`That was ${next.pc}`);
-    await page.keyboard.press('Space');
+    // The session focuses Continue as it starts listening for Space.
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeFocused();
+    await press(page, 'Space');
     await expect(page.getByTestId('feedback-wrong')).toBeHidden();
   });
 
