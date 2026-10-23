@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { getDb, saveGamification } from '../storage';
 import { StreakBadge } from './StreakBadge';
 
 describe('<StreakBadge>', () => {
   it('shows the streak, ring and freezes in the full sidebar', async () => {
-    await saveGamification(getDb(), { streakCurrent: 4, freezesHeld: 1 });
+    await saveGamification(getDb(), { streakCurrent: 4, freezesHeld: 1, xpTotal: 1240 });
     render(<StreakBadge variant="full" />);
     const badge = await screen.findByRole('group', {
-      name: '4-day streak. Daily goal: 0 of 10 minutes. 1 streak freeze held',
+      name: '4-day streak. Daily goal: 0 of 10 minutes. 1 streak freeze held. 1,240 XP earned',
     });
     expect(badge).toHaveAttribute('data-variant', 'full');
     expect(screen.getByTestId('sidebar-streak-count')).toHaveTextContent('4');
     expect(screen.getByRole('img', { name: 'Daily goal: 0 of 10 minutes' })).toBeInTheDocument();
     expect(badge).toHaveTextContent('0/10 min today');
     expect(badge).toHaveTextContent('❄️ 1');
+    expect(screen.getByTestId('sidebar-xp')).toHaveTextContent('1,240 XP earned');
   });
 
   it('is compact in the icon sidebar', async () => {
@@ -23,5 +24,17 @@ describe('<StreakBadge>', () => {
     expect(badge).toHaveAttribute('data-variant', 'icon');
     expect(badge).not.toHaveTextContent('min today');
     expect(screen.getByRole('img', { name: /^Daily goal/ })).toBeInTheDocument();
+    expect(await screen.findByTestId('sidebar-xp')).toHaveTextContent('1.2k XP');
+  });
+
+  it('keeps XP earned live as a session adds to it', async () => {
+    render(<StreakBadge variant="full" />);
+    expect(await screen.findByTestId('sidebar-xp')).toHaveTextContent('1,240 XP earned');
+    await act(async () => {
+      await saveGamification(getDb(), { xpTotal: 1300 });
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId('sidebar-xp')).toHaveTextContent('1,300 XP earned'),
+    );
   });
 });

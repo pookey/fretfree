@@ -5,7 +5,8 @@
   grid-template-columns: auto 1fr;
   grid-template-areas:
     'ring streak'
-    'ring detail';
+    'ring detail'
+    'ring xp';
   align-items: center;
   column-gap: var(--space-3);
   padding: var(--space-3);
@@ -21,7 +22,8 @@
   grid-template-columns: auto;
   grid-template-areas:
     'streak'
-    'ring';
+    'ring'
+    'xp';
   justify-items: center;
   row-gap: var(--space-2);
   padding: var(--space-2) var(--space-1);
@@ -62,4 +64,27 @@
   gap: var(--space-2);
   font-size: 0.8125rem;
   color: var(--text-muted);
+}
+
+/* Lifetime XP under the streak (design §3.8). It only ever grows. */
+.xp {
+  grid-area: xp;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.xp strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* Count over "XP", like the flame over the streak, so it fits the rail. */
+.badge[data-variant='icon'] .xp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.6875rem;
+  line-height: 1.2;
 }

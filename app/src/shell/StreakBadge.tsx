@@ -5,18 +5,27 @@ import {
   streakLabel,
   useStreakSummary,
 } from '../components/goal-ring';
+import { formatXp, formatXpCompact, useXp, xpEarnedText } from '../components/xp';
 import styles from './StreakBadge.module.css';
 
 /**
- * The streak and daily-goal ring the iPad sidebar always shows (design §7
- * Today). `icon` is the collapsed sidebar: flame, count and a small ring,
- * stacked. The phone tab bar has no badge.
+ * The streak, daily-goal ring and XP earned the iPad sidebar always shows
+ * (design §7 Today, §3.8). `icon` is the collapsed sidebar: flame, count, a
+ * small ring and a compact XP total, stacked. The phone tab bar has no badge.
  */
 export function StreakBadge({ variant }: { variant: 'full' | 'icon' }) {
   const summary = useStreakSummary();
+  const xp = useXp();
   if (!summary) return null;
   const { streak, freezesHeld, goal } = summary;
-  const name = [streakLabel(streak), goalLabel(goal), freezesLabel(freezesHeld)].join('. ');
+  const name = [
+    streakLabel(streak),
+    goalLabel(goal),
+    freezesLabel(freezesHeld),
+    xp && xpEarnedText(xp.earned),
+  ]
+    .filter(Boolean)
+    .join('. ');
   return (
     <div
       className={styles.badge}
@@ -34,6 +43,12 @@ export function StreakBadge({ variant }: { variant: 'full' | 'icon' }) {
         <div className={styles.detail} aria-hidden>
           <span>{goal.met ? 'Goal met' : `${goal.minutes}/${goal.goalMinutes} min today`}</span>
           {freezesHeld > 0 && <span>❄️ {freezesHeld}</span>}
+        </div>
+      )}
+      {xp && (
+        <div className={styles.xp} aria-hidden data-testid="sidebar-xp">
+          <strong>{variant === 'full' ? formatXp(xp.earned) : formatXpCompact(xp.earned)}</strong>{' '}
+          {variant === 'full' ? 'XP earned' : 'XP'}
         </div>
       )}
     </div>
