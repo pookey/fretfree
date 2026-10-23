@@ -1010,6 +1010,41 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Remove the blob "access control checks" filter that 81dd35e added to `app/e2e/m4-06.spec.ts`: once nothing loads a blob worklet, that error is a real failure again. Add a WebKit e2e test (all iPad profiles plus `@smoke` for iPhone) that plays the test note and asserts output level > 0 with **no** pageerrors, with the service worker active (as in production).
   - Report what you confirmed as the root cause. The user tests on real devices after the ship.
 
+### M4-14 · Fix: sound muted by iOS silent mode until the mic is allowed
+- **Status:** todo
+- **Priority:** high (user report, 2026-10-23: on new devices, sound is often missing until they enable the mic in Settings and Safari asks for permission)
+- **Deps:** none
+- **Design:** §9
+- **Owns:** `app/src/audio/audio.ts`, `app/src/audio/audio.test.ts`, `app/src/audio/session.ts` (new), `app/src/audio/session.test.ts` (new), `app/src/mic/detector.ts`, `app/e2e/m4-14.spec.ts`
+- **Acceptance:**
+  - Root cause, confirmed by the user on a real iPad and iPhone with a throwaway test page: iOS gives Web Audio the "ambient" audio session by default, so silent mode (the bell in Control Centre, or the iPhone's switch or Action button) mutes it. Granting the mic moves Safari to play-and-record, which ignores silent mode, which is why the mic "fixed" it.
+  - What worked where (Safari 27, page inside a claude.ai iframe): on the iPad, `navigator.audioSession.type = 'playback'` was enough. On the iPhone, the setter was **silently ignored** (it read back `'auto'`); a looping silent `<audio>` element fixed it. The iframe may be why; don't rely on the setter either way.
+  - So, inside the unlock gesture (in `unlockAudio` and in the re-unlock after backgrounding): set `navigator.audioSession.type = 'playback'` where it exists, in try/catch, then **read it back**. If it isn't `'playback'`, or `audioSession` doesn't exist, start a looping silent `<audio>` element (a tiny generated WAV, `playsinline`, inside the same gesture). Other browsers do nothing.
+  - The silent track: pause it when the page is hidden and restart it on the next unlocking tap. Set `navigator.mediaSession.metadata` (title "FretFree") so the Now Playing entry it may create says what it is. Don't start it when sound is off in Settings.
+  - Keep the session logic in a small `audio/session.ts` with unit tests: setter works, setter ignored → silent track, no `audioSession` → silent track, setter throws, `play()` rejected (keep going silently and report nothing to the learner).
+  - Mic mode must still work: set `'play-and-record'` while the mic is listening (`mic/detector.ts`), and put `'playback'` back when it stops, so a drill's sounds keep playing on silent afterwards.
+  - e2e (`m4-14.spec.ts`, iPad profiles plus `@smoke`): stub `navigator.audioSession` before load (one test where the setter sticks, one where it's ignored) and tap to unlock. Assert `'playback'` in the first, and a playing silent `<audio>` in the second. Start and stop the mic with a fake media stream and assert it ends at `'playback'` again.
+  - The user re-tests on a real iPad and iPhone, both on silent, after the ship.
+
+### M4-15 · Nylon-guitar samples for every played note
+- **Status:** todo
+- **Deps:** M4-14
+- **Design:** §9 ("small samples of a few notes per string, pitch-shifted")
+- **Owns:** `app/src/audio/**`, `app/public/samples/**`, `app/vite.config.ts` (workbox globPatterns only), `scripts/fetch-samples.mjs` (new), `app/e2e/m4-15.spec.ts`, `NOTICE` or `app/public/samples/LICENSE.txt` (new)
+- **User decision (2026-10-23):** the user compared four voices on a real iPad (the current Karplus–Strong voice, an improved synth, and FluidR3 steel and nylon samples) and chose **FluidR3 nylon acoustic guitar**. Keep the app's ring times: a note 1.1 s, a strummed chord 2.2 s (`AUDIO.notes.duration`, `AUDIO.strum.duration`). Media doesn't count toward the first-load JS budget, so download size isn't a constraint here.
+- **Acceptance:**
+  - **Licence first. Stop and report before shipping if it isn't clear.** Linux packages (Debian, Mageia) list FluidR3_GM as MIT; the midi-js-soundfonts README says "Creative Commons Attribution 3.0". Find the original FluidR3 README/COPYING and confirm that the nylon guitar preset's samples are Frank Wen's and redistributable (one forum claim says some acoustic guitar presets came from another soundfont). Either MIT or CC BY is acceptable for media, with the notice shipped beside the files. Record what you found in `docs/progress.md`.
+  - Ship every chromatic note E2–E6 (MIDI 40–88, the neck's range to fret 24) from midi-js-soundfonts' `FluidR3_GM/acoustic_guitar_nylon-mp3/` as `app/public/samples/nylon/<midi>.mp3`: about 49 files of 3.2 s, ~16 KB each, ~0.8 MB in total. MP3, because iOS can't decode Ogg. `scripts/fetch-samples.mjs` downloads them reproducibly (pinned commit URL), so the files are checked in but can be regenerated.
+  - The service worker precaches them (add `mp3` to `globPatterns`), so sound works offline from the first visit.
+  - Samples load after the audio unlock (`ready()`), never in first-load JS. Notes outside E2–E6 pitch-shift the nearest sample with `playbackRate`. Until a note's sample has decoded, or if a fetch or decode fails, that note plays on the existing Karplus–Strong voice. The app is never silent because of samples.
+  - Keep the per-string voice model: a new note on a string damps the last, and `damp()` stops everything.
+  - Level: the rendered samples peak near 0.125. Match the old voice's loudness (the test page used a gain of about 1.3). Trim a chord by about 1/√(notes/2.5) so a six-string strum doesn't overload. Add a gentle limiter (`DynamicsCompressorNode`: threshold −4 dB, ratio 8) before the master volume.
+  - Humanise strums a little, as on the test page: each string's level 0.75–1.0 (lower on up-strokes), and the 30 ms string gap varied ±25%. Pass the `rng` in so `strum.ts` stays pure and its tests deterministic.
+  - Release a sample with about a 0.3 s fade, not the Karplus–Strong voice's 0.9 s.
+  - Every tunable goes in `audio/config.ts`. The pure parts (note → sample file and playback rate, strum humanising, level trim) have unit tests.
+  - e2e (`m4-15.spec.ts`, iPad profiles plus `@smoke`): with the service worker active, the test note requests `/samples/nylon/*.mp3`, decodes, and the output level is > 0. With sample requests blocked, it still sounds (the fallback).
+  - The user listens on a real iPad after the ship.
+
 ## M5: Mic mode
 
 ### M5-01 · [contract] Pitch-input API
