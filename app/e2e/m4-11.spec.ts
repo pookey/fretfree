@@ -11,7 +11,7 @@ import { skipInstallTip } from './helpers/install';
 // panel), wrong-answer feedback from D11, D14 and D15, the summary and
 // Progress. A second walk follows a "start with sound" learner: the
 // onboarding choice, Today's "Ear only" card, and the first daily prompt. A
-// third, with sound off, waits on M4-16 (test.fixme).
+// third, with sound off, starts on the neck (M4-16).
 //
 // The walks are tagged @smoke, so they also run against production on every
 // profile (run from app/):
@@ -270,8 +270,8 @@ test.describe('M4-11 screenshot pass', () => {
     await shoot(page, info, '32-session-d15-first');
   });
 
-  // M4-16: ear-find cards must not be served with sound off
-  test.fixme('a "start with sound" learner with sound off starts on the neck @smoke @screens @layout', async ({
+  // M4-16: ear-find cards aren't served with sound off.
+  test('a "start with sound" learner with sound off starts on the neck @smoke @screens @layout', async ({
     page,
   }, info) => {
     await skipInstallTip(page);
