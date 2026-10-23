@@ -70,7 +70,7 @@ describe('buildMap', () => {
   it('lists every module, in goal order, with the registered skills', () => {
     const map = buildMap({ skills: SKILLS, goal: 'general', stored: stored(), cards: [] });
     // Modules not built yet come last (M10-07), in their own default order.
-    const soon = ['advanced', 'meter', 'reading'];
+    const soon = ['advanced', 'reading'];
     expect(map.map((m) => m.module.id)).toEqual([
       ...MODULES.map((m) => m.id).filter((id) => !soon.includes(id)),
       ...soon,
@@ -227,7 +227,7 @@ describe('coming-soon modules', () => {
     const firstSoon = states.indexOf('soon');
     expect(firstSoon).toBeGreaterThan(0);
     expect(states.slice(firstSoon).every((s) => s === 'soon')).toBe(true);
-    expect(map.slice(firstSoon).map((m) => m.module.id)).toEqual(['reading', 'advanced', 'meter']);
+    expect(map.slice(firstSoon).map((m) => m.module.id)).toEqual(['reading', 'advanced']);
     expect(map[0]?.module.id).toBe('harmony');
   });
 });

@@ -45,6 +45,9 @@ export const SEED_CONFUSIONS: readonly (readonly [string, string])[] = [
   ['tab:line2', 'tab:line3'],
   ['tab:line4', 'tab:line5'],
   ['tab:line1', 'tab:line6'],
+  // Meters with the same bar felt another way (D32, `meter:<ts>`): six eighths in 2 or 3, ¢ vs C.
+  ['meter:6/8', 'meter:3/4'],
+  ['meter:2/2', 'meter:4/4'],
 ];
 
 /** Pair weights by unordered concept pair. Read it with `weightOf`. */

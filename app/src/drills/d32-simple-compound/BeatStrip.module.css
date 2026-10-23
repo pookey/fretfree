@@ -1,0 +1,110 @@
+/* A bar's pulses grouped into felt beats: discs start a beat, rings fill it. */
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.meter {
+  min-width: 3.5rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+/* One column per eighth, each pulse spanning its length: bars of the same
+   length are the same width, so 6/8 lines up over 3/4. */
+.beats {
+  --col: 2rem;
+  display: grid;
+  grid-template-columns: repeat(var(--eighths), var(--col));
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-m);
+  background: var(--bg-sunken);
+}
+
+.beat {
+  display: contents;
+}
+
+.cell {
+  grid-column: span var(--span);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
+
+/* A felt beat starts after a rule, so the grouping also reads by position. */
+.beat + .beat .cell[data-start] {
+  border-left: 2px dotted var(--border);
+}
+
+@media (max-width: 40rem) {
+  .beats {
+    --col: 1.5rem;
+  }
+}
+
+.mark {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: 2px solid var(--text-muted);
+}
+
+.cell[data-start] .mark {
+  width: 1.375rem;
+  height: 1.375rem;
+  border-color: var(--tone);
+  background: var(--tone);
+}
+
+/* The pulse sounding now: a heavier ring round it, so it reads without colour. */
+.cell[data-lit] .mark {
+  outline: 3px solid var(--text);
+  outline-offset: 2px;
+}
+
+.label {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.cell[data-start] .label {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.hear {
+  min-height: var(--tap);
+  /* Wide enough for "Hear it" and "Stop" alike, so strips stay lined up. */
+  min-width: 7.5rem;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hear[aria-pressed='true'] {
+  border-color: var(--tone);
+}
+
+.hear:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mark {
+    transition: outline-color 0.08s;
+  }
+}
