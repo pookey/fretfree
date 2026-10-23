@@ -53,9 +53,6 @@ export function Panel({ revision }: PanelProps) {
                 aria-label={toSpendText(xp?.toSpend ?? 0)}
               >
                 {formatXp(xp?.toSpend ?? 0)}
-                <span className={tile.arrow} aria-hidden>
-                  →
-                </span>
               </Link>
             ) : (
               formatXp(xp?.toSpend ?? 0)

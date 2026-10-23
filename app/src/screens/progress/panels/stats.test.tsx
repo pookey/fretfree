@@ -41,6 +41,6 @@ describe('stats panel', () => {
     );
     const link = await screen.findByRole('link', { name: '500 to spend in the Garage' });
     expect(link).toHaveAttribute('href', '/progress/garage');
-    expect(link).toHaveTextContent(/^500/);
+    expect(link).toHaveTextContent(/^500$/);
   });
 });
