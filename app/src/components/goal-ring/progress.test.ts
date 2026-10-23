@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   RING_CIRCUMFERENCE,
+  firstDayLine,
+  freezesExplainer,
   freezesLabel,
   goalLabel,
   goalProgress,
@@ -43,6 +45,30 @@ describe('labels', () => {
     expect(freezesLabel(0)).toBe('No streak freezes held');
     expect(freezesLabel(1)).toBe('1 streak freeze held');
     expect(freezesLabel(2)).toBe('2 streak freezes held');
+  });
+});
+
+describe('first-day and freeze copy', () => {
+  it('says how long the first session takes and where it starts', () => {
+    expect(firstDayLine(10, 'Natural notes on string 6')).toBe(
+      'Your first session takes about 10 minutes and starts with natural notes on string 6.',
+    );
+    expect(firstDayLine(5, 'The musical alphabet')).toBe(
+      'Your first session takes about 5 minutes and starts with the musical alphabet.',
+    );
+  });
+
+  it('keeps a title that opens with a name or numeral as it is', () => {
+    expect(firstDayLine(15, 'I–V–vi–IV by ear')).toMatch(/starts with I–V–vi–IV by ear\.$/);
+    expect(firstDayLine(15, 'CAGED shapes')).toMatch(/starts with CAGED shapes\.$/);
+    expect(firstDayLine(15, '')).toMatch(/starts with \.$/);
+  });
+
+  it('explains a freeze from the streak rules', () => {
+    expect(freezesExplainer()).toBe(
+      'A freeze covers a missed day automatically; you earn one for every 7 days in a row and can hold 2.',
+    );
+    expect(freezesExplainer({ freezeEvery: 5, maxFreezes: 3 })).toMatch(/every 5 days.*hold 3/);
   });
 });
 
