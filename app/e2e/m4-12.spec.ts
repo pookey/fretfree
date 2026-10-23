@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart } from './helpers';
+import { sectionLinks } from './helpers/nav';
 
 // The Tools section (design §7 Tools): practice utilities, one lazy view per
 // tool. Until a real tool ships, these specs switch on the test-only tool.
@@ -13,9 +14,7 @@ async function enableTestTool(page: Page): Promise<void> {
 const sections = (page: Page) => page.getByRole('navigation', { name: 'Sections' });
 
 async function sectionPaths(page: Page): Promise<(string | null)[]> {
-  return sections(page)
-    .getByRole('link')
-    .evaluateAll((links) => links.map((a) => a.getAttribute('href')));
+  return sectionLinks(page).evaluateAll((links) => links.map((a) => a.getAttribute('href')));
 }
 
 test.describe('Tools section', () => {

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart } from './helpers';
+import { sectionLinks } from './helpers/nav';
 
 // The sections the route registry (app/src/routes/*.route.tsx) declares, in
 // nav order. The session route has no nav entry, so it must not appear.
@@ -14,7 +15,7 @@ const SECTIONS = [
 ];
 
 async function expectNavFromRegistry(page: Page) {
-  const links = page.getByRole('navigation', { name: 'Sections' }).getByRole('link');
+  const links = sectionLinks(page);
   await expect(links).toHaveCount(SECTIONS.length);
   for (const [i, { label, href }] of SECTIONS.entries()) {
     await expect(links.nth(i)).toHaveAccessibleName(label);

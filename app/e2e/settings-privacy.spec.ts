@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart } from './helpers';
+import { sectionLinks } from './helpers/nav';
 
 // Settings as its own section (design §7) and the Privacy page.
 
@@ -40,7 +41,7 @@ test.describe('Settings and Privacy', () => {
 
   test('every section in the nav keeps a full-size tap target @smoke @layout', async ({ page }) => {
     await freshStart(page);
-    const links = page.getByRole('navigation', { name: 'Sections' }).getByRole('link');
+    const links = sectionLinks(page);
     // Five sections, plus Tools once a tool is registered (design §7).
     await expect(links.first()).toBeVisible();
     expect([5, 6]).toContain(await links.count());
