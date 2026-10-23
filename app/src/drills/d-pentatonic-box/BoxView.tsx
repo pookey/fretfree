@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAppStore } from '../../app-store';
 import { COMPACT_WINDOW_FRETS } from '../../shell/size-class';
 import { playNotes } from '../../audio/audio';
-import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
+import { Fretboard } from '../../components/fretboard/Fretboard';
 import { noteAt, samePosition, type FretRange, type Position } from '../../theory';
 import type { DrillRenderProps } from '../types';
 import {
@@ -16,11 +16,10 @@ import {
   dpbShowsHint,
   dpbTargetAt,
   dpbWindow,
-  dpbWrongTaps,
-  type BoxNote,
   type DpbAnswer,
   type DpbPrompt,
 } from './logic';
+import { dpbMarkers, ringedNotes } from './markers';
 import styles from './BoxView.module.css';
 
 interface ViewState {
@@ -39,12 +38,6 @@ function roundRule(guided: boolean): string {
   return guided
     ? 'Tap the notes in any order. A wrong tap ends the round.'
     : "Tap the notes in any order. A wrong tap ends the round; tap Done if you can't find the rest.";
-}
-
-/** The chord's degrees by shape and colour: the root a square, the 3rd a circle, the 5th a triangle. */
-function chordStyle(degree: BoxNote['degree']): FretMarker['style'] {
-  if (degree === '1') return 'root';
-  return degree === '5' ? 'fifth' : 'third';
 }
 
 /**
@@ -107,37 +100,7 @@ export function BoxView({
   const overlay = prompt.mode === 'overlay';
   const root = dpbDisplay(prompt.root);
   const relRoot = dpbDisplay(prompt.relative.root);
-  /** A target's label once found: its degree (overlay) or its name (relative). */
-  const answerLabel = (n: BoxNote) => (overlay ? dpbDisplay(n.degree) : relRoot);
-  const wrong = dpbWrongTaps(prompt, taps);
-
-  const markerFor = (n: BoxNote): FretMarker | null => {
-    const at = { string: n.string, fret: n.fret };
-    if (dpbTargetAt(prompt, n)) {
-      if (tapped(n)) return { ...at, style: 'correct', label: answerLabel(n), forceLabel: true };
-      if (feedback) return { ...at, style: 'ghost', label: answerLabel(n), forceLabel: true };
-      if (guided) return { ...at, style: 'target' };
-      if (overlay) return null;
-    }
-    if (wrong.some((p) => samePosition(p, n))) return null;
-    if (n.degree === '1') return { ...at, style: 'root', label: root, forceLabel: true };
-    if (overlay) return { ...at, style: chordStyle(n.degree), label: dpbDisplay(n.degree) };
-    // A relative prompt's box: plain dots, named by degree only once answered (rule 4).
-    return feedback
-      ? { ...at, style: 'tone', label: dpbDisplay(n.degree), forceLabel: true }
-      : { ...at, style: 'tone' };
-  };
-  const markers: FretMarker[] = prompt.boxNotes.flatMap((n) => markerFor(n) ?? []);
-  if (feedback) {
-    markers.push(
-      ...wrong.map((p): FretMarker => ({
-        ...p,
-        style: 'wrong',
-        label: dpbDisplay(noteAt(p, tuning, prompt.accidentalPref).pc),
-        forceLabel: true,
-      })),
-    );
-  }
+  const markers = dpbMarkers(prompt, { taps, guided, answered: feedback !== null, tuning });
 
   const chord = <strong>{dpbDisplay(prompt.chord)}</strong>;
   const hint = dpbShowsHint(guideLevel, guided);
@@ -145,8 +108,8 @@ export function BoxView({
   if (overlay) {
     question = guided ? (
       <>
-        This is {chord} pentatonic box {prompt.box}, around the {prompt.shape} shape. Tap each note
-        to continue.
+        This is {chord} pentatonic box {prompt.box}, around the {prompt.shape} shape. Tap the{' '}
+        {ringedNotes(prompt.targets.length)} to continue.
       </>
     ) : (
       <>
@@ -157,8 +120,8 @@ export function BoxView({
   } else {
     question = guided ? (
       <>
-        In this {chord} box, the relative {prompt.relative.quality}'s root is {relRoot}. Tap each{' '}
-        {relRoot} to continue.
+        In this {chord} box, the relative {prompt.relative.quality}'s root is {relRoot}. Tap the{' '}
+        {ringedNotes(prompt.targets.length, relRoot)} to continue.
       </>
     ) : (
       <>

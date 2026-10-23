@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAppStore } from '../../app-store';
 import { COMPACT_WINDOW_FRETS } from '../../shell/size-class';
 import { playNotes } from '../../audio/audio';
-import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
+import { Fretboard } from '../../components/fretboard/Fretboard';
 import { noteAt, samePosition, type FretRange, type Position } from '../../theory';
 import type { DrillRenderProps } from '../types';
 import {
@@ -15,17 +15,16 @@ import {
 } from './logic';
 import {
   dpsAccepts,
-  dpsDegreeLabel,
+  dpsAddedLine,
   dpsDegreeName,
   dpsExplain,
   dpsFound,
   dpsIgnores,
   dpsMissed,
-  dpsWrongTaps,
   type DpsAnswer,
   type DpsPrompt,
-  type PositionNote,
 } from './scale';
+import { dpsMarkers, ringedNotes } from './markers';
 import styles from './BoxView.module.css';
 
 interface ViewState {
@@ -96,35 +95,7 @@ export function ScaleView({
   const run = prompt.mode === 'run';
   const tonic = dpbDisplay(prompt.tonic);
   const found = dpsFound(prompt, taps);
-  const wrong = dpsWrongTaps(prompt, taps);
-  const isTarget = (n: Position) => prompt.targets.some((t) => samePosition(t, n));
-  const isGiven = (n: Position) => prompt.given.some((g) => samePosition(g, n));
-
-  const markerFor = (n: PositionNote): FretMarker | null => {
-    const at = { string: n.string, fret: n.fret };
-    const label = dpsDegreeLabel(n.degree);
-    if (wrong.some((p) => samePosition(p, n))) return null;
-    if (isTarget(n)) {
-      if (found.includes(n)) return { ...at, style: 'correct', label, forceLabel: true };
-      if (feedback) return { ...at, style: 'ghost', label, forceLabel: true };
-      if (guided) return { ...at, style: 'target', label, forceLabel: true };
-    }
-    if (!isGiven(n)) return null;
-    if (n.degree === 1) return { ...at, style: 'root', label: tonic, forceLabel: true };
-    // A position's box: dots named by degree as the guides allow.
-    return { ...at, style: 'tone', label };
-  };
-  const markers: FretMarker[] = prompt.notes.flatMap((n) => markerFor(n) ?? []);
-  if (feedback) {
-    markers.push(
-      ...wrong.map((p): FretMarker => ({
-        ...p,
-        style: 'wrong',
-        label: dpbDisplay(noteAt(p, tuning, prompt.accidentalPref).pc),
-        forceLabel: true,
-      })),
-    );
-  }
+  const markers = dpsMarkers(prompt, { taps, guided, answered: feedback !== null, tuning });
 
   const key = <strong>{tonic} major</strong>;
   const from = dpsDegreeName(prompt.degree);
@@ -134,7 +105,7 @@ export function ScaleView({
     question = guided ? (
       <>
         This is {key} position {prompt.position}, around box {prompt.position} (the {prompt.shape}{' '}
-        shape). Tap each note to continue.
+        shape). Tap the {ringedNotes(prompt.targets.length)} to continue.
       </>
     ) : (
       <>
@@ -145,8 +116,8 @@ export function ScaleView({
   } else {
     question = guided ? (
       <>
-        This is {key} position {prompt.position} from the {from}. Tap each note in order to
-        continue.
+        This is {key} position {prompt.position} from the {from}. Tap the{' '}
+        {ringedNotes(prompt.targets.length)} in order to continue.
       </>
     ) : (
       <>
@@ -155,9 +126,13 @@ export function ScaleView({
       </>
     );
   }
-  const before = run
-    ? `The squares are the roots, ${tonic}. Start on the lowest ${from} and go up to the highest.`
-    : `The squares are the roots, ${tonic}; the dots are major box ${prompt.position}.`;
+  let before = `The squares are the roots, ${tonic}; the dots are major box ${prompt.position}.`;
+  if (run) {
+    before = `The squares are the roots, ${tonic}. Start on the lowest ${from} and go up to the highest.`;
+  } else if (guided) {
+    // A worked example names what to tap, not the box it's given (rule 8).
+    before = `The squares are the roots, ${tonic}. ${dpsAddedLine(prompt)}`;
+  }
 
   return (
     <div

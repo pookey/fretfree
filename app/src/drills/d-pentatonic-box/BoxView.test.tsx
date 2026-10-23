@@ -5,7 +5,7 @@ import type { SizeClass } from '../../shell/size-class';
 import { STANDARD_TUNING, type Position } from '../../theory';
 import type { DrillFeedback } from '../types';
 import { BoxView } from './BoxView';
-import { dpbCheck, dpbMakePrompt, type DpbAnswer, type DpbPrompt } from './logic';
+import { dpbCheck, dpbDisplay, dpbMakePrompt, type DpbAnswer, type DpbPrompt } from './logic';
 
 // rng 0: the first natural root, C, at its lowest position (box 1 at frets 8–11).
 const prompt = (id: string) =>
@@ -43,12 +43,15 @@ const neck = () => screen.getByRole('group', { name: /^Fretboard:/ });
 const cell = (string: number, fret: number) =>
   neck().querySelector(`[data-cell="s${string}f${fret}"]`) as SVGElement;
 const tap = (p: Position) => fireEvent.pointerDown(cell(p.string, p.fret));
-const markers = (style: string) =>
-  [...neck().querySelectorAll(`[data-testid="marker-${style}"]`)].map((m) => ({
+const markersAt = (selector: string) =>
+  [...neck().querySelectorAll(selector)].map((m) => ({
     string: Number(m.getAttribute('data-string')),
     fret: Number(m.getAttribute('data-fret')),
     label: m.textContent,
   }));
+const markers = (style: string) => markersAt(`[data-testid="marker-${style}"]`);
+/** A worked example's targets: the target ring, or a degree shape ringed on top. */
+const ringed = () => markersAt('[data-testid="marker-target"], [data-emphasis="true"]');
 const cells = (style: string) => markers(style).map((m) => `s${m.string}f${m.fret}`);
 const fb = (p: DpbPrompt, answer: DpbAnswer): DrillFeedback<DpbAnswer> => ({
   answer,
@@ -129,13 +132,16 @@ describe('<BoxView> overlay', () => {
     const p = prompt('penta-box:1@minor');
     view(p, { guided: true });
     expect(screen.getByTestId('dpb-prompt')).toHaveTextContent(
-      'This is Cm pentatonic box 1, around the E shape. Tap each note to continue.',
+      'This is Cm pentatonic box 1, around the E shape. Tap the 6 ringed notes to continue.',
     );
     // A worked example gives one clear instruction: no Done clause (rule 8).
     expect(screen.getByTestId('dpb-explain')).toHaveTextContent(
       /^The squares are the roots, C\. Tap the notes in any order\. A wrong tap ends the round\.$/,
     );
-    expect(cells('target')).toEqual(p.targets.map((t) => `s${t.string}f${t.fret}`));
+    // Every target ringed and named: its degree, a root by letter, a chord tone in its shape.
+    expect(ringed()).toEqual(
+      p.targets.map((t) => ({ ...pos(t), label: t.degree === '1' ? 'C' : dpbDisplay(t.degree) })),
+    );
     expect(screen.getByTestId('dpb-count')).toHaveTextContent('Found 0 of 6');
     // Full guides label the chord's degrees.
     expect(markers('fifth').map((m) => m.label)).toEqual(['5', '5']);
@@ -213,9 +219,14 @@ describe('<BoxView> relative', () => {
     const p = prompt('penta-relative:1@minor');
     view(p, { guided: true });
     expect(screen.getByTestId('dpb-prompt')).toHaveTextContent(
-      "In this Cm box, the relative major's root is E♭. Tap each E♭ to continue.",
+      "In this Cm box, the relative major's root is E♭. Tap the 3 ringed E♭ notes to continue.",
     );
-    expect(cells('target')).toEqual(['s6f11', 's3f8', 's1f11']);
+    expect(markers('target')).toEqual([
+      { string: 6, fret: 11, label: 'E♭' },
+      { string: 3, fret: 8, label: 'E♭' },
+      { string: 1, fret: 11, label: 'E♭' },
+    ]);
+    expect(screen.getByTestId('dpb-count')).toHaveTextContent('Found 0 of 3');
   });
 
   it('labels the box by degree in feedback, with the wrong tap in place of its dot', () => {

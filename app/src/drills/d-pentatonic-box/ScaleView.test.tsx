@@ -45,12 +45,15 @@ const neck = () => screen.getByRole('group', { name: /^Fretboard:/ });
 const cell = (string: number, fret: number) =>
   neck().querySelector(`[data-cell="s${string}f${fret}"]`) as SVGElement;
 const tap = (p: Position) => fireEvent.pointerDown(cell(p.string, p.fret));
-const markers = (style: string) =>
-  [...neck().querySelectorAll(`[data-testid="marker-${style}"]`)].map((m) => ({
+const markersAt = (selector: string) =>
+  [...neck().querySelectorAll(selector)].map((m) => ({
     string: Number(m.getAttribute('data-string')),
     fret: Number(m.getAttribute('data-fret')),
     label: m.textContent,
   }));
+const markers = (style: string) => markersAt(`[data-testid="marker-${style}"]`);
+/** A worked example's targets: the target ring, or a degree shape ringed on top. */
+const ringed = () => markersAt('[data-testid="marker-target"], [data-emphasis="true"]');
 const cells = (style: string) => markers(style).map((m) => `s${m.string}f${m.fret}`);
 const fb = (p: DpsPrompt, answer: DpsAnswer): DrillFeedback<DpsAnswer> => ({
   answer,
@@ -67,7 +70,12 @@ describe('<ScaleView> position', () => {
       /^Fill in C major position 1 around this box$/,
     );
     expect(cells('root')).toEqual(['s6f8', 's4f10', 's1f8']);
-    expect(markers('tone')).toHaveLength(9);
+    // The box's 3rds and 5ths in their shapes, as C7 draws them; the 2nds and 6ths dots.
+    const thirds = markers('third');
+    const fifths = markers('fifth');
+    expect(thirds.length).toBeGreaterThan(0);
+    expect(fifths.length).toBeGreaterThan(0);
+    expect(thirds.length + fifths.length + markers('tone').length).toBe(9);
     expect(markers('target')).toEqual([]);
     expect(screen.getByTestId('dpb-count')).toHaveTextContent(/^Found 0$/);
     expect(screen.getByTestId('dpb-explain')).toHaveTextContent(
@@ -113,9 +121,15 @@ describe('<ScaleView> position', () => {
     const p = prompt('scale-position:1');
     view(p, { guided: true });
     expect(screen.getByTestId('dpb-prompt')).toHaveTextContent(
-      'This is C major position 1, around box 1 (the E shape). Tap each note to continue.',
+      'This is C major position 1, around box 1 (the E shape). Tap the 5 ringed notes to continue.',
     );
     expect(markers('target').map((m) => m.label)).toEqual(['7', '4', '7', '4', '7']);
+    expect(screen.getByTestId('dpb-count')).toHaveTextContent('Found 0 of 5');
+    // The hint names what to tap, not the box it's given.
+    expect(screen.getByTestId('dpb-explain')).toHaveTextContent(
+      'The squares are the roots, C. The ringed notes are the 4ths (F) and the 7ths (B): they fill box 1 out to the scale.',
+    );
+    expect(markers('fifth').map((m) => m.label)).toEqual(['5', '5']);
   });
 
   it('shows what was missed and the wrong tap in feedback, and ignores taps', () => {
@@ -173,7 +187,7 @@ describe('<ScaleView> run', () => {
     const first = view(p);
     for (const t of p.targets.slice(0, 4)) tap(t);
     // The root on string 4 was drawn, and is now played.
-    expect(markers('correct').map((m) => m.label)).toEqual(['5', '6', '7', 'R']);
+    expect(markers('correct').map((m) => m.label)).toEqual(['5', '6', '7', 'C']);
     expect(cells('root')).toEqual(['s6f8', 's1f8']);
     expect(first.onAnswer).not.toHaveBeenCalled();
     tap(p.targets[5]!);
@@ -190,9 +204,14 @@ describe('<ScaleView> run', () => {
     const p = prompt('scale-run:1@5');
     view(p, { guided: true });
     expect(screen.getByTestId('dpb-prompt')).toHaveTextContent(
-      'This is C major position 1 from the 5th. Tap each note in order to continue.',
+      'This is C major position 1 from the 5th. Tap the 8 ringed notes in order to continue.',
     );
-    expect(markers('target').map((m) => m.label)).toEqual(['5', '6', '7', 'R', '2', '3', '4', '5']);
+    // Each note named, the root a square and the 3rd and 5ths in their shapes, all ringed.
+    expect(ringed().map((m) => m.label)).toEqual(['5', '6', '7', 'C', '2', '3', '4', '5']);
+    expect(markers('target').map((m) => m.label)).toEqual(['6', '7', '2', '4']);
+    expect(markers('fifth').map((m) => m.label)).toEqual(['5', '5']);
+    expect(cells('root')).toEqual(['s6f8', 's4f10', 's1f8']);
+    expect(screen.getByTestId('dpb-count')).toHaveTextContent('Played 0 of 8');
   });
 
   it('names a wrong start in feedback', () => {

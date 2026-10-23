@@ -105,6 +105,23 @@ export function dpsDegreeName(degree: ScaleDegree): string {
   return `${degree}${degree === 2 ? 'nd' : degree === 3 ? 'rd' : 'th'}`;
 }
 
+/**
+ * A position card's worked example: what the ringed notes are, by degree
+ * and name. "The ringed notes are the 4ths (F) and the 7ths (B): they fill
+ * box 1 out to the scale."
+ */
+export function dpsAddedLine(prompt: DpsPrompt): string {
+  const degrees = [...new Set(prompt.targets.map((t) => t.degree))].sort((a, b) => a - b);
+  const parts = degrees.map((d) => {
+    const notes = prompt.targets.filter((t) => t.degree === d);
+    const name = dpbDisplay((notes[0] as PositionNote).pc);
+    return `the ${dpsDegreeName(d)}${notes.length > 1 ? 's' : ''} (${name})`;
+  });
+  const list =
+    parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts.at(-1) as string}` : parts[0];
+  return `The ringed notes are ${list}: they fill box ${prompt.position} out to the scale.`;
+}
+
 /** The degree as the neck labels it: `R` for the root, else its number. */
 export function dpsDegreeLabel(degree: ScaleDegree): string {
   return dpbDisplay(String(degree));
