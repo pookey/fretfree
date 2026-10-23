@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart, masterSkills } from './helpers';
 import { focusSession } from './helpers/focus';
+import { TARGET_MARKERS } from './helpers/targets';
 
 // M3-17: D8's chord tones in stages (user request, 2026-10-18: "find the
 // root first, then the 3rd, 5th and 7th"). Each stage opens once the one
@@ -39,7 +40,7 @@ async function answeredSkills(page: Page): Promise<string[]> {
 async function answer(page: Page): Promise<void> {
   if ((await drill(page).getAttribute('data-mode')) === 'tap') {
     // The target marker pulses, so tap the cell under it.
-    const target = page.getByTestId('marker-target').first();
+    const target = page.locator(TARGET_MARKERS).first();
     const cells = page.locator('svg[data-fret-from] [data-cell]');
     const cell =
       (await target.count()) > 0
@@ -222,7 +223,7 @@ test.describe('M3-17 chord tones in stages', () => {
     await focusSession(page, STAGES);
     // The first prompt is the root, as a worked example.
     await expect(promptText(page)).toContainText(/the roots? of/i);
-    await expect(page.getByTestId('marker-target').first()).toBeVisible();
+    await expect(page.locator(TARGET_MARKERS).first()).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     const skills = await practise(page, 6);

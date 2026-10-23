@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart, masterSkills } from './helpers';
 import { focusSession } from './helpers/focus';
+import { TARGET_MARKERS } from './helpers/targets';
 
 // M6-05: I2 arpeggio skills on D8. After C5's 3rd and 7th of the 7th-chord
 // shapes, I2 finds their root, then their 5th, in both directions, so every
@@ -83,7 +84,7 @@ async function readTask(page: Page): Promise<Task> {
   const shape = await cellsOf(neck(page).locator('[data-testid^="marker-"]'));
   const guided = /(marked|^The ringed note is)/.test(text);
   if (mode === 'name') {
-    const [ringed] = await cellsOf(neck(page).getByTestId('marker-target'));
+    const [ringed] = await cellsOf(neck(page).locator(TARGET_MARKERS));
     expect(ringed).toBeDefined();
     return { mode, guided, chord: chord!, root, shape, degree: degreeOf(root, ringed!) };
   }

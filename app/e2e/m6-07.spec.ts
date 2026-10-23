@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart, masterSkills } from './helpers';
 import { focusSession } from './helpers/focus';
+import { markerSelector } from './helpers/targets';
 
 // M6-07: I7, the major scale in five positions, on the box-overlay drill. A
 // position card draws its major pentatonic box and the learner fills in the
@@ -107,7 +108,7 @@ const cellAt = (page: Page, c: Cell) => neck(page).locator(`[data-cell="${key(c)
 async function markersOf(page: Page, styles: readonly string[]): Promise<Cell[]> {
   const out: Cell[] = [];
   for (const style of styles) {
-    for (const m of await neck(page).getByTestId(`marker-${style}`).all()) {
+    for (const m of await neck(page).locator(markerSelector(style)).all()) {
       out.push({
         string: Number(await m.getAttribute('data-string')),
         fret: Number(await m.getAttribute('data-fret')),
@@ -153,7 +154,7 @@ async function readTask(page: Page): Promise<Task> {
   expect(roots.length).toBeGreaterThan(0);
   const box =
     mode === 'position'
-      ? await markersOf(page, ['root', 'tone'])
+      ? await markersOf(page, ['root', 'tone', 'third', 'fifth'])
       : solveBox(tonic, position, roots);
   expect(box).toHaveLength(12);
   const notes = byPitch(fillPosition(tonic, box));

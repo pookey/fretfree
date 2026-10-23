@@ -137,7 +137,7 @@ test.describe('M10-11 the later drills say what they mean', () => {
     await masterSkills(page, ['C6.minor-cores', 'C6.minor-shapes']);
     await focusSession(page, 'C7.minor-boxes');
     // The first card is a worked example: one clear instruction, no Done clause.
-    await expect(prompt(page)).toContainText('Tap each note to continue.');
+    await expect(prompt(page)).toContainText(/Tap the \d+ ringed notes to continue\./);
     await expect(page.getByTestId('dpb-explain')).toHaveText(
       new RegExp(`^The squares are the roots, \\S+\\. ${escape(GUIDED_RULE)}$`),
     );

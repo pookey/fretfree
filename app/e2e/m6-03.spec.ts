@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart, masterSkills } from './helpers';
 import { focusSession } from './helpers/focus';
+import { TARGET_MARKERS, markerSelector } from './helpers/targets';
 
 // M6-03: I1 triad inversions on a string set (D18). A build card draws the
 // root as a square and the learner taps the inversion's other two notes; a
@@ -54,7 +55,7 @@ const cellAt = (page: Page, c: Cell) => neck(page).locator(`[data-cell="${key(c)
 async function markersOf(page: Page, styles: readonly string[]): Promise<Cell[]> {
   const out: Cell[] = [];
   for (const style of styles) {
-    for (const m of await neck(page).getByTestId(`marker-${style}`).all()) {
+    for (const m of await neck(page).locator(markerSelector(style)).all()) {
       out.push({
         string: Number(await m.getAttribute('data-string')),
         fret: Number(await m.getAttribute('data-fret')),
@@ -110,7 +111,7 @@ async function solve(page: Page): Promise<Task> {
   if (task.mode === 'build') {
     if (task.guided) {
       // A worked example marks the notes to copy (rule 8).
-      await expect(neck(page).getByTestId('marker-target')).toHaveCount(2);
+      await expect(neck(page).locator(TARGET_MARKERS)).toHaveCount(2);
     }
     for (const c of task.answer) await cellAt(page, c).click();
   } else {

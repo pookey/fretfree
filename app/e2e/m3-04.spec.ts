@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart, masterSkills } from './helpers';
 import { focusSession } from './helpers/focus';
+import { TARGET_MARKERS } from './helpers/targets';
 
 // M3-04: D8 "Find the chord tone in a shape". A chord shape (open, barre or
 // CAGED) is drawn on the neck; the learner taps the asked degree, or names a
@@ -88,7 +89,7 @@ async function readTask(page: Page): Promise<Task> {
   expect(shape.length).toBeGreaterThanOrEqual(4);
   const guided = /(marked|^The ringed note is)/.test(text);
   if (mode === 'name') {
-    const [ringed] = await cellsOf(neck(page).getByTestId('marker-target'));
+    const [ringed] = await cellsOf(neck(page).locator(TARGET_MARKERS));
     expect(ringed).toBeDefined();
     return {
       mode,
@@ -118,7 +119,7 @@ async function solve(page: Page): Promise<Task> {
     expect(cells.length, `${task.degree} of ${task.chord}`).toBeGreaterThan(0);
     if (task.guided) {
       // A worked example marks the notes to tap (rule 8).
-      await expect(neck(page).getByTestId('marker-target')).toHaveCount(cells.length);
+      await expect(neck(page).locator(TARGET_MARKERS)).toHaveCount(cells.length);
     }
     await cellAt(page, cells[0]!).click();
   } else {
@@ -230,8 +231,14 @@ test.describe('M3-04 D8 finds the chord tone in a shape', () => {
     const first = await readTask(page);
     expect(first).toMatchObject({ mode: 'tap', guided: true, degree: '1' });
     await expect(neck(page).getByTestId('shape-outline')).toHaveCount(1);
-    // Root squares would give the answer away.
-    await expect(neck(page).getByTestId('marker-root')).toHaveCount(0);
+    // The only root squares are the ringed answers: a worked example shows the
+    // answer in its degree's shape (M6-11), so no unringed square gives it away.
+    await expect(
+      neck(page).locator('[data-testid="marker-root"]:not([data-emphasis])'),
+    ).toHaveCount(0);
+    await expect(neck(page).locator(TARGET_MARKERS)).toHaveCount(
+      await neck(page).getByTestId('marker-root').count(),
+    );
 
     // iPad landscape shows the whole neck (design §7); portrait a 12-fret
     // neck and a phone a window, each holding the whole shape.

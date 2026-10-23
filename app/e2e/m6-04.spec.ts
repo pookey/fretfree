@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectNoHorizontalOverflow, freshStart, masterSkills } from './helpers';
 import { focusSession } from './helpers/focus';
+import { markerSelector } from './helpers/targets';
 
 // M6-04: the I1 voice-leading puzzle (D19). A triad is drawn as rings on a
 // string set, and the learner taps the next chord's voicing nearest it: the
@@ -54,7 +55,7 @@ const cellAt = (page: Page, c: Cell) => neck(page).locator(`[data-cell="${key(c)
 
 async function markersOf(page: Page, style: string): Promise<Cell[]> {
   const out: Cell[] = [];
-  for (const m of await neck(page).getByTestId(`marker-${style}`).all()) {
+  for (const m of await neck(page).locator(markerSelector(style)).all()) {
     out.push({
       string: Number(await m.getAttribute('data-string')),
       fret: Number(await m.getAttribute('data-fret')),
