@@ -61,39 +61,84 @@ function needsOf(
   return skills.filter((s) => unmet.has(s.id)).map((s) => s.id);
 }
 
+/** What one opener still waits for, by gate (M10-01): the titles to master and to be practising. */
+export interface Waits {
+  master: readonly string[];
+  practise: readonly string[];
+}
+
 /**
- * What a locked module waits for, split by gate (M10-01's wording): the
- * titles to master and the titles to be practising, across its openers.
+ * What a locked module waits for: one set of gates per opener, since any one
+ * opener opens it. An opener that needs everything another does and more
+ * adds no new way in, so it's left out.
  */
 function waitsFor(
   module: Module,
   skills: readonly Skill[],
   statuses: ReadonlyMap<string, SkillStatus>,
-): { master: string[]; practise: string[] } {
-  const unmet = { mastered: new Set<string>(), practising: new Set<string>() };
-  for (const skill of openers(module, skills, statuses)) {
+): Waits[] {
+  const titles = (ids: readonly string[]) =>
+    skills.filter((s) => ids.includes(s.id)).map((s) => s.title);
+  const sets = openers(module, skills, statuses).map((skill) => {
     const gates = gatesOf(skill);
-    for (const gate of ['mastered', 'practising'] as const)
-      for (const p of gates[gate]) if (!meetsGate(gate, statuses.get(p))) unmet[gate].add(p);
-  }
-  const titles = (ids: Set<string>) => skills.filter((s) => ids.has(s.id)).map((s) => s.title);
-  return { master: titles(unmet.mastered), practise: titles(unmet.practising) };
+    const unmet = (gate: 'mastered' | 'practising') =>
+      gates[gate].filter((p) => !meetsGate(gate, statuses.get(p)));
+    return { master: titles(unmet('mastered')), practise: titles(unmet('practising')) };
+  });
+  const within = (a: Waits, b: Waits) =>
+    a.master.every((t) => b.master.includes(t)) && a.practise.every((t) => b.practise.includes(t));
+  // Keep the first of two identical sets; drop any set strictly wider than another.
+  return sets.filter(
+    (b, i) => !sets.some((a, j) => j !== i && within(a, b) && (j < i || !within(b, a))),
+  );
 }
 
-/** "Chords opens once you’ve mastered 3rds and are practising Sharp keys." */
-export function opensOnceText(
-  title: string,
-  { master, practise: all }: { master: readonly string[]; practise: readonly string[] },
+/** "A, B or C". */
+function orList(words: readonly string[]): string {
+  if (words.length <= 1) return words.join('');
+  return `${words.slice(0, -1).join(', ')} or ${words[words.length - 1]}`;
+}
+
+/** "you’ve mastered A and are practising B", joining each gate's titles with `join`. */
+function gatesClause(
+  { master, practise }: Waits,
+  join: (words: readonly string[]) => string,
+  and: string,
 ): string {
-  // A skill to master needn't be listed again as one to be practising.
-  const practise = all.filter((t) => !master.includes(t));
-  const parts = [
-    master.length > 0 && `you’ve mastered ${listOf(master)}`,
-    practise.length > 0 && `${master.length > 0 ? 'are' : 'you’re'} practising ${listOf(practise)}`,
-  ].filter(Boolean);
-  return parts.length === 0
-    ? `${title} opens once you’ve mastered what it builds on.`
-    : `${title} opens once ${parts.join(' and ')}.`;
+  return [
+    master.length > 0 && `you’ve mastered ${join(master)}`,
+    practise.length > 0 && `${master.length > 0 ? 'are' : 'you’re'} practising ${join(practise)}`,
+  ]
+    .filter(Boolean)
+    .join(` ${and} `);
+}
+
+/**
+ * "Chords opens once you’ve mastered 3rds and are practising Sharp keys."
+ * Any one opener opens the module (rule 16: say only what's true), so its
+ * gates are alternatives: "and" only within one opener, "or" between openers
+ * that each wait for one thing ("Ear opens once you’re practising The musical
+ * alphabet or Natural notes on string 6"). Where some opener waits for more
+ * than one thing, an "or" between "and"s would read ambiguously, so it names
+ * only the nearest opener's gates: the fewest, then the fewest to master
+ * (mastery takes reviews over days; practising starts in a session), then
+ * the earliest.
+ */
+export function opensOnceText(title: string, waits: readonly Waits[]): string {
+  const size = (w: Waits) => w.master.length + w.practise.length;
+  const sets = waits.filter((w) => size(w) > 0);
+  if (sets.length === 0) return `${title} opens once you’ve mastered what it builds on.`;
+  if (sets.length > 1 && sets.every((w) => size(w) === 1)) {
+    const merged = {
+      master: sets.flatMap((w) => w.master),
+      practise: sets.flatMap((w) => w.practise),
+    };
+    return `${title} opens once ${gatesClause(merged, orList, 'or')}.`;
+  }
+  const nearer = (a: Waits, b: Waits) =>
+    size(a) < size(b) || (size(a) === size(b) && a.master.length < b.master.length);
+  const nearest = sets.reduce((a, b) => (nearer(b, a) ? b : a));
+  return `${title} opens once ${gatesClause(nearest, listOf, 'and')}.`;
 }
 
 /**

@@ -64,7 +64,7 @@ test.describe('M4-16 ear cards and sound', () => {
     await expect(detail).not.toContainText('from your first day');
     const offer = page.getByRole('region', { name: 'Already know this?' });
     await expect(offer).toContainText(
-      'Ear opens once you’re practising The musical alphabet and Natural notes on string 6.',
+      'Ear opens once you’re practising The musical alphabet or Natural notes on string 6.',
     );
     await expect(offer).not.toContainText('Progressions');
   });

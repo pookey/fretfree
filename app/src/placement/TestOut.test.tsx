@@ -113,31 +113,65 @@ async function nextProbe(id: string) {
 }
 
 describe('opensOnceText', () => {
-  it('names what to master and what to be practising (M10-01 wording)', () => {
-    expect(opensOnceText('Chords', { master: ['3rds'], practise: ['Sharp keys'] })).toBe(
+  it('names what one opener still needs to master and be practising (M10-01 wording)', () => {
+    expect(opensOnceText('Chords', [{ master: ['3rds'], practise: ['Sharp keys'] }])).toBe(
       'Chords opens once you’ve mastered 3rds and are practising Sharp keys.',
     );
-    expect(opensOnceText('Pentatonic', { master: [], practise: ['A', 'B'] })).toBe(
+    expect(opensOnceText('Pentatonic', [{ master: [], practise: ['A', 'B'] }])).toBe(
       'Pentatonic opens once you’re practising A and B.',
     );
-    expect(opensOnceText('Keys', { master: ['A', 'B', 'C'], practise: [] })).toBe(
+    expect(opensOnceText('Keys', [{ master: ['A', 'B', 'C'], practise: [] }])).toBe(
       'Keys opens once you’ve mastered A, B and C.',
     );
-    expect(opensOnceText('Keys', { master: [], practise: [] })).toBe(
+    expect(opensOnceText('Keys', [])).toBe('Keys opens once you’ve mastered what it builds on.');
+    expect(opensOnceText('Keys', [{ master: [], practise: [] }])).toBe(
       'Keys opens once you’ve mastered what it builds on.',
     );
   });
 
-  it('names a skill once when one entry needs it mastered and another practising', () => {
-    // Progressions: C9.pop needs triads mastered, C10's capo skills practising.
+  it('says "or" between openers that each wait for one thing: any one opens it (M10-21)', () => {
     expect(
-      opensOnceText('Progressions', {
-        master: ['Triads'],
-        practise: ['Sharp keys', 'Triads', 'Numerals'],
-      }),
-    ).toBe(
-      'Progressions opens once you’ve mastered Triads and are practising Sharp keys and Numerals.',
-    );
+      opensOnceText('Ear', [
+        { master: [], practise: ['The musical alphabet'] },
+        { master: [], practise: ['Natural notes on string 6'] },
+      ]),
+    ).toBe('Ear opens once you’re practising The musical alphabet or Natural notes on string 6.');
+    expect(
+      opensOnceText('Keys', [
+        { master: ['A'], practise: [] },
+        { master: ['B'], practise: [] },
+        { master: ['C'], practise: [] },
+      ]),
+    ).toBe('Keys opens once you’ve mastered A, B or C.');
+    expect(
+      opensOnceText('Keys', [
+        { master: ['A'], practise: [] },
+        { master: [], practise: ['B'] },
+      ]),
+    ).toBe('Keys opens once you’ve mastered A or are practising B.');
+  });
+
+  it('names only the nearest opener when one waits for several things, never "and" across openers', () => {
+    expect(
+      opensOnceText('Chords', [
+        { master: ['3rds', '4ths'], practise: [] },
+        { master: [], practise: ['Sharp keys'] },
+      ]),
+    ).toBe('Chords opens once you’re practising Sharp keys.');
+    // Of as many gates, the fewer to master is nearer.
+    expect(
+      opensOnceText('Progressions', [
+        { master: ['Triads'], practise: ['Roman numerals'] },
+        { master: [], practise: ['Sharp keys', 'Triads'] },
+      ]),
+    ).toBe('Progressions opens once you’re practising Sharp keys and Triads.');
+    // A full tie goes to the earliest opener.
+    expect(
+      opensOnceText('Chords', [
+        { master: ['3rds'], practise: ['Sharp keys'] },
+        { master: ['4ths', '5ths'], practise: [] },
+      ]),
+    ).toBe('Chords opens once you’ve mastered 3rds and are practising Sharp keys.');
   });
 });
 
@@ -162,13 +196,45 @@ describe('TestOut', () => {
       </MemoryRouter>,
     );
     const offer = screen.getByRole('region', { name: 'Already know this?' });
+    // Either first skill opens the module, so its gates are alternatives (M10-21).
     expect(offer).toHaveTextContent(
-      /Ear opens once you’re practising The musical alphabet and Natural notes on string 6\./,
+      /Ear opens once you’re practising The musical alphabet or Natural notes on string 6\./,
     );
     expect(offer).toHaveTextContent(
       /a short test of The musical alphabet and Natural notes on string 6\./,
     );
     expect(offer).not.toHaveTextContent(/Progressions/);
+  });
+
+  it('leaves out an opener that adds no new way in (M10-21)', () => {
+    const string5 = getSkill('F2.string5-naturals') as Skill;
+    const opener = (id: string, order: number, prerequisites: string[]): Skill => ({
+      ...GATED,
+      id,
+      order,
+      prerequisites,
+    });
+    // Ways in: string 6, string 6 again, string 6 and 5 together, or string 5.
+    // The twin and the pair add nothing, so the two single ways remain.
+    const skills = [
+      STRING6,
+      string5,
+      GATED,
+      opener('T1.twin', 1, [STRING6.id]),
+      opener('T1.pair', 2, [STRING6.id, string5.id]),
+      opener('T1.five', 3, [string5.id]),
+    ];
+    const statuses = new Map<string, SkillStatus>();
+    for (const s of skills) statuses.set(s.id, deriveStatus(s, statuses, undefined));
+    render(
+      <MemoryRouter>
+        <TestOut module={MODULE} offer statuses={statuses} skills={skills} drills={DRILLS} />
+      </MemoryRouter>,
+    );
+    const offer = screen.getByRole('region', { name: 'Already know this?' });
+    expect(offer).toHaveTextContent(
+      /Gated opens once you’ve mastered Natural notes on string 6 or Natural notes on string 5\. /,
+    );
   });
 
   it('offers nothing to an open module, before statuses load, or before settings load', () => {
