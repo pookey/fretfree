@@ -67,7 +67,7 @@ describe('<D32View>', () => {
     const { onAnswer } = renderView(prompt('6/8', 'feltBeats'));
     expect(screen.getByRole('img', { name: '6 8 time' })).toHaveTextContent('68');
     expect(screen.getByText('How many beats do you feel in a bar?')).toBeInTheDocument();
-    expect(answers().map((b) => b.textContent)).toEqual(['2', '3', '4', '6']);
+    expect(answers().map((b) => b.textContent)).toEqual(['2', '3', '4', '6', '9', '12']);
     fireEvent.click(screen.getByRole('button', { name: '2 beats' }));
     expect(onAnswer).toHaveBeenCalledWith('2');
     // No beat strip before an answer: it would give the answer away.

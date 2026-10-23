@@ -28,8 +28,9 @@ export { D32_ID, D32_METERS, D32_SCOPE, d32CanTest, d32ConceptOf } from './meta'
  *
  * **The choices carry no clue.** Each kind of card offers a fixed row for
  * its family of meters (simple, compound, or cut time) at scope 0, and one
- * row for every meter at scope 1, in a fixed order. Every row holds the
- * classic wrong answers: the top number as a beat count (6 for 6/8), the
+ * row for every meter at scope 1, in a fixed order: the same for every card
+ * of a family. Every row holds the classic wrong answers: the top number as
+ * a beat count (6, 9 and 12 on every compound card), the
  * bottom number as the beat (an eighth), and the meter with the same bar
  * felt the other way (3/4 for 6/8, 4/4 for 2/2; research/02 rule 6).
  *
@@ -76,7 +77,7 @@ const FAMILY_METERS: Record<MeterFamily, readonly string[]> = {
   cut: ['2/4', '4/4', '2/2'],
 };
 
-/** The beats a card offers at scope 0. A compound card adds its top number (6 for 6/8). */
+/** The beats a simple or cut-time card offers at scope 0; compound cards always get the full row. */
 const FELT_ROW = ['2', '3', '4'];
 const FELT_ROW_FULL = ['2', '3', '4', '6', '9', '12'];
 
@@ -120,11 +121,10 @@ export function d32Choices(fact: MeterFact, meter: string, scopeLevel: number): 
   const full = level(scopeLevel) >= 1;
   const family = familyOf(meter);
   switch (fact) {
-    case 'feltBeats': {
-      if (full) return FELT_ROW_FULL;
-      const top = String(signatureOf(meter).top);
-      return FELT_ROW.includes(top) ? FELT_ROW : [...FELT_ROW, top];
-    }
+    case 'feltBeats':
+      // Every compound card gets the whole row, so its own top number isn't
+      // the one odd button out (M8-05 review).
+      return full || family === 'compound' ? FELT_ROW_FULL : FELT_ROW;
     case 'beatUnit':
       return [...(full ? UNIT_ROW_FULL : UNIT_ROWS[family])];
     case 'kind':

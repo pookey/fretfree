@@ -59,9 +59,19 @@ describe('D32 items', () => {
     for (const m of ['4/4', '3/4', '2/4', '6/8', '9/8', '12/8', '2/2']) {
       expect(ids, m).toContain(`meter:${m}:feltBeats`);
       expect(ids, m).toContain(`meter:${m}:fromBeats`);
-      expect(ids, m).toContain(`meter:${m}:beatUnit`);
       expect(ids, m).toContain(`meter:${m}:kind`);
     }
+  });
+
+  it('asks a beat note only where it is a fact of its own', () => {
+    const ids = d32Items().flatMap((s) => s.items().map((i) => i.id));
+    expect(ids.filter((id) => id.endsWith(':beatUnit'))).toEqual([
+      'meter:4/4:beatUnit',
+      'meter:6/8:beatUnit',
+      'meter:12/8:beatUnit',
+      'meter:9/8:beatUnit',
+      'meter:2/2:beatUnit',
+    ]);
   });
 
   it('keys every card by its meter', () => {
@@ -116,8 +126,7 @@ describe('D32 answers', () => {
 
 describe('D32 choices', () => {
   it('offer the classic wrong answers for 6/8: the top number, and 3/4’s', () => {
-    expect(d32Choices('feltBeats', '6/8', 0)).toEqual(['2', '3', '4', '6']);
-    expect(d32Choices('feltBeats', '12/8', 0)).toEqual(['2', '3', '4', '12']);
+    expect(d32Choices('feltBeats', '6/8', 0)).toEqual(['2', '3', '4', '6', '9', '12']);
     expect(d32Choices('beatUnit', '6/8', 0)).toEqual(['4', '8', '4.']);
     expect(d32Choices('fromBeats', '6/8', 0)).toEqual(['3/4', '6/8', '9/8', '12/8']);
     expect(d32Choices('kind', '6/8', 0)).toEqual(['simple', 'compound']);
@@ -136,13 +145,16 @@ describe('D32 choices', () => {
     expect(d32Choices('fromBeats', '3/4', -2)).toEqual(['2/4', '3/4', '4/4']);
   });
 
-  it('depend on the card’s family, never on its answer', () => {
-    for (const fact of ['feltBeats', 'beatUnit', 'kind', 'fromBeats'] as const) {
-      const rows = new Set(
-        ['2/4', '3/4', '4/4'].map((m) => JSON.stringify(d32Choices(fact, m, 0))),
-      );
-      expect(rows.size, fact).toBe(1);
-    }
+  it('depend on the card’s family, never on the card itself', () => {
+    for (const family of [
+      ['2/4', '3/4', '4/4'],
+      ['6/8', '9/8', '12/8'],
+    ])
+      for (const fact of ['feltBeats', 'beatUnit', 'kind', 'fromBeats'] as const)
+        for (const level of [0, 1]) {
+          const rows = new Set(family.map((m) => JSON.stringify(d32Choices(fact, m, level))));
+          expect(rows.size, `${family.join()} ${fact} @${level}`).toBe(1);
+        }
   });
 });
 
