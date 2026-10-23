@@ -1,6 +1,6 @@
 import { useId, useRef, type KeyboardEvent } from 'react';
 import { Link } from 'react-router';
-import type { GuitarLook } from '../../components/guitar';
+import { hasGuard, type GuitarLook } from '../../components/guitar';
 import { CATEGORIES, catalogueItem, type Category, type GuitarSpec } from '../../engine/garage';
 import { CATEGORY_LABELS, partState, pickerItems, type PartState } from './model';
 import { PartChip } from './PartChip';
@@ -29,11 +29,11 @@ export interface PartPickerProps {
  * on (or equips it, if owned); only the Buy button spends anything.
  */
 export function PartPicker(props: PartPickerProps) {
-  const { category, spec, look, owned, balance } = props;
+  const { category, look } = props;
   const id = useId();
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
-  const selected = catalogueItem(spec[category]);
-  const items = pickerItems(category);
+  // A body drawn without a guard: nothing in the Pickguard tab would show on it.
+  const guardless = category === 'pickguard' && !hasGuard(look.body.render.shape);
 
   const onTabKey = (e: KeyboardEvent, index: number) => {
     const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
@@ -69,39 +69,57 @@ export function PartPicker(props: PartPickerProps) {
       </div>
 
       <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-tab-${category}`}>
-        {selected && (
-          <div className={styles.selected} data-testid="selected-part">
-            <p className={styles.selectedName}>{selected.name}</p>
-            <SelectedState
-              state={partState(selected, owned, balance)}
-              busy={props.busy}
-              onBuy={() => props.onBuy(selected.id)}
-            />
-          </div>
+        {guardless ? (
+          <p className={styles.noGuard} data-testid="no-guard-note">
+            This body has no pickguard.
+          </p>
+        ) : (
+          <PartList {...props} />
         )}
-        <ul className={styles.swatches} aria-label={`${CATEGORY_LABELS[category]} parts`}>
-          {items.map((item) => {
-            const state = partState(item, owned, balance);
-            return (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  className={styles.swatch}
-                  aria-pressed={item.id === spec[category]}
-                  data-state={state.kind}
-                  data-item={item.id}
-                  onClick={() => props.onTap(item.id)}
-                >
-                  <PartChip item={item} look={look} />
-                  <span className={styles.swatchName}>{item.name}</span>
-                  <SwatchTag state={state} />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
       </div>
     </div>
+  );
+}
+
+/** The selected part and its state, then a swatch per part in the category. */
+function PartList(props: PartPickerProps) {
+  const { category, spec, look, owned, balance } = props;
+  const selected = catalogueItem(spec[category]);
+  const items = pickerItems(category);
+  return (
+    <>
+      {selected && (
+        <div className={styles.selected} data-testid="selected-part">
+          <p className={styles.selectedName}>{selected.name}</p>
+          <SelectedState
+            state={partState(selected, owned, balance)}
+            busy={props.busy}
+            onBuy={() => props.onBuy(selected.id)}
+          />
+        </div>
+      )}
+      <ul className={styles.swatches} aria-label={`${CATEGORY_LABELS[category]} parts`}>
+        {items.map((item) => {
+          const state = partState(item, owned, balance);
+          return (
+            <li key={item.id}>
+              <button
+                type="button"
+                className={styles.swatch}
+                aria-pressed={item.id === spec[category]}
+                data-state={state.kind}
+                data-item={item.id}
+                onClick={() => props.onTap(item.id)}
+              >
+                <PartChip item={item} look={look} />
+                <span className={styles.swatchName}>{item.name}</span>
+                <SwatchTag state={state} />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </>
   );
 }
 

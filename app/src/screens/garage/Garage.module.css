@@ -445,3 +445,12 @@
 .main[data-size-class='compact'] .balance strong {
   font-size: 1.5rem;
 }
+
+/* The Pickguard tab on a body drawn without one (M11-11). */
+.noGuard {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--text-muted);
+}

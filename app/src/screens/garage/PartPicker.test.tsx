@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { STARTER_SPEC, catalogueItem, type Category, type GuitarSpec } from '../../engine/garage';
@@ -114,6 +114,29 @@ describe('PartPicker', () => {
     const props = renderPicker();
     fireEvent.click(swatch(/^Cherry sunburst/));
     expect(props.onTap).toHaveBeenCalledWith('finish.cherry-sunburst');
+  });
+
+  it('says plainly that a guardless body has no pickguard, with nothing to try on or buy', () => {
+    for (const shape of ['classical', 'superstrat']) {
+      const spec = { ...STARTER_SPEC, body: `body.${shape}` };
+      renderPicker({ spec, category: 'pickguard', balance: 1e6 });
+      expect(screen.getByTestId('no-guard-note')).toHaveTextContent('This body has no pickguard.');
+      expect(screen.queryByTestId('selected-part')).toBeNull();
+      expect(screen.queryByRole('list')).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Buy/ })).toBeNull();
+      expect(document.body.textContent).not.toMatch(/can.t|cannot|unavailable|locked/i);
+      // The other tabs are unchanged.
+      expect(screen.getAllByRole('tab')).toHaveLength(6);
+      cleanup();
+    }
+  });
+
+  it('offers pickguards as usual on an acoustic that has one', () => {
+    const spec = { ...STARTER_SPEC, body: 'body.dreadnought' };
+    renderPicker({ spec, category: 'pickguard' });
+    expect(screen.queryByTestId('no-guard-note')).toBeNull();
+    expect(screen.getByTestId('selected-part')).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem').length).toBeGreaterThan(1);
   });
 
   it('draws a chip for every category', () => {
