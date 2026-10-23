@@ -136,12 +136,13 @@ export function Board({
 }
 
 /** The transform that fits one electric-board inlay mark to a board `k` times as wide. */
-function fitMark(inlay: InlayShape, d: string, k: number): string {
+export function fitMark(inlay: InlayShape, d: string, k: number): string | undefined {
   if (inlay !== 'dots') return `scale(${k.toFixed(3)} 1)`;
-  // A dot is `M (cx - r) cy a r r …`: move its centre, keep it round.
-  const [, x, r] = /^M (-?[\d.]+) -?[\d.]+ a ([\d.]+)/.exec(d) ?? [];
-  const cx = Number(x) + Number(r);
-  return `translate(${((k - 1) * cx).toFixed(3)} 0)`;
+  // A dot is `M (cx - r) cy a r r …`: move its centre, keep it round. If the
+  // path isn't in that form, leave the dot where it is rather than lose it.
+  const m = /^M\s*(-?[\d.]+(?:e-?\d+)?)[\s,]+-?[\d.]+(?:e-?\d+)?\s*a\s*([\d.]+(?:e-?\d+)?)/.exec(d);
+  const cx = m ? Number(m[1]) + Number(m[2]) : NaN;
+  return Number.isFinite(cx) ? `translate(${((k - 1) * cx).toFixed(3)} 0)` : undefined;
 }
 
 /** Where the board meets the body: a soft shadow under the heel. */

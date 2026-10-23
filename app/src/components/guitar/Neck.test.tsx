@@ -10,6 +10,7 @@ import {
   SLOT,
   SLOTTED_PATH,
   Strings,
+  fitMark,
   neckHalfWidth,
   neckStringX,
   stringAnchor,
@@ -89,6 +90,16 @@ describe('<Board>', () => {
     expect(shifts.filter((x) => x === 0)).toHaveLength(7);
     expect(Math.min(...shifts)).toBeLessThan(0);
     expect(Math.max(...shifts)).toBeGreaterThan(0);
+  });
+
+  it('fits a dot by moving it, and leaves one it cannot read in place', () => {
+    expect(fitMark('dots', 'M 7 300 a 3 3 0 1 0 6 0 a 3 3 0 1 0 -6 0 Z', 1.5)).toBe(
+      'translate(5.000 0)',
+    );
+    expect(fitMark('dots', 'M 1e-1 300 a 3 3 0 1 0 6 0 Z', 2)).toBe('translate(3.100 0)');
+    // An unexpected path never becomes translate(NaN 0), which would hide the dot.
+    expect(fitMark('dots', 'M10,300 A 3 3 0 1 0 16 300 Z', 1.5)).toBeUndefined();
+    expect(fitMark('blocks', 'M -9 300 L 9 300 L 9 310 L -9 310 Z', 1.2)).toBe('scale(1.200 1)');
   });
 
   it('casts the heel shadow to the width of the neck', () => {
