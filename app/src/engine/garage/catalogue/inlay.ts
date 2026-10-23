@@ -1,15 +1,19 @@
 import { garage } from '../../config/garage';
-import type { CatalogueItem } from '../types';
+import type { CatalogueItem, InlayShape } from '../types';
 
 /** Inlay shapes (design §3.8). Positions stay standard; only the shape changes. */
+const inlay = (shape: InlayShape, name: string): CatalogueItem<'inlay'> => ({
+  id: `inlay.${shape}`,
+  category: 'inlay',
+  name,
+  price: garage.prices[`inlay.${shape}`],
+  render: { shape },
+});
+
 const inlays: readonly CatalogueItem<'inlay'>[] = [
-  {
-    id: 'inlay.dots',
-    category: 'inlay',
-    name: 'Dots',
-    price: garage.prices['inlay.dots'],
-    render: { shape: 'dots' },
-  },
+  inlay('dots', 'Dots'),
+  inlay('blocks', 'Blocks'),
+  inlay('trapezoids', 'Trapezoids'),
 ];
 
 export default inlays;
