@@ -36,6 +36,8 @@
 .spot {
   position: relative;
   flex: 1 1 auto;
+  /* As tall as the guitar, so the floor shadow sits right under it. */
+  align-self: start;
   display: grid;
   justify-items: center;
   padding: var(--space-3) var(--space-5);
