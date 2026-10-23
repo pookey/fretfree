@@ -34,7 +34,9 @@ describe('<GuitarArt>', () => {
       const svg = screen.getByRole('img');
       expect(svg.tagName).toBe('svg');
       expect(svg).toHaveAccessibleName(new RegExp(`^${BODIES.get(shape)!.name} guitar, `));
-      const outline = svg.querySelectorAll(`path[d="${BODIES.get(shape)!.outline}"]`);
+      const d = BODIES.get(shape)!.outline;
+      // Matched in JS: a selector on a long path string is unreliable in jsdom.
+      const outline = [...svg.querySelectorAll('path')].filter((p) => p.getAttribute('d') === d);
       expect(outline.length).toBeGreaterThan(2);
       const paint = finishFill(svg, type);
       if (type === 'solid') {

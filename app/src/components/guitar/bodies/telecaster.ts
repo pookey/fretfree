@@ -1,114 +1,131 @@
 import { NECK_JOINT_Y, SCALE } from '../geometry';
-import { INCH, along, inset, smoothClosed, stadium, type Pt } from '../outline';
+import { along, inset, insetOutline, smoothClosed, stadium, type Pt } from '../outline';
 import type { BodyShape } from '../types';
 
 /**
- * Telecaster: a slab with one cutaway on the treble side, a rounded bass
- * shoulder, two single coils, a bridge plate that holds the bridge pickup
- * and a control plate. The outline is fitted through the dimensions below
- * (outline method, `outline.ts`), never traced; only the name is the
- * model's.
+ * Telecaster: a flat-sided slab with a round lower bout and one deep
+ * cutaway scoop on the treble side by the neck heel; two single coils, a
+ * bridge plate that holds the bridge pickup, and a control plate. Only the
+ * name is the model's.
  *
- * Dimensions, in inches. The overall size is the published 12.75 × 15.75;
- * the bout and horn positions are measured down from the top of the bass
- * shoulder and read off reference proportions. The jack is on the rim, so
- * the top has none.
+ * Outline source: US design patent D164,227 (C. L. Fender, 1951; public
+ * domain), Fig. 3. That figure is a back view drawn upside down, so it is
+ * flipped top to bottom. Its contour was traced, the strap buttons and
+ * neck plate removed, then rescaled to the dimension table, resampled and
+ * smoothed (outline method, `outline.ts`). The headstock is our own.
+ *
+ * Dimensions, in inches: 12.75 wide × 15.75 long, the tail 136 mm behind
+ * the saddles. The points start at the tail and run clockwise. The jack is
+ * on the rim, so the top has none.
  */
-const DIM = {
-  length: 15.75,
-  shoulder: { x: -3.1 },
-  upperBout: { width: 11.8, y: 2.6 },
-  waist: { width: 11.5, y: 6.2 },
-  lowerBout: { width: 12.75, y: 11.2 },
-  trebleHorn: { x: 4.8, y: 1.0 },
-  /** The cutaway meets the neck this far below the top. */
-  cutaway: { y: 3.1 },
-  pocket: { width: 2.2 },
-};
-
-const J = NECK_JOINT_Y;
-const TAIL = SCALE + 136;
-const TOP = TAIL - DIM.length * INCH;
-const X = (inches: number) => inches * INCH;
-const Y = (inches: number) => TOP + inches * INCH;
-const P = X(DIM.pocket.width / 2);
-const UB = X(DIM.upperBout.width / 2);
-const W = X(DIM.waist.width / 2);
-const LB = X(DIM.lowerBout.width / 2);
-const TH = { x: X(DIM.trebleHorn.x), y: Y(DIM.trebleHorn.y) };
-const CUT = Y(DIM.cutaway.y);
-
-const POINTS: readonly Pt[] = [
-  [-P, J],
-  // Bass side: a nearly level top, a round shoulder, a nearly straight side.
-  [-54, TOP + 4],
-  [X(DIM.shoulder.x), TOP],
-  [-106, TOP + 5],
-  [-128, TOP + 18],
-  [-144, TOP + 40],
-  [-UB, Y(DIM.upperBout.y)],
-  [-W, Y(DIM.waist.y)],
-  [-LB, Y(DIM.lowerBout.y) - 4],
-  // A broad bottom with rounded corners.
-  [-LB + 2, Y(DIM.lowerBout.y) + 32],
-  [-152, TAIL - 49],
-  [-134, TAIL - 22],
-  [-100, TAIL - 6],
-  [-50, TAIL - 1],
-  [0, TAIL],
-  [50, TAIL - 1],
-  [100, TAIL - 6],
-  [134, TAIL - 22],
-  [152, TAIL - 49],
-  [LB - 2, Y(DIM.lowerBout.y) + 32],
-  [LB, Y(DIM.lowerBout.y) - 4],
-  [W, Y(DIM.waist.y)],
-  [UB - 1, Y(DIM.upperBout.y) + 8],
-  // The treble horn, then one long cutaway down to the end of the board.
-  [147, TH.y + 31],
-  [143, TH.y + 15],
-  [134, TH.y + 4],
-  [TH.x, TH.y],
-  [108, TH.y + 3],
-  [96, TH.y + 12],
-  [84, CUT - 29],
-  [70, CUT - 16],
-  [54, CUT - 5],
-  [P + 1, CUT],
-  // Under the board: keeps the curve's tangents short at the pocket.
-  [-6, J + 4],
+const OUTLINE: readonly Pt[] = [
+  [-4.5, 784.0],
+  [-21.5, 784.0],
+  [-38.5, 784.0],
+  [-56.0, 784.0],
+  [-73.0, 783.0],
+  [-90.0, 780.0],
+  [-106.0, 774.0],
+  [-121.0, 765.5],
+  [-134.0, 754.5],
+  [-145.0, 741.5],
+  [-153.5, 726.5],
+  [-159.0, 710.0],
+  [-162.5, 693.5],
+  [-163.0, 676.0],
+  [-162.0, 659.0],
+  [-159.0, 642.0],
+  [-154.5, 625.5],
+  [-149.0, 609.0],
+  [-142.0, 593.5],
+  [-134.5, 578.0],
+  [-127.0, 562.5],
+  [-121.5, 546.5],
+  [-118.5, 529.5],
+  [-119.0, 512.5],
+  [-123.0, 495.5],
+  [-129.5, 480.0],
+  [-137.0, 464.5],
+  [-142.5, 448.5],
+  [-144.5, 431.0],
+  [-142.5, 414.0],
+  [-136.5, 398.5],
+  [-123.5, 388.5],
+  [-106.0, 388.0],
+  [-89.0, 388.0],
+  [-72.0, 388.0],
+  [-55.0, 392.0],
+  [-38.5, 395.0],
+  [-21.0, 395.0],
+  [-4.0, 395.5],
+  [13.0, 396.0],
+  [30.5, 397.0],
+  [38.5, 410.0],
+  [39.5, 427.0],
+  [51.0, 438.5],
+  [66.5, 433.0],
+  [79.0, 421.5],
+  [88.5, 407.5],
+  [96.5, 392.0],
+  [111.0, 384.0],
+  [127.0, 388.5],
+  [135.0, 403.0],
+  [138.5, 420.0],
+  [138.5, 437.0],
+  [136.0, 454.0],
+  [130.5, 470.5],
+  [123.0, 485.5],
+  [117.5, 502.0],
+  [115.0, 519.0],
+  [115.5, 536.0],
+  [119.5, 552.5],
+  [126.5, 568.5],
+  [134.0, 584.0],
+  [140.5, 600.0],
+  [146.5, 616.0],
+  [152.0, 632.0],
+  [156.5, 649.0],
+  [160.0, 665.5],
+  [161.0, 683.0],
+  [159.5, 700.0],
+  [155.5, 716.5],
+  [148.5, 732.5],
+  [139.0, 746.5],
+  [127.0, 759.0],
+  [113.5, 769.0],
+  [98.0, 776.5],
+  [81.5, 781.0],
+  [64.5, 783.0],
+  [47.0, 783.0],
+  [30.0, 783.0],
+  [13.0, 784.0],
 ];
 
-const outline = smoothClosed(POINTS);
-const guard = (side: 'bass' | 'treble', y: number, d = 14) => inset(outline, side, y, d);
+const J = NECK_JOINT_Y;
+const outline = smoothClosed(OUTLINE);
 
-/** The control plate runs with the strings, its far end inset from the lower bout. */
-const PLATE_A = guard('treble', SCALE - 52, 56);
-const PLATE_B = guard('treble', SCALE + 70, 46);
+/**
+ * The guard surrounds the neck pickup and sweeps down the bass side, 13 mm
+ * in from the rim; the treble horn and the lower bout stay bare.
+ */
+const RIM = insetOutline(OUTLINE, 13);
+const GUARD_RIM = RIM.filter(([x, y]) => x < 56 && y < SCALE - 80);
+
+/** The control plate runs with the strings, inset from the lower treble bout. */
+const PLATE_A = inset(outline, 'treble', SCALE - 52, 56);
+const PLATE_B = inset(outline, 'treble', SCALE + 70, 46);
 
 const telecaster: BodyShape = {
   name: 'Telecaster',
   outline,
-  // Inset from the bass edge, round the neck pickup, stopping short of the
-  // bridge plate, and following the cutaway on the treble side.
   pickguard: smoothClosed([
-    [-P - 1, J + 10],
-    [-56, J + 12],
-    guard('bass', TOP + 14, 12),
-    guard('bass', Y(DIM.upperBout.y)),
-    guard('bass', Y(DIM.waist.y) - 30),
-    guard('bass', Y(DIM.waist.y) + 10, 18),
-    [-96, SCALE - 84],
-    [-60, SCALE - 82],
-    [60, SCALE - 82],
-    [94, SCALE - 96],
-    guard('treble', Y(DIM.waist.y) - 30, 26),
-    guard('treble', Y(DIM.upperBout.y) + 20, 16),
-    [114, CUT - 18],
-    [92, CUT - 8],
-    [70, CUT + 4],
-    [48, CUT + 11],
-    [P + 1, CUT + 12],
+    ...GUARD_RIM,
+    // Down beside the neck pickup to the front of the bridge plate.
+    [62, J + 100],
+    [62, J + 140],
+    [52, SCALE - 84],
+    [-52, SCALE - 84],
+    [-96, SCALE - 90],
   ]),
   pickups: [
     { type: 'single', x: 0, y: SCALE - 160 },

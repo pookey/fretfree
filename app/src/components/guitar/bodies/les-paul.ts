@@ -1,121 +1,116 @@
 import { NECK_JOINT_Y, SCALE } from '../geometry';
-import { INCH, inset, smoothClosed, type Pt } from '../outline';
+import { inset, smoothClosed, type Pt } from '../outline';
 import type { BodyShape } from '../types';
 
 /**
- * Les Paul: a small rounded upper bout, one pointed cutaway on the treble
- * side, a full lower bout, a bound top, two humbuckers, a bar bridge with
- * a stop tailpiece, four knobs and a toggle. The outline is fitted
- * through the dimensions below (outline method, `outline.ts`), never
- * traced; only the name is the model's.
+ * Les Paul: a round upper bout, one pointed cutaway on the treble side, a
+ * lower bout much wider than the upper, a bound top; two humbuckers, a bar
+ * bridge with a stop tailpiece, four knobs and a toggle. Only the name is
+ * the model's.
  *
- * Dimensions, in inches. The overall size is the published 13 × 17.25;
- * the bout and horn positions are measured down from the top of the bass
- * bout and read off reference proportions. The jack is on the rim, so the
- * top has none.
+ * Outline source: the body path (only) of Openclipart 16769, "Gibson Les
+ * Paul" by Piemaster (2008, public domain), rescaled to the dimension
+ * table, centred on its lower bout, resampled and smoothed (outline method,
+ * `outline.ts`). The bass bout beside the neck is redrawn as one arc. The
+ * headstock is our own.
+ *
+ * Dimensions, in inches: 13 wide × 17.25 long, the tail 134 mm behind the
+ * saddles. The points start at the tail and run clockwise. The jack is on
+ * the rim, so the top has none.
  */
-const DIM = {
-  length: 17.25,
-  upperBout: { width: 10.9, y: 2.9 },
-  waist: { width: 9.0, y: 7.0 },
-  lowerBout: { width: 13, y: 11.7 },
-  trebleHorn: { x: 3.45, y: 0.75 },
-  /** The cutaway meets the neck this far below the top. */
-  cutaway: { y: 3.9 },
-  pocket: { width: 2.2 },
-};
-
-const J = NECK_JOINT_Y;
-const TAIL = SCALE + 134;
-const TOP = TAIL - DIM.length * INCH;
-const X = (inches: number) => inches * INCH;
-const Y = (inches: number) => TOP + inches * INCH;
-const P = X(DIM.pocket.width / 2);
-const W = X(DIM.waist.width / 2);
-const TH = { x: X(DIM.trebleHorn.x), y: Y(DIM.trebleHorn.y) };
-const CUT = Y(DIM.cutaway.y);
-
-/** The upper bass bout is round: an arc touching the top and its widest point. */
-const UPPER = { r: (Y(DIM.upperBout.y) - TOP) * 1, cy: Y(DIM.upperBout.y) };
-const UPPER_CX = -X(DIM.upperBout.width / 2) + UPPER.r;
-const upper = (deg: number): Pt => {
-  const t = (deg * Math.PI) / 180;
-  return [UPPER_CX - UPPER.r * Math.sin(t), UPPER.cy - UPPER.r * Math.cos(t)];
-};
-
-/** The lower bout is an ellipse: widest at its dimension, round to the tail. */
-const LOWER = { rx: X(DIM.lowerBout.width / 2), cy: Y(DIM.lowerBout.y) };
-const LOWER_RY = TAIL - LOWER.cy;
-const lower = (deg: number, side = -1): Pt => {
-  const t = (deg * Math.PI) / 180;
-  return [side * LOWER.rx * Math.sin(t), LOWER.cy - LOWER_RY * Math.cos(t)];
-};
-
-const POINTS: readonly Pt[] = [
-  // Under the board: the body runs up to where its arc meets the neck.
-  [-12, J],
-  [-26, J - 32],
-  // The bass bout's round arc, over its top.
-  upper(-22),
-  upper(0),
-  upper(35),
-  upper(65),
-  upper(90),
-  upper(118),
-  [-W - 4, Y(DIM.waist.y) - 34],
-  [-W, Y(DIM.waist.y)],
-  lower(56),
-  lower(70),
-  lower(90),
-  lower(118),
-  lower(145),
-  lower(180),
-  lower(145, 1),
-  lower(118, 1),
-  lower(90, 1),
-  lower(70, 1),
-  lower(56, 1),
-  [W, Y(DIM.waist.y)],
-  [W + 4, Y(DIM.waist.y) - 36],
-  // The treble side climbs into a round horn that points up and in, then
-  // the cutaway scoops back down to the neck.
-  [124, CUT + 10],
-  [127, TH.y + 62],
-  [122, TH.y + 38],
-  [112, TH.y + 18],
-  [100, TH.y + 5],
-  [TH.x, TH.y],
-  [78, TH.y + 5],
-  [72, TH.y + 17],
-  [68, TH.y + 34],
-  [62, CUT - 26],
-  [52, CUT - 9],
-  [40, CUT - 1],
-  [P + 1, CUT],
-  // Under the board: keeps the curve's tangents short at the pocket.
-  [0, J + 26],
+const OUTLINE: readonly Pt[] = [
+  [12.0, 782.0],
+  [-7.0, 781.5],
+  [-25.0, 779.5],
+  [-43.5, 776.0],
+  [-61.5, 771.0],
+  [-79.0, 764.5],
+  [-95.5, 756.0],
+  [-111.0, 745.0],
+  [-124.5, 732.5],
+  [-137.0, 718.0],
+  [-147.5, 702.5],
+  [-156.0, 685.5],
+  [-162.0, 667.5],
+  [-165.0, 649.0],
+  [-164.5, 630.0],
+  [-161.5, 611.0],
+  [-155.5, 593.0],
+  [-147.0, 576.0],
+  [-137.0, 560.0],
+  [-126.5, 544.5],
+  [-115.5, 529.0],
+  [-106.0, 512.5],
+  [-98.0, 495.5],
+  [-96.5, 476.5],
+  [-100.5, 458.0],
+  [-107.0, 440.5],
+  [-114.5, 423.0],
+  [-120.0, 404.5],
+  [-120.5, 385.5],
+  [-113.5, 368.0],
+  [-100.5, 355.0],
+  [-84.0, 346.5],
+  [-65.5, 344.0],
+  [-50.0, 350.0],
+  [-37.0, 355.5],
+  [-26.0, 360.5],
+  [-8.0, 362.5],
+  [10.0, 353.0],
+  [22.0, 352.0],
+  [26.0, 370.5],
+  [33.0, 388.0],
+  [46.0, 401.0],
+  [64.0, 402.0],
+  [80.5, 393.5],
+  [95.5, 382.5],
+  [108.5, 389.0],
+  [110.0, 408.0],
+  [105.0, 426.5],
+  [97.0, 443.5],
+  [91.0, 461.5],
+  [89.0, 480.5],
+  [95.0, 498.5],
+  [105.0, 514.5],
+  [116.0, 530.0],
+  [127.0, 545.5],
+  [138.0, 561.0],
+  [148.0, 577.0],
+  [156.0, 594.0],
+  [162.0, 612.0],
+  [165.0, 630.5],
+  [164.5, 649.5],
+  [161.0, 668.5],
+  [155.0, 686.5],
+  [148.0, 704.0],
+  [139.5, 721.0],
+  [129.0, 737.0],
+  [116.5, 750.5],
+  [101.5, 762.0],
+  [85.0, 770.5],
+  [67.0, 775.5],
+  [49.0, 779.0],
+  [30.5, 781.0],
 ];
 
-const outline = smoothClosed(POINTS);
+const J = NECK_JOINT_Y;
+const outline = smoothClosed(OUTLINE);
 
 const lesPaul: BodyShape = {
   name: 'Les Paul',
   outline,
-  // A raised guard in the cutaway, beside the pickups: inset from the
-  // treble edge, pointed towards the bridge.
+  // A small raised teardrop beside the pickups, under the cutaway, ending
+  // about level with the bridge pickup.
   pickguard: smoothClosed([
-    [50, CUT + 16],
-    [58, CUT + 6],
-    [70, CUT - 14],
-    [80, TH.y + 44],
-    [92, TH.y + 34],
-    inset(outline, 'treble', TH.y + 56, 11),
-    inset(outline, 'treble', CUT + 30, 11),
-    inset(outline, 'treble', Y(DIM.waist.y) - 30, 12),
-    [92, SCALE - 74],
-    [70, SCALE - 40],
-    [58, SCALE - 36],
-    [51, SCALE - 52],
+    [50, J + 40],
+    [64, J + 34],
+    [78, J + 42],
+    [84, J + 70],
+    [83, J + 112],
+    [77, J + 158],
+    [64, SCALE - 46],
+    [53, J + 176],
+    [50, J + 120],
   ]),
   pickups: [
     { type: 'humbucker', x: 0, y: SCALE - 152 },
@@ -132,7 +127,7 @@ const lesPaul: BodyShape = {
       { x: 124, y: SCALE + 54 },
     ],
     switch: (() => {
-      const [x, y] = inset(outline, 'bass', Y(DIM.upperBout.y) - 10, 30);
+      const [x, y] = inset(outline, 'bass', J + 16, 30);
       return { type: 'toggle' as const, x, y };
     })(),
   },

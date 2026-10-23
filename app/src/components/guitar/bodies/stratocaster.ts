@@ -1,135 +1,119 @@
 import { NECK_JOINT_Y, SCALE } from '../geometry';
-import { INCH, edgeAngle, inset, smoothClosed, type Pt } from '../outline';
+import { edgeAngle, inset, insetOutline, smoothClosed, type Pt } from '../outline';
 import type { BodyShape } from '../types';
 
 /**
- * Stratocaster: a contoured double cutaway, the bass horn longer than the
- * treble, three single coils and a tremolo. The outline is fitted through
- * the dimensions below (outline method, `outline.ts`), never traced; only
- * the name is the model's.
+ * Stratocaster: a contoured double cutaway with a long bass horn and a
+ * shorter treble horn, a clear waist and an offset lower bout; three single
+ * coils, a tremolo and a contoured guard. Only the name is the model's.
  *
- * Dimensions, in inches. The overall size is the published 13 × 18; the
- * bout and horn positions are measured down from the bass horn's tip and
- * read off reference proportions.
+ * Outline source: the body path (only) of Openclipart 16768, "Fender
+ * Stratocaster" by Piemaster (2008, public domain), rescaled to the
+ * dimension table, centred on its lower bout, resampled and smoothed
+ * (outline method, `outline.ts`). The headstock is our own.
+ *
+ * Dimensions, in inches: 13 wide × 18 long, the tail 131 mm behind the
+ * saddles. The points start at the tail and run clockwise.
  */
-const DIM = {
-  length: 18,
-  bassHorn: { x: -3.05, y: 0 },
-  trebleHorn: { x: 3.35, y: 1.25 },
-  upperBout: { width: 11.9, y: 4.9 },
-  waist: { width: 10.7, y: 8.6 },
-  lowerBout: { width: 13, y: 13.4 },
-  pocket: { width: 2.2 },
-};
-
-const J = NECK_JOINT_Y;
-const TAIL = SCALE + 131;
-const TOP = TAIL - DIM.length * INCH;
-const X = (inches: number) => inches * INCH;
-const Y = (inches: number) => TOP + inches * INCH;
-const P = X(DIM.pocket.width / 2);
-const UB = X(DIM.upperBout.width / 2);
-const W = X(DIM.waist.width / 2);
-const LB = X(DIM.lowerBout.width / 2);
-
-const BH = { x: X(DIM.bassHorn.x), y: Y(DIM.bassHorn.y) };
-const TH = { x: X(DIM.trebleHorn.x), y: Y(DIM.trebleHorn.y) };
-
-const POINTS: readonly Pt[] = [
-  [-P, J],
-  // Bass cutaway: a round U from the pocket up the horn's inner edge.
-  [-38, J],
-  [-47, J - 3],
-  [-54, J - 10],
-  [-58, J - 22],
-  [-60, BH.y + 34],
-  [-62, BH.y + 19],
-  [-66, BH.y + 6],
-  [BH.x, BH.y],
-  // A small round tip, a straight run outwards, then a steady bend into
-  // the upper bout: the slope only ever flattens, so there is no shoulder.
-  [-88, BH.y + 5],
-  [-95, BH.y + 15],
-  [-104, BH.y + 31],
-  [-117, BH.y + 55],
-  [-130, BH.y + 79],
-  [-141, BH.y + 101],
-  [-UB + 3, BH.y + 119],
-  [-UB, Y(DIM.upperBout.y) + 8],
-  [-UB + 5, Y(DIM.upperBout.y) + 38],
-  [-W - 2, Y(DIM.waist.y) - 26],
-  [-W, Y(DIM.waist.y)],
-  [-W - 6, Y(DIM.waist.y) + 36],
-  [-LB + 9, Y(DIM.lowerBout.y) - 42],
-  [-LB, Y(DIM.lowerBout.y)],
-  [-LB + 6, Y(DIM.lowerBout.y) + 52],
-  [-134, TAIL - 22],
-  [-76, TAIL - 3],
-  [0, TAIL],
-  [76, TAIL - 3],
-  [134, TAIL - 22],
-  [LB - 6, Y(DIM.lowerBout.y) + 52],
-  [LB, Y(DIM.lowerBout.y)],
-  [LB - 9, Y(DIM.lowerBout.y) - 42],
-  // The treble waist is gentler than the bass.
-  [W + 9, Y(DIM.waist.y) + 36],
-  [W + 5, Y(DIM.waist.y)],
-  [W + 6, Y(DIM.waist.y) - 26],
-  [UB - 2, Y(DIM.upperBout.y) + 38],
-  [UB, Y(DIM.upperBout.y) + 14],
-  [UB - 3, Y(DIM.upperBout.y) - 6],
-  [UB - 10, TH.y + 74],
-  [127, TH.y + 54],
-  [114, TH.y + 32],
-  [104, TH.y + 15],
-  [96, TH.y + 5],
-  [TH.x, TH.y],
-  // Treble cutaway: shorter horn, the same round U.
-  [76, TH.y + 4],
-  [70, TH.y + 14],
-  [66, TH.y + 24],
-  [61, J - 6],
-  [52, J],
-  [40, J + 1],
+const OUTLINE: readonly Pt[] = [
+  [13.0, 779.0],
+  [-7.5, 778.5],
+  [-27.5, 777.5],
+  [-48.0, 775.5],
+  [-68.5, 773.0],
+  [-88.5, 768.5],
+  [-107.5, 761.0],
+  [-124.5, 750.5],
+  [-139.5, 736.5],
+  [-151.5, 720.0],
+  [-160.5, 701.5],
+  [-165.0, 681.5],
+  [-164.0, 661.0],
+  [-160.0, 641.0],
+  [-154.0, 621.5],
+  [-147.0, 602.5],
+  [-139.0, 583.5],
+  [-130.0, 565.5],
+  [-120.5, 547.0],
+  [-113.5, 528.0],
+  [-111.0, 507.5],
+  [-115.0, 487.5],
+  [-120.5, 468.0],
+  [-126.0, 448.0],
+  [-131.5, 428.5],
+  [-135.5, 408.5],
+  [-137.5, 388.0],
+  [-136.5, 367.5],
+  [-131.5, 348.0],
+  [-122.0, 330.0],
+  [-104.0, 322.0],
+  [-86.5, 331.0],
+  [-79.5, 350.0],
+  [-76.5, 370.0],
+  [-67.5, 388.5],
+  [-51.0, 400.0],
+  [-31.5, 397.0],
+  [-15.0, 385.0],
+  [1.0, 397.0],
+  [16.0, 411.0],
+  [31.0, 425.5],
+  [46.0, 439.0],
+  [64.5, 447.0],
+  [84.0, 443.0],
+  [98.0, 428.0],
+  [106.0, 409.0],
+  [117.5, 393.0],
+  [136.5, 392.0],
+  [151.5, 405.5],
+  [158.0, 424.5],
+  [156.0, 445.0],
+  [150.5, 464.5],
+  [143.5, 483.5],
+  [137.5, 503.0],
+  [133.5, 523.5],
+  [132.5, 543.5],
+  [135.5, 564.0],
+  [142.5, 583.0],
+  [150.0, 602.0],
+  [156.5, 621.5],
+  [161.5, 641.5],
+  [164.5, 661.5],
+  [165.5, 682.0],
+  [162.5, 702.5],
+  [156.0, 721.5],
+  [145.5, 739.0],
+  [131.0, 753.5],
+  [114.0, 764.0],
+  [94.5, 771.0],
+  [74.5, 775.0],
+  [54.0, 777.5],
+  [33.5, 778.5],
 ];
 
-const outline = smoothClosed(POINTS);
-const guard = (side: 'bass' | 'treble', y: number, d = 14) => inset(outline, side, y, d);
-const JACK_Y = Y(DIM.lowerBout.y) + 42;
+const J = NECK_JOINT_Y;
+const outline = smoothClosed(OUTLINE);
+
+/** The guard follows the rim 13 mm in, from the bass waist over both horns and down the treble side. */
+const RIM = insetOutline(OUTLINE, 13);
+const GUARD_RIM = RIM.filter(([x, y]) => (x < 0 ? y < SCALE - 72 : y < SCALE + 40));
+
+const JACK_Y = SCALE + 98;
 
 const stratocaster: BodyShape = {
   name: 'Stratocaster',
   outline,
-  // Inset from the edge where it follows the body; free points round the
-  // pickups, tremolo and controls.
   pickguard: smoothClosed([
-    [-P - 1, J + 4],
-    [-44, J + 10],
-    [-58, J + 2],
-    [-70, TOP + 52],
-    [-88, TOP + 46],
-    guard('bass', TOP + 84),
-    guard('bass', Y(DIM.upperBout.y)),
-    guard('bass', Y(DIM.waist.y) - 20),
-    guard('bass', Y(DIM.waist.y) + 30, 16),
-    [-104, SCALE - 34],
-    [-70, SCALE - 18],
-    [-42, SCALE - 19],
-    [42, SCALE - 19],
-    [54, SCALE + 6],
-    [64, SCALE + 44],
-    [82, SCALE + 74],
-    [104, SCALE + 80],
-    [118, SCALE + 62],
-    guard('treble', SCALE + 10, 30),
-    guard('treble', Y(DIM.waist.y) + 30, 16),
-    guard('treble', Y(DIM.waist.y) - 20),
-    guard('treble', Y(DIM.upperBout.y)),
-    guard('treble', TOP + 86),
-    [86, TOP + 58],
-    [70, J - 2],
-    [56, J + 10],
-    [40, J + 8],
+    ...GUARD_RIM,
+    // Round the controls, then across the top of the tremolo.
+    [128, SCALE + 66],
+    [112, SCALE + 80],
+    [88, SCALE + 74],
+    [68, SCALE + 46],
+    [54, SCALE + 8],
+    [44, SCALE - 18],
+    [-44, SCALE - 18],
+    [-84, SCALE - 34],
+    [-112, SCALE - 56],
   ]),
   pickups: [
     { type: 'single', x: 0, y: SCALE - 160 },
@@ -139,12 +123,12 @@ const stratocaster: BodyShape = {
   bridge: { type: 'tremolo', x: 0, y: SCALE },
   controls: {
     knobs: [
-      { x: 76, y: SCALE - 14 },
-      { x: 88, y: SCALE + 24 },
-      { x: 100, y: SCALE + 60 },
+      { x: 78, y: SCALE - 12 },
+      { x: 90, y: SCALE + 24 },
+      { x: 100, y: SCALE + 58 },
     ],
-    switch: { type: 'blade', x: 70, y: SCALE - 62, angle: 34 },
-    // On the top, in a recessed plate on the lower treble bout.
+    switch: { type: 'blade', x: 72, y: SCALE - 60, angle: 34 },
+    // On the top, in a recessed plate on the lower treble bout, below the guard.
     jack: (() => {
       const [x, y] = inset(outline, 'treble', JACK_Y, 21);
       return { x, y, plate: true, angle: edgeAngle(outline, 'treble', JACK_Y) };
