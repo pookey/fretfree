@@ -109,6 +109,17 @@ Push the outbox in batches, then pull to the end, then push whatever the pull qu
 
 **Switching account.** `syncState.account` names the account the cursor belongs to. Signing into a different one resets the cursor and re-queues every record. Signing out keeps the local data.
 
+### The client engine (M7-05)
+
+`storage/sync/engine.ts` is loaded on demand after first paint, and stays idle until the learner signs in.
+
+- **Account.** `syncState.account` holds the access token's `sub` (the email if the token can't be read), so a deleted and re-created account with the same email counts as a new one.
+- **Batches.** The outbox is pushed in batches within `SYNC_LIMITS`. A 400 or 413 refuses a whole batch, so the engine splits it in half until the record the server can't take is alone. That record leaves the outbox, and the rest go through. A later local change queues it again.
+- **Errors.** No network is *offline*. A 503 waits for its `retry-after`. Anything else is an *error*, retried with backoff (30 s, doubling, at most 15 min). A 410 (`account-closing`) signs out on this device and keeps local data. `stopSync()` ends syncing at once, for an account delete (M7-06).
+- **Restaging.** Pulled cards, review logs and skill states go through `RESTAGES` (`export-import.ts`), in schema-version order, before they merge. A moved row keeps its ID and gets `updatedAt + 1`. A retired skill's state becomes a tombstone, and its stages' states are added unless this device has them. Every restaged record is queued, so the server ends up holding the restaged version.
+- **Re-derivation.** After a pull that brought gamification records, `deriveGamification` works from the merged logs. `xpTotal` is at least the sum of the logged answer and quest XP. A day's XP and minutes are at least the sums logged for that date, and a day whose combined minutes reach the goal counts as met. The streak is the more generous of two settlements: the merged state settled forward, and a replay of every day from the first goal met. The replay restores a streak that a stale device broke without practising (§3.7). The forward settlement keeps a streak the replay can't see. Re-derivation logs no events: they happened, and were logged, on the device that settled them.
+- **Status.** The account panel shows `getSyncStatus()`: last synced, offline, or an error.
+
 ### Server notes (M7-03)
 
 - The table is partitioned by user ID, taken from the JWT and never from the body. A record's sort key is `table#id`. Pulls are served by a **local secondary index** on the sequence number (partition key user ID, sort key `seq`), queried with `ConsistentRead: true`. Don't use a GSI: GSIs replicate asynchronously and can't be read consistently. A pull could then see seq 11 before seq 10 has arrived, move its cursor past 10 and never fetch that record. That is the same gap the atomic write closes.
