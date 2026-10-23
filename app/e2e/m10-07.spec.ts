@@ -49,6 +49,6 @@ test('modules not built yet come after the open and locked ones', async ({ page 
   const states = await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-state')));
   const firstSoon = states.indexOf('soon');
   expect(firstSoon).toBeGreaterThan(0);
-  expect(states.slice(firstSoon)).toEqual(['soon', 'soon', 'soon']);
+  expect(states.slice(firstSoon)).toEqual(['soon', 'soon']);
   await expect(cards.last()).toContainText('Coming soon');
 });
