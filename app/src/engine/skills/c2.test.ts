@@ -99,6 +99,11 @@ describe('C2 stages (M10-12)', () => {
     expect(groups.map((g) => [g.id, g.prerequisites])).toEqual([
       ['C2.string2-naturals', ['F2.string6-naturals', 'F2.string5-naturals']],
       ['C2.all-notes', ['C2.string2-naturals']],
+      // Then a short probe of each stage they skip, once the later one is known (M10-20).
+      ['C2.string1-naturals', ['C2.string2-naturals']],
+      ['C2.string4-naturals', ['C2.string2-naturals']],
+      ['C2.string3-naturals', ['C2.string2-naturals']],
+      ['C2.low-accidentals', ['C2.all-notes']],
     ]);
   });
 

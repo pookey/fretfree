@@ -23,11 +23,31 @@ export const placement = {
    * asked 6, 5 to pass, until C1 and C6 joined in M10-16). A known skill is
    * only seeded at ≈10 days, so FSRS soon corrects a lucky pass, and the
    * stricter test-out below is what marks a skill mastered.
+   *
+   * A skill of five items or fewer asks one probe (F1's B–C and E–F, C6's
+   * triad cores): it still samples a fifth of the skill, as the large tier
+   * does at 15 items, and it frees the time the stage probes below take.
    */
   tiers: [
+    { upTo: 5, probes: 1, knownAt: 1 },
     { upTo: 8, probes: 2, knownAt: 2 },
     { upTo: Number.MAX_SAFE_INTEGER, probes: 4, knownAt: 3 },
   ],
+  /**
+   * Staged topics (M10-20). Placement probes only some of their stages (C2:
+   * string 2's naturals and the last sharps-and-flats stage; C8: the first
+   * keys), and a known later stage doesn't imply the stages skipped before
+   * it: a known string 2 says nothing about string 1. Each skipped earlier
+   * stage gets one short probe once its later stage is known, after every
+   * other probe: one answer, which must be fluent. A miss leaves the stage
+   * as new cards; a pass only seeds it (at ≈10 days, not a gate), and FSRS
+   * soon corrects a lucky one. C2 skips four stages: ~10 s for an expert,
+   * inside `budgetMs` with the one-probe tier above.
+   */
+  stageProbes: {
+    topics: ['C2', 'C8'],
+    tier: { probes: 1, knownAt: 1 },
+  },
   /**
    * The guide level a known skill starts at: inlays only. Full guides help
    * novices and hold experts back (expertise reversal, research/02).

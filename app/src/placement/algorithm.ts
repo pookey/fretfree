@@ -18,6 +18,11 @@ import type { Item, Skill } from '../engine/model';
  *
  * A known group's items are seeded as known, except any probe that wasn't
  * fluent: that item is taught like any other new one.
+ *
+ * Staged topics (C2's strings, C8's keys) probe only some stages. A known
+ * later stage says nothing about the stages placement skipped before it (a
+ * known string 2 says nothing about string 1), so each of those gets a short
+ * probe of its own once the later stage is known (M10-20, `stageProbeGroups`).
  */
 
 /** See `ENGINE_CONFIG.placement.tiers`. */
@@ -58,6 +63,8 @@ export interface GroupInput {
    * shaky, so a sample can't vouch for them.
    */
   mustProbe?: readonly string[];
+  /** Probes and pass mark for this group, instead of its size's tier (still capped at its items). */
+  tier?: { probes: number; knownAt: number };
 }
 
 export interface ProbeGroup extends GroupInput {
@@ -131,13 +138,67 @@ export function skillGroups(
   }));
 }
 
-/** The placement test's groups: every skill of the configured topics, bar `skipPlacement` ones. */
+/**
+ * The placement test's groups: every skill of the configured topics, bar
+ * `skipPlacement` ones, then the short probes for the stages they skip
+ * (`stageProbeGroups`).
+ */
 export function placementGroups(
   skills: readonly Skill[],
   canServe: (item: Item) => boolean,
   topics: readonly string[] = ENGINE_CONFIG.placement.topics,
+  stages: StageProbes = ENGINE_CONFIG.placement.stageProbes,
 ): GroupInput[] {
-  return skillGroups(skills, canServe, (s) => topics.includes(s.topic) && !s.skipPlacement);
+  const groups = skillGroups(skills, canServe, (s) => topics.includes(s.topic) && !s.skipPlacement);
+  return [...groups, ...stageProbeGroups(skills, canServe, groups, stages)];
+}
+
+/** See `ENGINE_CONFIG.placement.stageProbes`. */
+export interface StageProbes {
+  topics: readonly string[];
+  tier: { probes: number; knownAt: number };
+}
+
+/**
+ * A short probe for each stage placement skips before a probed one (M10-20):
+ * the `skipPlacement` skills of a staged topic that a probed group reaches
+ * through its prerequisites, hard or soft, without passing another probed
+ * skill or leaving the topic. Each is asked only once its later stage is
+ * known (its one prerequisite), so a learner who misses string 2 is never
+ * asked string 1, and a miss leaves that stage as new cards. They come last:
+ * the main probes decide what opens, and these only seed, so the budget
+ * spends itself on them only once everything else has settled.
+ */
+export function stageProbeGroups(
+  skills: readonly Skill[],
+  canServe: (item: Item) => boolean,
+  probed: readonly GroupInput[],
+  { topics, tier }: StageProbes = ENGINE_CONFIG.placement.stageProbes,
+): GroupInput[] {
+  const byId = new Map(skills.map((s) => [s.id, s]));
+  const taken = new Set<string>();
+  return probed.flatMap((group) => {
+    const later = byId.get(group.id);
+    if (!later || !topics.includes(later.topic)) return [];
+    const earlier = new Set<string>();
+    const walk = (s: Skill) => {
+      for (const id of [...s.prerequisites, ...(s.softPrerequisites ?? [])]) {
+        const pre = byId.get(id);
+        if (!pre?.skipPlacement || pre.topic !== later.topic || earlier.has(id)) continue;
+        earlier.add(id);
+        walk(pre);
+      }
+    };
+    walk(later);
+    // In curriculum order; a stage before two probed ones is asked after the first.
+    return skills
+      .filter((s) => earlier.has(s.id) && !taken.has(s.id))
+      .map((s) => {
+        taken.add(s.id);
+        return { id: s.id, items: s.items().filter(canServe), prerequisites: [group.id], tier };
+      })
+      .filter((g) => g.items.length > 0);
+  });
 }
 
 export function startPlacement(
@@ -156,7 +217,10 @@ export function startPlacement(
       const must = new Set(g.mustProbe ?? []);
       const first = g.items.filter((i) => must.has(i.id));
       const rest = g.items.filter((i) => !must.has(i.id));
-      const tier = probeTier(g.items.length, tiers);
+      const tier = probeTier(
+        g.items.length,
+        g.tier ? [{ upTo: Number.MAX_SAFE_INTEGER, ...g.tier }] : tiers,
+      );
       const probes = Math.max(tier.probes, first.length);
       return {
         ...g,

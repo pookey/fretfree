@@ -26,9 +26,9 @@ import { FRETS_0_12, itemsOf, memo, noteItems } from './helpers';
  *
  * The placement test probes two stages, as one C2 skill fitted its budget:
  * string 2's naturals (the hardest; a learner who knows them knows the other
- * naturals) and the last stage (the hardest sharps and flats). The other
- * stages open in turn and arrive as new cards, which a fluent learner's
- * first Easy answers space out quickly.
+ * naturals) and the last stage (the hardest sharps and flats). Each other
+ * stage gets one short probe once the probed stage after it is known (M10-20,
+ * `placement/algorithm.ts`): a known string 2 says nothing about string 1.
  */
 
 // D16 (play-the-note) finds the note on a real guitar, in mic mode only.

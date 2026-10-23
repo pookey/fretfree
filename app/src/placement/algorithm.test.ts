@@ -14,6 +14,7 @@ import {
   probeTier,
   progress,
   shuffled,
+  stageProbeGroups,
   startPlacement,
   verdicts,
   type GroupInput,
@@ -52,7 +53,8 @@ const probedGroups = (s: PlacementState) => s.answers.map((a) => a.groupId);
 
 describe('probeTier', () => {
   it('scales the probes with the group size and caps them at its items', () => {
-    expect(probeTier(4)).toEqual({ probes: 2, knownAt: 2 });
+    expect(probeTier(4)).toEqual({ probes: 1, knownAt: 1 });
+    expect(probeTier(6)).toEqual({ probes: 2, knownAt: 2 });
     expect(probeTier(15)).toEqual({ probes: 4, knownAt: 3 });
     expect(probeTier(138)).toEqual({ probes: 4, knownAt: 3 });
     expect(probeTier(1)).toEqual({ probes: 1, knownAt: 1 });
@@ -305,10 +307,12 @@ describe('placementGroups', () => {
     // ~2.5 s a probe (answer plus feedback). A CAGED core is three taps, so ~4.5 s.
     const ms = (itemId: string) => (itemId.startsWith('caged-core:') ? 4500 : 2500);
     const expertMs = all.answers.reduce((t, a) => t + ms(a.itemId), 0);
-    // An expert answers everything in the budget, the octave shapes and cores included.
+    // An expert answers everything in the budget: the octave shapes, the cores
+    // and the C2 stages placement skips (M10-20) included.
     expect(expertMs).toBeLessThanOrEqual(ENGINE_CONFIG.placement.budgetMs);
     expect(new Set(probedGroups(all))).toEqual(new Set(groups.map((g) => g.id)));
     expect(verdicts(all).get('C6.triad-cores')).toBe('known');
+    expect(verdicts(all).get('C2.string1-naturals')).toBe('known');
 
     // At ~3.5 s a probe the budget ends it first: it still reaches intervals and keys,
     // and a locked module's test-out covers whatever it didn't (M2-16).
@@ -320,6 +324,107 @@ describe('placementGroups', () => {
     const v = verdicts(s);
     for (const id of ['C3.thirds', 'C3.fourths-fifths', 'C3.seconds', 'C4.sharp-keys'])
       expect(v.get(id)).toBe('known');
+  });
+});
+
+describe('stage probes (M10-20)', () => {
+  const stage = (id: string, prerequisites: string[], extra: Partial<Skill> = {}): Skill => ({
+    id,
+    topic: 'C8',
+    order: 0,
+    title: id,
+    prerequisites,
+    drillTypes: [],
+    items: () => items(id, 12),
+    ...extra,
+  });
+  // Three key stages, only the last probed, as if C8 probed a later stage.
+  const keys = [
+    stage('C5.triads', [], { topic: 'C5' }),
+    stage('C8.one', ['C5.triads'], { skipPlacement: true }),
+    stage('C8.two', [], { softPrerequisites: ['C8.one'], skipPlacement: true }),
+    stage('C8.three', ['C5.triads'], { softPrerequisites: ['C8.two'] }),
+    // Practice after the probed stage, and a skipped stage of another topic: never probed.
+    stage('C8.after', ['C8.three'], { skipPlacement: true }),
+    stage('C5.tones', [], { topic: 'C5', skipPlacement: true }),
+  ];
+  const groups = placementGroups(keys, () => true, ['C5', 'C8']);
+  const SHORT = ENGINE_CONFIG.placement.stageProbes.tier;
+
+  it('adds a short probe for each stage skipped before a probed one, gated on it', () => {
+    expect(groups.map((g) => [g.id, g.prerequisites, g.tier])).toEqual([
+      ['C5.triads', [], undefined],
+      ['C8.three', ['C5.triads'], undefined],
+      ['C8.one', ['C8.three'], SHORT],
+      ['C8.two', ['C8.three'], SHORT],
+    ]);
+    // Only the configured topics: C5's skipped tones aren't stages of anything.
+    expect(
+      stageProbeGroups(keys, () => true, groups.slice(0, 2), { topics: [], tier: SHORT }),
+    ).toEqual([]);
+  });
+
+  it('an expert passing a later stage gets probes for the earlier ones, and they are seeded', () => {
+    const s = run(startPlacement(groups, lcg()), () => 'fluent');
+    expect(probedGroups(s)).toEqual([
+      ...Array(3).fill('C5.triads'),
+      ...Array(3).fill('C8.three'),
+      ...Array(SHORT.probes).fill('C8.one'),
+      ...Array(SHORT.probes).fill('C8.two'),
+    ]);
+    const v = verdicts(s);
+    for (const id of ['C8.one', 'C8.two', 'C8.three']) expect(v.get(id)).toBe('known');
+    expect(knownItems(s)).toHaveLength(48);
+  });
+
+  it('a probe failure leaves that stage as new cards, and the others as shown', () => {
+    const s = run(startPlacement(groups, lcg()), (id) => (id === 'C8.one' ? 'slow' : 'fluent'));
+    const v = verdicts(s);
+    expect(v.get('C8.one')).toBe('unknown');
+    expect(v.get('C8.two')).toBe('known');
+    // One miss settles it: a short probe needs every answer fluent.
+    expect(probedGroups(s).filter((id) => id === 'C8.one')).toHaveLength(1);
+    expect(knownItems(s).some((i) => i.skillId === 'C8.one')).toBe(false);
+    const seeded = new Set(knownItems(s).map((i) => i.skillId));
+    expect(seeded).toEqual(new Set(['C5.triads', 'C8.two', 'C8.three']));
+  });
+
+  it('never asks the earlier stages when the later one isn’t known', () => {
+    const s = run(startPlacement(groups, lcg()), (id) => (id === 'C8.three' ? 'wrong' : 'fluent'));
+    const v = verdicts(s);
+    for (const id of ['C8.one', 'C8.two']) expect(v.get(id)).toBe('skipped');
+    expect(probedGroups(s)).not.toContain('C8.one');
+    expect(progress(s)).toBe(1);
+  });
+
+  it('probes C2’s skipped strings after string 2, and its low sharps and flats after the last stage', () => {
+    const picker = createDrillPicker(SKILLS, DRILLS);
+    const all = placementGroups(SKILLS, (i) => picker.canServe(i));
+    const staged = all.filter((g) => g.tier);
+    expect(staged.map((g) => [g.id, g.prerequisites])).toEqual([
+      ['C2.string1-naturals', ['C2.string2-naturals']],
+      ['C2.string4-naturals', ['C2.string2-naturals']],
+      ['C2.string3-naturals', ['C2.string2-naturals']],
+      ['C2.low-accidentals', ['C2.all-notes']],
+    ]);
+    // After every main probe; C8 probes only its first keys, so nothing comes before it.
+    expect(all.slice(-staged.length)).toEqual(staged);
+    // Every C2 stage is now probed, directly or after a later one.
+    const c2 = SKILLS.filter((s) => s.topic === 'C2').map((s) => s.id);
+    expect(new Set(all.map((g) => g.id).filter((id) => id.startsWith('C2.')))).toEqual(new Set(c2));
+  });
+
+  it('an expert who misses string 1 gets strings 4 and 3 seeded, and string 1 taught', () => {
+    const picker = createDrillPicker(SKILLS, DRILLS);
+    const all = placementGroups(SKILLS, (i) => picker.canServe(i));
+    const s = run(startPlacement(all, lcg()), (id) =>
+      id === 'C2.string1-naturals' ? 'wrong' : 'fluent',
+    );
+    const v = verdicts(s);
+    expect(v.get('C2.string1-naturals')).toBe('unknown');
+    for (const id of ['C2.string4-naturals', 'C2.string3-naturals', 'C2.low-accidentals'])
+      expect(v.get(id)).toBe('known');
+    expect(knownItems(s).some((i) => i.skillId === 'C2.string1-naturals')).toBe(false);
   });
 });
 
