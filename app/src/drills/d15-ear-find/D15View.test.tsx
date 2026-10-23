@@ -120,7 +120,7 @@ describe('<D15View>', () => {
   it('with sound off, still names a find card, and waits to play', () => {
     setSettings({ soundOn: false });
     view(prompt('find:G@s5'));
-    expect(screen.getByTestId('d15-prompt')).toHaveTextContent('Find the G you hear on string 5');
+    expect(screen.getByTestId('d15-prompt')).toHaveTextContent(/^Find the G on string 5$/);
     expect(screen.getByTestId('d15-explain')).toHaveTextContent('Sound is off');
     expect(screen.getByRole('button', { name: 'Hear it again' })).toBeDisabled();
     expect(playNotes).not.toHaveBeenCalled();
@@ -220,6 +220,15 @@ describe('<D15View>', () => {
       'This is G on string 5, a minor 7th above the open A. Listen, then tap it.',
     );
     expect(screen.getByTestId('marker-target')).toHaveAttribute('data-fret', '10');
+  });
+
+  it('promises no sound on a worked example while sound is off (M4-16)', () => {
+    setSettings({ soundOn: false });
+    view(prompt('find:G@s5'), { guided: true, guideLevel: 0 });
+    expect(screen.getByTestId('d15-prompt')).toHaveTextContent(
+      /^This is G on string 5, a minor 7th above the open A\. Tap it\.$/,
+    );
+    expect(screen.getByTestId('d15-prompt')).not.toHaveTextContent('Listen');
   });
 
   it('shows both positions and how far off a wrong tap was', () => {

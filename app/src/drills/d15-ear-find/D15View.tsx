@@ -213,13 +213,14 @@ export function D15View({
     promptText = (
       <>
         This is <strong>{prompt.pc}</strong> on string {prompt.string}, a {d15Above(prompt)}.
-        Listen, then tap it.
+        {soundOn ? ' Listen, then tap it.' : ' Tap it.'}
       </>
     );
   } else if (named) {
+    // With sound off the named card is answered by name alone: no promise of a sound.
     promptText = (
       <>
-        Find the <strong>{prompt.pc}</strong> you hear on string {prompt.string}
+        Find the <strong>{prompt.pc}</strong> {soundOn ? 'you hear ' : ''}on string {prompt.string}
       </>
     );
   } else {
