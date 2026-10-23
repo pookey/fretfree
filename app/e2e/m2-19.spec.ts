@@ -80,29 +80,41 @@ async function openProgressWithReviews(page: Page): Promise<void> {
 }
 
 test.describe('M2-19 topic progress', () => {
-  test('lists Octaves and Intervals with learning and stable counts @smoke', async ({ page }) => {
+  test('lists Whole neck and Intervals, titled as on Learn, with learning and stable counts @smoke', async ({
+    page,
+  }) => {
     await openProgressWithReviews(page);
     const panel = page.locator('[data-progress-panel="topics"]');
-    await expect(panel.getByRole('heading', { name: 'Topics', level: 2 })).toBeVisible();
+    await expect(panel.getByRole('heading', { name: 'Modules', level: 2 })).toBeVisible();
 
-    const octaves = panel.getByTestId('topic-C1');
-    await expect(octaves.getByRole('heading', { name: 'Octaves' })).toBeVisible();
-    await expect(octaves.getByTestId('topic-counts')).toHaveText(/^2 learning · 0 stable of \d+$/);
-    await expect(octaves.getByRole('img')).toHaveAccessibleName(
-      /^Octaves: [1-9]\d*% learning, 0% stable$/,
+    // Octaves is a topic of Learn's Whole neck module (M10-09).
+    const neck = panel.getByTestId('progress-module-notes-2');
+    await expect(neck.getByRole('heading', { name: 'Whole neck' })).toBeVisible();
+    await expect(neck.getByTestId('topic-counts')).toHaveText(/^2 learning · 0 stable of \d+$/);
+    await expect(neck.getByRole('img')).toHaveAccessibleName(
+      /^Whole neck: [1-9]\d*% learning, 0% stable$/,
+    );
+    await expect(neck.getByTestId('topic-C1')).toHaveText(
+      /^Octaves: 2 learning · 0 stable of \d+$/,
     );
 
-    const intervals = panel.getByTestId('topic-C3');
+    const intervals = panel.getByTestId('progress-module-intervals');
     await expect(intervals.getByRole('heading', { name: 'Intervals' })).toBeVisible();
     await expect(intervals.getByTestId('topic-counts')).toHaveText(
       /^1 learning · 0 stable of \d+$/,
     );
 
-    // Only started topics are listed, and nothing claims the items are learned.
-    await expect(panel.getByRole('listitem')).toHaveCount(2);
-    await expect(panel.getByText(/learned|mastered/i)).toHaveCount(0);
+    // Only started modules are listed, and no count claims the cards are learned.
+    await expect(panel.getByTestId(/^progress-module-/)).toHaveCount(2);
+    await expect(
+      panel
+        .getByRole('list')
+        .first()
+        .getByText(/learned|mastered/i),
+    ).toHaveCount(0);
+    await expect(panel.getByTestId('learning-legend')).toBeVisible();
 
-    await expect(page.getByText('Items in rotation')).toBeVisible();
+    await expect(page.getByText('Cards practised', { exact: true })).toBeVisible();
     await expect(page.getByTestId('card-count')).toHaveText(String(REVIEWS.length));
     await expectNoHorizontalOverflow(page);
   });

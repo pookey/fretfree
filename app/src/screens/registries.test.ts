@@ -22,7 +22,7 @@ describe('screen registries', () => {
       ['heatmap', 'Mastery map'],
       ['over-time', 'Over time'],
       ['coming-up', 'Coming up'],
-      ['topics', 'Topics'],
+      ['topics', 'Modules'],
       ['stats', undefined],
       ['calendar', 'Practice calendar'],
       ['achievements', 'Achievements'],
