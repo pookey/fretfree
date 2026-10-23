@@ -891,7 +891,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Coordinate through the PM: drills over budget (M6-06 first) rebase onto it and re-run `pnpm verify:quick --preflight`.
 
 ### M1-45 · Settle the hardware-keyboard e2e flakes
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** §7 (keyboard input)
 - **Owns:** `app/e2e/m3-02.spec.ts`, `app/e2e/m1-04.spec.ts`, `app/e2e/d1-session.spec.ts`, `app/e2e/helpers/keyboard.ts` (new)
