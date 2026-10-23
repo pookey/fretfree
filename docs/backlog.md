@@ -912,6 +912,16 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The waiting message prints the real number of slots and the waiter's place in the queue ("waiting for an e2e slot: 2 of 2 in use, 3rd in line").
   - A shell test (`scripts/slot-lib.test.sh`, run by `pnpm verify:static` or a documented command) starts several fake waiters with staggered start times on one slot and checks they get it in arrival order, the lane jumps the queue, and a killed waiter's ticket doesn't block the next one.
 
+### M1-47 · Settle the M2-13 refit spec on the phone
+- **Status:** todo
+- **Deps:** none
+- **Design:** none (test reliability)
+- **Owns:** `app/e2e/m2-13.spec.ts`
+- **Acceptance:**
+  - Found by the PM, 2026-10-23: `m2-13.spec.ts:71` ("finishing a session after ~1,000 reviews stores refit weights", `@smoke`) fails on `iphone-smoke` with the session summary never visible within 15 s. It failed M10-17's lane run twice before M10-17 took its settings read out of the achievement watch, and it then passed on retry in the audio-on-mac verify (0921dfb6) and in M10-20's lane run (0458fa4c), both with that fix in.
+  - Find the cause from traces under load (`--repeat-each 10`, 5 workers, iphone-smoke): the session end with 1,000 seeded reviews (refit + persist + achievement watch) on a phone. If it is the spec (a wait that doesn't cover the refit), fix the wait on a real signal; no longer timeouts as the fix. If it's app code (session end slow or racing on the phone), report it to the PM with the evidence rather than editing outside Owns.
+  - Proof in the report: `--repeat-each 10` on iphone-smoke under 5 workers, before and after.
+
 ### M3-18 · Lazy-load drill views and the onboarding and placement routes
 - **Status:** done
 - **Deps:** M3-16
