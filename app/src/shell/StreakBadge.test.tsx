@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render as rtlRender, screen, waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { MemoryRouter } from 'react-router';
 import { getDb, saveGamification } from '../storage';
 import { StreakBadge } from './StreakBadge';
+
+// The guitar above the badge links to the Garage, so it needs a router.
+const render = (ui: ReactElement) => rtlRender(<MemoryRouter>{ui}</MemoryRouter>);
 
 describe('<StreakBadge>', () => {
   it('shows the streak, ring and freezes in the full sidebar', async () => {
@@ -38,5 +43,14 @@ describe('<StreakBadge>', () => {
     await waitFor(() =>
       expect(screen.getByTestId('sidebar-xp')).toHaveTextContent('1,300 XP earned'),
     );
+  });
+
+  it('stacks the equipped guitar on the badge, linking to the Garage', async () => {
+    render(<StreakBadge variant="icon" />);
+    const badge = await screen.findByTestId('sidebar-streak');
+    const guitar = await screen.findByRole('link', { name: 'Your guitar: My guitar' });
+    expect(guitar).toHaveAttribute('data-variant', 'icon');
+    expect(guitar.parentElement).toBe(badge.parentElement);
+    expect(badge).not.toContainElement(guitar);
   });
 });

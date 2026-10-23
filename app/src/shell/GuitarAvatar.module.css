@@ -1,0 +1,71 @@
+/*
+ * The guitar and the streak badge, pinned together to the bottom of the
+ * sidebar (design §7). The guitar sits on top: the badge's rows are full.
+ */
+.dock {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* `.dock` outweighs the shell's `.sidebar a` rules for nav links. */
+.dock .avatar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.dock .avatar[data-variant='icon'] {
+  justify-content: center;
+  padding: var(--space-2) var(--space-1);
+}
+
+@media (hover: hover) {
+  .dock .avatar:hover {
+    background: var(--surface);
+    border-color: var(--accent);
+  }
+}
+
+.dock .avatar:focus-visible {
+  outline: 3px solid var(--tone);
+  outline-offset: 2px;
+}
+
+/* As wide as the badge's ring, so the name lines up with the streak below. */
+.art {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  min-width: 2.25rem;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.label {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+/* Names run to 40 characters: one line, cut with an ellipsis. */
+.name {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
