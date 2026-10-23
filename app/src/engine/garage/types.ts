@@ -27,13 +27,20 @@ export interface ColourStop {
   colour: string;
 }
 
+/** The Okabe–Ito tokens the neck paints note markers with (`Fretboard.module.css`). */
+export type MarkerToken =
+  '--root' | '--tone' | '--correct' | '--wrong' | '--chord-fifth' | '--chord-seventh';
+
 /**
  * A fretboard palette: the neck tokens of `styles/tokens.css`, so the neck
- * skin (M11-08) can apply it as-is. Strings, fret wire and inlays must keep
- * 3:1 contrast against `--wood` (M11-04 tests this).
+ * skin (M11-08) can apply it as-is. Strings, fret wire, inlays and markers
+ * must keep 3:1 contrast against `--wood` (M11-04 tests this). A light board
+ * also sets the marker tokens, to darker shades of the same hues, because the
+ * theme's Okabe–Ito fills are too light for it; these apply on the neck only.
  */
 export type BoardPalette = Readonly<
-  Record<'--wood' | '--wood-dark' | '--string' | '--fret-wire' | '--inlay', string>
+  Record<'--wood' | '--wood-dark' | '--string' | '--fret-wire' | '--inlay', string> &
+    Partial<Record<MarkerToken, string>>
 >;
 
 export type InlayShape = 'dots' | 'blocks' | 'trapezoids';
