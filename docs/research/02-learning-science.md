@@ -61,6 +61,7 @@ There's almost no controlled research on fretboard learning itself. Choices like
 14. **Optional mental-practice drills** for when the guitar isn't to hand.
 15. **Motivation through visible competence:** fretboard mastery heatmaps, retention forecasts. Forgiving streaks with freeze days. No public leaderboards.
     _Product decision (2026-10-18): the user chose Duolingo-style gamification (streaks, XP, daily goal, achievements, quests). It is adopted with guardrails that keep it consistent with this rule; see design §3.7. Leagues are opt-in only, and there are no hearts or lives._
+    _Product decision (2026-10-23): the user asked for a Garage, where XP buys cosmetic guitar parts. Lifetime XP is never spent. Parts are bought from a derived balance, and a few finishes can only be unlocked by mastery, speed and mic badges, never by streaks. There is no randomness, scarcity or nudging, and the shop never changes what is practised or how often. See design §3.8._
 16. **Learner choice** of goals, genres and session length, but never a choice that disables spacing or retrieval.
 17. **Log reviews locally** so the thresholds can be tuned and A/B tested.
 

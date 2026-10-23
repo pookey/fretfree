@@ -42,6 +42,8 @@ Status values: `todo` · `in-progress` · `review` · `done` · `blocked`. Only 
 
 **M10 (learning-path fixes)** comes from the learning-path review of 2026-10-20 (`docs/review/2026-10-20-learning-path-review.md`, verified against main in `docs/handoff/08-review-verification.md`). Its first six WPs are `Priority: high` in the review's order: the songs on-ramp (M10-01, M10-02), session lanes (M10-03), concept intros (M10-04) and teaching feedback (M10-05, M10-06).
 
+**M11 (the Garage)** is a user request (2026-10-23): XP becomes visible, and it buys cosmetic guitar parts (design §3.8). Every M11 WP is `Priority: high`. M11-01 is the contract (schema v6, so it holds the `db.ts` hotspot).
+
 **M8 (future: reading and meter)** has its own section at the end. Its timing-engine contract (M8-01) is shared with M6-08 and scheduled early. The rest follows M6 via soft `After` ordering.
 
 Milestones group features; they are **not** release gates. Every merged WP ships (`pnpm ship`). Packages from later milestones may start as soon as their dependencies are `done`.
@@ -1850,3 +1852,162 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
 - **Acceptance:**
   - PM decision: a learner placed "known" on a later C2 or C8 stage does not get the earlier stages implied (a known string 2 says nothing about string 1). Placement adds one short probe per skipped earlier stage, inside the existing time budget (`placement.budgetMs`), and seeds only what the learner shows.
   - Unit tests: an expert passing a later stage gets probes for the earlier ones; a probe failure leaves that stage as new cards.
+
+---
+
+## M11: The Garage
+
+User request, 2026-10-23. XP was earned but its total was never shown and it had no use. The Garage turns it into a cosmetic guitar you build and customise: body shape, finish, pickguard, hardware, fretboard wood and inlays. Most parts are bought from a derived garage balance (lifetime XP is never spent). A few finishes are unlocked only by mastery, speed and mic badges. The guitar also appears in the sidebar and on the drill fretboard, and can be shared as an image. Design §3.8 holds the model and the guardrails, which every WP here must respect: no randomness, scarcity or shop nudges, loss-free copy, never streak-tied, and guide fading always wins over the neck skin.
+
+### M11-01 · [contract] Garage model, wallet and schema v6
+- **Status:** todo
+- **Priority:** high (user request 2026-10-23)
+- **Deps:** —
+- **Design:** §3.8
+- **Owns:** `app/src/engine/garage/**`, `app/src/engine/config/garage.ts`, `app/src/storage/db.ts`, `app/src/storage/garage-repo.ts`, `app/src/storage/garage-repo.test.ts`, `app/src/storage/export-import.ts`, `app/src/storage/sync/model.ts`, `app/src/storage/sync/model.test.ts`
+- **Acceptance:**
+  - `engine/garage/types.ts`: `GuitarSpec { body, finish, pickguard, hardware, board, inlay }` (catalogue item IDs) and `CatalogueItem { id, category, name, price?, unlockedBy?, render }`, where `category` is one of body, finish, pickguard, hardware, board or inlay, `unlockedBy` is an achievement ID, and `render` is per-category data: finish colour stops and type (solid, sunburst, natural, metallic or sparkle); board `--wood`, `--wood-dark`, `--string`, `--fret-wire` and `--inlay` values; inlay shape.
+  - Catalogue items register one file per category from `engine/garage/catalogue/*.ts` through `import.meta.glob`, the same pattern as `engine/config/index.ts`. This WP lands the registry and a **free starter set**: one part per category, making a complete starter guitar. M11-04 adds the rest.
+  - `engine/garage/wallet.ts` is pure and deterministic:
+    - `balance(xpTotal, purchases)` returns `xpTotal − Σ price`, displayed as at least 0;
+    - `owned(purchases, achievements)` returns starter parts, bought parts, and finishes whose `unlockedBy` badge is unlocked;
+    - `canBuy(item, state)` is false for mastery-only items, owned items and unaffordable items;
+    - `buy(item, state, now)` returns the purchase record or a typed refusal.
+  - Unit tests reach 90% or more.
+  - Schema **v6** appends `garagePurchases: 'itemId'` (`{ itemId, price, at, uid }`) and `garage: 'key'` (singleton `{ key, spec, name }`). Earlier versions are not edited.
+  - `storage/garage-repo.ts` has get build, save build, list purchases, and `purchase()` in one transaction that re-checks `canBuy` against stored XP.
+  - `getGarage` falls back to the starter build. `xpTotal` is never written by the garage.
+  - Sync: add both tables to `SYNC_TABLES`. Purchases merge as fields with `at: 'min'`, so two devices buying the same part union to one row. The build merges as a record (last write wins). `model.test.ts` stays green.
+  - JSON export and import round-trip both tables, with a test. A v5 export still imports.
+  - Prices live in `engine/config/garage.ts`. That file holds only the starter prices (0) and the reachability constants that M11-04's test uses.
+
+### M11-02 · Make XP visible: XP earned and the garage balance
+- **Status:** todo
+- **Priority:** high (user request 2026-10-23)
+- **Deps:** M11-01
+- **Design:** §3.7, §3.8
+- **Owns:** `app/src/shell/StreakBadge.tsx`, `app/src/shell/StreakBadge.module.css`, `app/src/screens/progress/panels/stats.tsx`, `app/src/session/summary/SessionSummary.tsx`, `app/src/screens/about/AboutScreen.tsx`, `app/src/components/xp/**`, `app/e2e/m11-02.spec.ts`
+- **Acceptance:**
+  - The sidebar badge shows XP earned (lifetime) under the streak, kept live with `liveQuery`.
+  - The Progress stats panel shows "XP earned" and "To spend in the Garage".
+  - The session summary keeps "XP earned" for the session and adds a line "N to spend in the Garage". The line becomes a link once the Garage route exists (M11-06); until then it is plain text.
+  - A plain-words "What XP is for" explanation sits on About and in the Progress stats panel: XP grows with useful practice (due reviews and new items count most) and buys parts for your guitar.
+  - Copy is loss-free. A balance is never described as falling or lost.
+  - RTL tests and an e2e spec, with a `@smoke` check that the balance renders on a phone.
+
+### M11-03 · Guitar SVG renderer and the first three bodies
+- **Status:** todo
+- **Priority:** high (user request 2026-10-23)
+- **Deps:** M11-01
+- **Design:** §3.8
+- **Owns:** `app/src/components/guitar/**`
+- **Acceptance:**
+  - `<Guitar spec size label?>` renders any `GuitarSpec` as one SVG: the body with its finish, the pickguard, pickups, bridge, knobs, hardware colour, and the neck with the board wood, frets and inlays (standard positions; shape from the spec). It also renders an **original** headstock. No brand headstock or model silhouette may be copied.
+  - All five finish types render: solid, sunburst (radial gradient), natural (wood-grain pattern), metallic (gradient) and sparkle (static pattern; nothing animates under `prefers-reduced-motion`).
+  - Bodies are one file per shape in `components/guitar/bodies/<id>.ts`, auto-registered with `import.meta.glob`. Each exports its outline path, its pickguard path (optional), its pickup and bridge anchor points, and its neck joint. This WP lands **S-style, T-style and single-cut**.
+  - It has `role="img"` and a generated label such as "Single-cut guitar, cherry sunburst, cream pickguard, gold hardware, rosewood neck with block inlays".
+  - The renderer is lazy-loaded wherever it is mounted, so it adds nothing to first-load JS.
+  - Tests: RTL coverage that every registered body renders with every finish type, plus label tests. There is no new e2e, since this WP has no route.
+
+### M11-04 · Catalogue: priced parts, neck palettes and mastery finishes
+- **Status:** todo
+- **Priority:** high (user request 2026-10-23)
+- **Deps:** M11-01
+- **Design:** §3.8
+- **Owns:** `app/src/engine/garage/catalogue/**`, `app/src/engine/config/garage.ts`, `app/src/engine/garage/catalogue.test.ts`
+- **Acceptance:**
+  - The full catalogue, with generic names only:
+    - all 7 body shapes: S-style, T-style, single-cut, double-cut, offset, hollow-body, dreadnought;
+    - about 15 finishes across all five types;
+    - pickguards (including "none");
+    - chrome, gold and black hardware;
+    - rosewood, maple and ebony boards;
+    - dot, block and trapezoid inlays.
+  - About 6 **mastery finishes**, each with `unlockedBy` set to an existing achievement among `whole-neck`, `string-N-master`, `speed-demon`, `mic-notes` and `mic-sequences`. **None is tied to a `streak-*` badge** (a test enforces this). They have no price.
+  - Prices live in `engine/config/garage.ts`. A **reachability test** derives typical daily XP at the Casual and Regular goals from `gamification.xp`, documenting its assumption about answers per minute. It asserts two things:
+    - the cheapest non-starter part is affordable after about one Casual day;
+    - the most expensive part needs no more than about 14 Regular days.
+  - Board palettes: a test computes WCAG contrast of `--string`, `--fret-wire`, `--inlay` and the marker colours (Okabe–Ito tokens) against `--wood`, and requires at least 3:1 for each. A light maple board therefore needs dark strings and inlays.
+  - Every item ID is unique, and every `unlockedBy` names a registered achievement.
+
+### M11-05 · Remaining bodies: double-cut, offset, hollow-body, dreadnought
+- **Status:** todo
+- **Priority:** high (user request 2026-10-23)
+- **Deps:** M11-03
+- **Design:** §3.8
+- **Owns:** `app/src/components/guitar/bodies/double-cut.ts`, `app/src/components/guitar/bodies/offset.ts`, `app/src/components/guitar/bodies/hollow-body.ts`, `app/src/components/guitar/bodies/dreadnought.ts`, their tests
+- **Acceptance:**
+  - Four new body files follow M11-03's per-shape contract. The hollow-body has f-holes. The dreadnought is acoustic: a soundhole and a bridge, no pickups, and the pickguard drawn as a teardrop where the spec has one.
+  - All outlines are original. They are recognisable as the generic shape, but not traced from a product.
+  - The existing render tests now cover all seven shapes.
+
+### M11-06 · Garage screen: browse, try on, buy, equip and name
+- **Status:** todo
+- **Priority:** high (user request 2026-10-23)
+- **Deps:** M11-03, M11-04
+- **Design:** §3.8, §7 Garage
+- **Owns:** `app/src/routes/garage.route.tsx`, `app/src/screens/garage/**`, `app/e2e/m11-06.spec.ts`, `app/e2e/layout-sweep.spec.ts`
+- **Acceptance:**
+  - Route `/progress/garage` uses `layout: 'shell'`, has no `nav`, and keeps Progress highlighted. The screen is lazy (`lazyElement`).
+  - On regular-wide, the guitar preview is the main pane and the part picker is the `ScreenLayout` context panel: category tabs, then swatches. On compact, the preview sits on top and the picker is the context sheet. Swatches are 44pt or larger.
+  - **Tapping a part tries it on.** The preview changes and nothing is spent. The selected swatch shows one of three states:
+    - "Owned";
+    - "Buy · N XP" (enabled only if affordable, with no confirm dialog);
+    - "Unlocked by the *Whole neck* badge", linking to the achievements panel.
+
+    Text and shape mark each state, not just colour.
+  - Buying calls `garage-repo.purchase()` and equips the part. The balance updates live. "Reset to my build" discards a try-on.
+  - The guitar has an editable name (max 40 characters, saved on blur).
+  - Copy follows §3.8: no "can't afford" wording, and no nudges.
+  - M11-02's summary line now links here.
+  - If `app/e2e/layout-sweep.spec.ts` exists on main, add `/progress/garage` to its `SCREENS`.
+  - Tests: RTL for the picker states. An e2e that seeds XP, tries on a part, buys it, re-equips the starter for free and reloads to check it persisted. A `@layout` check of the context panel on iPad. A `@smoke` buy flow on a phone.
+
+### M11-07 · Your guitar in the sidebar and on Progress
+- **Status:** todo
+- **Priority:** high (user request 2026-10-23)
+- **Deps:** M11-06
+- **After:** M11-02
+- **Design:** §3.8, §7
+- **Owns:** `app/src/shell/GuitarAvatar.tsx`, `app/src/shell/GuitarAvatar.module.css`, `app/src/shell/StreakBadge.tsx`, `app/src/screens/progress/panels/guitar.tsx`, `app/e2e/m11-07.spec.ts`
+- **Acceptance:**
+  - A small, lazily loaded rendering of the equipped guitar sits beside the sidebar streak badge (mounted from `StreakBadge.tsx`, so `AppShell.tsx` is untouched). It links to the Garage, with the accessible name "Your guitar: <name>". When the sidebar collapses to icons, it shrinks to the body only. The phone tab bar is unchanged.
+  - A Progress panel, "Your guitar" (order about 14), previews the build with its name and balance and has an "Open the Garage" link.
+  - The first-load budget still holds.
+  - RTL tests, and an e2e test that the avatar and panel reflect a newly equipped part.
+
+### M11-08 · Neck skin: drills use your board wood and inlays
+- **Status:** todo
+- **Priority:** high (user request 2026-10-23)
+- **Deps:** M11-04
+- **Design:** §3.8 neck skin, §8
+- **Owns:** `app/src/components/fretboard/Fretboard.tsx`, `app/src/components/fretboard/Fretboard.module.css`, `app/src/components/fretboard/Fretboard.test.tsx`, `app/src/components/guitar/skin.ts`, `app/src/styles/tokens.css`, `app/src/engine/model.ts` (one setting), `app/src/screens/settings/SettingsGroups.tsx`, `app/e2e/m11-08.spec.ts`
+- **Acceptance:**
+  - The equipped board's palette (`--wood`, `--wood-dark`, `--string`, `--fret-wire`, `--inlay`) is applied through a `data-board` attribute on the root element, so every neck renderer that uses the tokens follows: the Fretboard, the heatmap and the capo neck. The attribute is set by a small hook that reads the build with `liveQuery`.
+  - The Fretboard gains an optional `inlayStyle: 'dots' | 'blocks' | 'trapezoids'`, defaulting to dots, supplied by a lightweight context. Only the shape changes. **`guideLevel` and `blindMode` still decide whether inlays render.** A test covers level 0 plus blind mode for every style.
+  - A Settings toggle, "Use my guitar's neck in drills", is on by default. With it off, the neck looks exactly as it does today.
+  - `pnpm lighthouse` accessibility stays at 100 in dark and light with the maple board equipped. The first-load budget holds: the catalogue palette data the hook needs is small, or loaded lazily.
+  - An e2e spec equips maple with blocks, opens D1, and checks the attribute and the inlay shape. A `@layout` screenshot comparison isn't required.
+
+### M11-09 · Share my guitar
+- **Status:** todo
+- **Priority:** high (user request 2026-10-23)
+- **Deps:** M11-06
+- **Design:** §3.8 sharing
+- **Owns:** `app/src/screens/garage/share/**`, `app/src/screens/privacy/PrivacyScreen.tsx`, `app/e2e/m11-09.spec.ts`
+- **Acceptance:**
+  - A "Share my guitar" button on the Garage renders a PNG card entirely on the device: the guitar SVG drawn to a canvas, the guitar's name, an optional "Badges: …" line (a toggle, off by default), and the app URL.
+  - Where `navigator.canShare({ files })` is true (iPadOS and iOS Safari), it calls `navigator.share`. Otherwise it downloads the PNG through the existing download helper (`storage/download-export.ts` pattern). A share cancelled by the user (AbortError) is not an error.
+  - There is no network request (asserted in e2e). The privacy screen gets one line saying that sharing is user-initiated, and that the image is made on the device and goes only where you send it.
+  - RTL tests with `navigator.share` mocked. An e2e of the download path (WebKit has no share sheet in Playwright).
+
+### M11-10 · Badge unlocks name their garage finish
+- **Status:** todo
+- **Priority:** high (user request 2026-10-23)
+- **Deps:** M11-04
+- **Design:** §3.7 achievements, §3.8
+- **Owns:** `app/src/components/achievements/**`, `app/e2e/m11-10.spec.ts`
+- **Acceptance:**
+  - For a badge that unlocks a mastery finish, the achievement toast and the achievement list add "Unlocks the *Gold leaf* finish in the Garage", looked up from the catalogue's `unlockedBy`.
+  - Informational tone: the competence comes first and the finish is secondary. Badges that unlock nothing are unchanged.
+  - RTL tests, and an e2e test that unlocks `whole-neck` from seeded data and sees the line.

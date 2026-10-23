@@ -180,6 +180,55 @@ DailyProgress { date, xp, minutes, goalMet, freezeUsed, questsCompleted[] }
 Achievement { id, unlockedAt }
 ```
 
+### 3.8 The Garage (spending XP on cosmetic guitars)
+
+User request, 2026-10-23. XP was earned but never shown as a total, so learners couldn't tell how much they had or what it was for. The Garage gives XP a use: build and customise your own guitar. It is cosmetic only. It never changes *what* is practised or how often (§3.7 engine wiring).
+
+**XP has two jobs.**
+
+- **XP earned** is the lifetime total (`Gamification.xpTotal`). It is never spent, never reduced and never shown as lost. Sync merges it by max, so nothing can lower it.
+- **Garage balance** is derived, not stored: `xpTotal − Σ price of owned parts`, shown as "N to spend". If an offline merge pushes it below zero, it displays as 0.
+
+**Catalogue.** These are the categories:
+
+- **Body shape.** Generic names and original artwork: S-style, T-style, single-cut, double-cut, offset, hollow-body and dreadnought acoustic.
+- **Finish.** Solid colours, sunbursts, natural woods, metallics and sparkle.
+- **Pickguard.** A colour, or none.
+- **Hardware.** Chrome, gold or black.
+- **Fretboard wood.** Rosewood, maple or ebony.
+- **Inlay shape.** Dots, blocks or trapezoids.
+
+A free starter guitar is owned from day one. There are two ways to get a part (the user chose this hybrid):
+
+- **Bought with XP.** Most parts, at fixed prices in `engine/config/garage.ts`.
+- **Unlocked by mastery.** A handful of special finishes can't be bought. Each is tied to an existing mastery, speed or mic achievement (for example *Whole neck*, *String N master*, *Speed demon*). None is tied to a streak. The finish is free and owned the moment its badge unlocks.
+
+Headstocks are original shapes. Brand headstock silhouettes and model names are trademarks, so the app copies neither.
+
+| Guardrail | Why |
+|---|---|
+| No randomness: no loot boxes, chests or mystery parts. No limited-time or rotating stock, no sales. | Variable-ratio and scarcity mechanics make a reward controlling, not informational (Deci et al. 1999). |
+| No notifications or nudges to visit the shop. No "can't afford" copy. Prices are shown plainly. | The shop is optional. It must not compete with the session for attention, and §3.7's copy stays loss-free. |
+| Purchases are permanent, and re-equipping an owned part is free. | Spending is a choice, never a loss. |
+| Mastery finishes come from mastery, speed and mic badges, never from streaks. | They signal competence (rule 15). Streak-tied rewards would add loss-aversion pressure. |
+| Prices are set so a first purchase is possible after about one day at the default goal, and nothing costs more than about two weeks at the Regular goal. A config test checks this against the XP config. | The reward stays small and reachable. It doesn't become a grind target, and M1-08 already guarantees that grinding stable cards can't out-earn doing due reviews. |
+
+**The neck skin.** By default the drill fretboard uses the equipped board wood and inlay shape. A Settings toggle, "Use my guitar's neck in drills", turns this off.
+
+- Only palettes whose strings, fret wire, inlays and markers pass a contrast check against the board are offered.
+- Inlay positions stay standard, and only the shape changes.
+- Guide fading (§8) always wins: `guideLevel` and blind mode decide whether inlays show, never the skin.
+
+**Sharing ("share my guitar").** The Garage renders the guitar to a PNG card on the device, with the guitar's name, an optional line of earned badges, and the app URL. On iPad and iPhone it goes through the Web Share API (`navigator.share({ files })`), and elsewhere it is downloaded. Nothing is uploaded.
+
+Data model additions (schema v6):
+
+```ts
+GaragePurchase { itemId, price, at }   // one row per owned part; sync unions rows, at: 'min'
+GarageBuild { key: 'singleton', spec: GuitarSpec, name }   // the equipped build; last write wins
+GuitarSpec { body, finish, pickguard, hardware, board, inlay }   // catalogue item IDs
+```
+
 ## 4. Personalisation (instead of "learning styles")
 
 Onboarding takes under 3 minutes, and every step is skippable:
@@ -447,6 +496,15 @@ User request, 2026-10-19. Utilities a guitarist reaches for while practising, ke
 - **Coming up:** reviews due on each of the next 7 days (overdue counts as today), and the mean recall of practised items 30 days out if practice stopped today.
 - **Practice calendar:** session history and streak days, a week per row, shaded by minutes against the daily goal, with ✓ for goal days and ❄ for freezes.
 - Accuracy over time is deliberately not charted: the adaptive band (§3.3 step 4) holds it at 80–90%, so a flat line would read as "not improving".
+
+### Garage
+
+Reached from Progress (`/progress/garage`), from the guitar avatar in the sidebar, and from the session summary's balance line. It is not a nav section (§3.8).
+
+- **Regular-wide:** the guitar preview fills the main pane. The part picker (category tabs, then swatches with prices or the badge that unlocks them) is the context panel.
+- **Compact:** the preview sits on top, and the picker becomes a sheet.
+- Tapping a part tries it on for free. "Buy · N XP" buys it, with no confirm dialog. Owned parts equip with a tap, and the guitar can be named.
+- "Share my guitar" opens the share sheet with a PNG card.
 
 ### Settings
 
