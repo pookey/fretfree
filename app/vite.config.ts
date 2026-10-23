@@ -94,7 +94,9 @@ export default defineConfig({
     ],
     // Verify runs while several worktrees verify at once (load 40–50 on 10
     // cores). The 5 s default failed healthy tests in the integration lane.
-    testTimeout: 20_000,
+    // The remote runner's slower cores scale it (TEST_TIMEOUT_SCALE, as in
+    // playwright.config.ts).
+    testTimeout: 20_000 * (Number(process.env.TEST_TIMEOUT_SCALE ?? 1) || 1),
     // Several worktrees test at once, and each run used to start a worker per
     // core. Cap it so concurrent runs share the machine; the lane raises it.
     maxWorkers: Number(process.env.VITEST_MAX_WORKERS ?? 4),

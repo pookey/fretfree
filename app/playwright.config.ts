@@ -37,7 +37,7 @@ const quiet = new RegExp(
 // did before (`pnpm e2e:full`, the scheduled safety net). Worker checks run
 // `pnpm e2e:fast`: ipad-landscape plus the phone (scripts/verify-quick.sh).
 const fullMatrix = process.env.PW_FULL_MATRIX === '1';
-const timeoutScale = Number(process.env.PW_TIMEOUT_SCALE ?? 1) || 1;
+const timeoutScale = Number(process.env.TEST_TIMEOUT_SCALE ?? 1) || 1;
 const extraIpad = fullMatrix ? { grepInvert: /@phone/ } : { grep: /@layout/, grepInvert: /@phone/ };
 export default defineConfig({
   testDir: './e2e',
@@ -45,7 +45,7 @@ export default defineConfig({
   testMatch: quietPhase === 'quiet' ? quiet : '**/*.spec.ts',
   ...(quietPhase === 'main' && { testIgnore: quiet }),
   // Timeouts are per test, so a slower machine needs longer ones even when
-  // it finishes the suite sooner. The remote runner sets PW_TIMEOUT_SCALE:
+  // it finishes the suite sooner. The remote runner sets TEST_TIMEOUT_SCALE:
   // its cores are about half as fast per thread and 20 workers share them,
   // so a test takes 1.8x as long as on the Mac (2.6x at the 90th percentile).
   timeout: 30_000 * timeoutScale,
