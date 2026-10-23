@@ -1833,7 +1833,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Unit tests for both; an e2e check on one guide-level neck.
 
 ### M10-19 · Explore walk-backs follow the gates still unmet
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user's top priority; follow-up from M10-02)
 - **Deps:** M10-02
 - **Design:** PM decision on M10-02 (progress.md "Decisions and deviations")
