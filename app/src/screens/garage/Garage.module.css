@@ -26,19 +26,19 @@
 }
 
 .main[data-size-class='regular-wide'] .info {
-  flex: 1 1 10rem;
+  flex: 1 1 11.5rem;
 }
 
 /*
  * The guitar's width: from the window's height (less the title, back link
  * and padding; 370 / 1010 is the drawing's aspect), or narrower when the main
  * pane is (iPad mini), leaving the stage's padding, the gap, the spot's
- * padding and a 10rem name column beside it.
+ * padding and an 11.5rem name column beside it.
  */
 .main[data-size-class='regular-wide'] .frame {
   width: min(
     calc(clamp(20rem, 100dvh - 17rem, 52rem) * 0.3663),
-    calc(100cqi - 2.125rem - 1.5rem - 1.5rem - 10rem)
+    calc(100cqi - 2.125rem - 1.5rem - 1.5rem - 11.5rem)
   );
 }
 
@@ -176,6 +176,11 @@
   font-size: 1.125rem;
 }
 
+/* "to spend" stays on one line in a narrow column. */
+.balance span {
+  white-space: nowrap;
+}
+
 .balance strong {
   color: var(--text);
   font-family: var(--font-display);
@@ -189,6 +194,7 @@
 }
 
 .reset {
+  white-space: nowrap;
   min-height: var(--tap);
   padding: 0 var(--space-4);
   border-radius: var(--radius-m);

@@ -150,7 +150,7 @@ export function GarageScreen({ now = () => new Date() }: { now?: () => Date }) {
           <div className={styles.info}>
             <GuitarName name={build.name} />
             <p className={styles.balance} data-testid="garage-wallet">
-              <strong>{toSpend.toLocaleString('en')}</strong> to spend
+              <strong>{toSpend.toLocaleString('en')}</strong> <span>to spend</span>
             </p>
             <p className={styles.tryOnNote} aria-live="polite">
               {tryingOn ? `Trying on: ${tryOnSummary(trying)}. Nothing is spent.` : 'Your build.'}

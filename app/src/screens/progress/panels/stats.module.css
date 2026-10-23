@@ -3,6 +3,11 @@
   position: relative;
 }
 
+/* Room for the arrow, so a long label never runs under it. */
+.linked dt {
+  padding-inline-end: 1.75rem;
+}
+
 .link {
   color: inherit;
   text-decoration: none;
