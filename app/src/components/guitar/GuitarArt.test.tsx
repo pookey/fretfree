@@ -1,9 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { contrast } from './colour';
 import { GuitarArt } from './GuitarArt';
 import { BODIES } from './registry';
 import { FINISHES, look } from './test/fixtures';
 import type { FinishType } from './types';
+
+const BLACK = {
+  name: 'Black',
+  render: { type: 'solid', stops: [{ offset: 0, colour: '#161616' }] },
+} as const;
 
 const PAINT: Record<FinishType, string | null> = {
   solid: null,
@@ -62,6 +68,29 @@ describe('<GuitarArt>', () => {
       />,
     );
     expect(document.querySelectorAll('path[fill="#efe3c8"]')).toHaveLength(0);
+  });
+
+  it.each([
+    ['a black guard', { name: 'Black', render: { colour: '#1b1b1b' } }, FINISHES.solid],
+    ['no guard on a black finish', { name: 'None', render: { colour: null } }, BLACK],
+  ] as const)('keeps single-coil covers visible on %s', (_, pickguard, finish) => {
+    const surface = pickguard.render.colour ?? finish.render.stops[0]!.colour;
+    render(
+      <GuitarArt
+        spec={look({
+          body: { name: 'Stratocaster', render: { shape: 'stratocaster' } },
+          pickguard,
+          finish,
+        })}
+        size={20}
+      />,
+    );
+    // The cover is the 72 x 18 rounded rect of each single coil.
+    const covers = [...screen.getByRole('img').querySelectorAll('rect[width="72"]')];
+    expect(covers).toHaveLength(3);
+    for (const c of covers) {
+      expect(contrast(c.getAttribute('fill')!, surface)).toBeGreaterThanOrEqual(3);
+    }
   });
 
   it('paints the board wood and the hardware colour', () => {

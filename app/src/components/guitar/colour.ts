@@ -32,3 +32,20 @@ export function luminance(c: string): number {
   });
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
+
+/** WCAG contrast ratio between two colours, 1 to 21. */
+export function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+const CREAM = '#ece6da';
+const BLACK = '#1c1a19';
+
+/**
+ * Plastic parts (single-coil covers, switch tips) in cream or black,
+ * whichever stands out more from the surface they sit on.
+ */
+export function plasticFor(surface: string): string {
+  return contrast(CREAM, surface) >= contrast(BLACK, surface) ? CREAM : BLACK;
+}

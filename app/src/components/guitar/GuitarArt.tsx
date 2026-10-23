@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { darken, lighten, luminance } from './colour';
+import { darken, lighten, plasticFor } from './colour';
 import { finishPaint } from './finish';
 import { frameBox, frameOf, type GuitarCrop, type GuitarSize } from './frame';
 import { DEFAULT_FRETS, stringWidth, stringX, tunerPost } from './geometry';
@@ -52,7 +52,8 @@ export function GuitarArt({ spec, size, label, crop = 'full', className }: Guita
   const paints: Paints = {
     metal: `url(#${id('metal')})`,
     colour: hardware,
-    plastic: guard && luminance(guard) > 0.5 ? '#f7f4ec' : '#1c1a19',
+    // Against the guard, or the finish where there is none.
+    plastic: plasticFor(guard ?? spec.finish.render.stops[0]?.colour ?? '#888888'),
   };
   const tailY = stringEnd(body.bridge, body.tailpiece);
 
