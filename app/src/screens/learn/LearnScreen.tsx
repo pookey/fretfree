@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useAppStore } from '../../app-store';
+import { LearningLegend } from '../../components/learning-legend/LearningLegend';
 import { DRILLS } from '../../drills/registry';
 import { SKILLS, type CardRecord, type Goal, type SkillStatus } from '../../engine';
 import type { StatusOverlay } from '../../engine/overlay';
@@ -89,7 +90,7 @@ function ModuleCard({
           <span className={styles.moduleMeta}>
             {MODULE_STATE_LABEL[view.state]}
             {skills > 0 &&
-              ` · ${view.masteredSkills}/${skills} skills · ${percent(view.learning)}% learning · ${percent(view.mastery)}% stable`}
+              ` · ${view.masteredSkills}/${skills} skills mastered · ${percent(view.learning)}% learning · ${percent(view.mastery)}% stable`}
           </span>
         </span>
       </Link>
@@ -152,6 +153,8 @@ export function LearnScreen() {
                 ))}
               </select>
             </label>
+            {/* Defined where the numbers first appear (copy audit, screens §9). */}
+            <LearningLegend className={styles.legend} />
             <ul className={styles.modules}>
               {map.map((view) => (
                 <ModuleCard

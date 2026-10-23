@@ -4,6 +4,7 @@ import { useAppStore } from '../app-store';
 import { DRILLS } from '../drills/registry';
 import type { AnyDrillType } from '../drills/types';
 import type { Module } from '../engine/frontier';
+import { gatesOf, meetsGate } from '../engine/mastery';
 import type { Skill, SkillStatus } from '../engine/model';
 import { SKILLS } from '../engine/skills';
 import { createDrillPicker } from '../session/drill-picker';
@@ -20,6 +21,40 @@ import {
   unmetPrerequisites,
 } from './test-out';
 import styles from './TestOut.module.css';
+
+/**
+ * What a locked module waits for, split by gate (M10-01's wording): the
+ * titles to master and the titles to be practising, across its first skills.
+ */
+function waitsFor(
+  module: Module,
+  skills: readonly Skill[],
+  statuses: ReadonlyMap<string, SkillStatus>,
+): { master: string[]; practise: string[] } {
+  const unmet = { mastered: new Set<string>(), practising: new Set<string>() };
+  for (const skill of entrySkills(module, skills)) {
+    if (statuses.get(skill.id) !== 'locked') continue;
+    const gates = gatesOf(skill);
+    for (const gate of ['mastered', 'practising'] as const)
+      for (const p of gates[gate]) if (!meetsGate(gate, statuses.get(p))) unmet[gate].add(p);
+  }
+  const titles = (ids: Set<string>) => skills.filter((s) => ids.has(s.id)).map((s) => s.title);
+  return { master: titles(unmet.mastered), practise: titles(unmet.practising) };
+}
+
+/** "Chords opens once you’ve mastered 3rds and are practising Sharp keys." */
+export function opensOnceText(
+  title: string,
+  { master, practise }: { master: readonly string[]; practise: readonly string[] },
+): string {
+  const parts = [
+    master.length > 0 && `you’ve mastered ${listOf(master)}`,
+    practise.length > 0 && `${master.length > 0 ? 'are' : 'you’re'} practising ${listOf(practise)}`,
+  ].filter(Boolean);
+  return parts.length === 0
+    ? `${title} opens once you’ve mastered what it builds on.`
+    : `${title} opens once ${parts.join(' and ')}.`;
+}
 
 /**
  * "Already know this? Test out" on a locked module's detail (design §3.4,
@@ -95,7 +130,7 @@ export function TestOut({
           {opened ? (
             <p>
               <strong>{module.title} is open.</strong> Its first skills now join your sessions, and
-              what you knew comes back as check-ups, not lessons.
+              what you knew comes back as check-ups, not as new cards.
             </p>
           ) : (
             <p>
@@ -132,12 +167,13 @@ export function TestOut({
 
   if (!offer || !loaded || !statuses || probed.length === 0) return null;
   const titles = probed.map((id) => skills.find((s) => s.id === id)?.title ?? id);
+  const opensOnce = opensOnceText(module.title, waitsFor(module, skills, statuses));
   return (
     <section className={styles.testOut} aria-labelledby={headingId} data-testid="test-out">
       <h3 id={headingId}>Already know this?</h3>
       <p>
-        {module.title} opens once you’ve mastered what it builds on. If you already have, prove it
-        now instead of waiting for the reviews: a short test of {listOf(titles)}.
+        {opensOnce} Already there? Prove it now instead of waiting for the reviews: a short test of{' '}
+        {listOf(titles)}.
       </p>
       <p className={styles.muted}>
         Every answer has to be quick and correct. Anything you miss stays to practise, and nothing

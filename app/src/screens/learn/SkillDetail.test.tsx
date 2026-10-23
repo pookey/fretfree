@@ -36,7 +36,7 @@ describe('<SkillDetail>', () => {
   it('opens the worked example and offers focused practice on the frontier', async () => {
     renderSkill('F2.string6-naturals', 'unlocked');
     expect(
-      screen.getByText('Its new items join your daily sessions, a few each day.'),
+      screen.getByText('Its new cards join your daily sessions, a few each day.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Practise this now' })).toHaveAttribute(
       'href',
@@ -91,7 +91,7 @@ describe('<SkillDetail>', () => {
   it('offers no practice for a skill no built drill can test', () => {
     renderSkill('F3.markers', 'unlocked', false);
     expect(screen.getByText(/Coming soon\. Its drill isn't built yet/)).toBeInTheDocument();
-    expect(screen.queryByText(/Its new items join your daily sessions/)).toBeNull();
+    expect(screen.queryByText(/Its new cards join your daily sessions/)).toBeNull();
     expect(screen.queryByRole('link', { name: 'Practise this now' })).toBeNull();
   });
 

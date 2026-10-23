@@ -32,7 +32,7 @@ function statusCopy(view: SkillView): Copy[] {
     ];
   if (view.status === 'mastered') return [{ text: 'Mastered. Reviews keep it fresh.', needs: [] }];
   if (isFrontier(view.status))
-    return [{ text: 'Its new items join your daily sessions, a few each day.', needs: [] }];
+    return [{ text: 'Its new cards join your daily sessions, a few each day.', needs: [] }];
   const gates = gatesOf(view.skill);
   const titles = (ids: readonly string[]) => ids.map((id) => getSkill(id)?.title ?? id);
   const [master, practise] = [titles(gates.mastered), titles(gates.practising)];

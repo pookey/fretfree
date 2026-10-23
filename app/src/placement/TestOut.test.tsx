@@ -15,7 +15,7 @@ import type { Module } from '../engine/frontier';
 import { getSkill } from '../engine/skills';
 import { FretworkDB, getSkillStates } from '../storage';
 import { noteAt } from '../theory';
-import { TestOut } from './TestOut';
+import { TestOut, opensOnceText } from './TestOut';
 
 // A module whose one skill needs string 6's natural notes mastered (a hard
 // gate). Only D1 runs here, so the test-out probes string 6's 8 `note@`
@@ -112,11 +112,28 @@ async function nextProbe(id: string) {
   });
 }
 
+describe('opensOnceText', () => {
+  it('names what to master and what to be practising (M10-01 wording)', () => {
+    expect(opensOnceText('Chords', { master: ['3rds'], practise: ['Sharp keys'] })).toBe(
+      'Chords opens once you’ve mastered 3rds and are practising Sharp keys.',
+    );
+    expect(opensOnceText('Pentatonic', { master: [], practise: ['A', 'B'] })).toBe(
+      'Pentatonic opens once you’re practising A and B.',
+    );
+    expect(opensOnceText('Keys', { master: ['A', 'B', 'C'], practise: [] })).toBe(
+      'Keys opens once you’ve mastered A, B and C.',
+    );
+    expect(opensOnceText('Keys', { master: [], practise: [] })).toBe(
+      'Keys opens once you’ve mastered what it builds on.',
+    );
+  });
+});
+
 describe('TestOut', () => {
   it('offers a locked module a test of what it still needs', () => {
     renderOffer();
     const offer = screen.getByRole('region', { name: 'Already know this?' });
-    expect(offer).toHaveTextContent(/Gated opens once you’ve mastered what it builds on/);
+    expect(offer).toHaveTextContent(/Gated opens once you’ve mastered Natural notes on string 6\./);
     expect(offer).toHaveTextContent(/a short test of Natural notes on string 6/);
     expect(within(offer).getByRole('button', { name: 'Test out' })).toBeInTheDocument();
   });

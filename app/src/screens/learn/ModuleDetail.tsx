@@ -1,4 +1,5 @@
-import { ENGINE_CONFIG, type SkillStatus } from '../../engine';
+import { LearningLegend } from '../../components/learning-legend/LearningLegend';
+import type { SkillStatus } from '../../engine';
 import { TestOut } from '../../placement/TestOut';
 import { MasteryRing } from './MasteryRing';
 import { MODULE_STATE_LABEL, percent, type ModuleView } from './map-model';
@@ -65,8 +66,9 @@ export function ModuleDetail({
       {track && <p className={styles.muted}>{track}</p>}
       {view.state === 'locked' && (
         <p className={styles.note} data-testid="preview-note">
-          You can preview this module now. Its skills start feeding your sessions once you've made
-          progress on what they build on.
+          You can look around this module now and try its examples. Its skills join your daily
+          sessions on their own once you’re far enough along with what they build on: each skill
+          below says what it’s waiting for.
         </p>
       )}
       {view.skills.length > 0 && (
@@ -92,12 +94,9 @@ export function ModuleDetail({
               <SkillDetail key={s.skill.id} view={s} />
             ))}
           </ul>
+          <LearningLegend />
           <p className={styles.muted}>
-            An item is learning while your latest answer to it is right. It becomes stable once
-            you'd still recall it {ENGINE_CONFIG.mastery.stabilityDays} days later, which takes
-            spaced reviews over several days, not one long session. A skill is mastered when{' '}
-            {Math.round(ENGINE_CONFIG.mastery.itemShare * 100)}% of its items are stable and you
-            answer within your speed target.
+            A card becomes stable through reviews spread over several days, not one long session.
           </p>
         </>
       ) : (
