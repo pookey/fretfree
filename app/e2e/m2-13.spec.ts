@@ -69,7 +69,12 @@ async function storedFit(page: Page): Promise<{ w: number[]; reviewCount: number
 async function playOneAndFinish(page: Page): Promise<void> {
   await focusSession(page, SKILL);
   await answer(page, await targetNote(page));
-  await expect(page.getByTestId('feedback-correct')).toBeVisible();
+  // The progress bar moves on once the answer is in and the session advances;
+  // unlike the 700 ms "correct" feedback it stays, so a slow poll can't miss it.
+  await expect(page.getByRole('progressbar', { name: 'Session progress' })).toHaveAttribute(
+    'aria-valuenow',
+    '1',
+  );
   await expect(page.getByTestId('feedback-bar')).not.toHaveAttribute('data-state');
   await page.getByRole('button', { name: 'End session' }).click();
   await expect(page.getByTestId('session-summary')).toBeVisible();
