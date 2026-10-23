@@ -191,7 +191,7 @@ User request, 2026-10-23. XP was earned but never shown as a total, so learners 
 
 **Catalogue.** These are the categories:
 
-- **Body shape.** Generic names and original artwork: S-style, T-style, single-cut, double-cut, offset, hollow-body and dreadnought acoustic.
+- **Body shape.** The names guitarists use, on original artwork. Electrics: Stratocaster, Telecaster, Les Paul, SG, Jazzmaster, ES-335 and Superstrat. Acoustics: dreadnought, jumbo, parlour, concert (OM) and classical (nylon string).
 - **Finish.** Solid colours, sunbursts, natural woods, metallics and sparkle.
 - **Pickguard.** A colour, or none.
 - **Hardware.** Chrome, gold or black.
@@ -203,7 +203,7 @@ A free starter guitar is owned from day one. There are two ways to get a part (t
 - **Bought with XP.** Most parts, at fixed prices in `engine/config/garage.ts`.
 - **Unlocked by mastery.** A handful of special finishes can't be bought. Each is tied to an existing mastery, speed or mic achievement (for example *Whole neck*, *String N master*, *Speed demon*). None is tied to a streak. The finish is free and owned the moment its badge unlocks.
 
-Headstocks are original shapes. Brand headstock silhouettes and model names are trademarks, so the app copies neither.
+**Names and trademarks (user decision, 2026-10-23).** Bodies use the exact model names because learners recognise them, and the user chose that over "Strat-style" names. Stratocaster, Telecaster, Jazzmaster (Fender), Les Paul, SG and ES-335 (Gibson) are trademarks of their owners. The About screen says so, and that Fretwork isn't affiliated with or endorsed by them. The **artwork stays original**: bodies are drawn, not traced from a product. Headstocks are our own shapes (three-a-side, six-in-line and slotted classical), never a brand's headstock silhouette or logo, because those are the most strongly protected.
 
 | Guardrail | Why |
 |---|---|

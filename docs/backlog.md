@@ -42,7 +42,7 @@ Status values: `todo` · `in-progress` · `review` · `done` · `blocked`. Only 
 
 **M10 (learning-path fixes)** comes from the learning-path review of 2026-10-20 (`docs/review/2026-10-20-learning-path-review.md`, verified against main in `docs/handoff/08-review-verification.md`). Its first six WPs are `Priority: high` in the review's order: the songs on-ramp (M10-01, M10-02), session lanes (M10-03), concept intros (M10-04) and teaching feedback (M10-05, M10-06).
 
-**M11 (the Garage)** is a user request (2026-10-23): XP becomes visible, and it buys cosmetic guitar parts (design §3.8). Every M11 WP is `Priority: high`. M11-01 is the contract (schema v6, so it holds the `db.ts` hotspot).
+**M11 (the Garage)** is a user request (2026-10-23): XP becomes visible, and it buys cosmetic guitar parts (design §3.8). Every M11 WP is `Priority: high`. Bodies use the exact model names (user decision 2026-10-23), with an attribution note on About and original artwork. M11-01 is the contract (schema v6, so it holds the `db.ts` hotspot).
 
 **M8 (future: reading and meter)** has its own section at the end. Its timing-engine contract (M8-01) is shared with M6-08 and scheduled early. The rest follows M6 via soft `After` ordering.
 
@@ -1892,6 +1892,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - The Progress stats panel shows "XP earned" and "To spend in the Garage".
   - The session summary keeps "XP earned" for the session and adds a line "N to spend in the Garage". The line becomes a link once the Garage route exists (M11-06); until then it is plain text.
   - A plain-words "What XP is for" explanation sits on About and in the Progress stats panel: XP grows with useful practice (due reviews and new items count most) and buys parts for your guitar.
+  - About adds a short trademark note (design §3.8): "Stratocaster, Telecaster and Jazzmaster are trademarks of Fender Musical Instruments Corporation. Les Paul, SG and ES-335 are trademarks of Gibson Brands, Inc. Fretwork isn't affiliated with or endorsed by either. The guitar drawings are our own."
   - Copy is loss-free. A balance is never described as falling or lost.
   - RTL tests and an e2e spec, with a `@smoke` check that the balance renders on a phone.
 
@@ -1905,7 +1906,8 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - `<Guitar spec size label?>` renders any `GuitarSpec` as one SVG: the body with its finish, the pickguard, pickups, bridge, knobs, hardware colour, and the neck with the board wood, frets and inlays (standard positions; shape from the spec). It also renders an **original** headstock. No brand headstock or model silhouette may be copied.
   - All five finish types render: solid, sunburst (radial gradient), natural (wood-grain pattern), metallic (gradient) and sparkle (static pattern; nothing animates under `prefers-reduced-motion`).
   - Bodies are one file per shape in `components/guitar/bodies/<id>.ts`, auto-registered with `import.meta.glob`. Each exports its outline path, its pickguard path (optional), its pickup and bridge anchor points, and its neck joint. This WP lands **S-style, T-style and single-cut**.
-  - It has `role="img"` and a generated label such as "Single-cut guitar, cherry sunburst, cream pickguard, gold hardware, rosewood neck with block inlays".
+  - It has `role="img"` and a generated label such as "Les Paul guitar, cherry sunburst, cream pickguard, gold hardware, rosewood neck with block inlays".
+  - *(User decision 2026-10-23: bodies use the exact model names. This WP's three are `stratocaster`, `telecaster` and `les-paul`, named Stratocaster, Telecaster and Les Paul. The artwork and headstock stay original.)*
   - The renderer is lazy-loaded wherever it is mounted, so it adds nothing to first-load JS.
   - Tests: RTL coverage that every registered body renders with every finish type, plus label tests. There is no new e2e, since this WP has no route.
 
@@ -1916,8 +1918,8 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
 - **Design:** §3.8
 - **Owns:** `app/src/engine/garage/catalogue/**`, `app/src/engine/config/garage.ts`, `app/src/engine/garage/catalogue.test.ts`
 - **Acceptance:**
-  - The full catalogue, with generic names only:
-    - all 7 body shapes: S-style, T-style, single-cut, double-cut, offset, hollow-body, dreadnought;
+  - The full catalogue:
+    - all 12 body shapes, with the exact model names (design §3.8, user decision 2026-10-23): Stratocaster, Telecaster, Les Paul, SG, Jazzmaster, ES-335, Superstrat, dreadnought, jumbo, parlour, concert and classical. A body whose file hasn't landed yet (M11-05, M11-11) is still listed. The Garage hides parts whose body isn't registered (`bodyFor` throws), so add a `registered` check or a test fixture rather than failing;
     - about 15 finishes across all five types;
     - pickguards (including "none");
     - chrome, gold and black hardware;
@@ -1930,16 +1932,40 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - Board palettes: a test computes WCAG contrast of `--string`, `--fret-wire`, `--inlay` and the marker colours (Okabe–Ito tokens) against `--wood`, and requires at least 3:1 for each. A light maple board therefore needs dark strings and inlays.
   - Every item ID is unique, and every `unlockedBy` names a registered achievement.
 
-### M11-05 · Remaining bodies: double-cut, offset, hollow-body, dreadnought
+### M11-05 · Electric bodies: SG, Jazzmaster, ES-335 and Superstrat
 - **Status:** todo
 - **Priority:** high (user request 2026-10-23)
 - **Deps:** M11-03
 - **Design:** §3.8
-- **Owns:** `app/src/components/guitar/bodies/double-cut.ts`, `app/src/components/guitar/bodies/offset.ts`, `app/src/components/guitar/bodies/hollow-body.ts`, `app/src/components/guitar/bodies/dreadnought.ts`, their tests
+- **Owns:** `app/src/components/guitar/bodies/sg.ts`, `app/src/components/guitar/bodies/jazzmaster.ts`, `app/src/components/guitar/bodies/es-335.ts`, `app/src/components/guitar/bodies/superstrat.ts`, `app/src/components/guitar/parts.tsx`, `app/src/components/guitar/types.ts`, their tests
 - **Acceptance:**
-  - Four new body files follow M11-03's per-shape contract. The hollow-body has f-holes. The dreadnought is acoustic: a soundhole and a bridge, no pickups, and the pickguard drawn as a teardrop where the spec has one.
-  - All outlines are original. They are recognisable as the generic shape, but not traced from a product.
-  - The existing render tests now cover all seven shapes.
+  - Four new body files follow M11-03's per-shape contract, with the exact model names (user decision 2026-10-23):
+    - SG: thin double horns and bevels;
+    - Jazzmaster: an offset waist, a large pickguard and two wide single coils;
+    - ES-335: a semi-hollow double-cut with f-holes, binding and a trapeze or stop tailpiece;
+    - Superstrat: a sharper double-cut with deep cutaways, 24 frets, and a humbucker-single-humbucker layout.
+  - If the Superstrat needs a locking tremolo, add a `locking` bridge type in `types.ts` and `parts.tsx`. Keep it additive.
+  - All outlines and headstocks are original artwork, recognisable as the shape but not traced from a product.
+  - The existing render tests now cover all registered shapes. Check the drawings visually (render to PNG) before reporting.
+
+### M11-11 · Acoustic bodies: dreadnought, jumbo, parlour, concert and classical
+- **Status:** todo
+- **Priority:** high (user request 2026-10-23)
+- **Deps:** M11-03
+- **After:** M11-05
+- **Design:** §3.8
+- **Owns:** `app/src/components/guitar/bodies/dreadnought.ts`, `app/src/components/guitar/bodies/jumbo.ts`, `app/src/components/guitar/bodies/parlour.ts`, `app/src/components/guitar/bodies/concert.ts`, `app/src/components/guitar/bodies/classical.ts`, `app/src/components/guitar/Neck.tsx`, `app/src/components/guitar/parts.tsx`, `app/src/components/guitar/types.ts`, their tests
+- **Acceptance:**
+  - Five acoustic bodies, each with a soundhole and rosette (`details`), an acoustic bridge with pins, no pickups and no electronics:
+    - dreadnought: square shoulders, 14 frets clear of the body;
+    - jumbo: a round lower bout and a narrow waist;
+    - parlour: small, 12 frets clear;
+    - concert (OM): 14 frets clear;
+    - classical: 12 frets clear, a tie-block bridge, no pickguard, and a wider, flatter neck with nylon-coloured treble strings.
+  - The pickguard, where the spec has one, is a teardrop beside the soundhole.
+  - The body contract gains an optional `headstock: 'solid' | 'slotted'` (default `solid`) and an optional `neck: 'electric' | 'acoustic' | 'classical'` width. `Neck.tsx` draws an **original** slotted headstock with rollers for the classical. Steel-string acoustics may use the solid three-a-side headstock.
+  - Neck joints follow the 12- or 14-fret rule while every body keeps the shared scale and saddle line.
+  - Render tests cover every body. Check the drawings visually (render to PNG) before reporting.
 
 ### M11-06 · Garage screen: browse, try on, buy, equip and name
 - **Status:** todo
