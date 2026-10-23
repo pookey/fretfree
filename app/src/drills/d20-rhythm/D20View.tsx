@@ -432,7 +432,7 @@ function countOf(step: number): string {
  * carry the verdict, not colour alone.
  */
 function HitMarker({ mark }: { mark: HitMark }) {
-  if (mark.offsetMs === null) return <span className={styles.miss}>✕</span>;
+  if (mark.offsetMs === null) return <span>✕</span>;
   const x = d20MarkX(mark.offsetMs);
   const style = {
     '--x': x,
