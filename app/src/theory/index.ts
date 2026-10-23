@@ -9,3 +9,5 @@ export * from './pentatonic';
 export * from './arpeggios';
 export * from './function';
 export * from './staff';
+export * from './meter';
+export * from './rhythm';
