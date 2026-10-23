@@ -129,7 +129,9 @@ test.describe('M4-10 ear only', () => {
     const link = earOnly(page);
     await expect(link).toBeVisible();
     expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-    await expect(quickDrills(page).getByTestId('ear-only-copy')).toHaveText(/nothing is due/i);
+    await expect(quickDrills(page).getByTestId('ear-only-copy')).toHaveText(
+      /no ear cards are due/i,
+    );
     await expectNoHorizontalOverflow(page);
 
     await link.click();
