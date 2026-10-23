@@ -484,7 +484,7 @@ export const PROGRESSIONS: readonly Progression[] = [
     name: 'I–IV–V',
     mode: 'major',
     numerals: ['I', 'IV', 'V'],
-    description: 'The three-chord backbone of folk, country and rock and roll.',
+    description: 'The three-chord backbone of folk, country and rock ’n’ roll.',
   },
   {
     id: 'I-V-vi-IV',

@@ -32,6 +32,7 @@ const REPLAY_KEY = 'r';
  */
 export function D14View({
   prompt,
+  guideLevel,
   guided,
   handedness,
   sizeClass,
@@ -79,6 +80,10 @@ export function D14View({
   }, [feedback, onAnswer, choices, prompt]);
 
   const explanation = feedback ? d14Explain(prompt, feedback.answer) : null;
+  // From guide level 2 the panel beside the feedback says what each sound
+  // is like, so the feedback doesn't say it again. A compact sheet starts
+  // closed, so there the feedback keeps it.
+  const panelHasCues = Boolean(aside) && sizeClass !== 'compact' && (guided || guideLevel >= 2);
 
   return (
     <div
@@ -152,7 +157,7 @@ export function D14View({
             <div className={styles.feedback} data-testid="d14-feedback">
               <p>
                 {explanation && <>{explanation} </>}
-                {d14Fact(prompt)}
+                {d14Fact(prompt, { cue: !panelHasCues })}
               </p>
               {wrong && (
                 <div className={styles.compare} role="group" aria-label="Compare the sounds">

@@ -52,7 +52,36 @@ describe('D14 words', () => {
     expect(d14Explain(pop, 'vi-IV-I-V')).toBe(
       'vi–IV–I–V uses the same chords in another order: listen for the chord it starts on.',
     );
-    expect(d14Explain(pop, 'I-IV-V')).toBe('I–IV–V has different chords: I–IV–V.');
+  });
+
+  it('names the chords a wrong progression has or lacks, in the key that played', () => {
+    const pop = prompt('prog:I-V-vi-IV:ear', 2);
+    expect(d14Explain(pop, 'I-IV-V')).toBe('I–IV–V uses C, F and G. This one also has Am.');
+    // The same four chords, not a rotation: the order is the cue.
+    expect(d14Explain(pop, 'I-vi-IV-V')).toBe(
+      'I–vi–IV–V uses the same chords in another order: C–Am–F–G.',
+    );
+    const three = prompt('prog:I-IV-V:ear', 2);
+    expect(d14Explain(three, 'I-V-vi-IV')).toBe(
+      'I–V–vi–IV uses C, G, Am and F. This one has no Am.',
+    );
+    expect(d14Explain(prompt('prog:ii-V-I:ear', 2), 'I-IV-V')).toBe(
+      'I–IV–V uses C, F and G. This one has Dm, not F.',
+    );
+    // A minor progression plays in the relative minor, so the chords compare.
+    expect(d14Explain(three, 'i-bVII-bVI-bVII')).toBe(
+      'i–♭VII–♭VI–♭VII uses Am, G and F. This one has C, not Am.',
+    );
+  });
+
+  it('leaves the sound’s character to the panel when it shows it', () => {
+    expect(d14Fact(prompt('ear-chord:minor'), { cue: false })).toBe('Minor chord (1 ♭3 5).');
+    expect(d14Fact(prompt('prog:I-V-vi-IV:ear', 0, 0), { cue: false })).toBe(
+      'I–V–vi–IV in C major.',
+    );
+    expect(d14Fact(prompt('ear-interval:M3:up'), { cue: false })).toBe(
+      'Major 3rd, rising: 4 half steps apart.',
+    );
   });
 
   it('labels buttons for the ear and for VoiceOver', () => {

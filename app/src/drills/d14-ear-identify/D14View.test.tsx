@@ -181,6 +181,16 @@ describe('<D14View>', () => {
     );
   });
 
+  it('leaves what the sound is like to the panel beside the feedback', () => {
+    const p = prompt('prog:I-IV-V:ear');
+    const { unmount } = renderView(p, { feedback: fb(p, 'I-IV-V') });
+    expect(screen.getByTestId('d14-feedback')).toHaveTextContent(/^I–IV–V in C major\.$/);
+    unmount();
+    // A phone's panel is a closed sheet, so the feedback says it.
+    renderView(p, { feedback: fb(p, 'I-IV-V'), sizeClass: 'compact' });
+    expect(screen.getByTestId('d14-feedback')).toHaveTextContent('three-chord backbone');
+  });
+
   it('says when silent mode leaves the clip unheard', () => {
     act(() => useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, soundOn: false } }));
     renderView(prompt());

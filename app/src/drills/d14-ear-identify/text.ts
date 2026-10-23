@@ -7,7 +7,7 @@ import {
   type ChordKind,
   type IntervalName,
 } from '../../theory';
-import { d14KeyOf, d14LongName, pretty, type D14Kind, type D14Prompt } from './logic';
+import { d14Chart, d14KeyOf, d14LongName, pretty, type D14Kind, type D14Prompt } from './logic';
 
 /**
  * D14's words: the question, the worked example, what each sound is and
@@ -18,6 +18,17 @@ import { d14KeyOf, d14LongName, pretty, type D14Kind, type D14Prompt } from './l
 
 function plural(n: number, what: string): string {
   return `${n} ${what}${n === 1 ? '' : 's'}`;
+}
+
+/** `C`, `C and F`, `C, F and G`. */
+function list(items: readonly string[]): string {
+  if (items.length <= 1) return items.join('');
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+}
+
+/** A progression's chords in the key it plays in, each once, in the order they first sound. */
+function chordsOf(prompt: D14Prompt, progression: string): string[] {
+  return [...new Set(d14Chart(prompt, progression).map((c) => pretty(c.symbol)))];
 }
 
 /** `rising`, `falling`, `played together`. */
@@ -98,8 +109,13 @@ export const REFERENCE_TUNES: Readonly<Record<string, string>> = {
   P8: 'Somewhere over the Rainbow',
 };
 
-/** The sound, named and explained: the worked example (rule 8) and the feedback (rule 10). */
-export function d14Fact(prompt: D14Prompt): string {
+/**
+ * The sound, named and explained: the worked example (rule 8) and the
+ * feedback (rule 10). `cue: false` leaves out what it sounds like (a chord's
+ * character, a progression's description) when the context panel beside it
+ * already says so.
+ */
+export function d14Fact(prompt: D14Prompt, { cue = true }: { cue?: boolean } = {}): string {
   switch (prompt.kind) {
     case 'interval': {
       const n = intervalSemitones(prompt.answer as IntervalName);
@@ -107,12 +123,13 @@ export function d14Fact(prompt: D14Prompt): string {
     }
     case 'chord': {
       const formula = d14SubLabel('chord', prompt.answer) as string;
-      const character = CHORD_CHARACTER[prompt.answer as ChordKind];
+      const character = cue ? CHORD_CHARACTER[prompt.answer as ChordKind] : undefined;
       return `${title(d14LongName('chord', prompt.answer))} chord (${formula})${character ? `: ${character}` : ''}.`;
     }
     case 'progression': {
       const p = getProgression(prompt.answer);
-      return `${pretty(p.name)} in ${d14KeyName(prompt)}. ${p.description}`;
+      const named = `${pretty(p.name)} in ${d14KeyName(prompt)}.`;
+      return cue ? `${named} ${p.description}` : named;
     }
   }
 }
@@ -143,7 +160,18 @@ export function d14Explain(prompt: D14Prompt, answer: string): string | null {
       if (relatedRotations(prompt.answer).some((p) => p.id === answer)) {
         return `${pretty(yours)} uses the same chords in another order: listen for the chord it starts on.`;
       }
-      return `${pretty(yours)} has different chords: ${pretty(getProgression(answer).numerals.join('–'))}.`;
+      // Both in the key that played, so the chords that differ are the cue.
+      const heard = chordsOf(prompt, prompt.answer);
+      const mine = chordsOf(prompt, answer);
+      const added = heard.filter((c) => !mine.includes(c));
+      const missing = mine.filter((c) => !heard.includes(c));
+      if (added.length === 0 && missing.length === 0) {
+        return `${pretty(yours)} uses the same chords in another order: ${pretty(d14Chart(prompt, answer).map((c) => c.symbol).join('–'))}.`;
+      }
+      const uses = `${pretty(yours)} uses ${list(mine)}.`;
+      if (added.length === 0) return `${uses} This one has no ${list(missing)}.`;
+      if (missing.length === 0) return `${uses} This one also has ${list(added)}.`;
+      return `${uses} This one has ${list(added)}, not ${list(missing)}.`;
     }
   }
 }
