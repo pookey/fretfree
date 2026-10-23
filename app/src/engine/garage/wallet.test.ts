@@ -20,7 +20,12 @@ const goldLeaf: CatalogueItem = {
   unlockedBy: 'whole-neck',
   render: { type: 'metallic', stops: [{ offset: 0, colour: '#c9a227' }] },
 };
-const catalogue = [...CATALOGUE, blue, goldLeaf];
+// The stand-ins replace the catalogue's own parts of the same IDs, at fixed prices.
+const catalogue = [
+  ...CATALOGUE.filter((i) => i.id !== blue.id && i.id !== goldLeaf.id),
+  blue,
+  goldLeaf,
+];
 
 const bought = (itemId: string, price: number): GaragePurchase => ({ itemId, price, at });
 

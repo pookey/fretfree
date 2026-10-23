@@ -74,10 +74,17 @@ export const garage = {
     answersPerMinute: 8,
     /**
      * Assumed share of correct answers: the middle of the adaptive 80–90%
-     * band (design §3.3 step 4). A typical answer is the first today to a due or new
-     * card, rated Good when correct, so no fluency bonus is counted.
+     * band (design §3.3 step 4). Correct answers are rated Good, so no
+     * fluency bonus is counted.
      */
     accuracy: 0.85,
+    /**
+     * Assumed share of answers that repeat an item already answered today
+     * (learning steps and retries bring items back within a session). Each is
+     * priced as a second answer, at `gamification.xp.repeatDecay`; the rest
+     * are first answers today to a due or new card.
+     */
+    repeatShare: 0.3,
     /** The cheapest non-starter part is affordable after this many Casual days. */
     cheapestCasualDays: 1,
     /** The priciest part needs no more than this many Regular days. */

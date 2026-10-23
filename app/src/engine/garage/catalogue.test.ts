@@ -130,21 +130,34 @@ describe('mastery finishes', () => {
 });
 
 describe('price reachability (design §3.8 guardrails)', () => {
-  // A typical answer is the first today to a due or new card. Correct ones
-  // are rated Good: counting no fluency bonus keeps the estimate low.
-  const answer = { kind: 'due', stabilityDays: 0, answeredToday: 0 } as const;
-  const right = xpForAnswer({ ...answer, correct: true, rating: Rating.Good });
-  const wrong = xpForAnswer({ ...answer, correct: false, rating: Rating.Again });
-  const perAnswer = reachability.accuracy * right + (1 - reachability.accuracy) * wrong;
+  // An answer is the first today to a due or new card, or (`repeatShare`) a
+  // second one at `repeatDecay`. Correct ones are rated Good: counting no
+  // fluency bonus keeps the estimate low.
+  const xpAt = (answeredToday: number) => {
+    const answer = { kind: 'due', stabilityDays: 0, answeredToday } as const;
+    const right = xpForAnswer({ ...answer, correct: true, rating: Rating.Good });
+    const wrong = xpForAnswer({ ...answer, correct: false, rating: Rating.Again });
+    return {
+      right,
+      wrong,
+      mean: reachability.accuracy * right + (1 - reachability.accuracy) * wrong,
+    };
+  };
+  const first = xpAt(0);
+  const repeat = xpAt(1);
+  const perAnswer =
+    (1 - reachability.repeatShare) * first.mean + reachability.repeatShare * repeat.mean;
   const daily = (minutes: number) => minutes * reachability.answersPerMinute * perAnswer;
   const casualDay = daily(reachability.casualMinutes);
   const regularDay = daily(reachability.regularMinutes);
   const paid = forSale.map((i) => i.price!).filter((p) => p > 0);
 
   it('derives daily XP from the XP config', () => {
-    expect(right).toBeGreaterThan(wrong);
-    // 5 min × 8 answers × (0.85 × 10 + 0.15 × 6) XP with today's config.
-    expect(casualDay).toBeCloseTo(376);
+    expect(first.right).toBeGreaterThan(first.wrong);
+    expect(repeat.mean).toBeLessThan(first.mean);
+    // 5 min × 8 answers × (0.7 × 9.4 + 0.3 × 4.7) XP with today's config:
+    // a first answer averages 0.85 × 10 + 0.15 × 6, a repeat half that.
+    expect(casualDay).toBeCloseTo(319.6);
     expect(regularDay).toBe(2 * casualDay);
   });
 
