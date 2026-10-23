@@ -35,7 +35,7 @@ async function openGarage(page: Page, xp: number): Promise<void> {
   await expect(balance(page)).toBeVisible();
 }
 
-const balance = (page: Page) => page.getByTestId('garage-balance');
+const balance = (page: Page) => page.getByTestId('garage-wallet');
 const preview = (page: Page) => page.getByRole('img', { name: /^[^:]+: \w[\w ]* guitar, / });
 const swatch = (page: Page, name: string) =>
   page.getByRole('button', { name: new RegExp(`^${name}\\b`) });
@@ -129,9 +129,30 @@ test.describe('the Garage', () => {
       expect(b!.height).toBeGreaterThanOrEqual(44);
       expect(b!.width).toBeGreaterThanOrEqual(44);
     }
+
+    // Try on the lowest finish: the panel scrolls to it, but its state stays
+    // in view, and beside the panel so does the whole guitar.
+    await panel.getByRole('tab', { name: 'Finish' }).click();
+    await panel.getByRole('list', { name: 'Finish parts' }).getByRole('button').last().click();
+    await expect(selected(page)).toBeInViewport();
+    if (wide) {
+      const after = await preview(page).boundingBox();
+      expect(after!.y).toBeGreaterThanOrEqual(0);
+      expect(after!.y + after!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+    }
   });
 
-  test('buys a part from the parts sheet on a phone @smoke @phone', async ({ page }) => {
+  test('opens from the balance tile on Progress', async ({ page }) => {
+    await freshStart(page);
+    await seedXp(page, 500);
+    await page.goto('/progress');
+    await page.getByRole('link', { name: '500 to spend in the Garage' }).click();
+    await expect(page).toHaveURL(/\/progress\/garage$/);
+    await expect(page.getByRole('heading', { name: 'Garage', level: 1 })).toBeVisible();
+    await expect(balance(page)).toHaveText('500 to spend');
+  });
+
+  test('buys a part from the parts sheet on a phone @smoke @layout @phone', async ({ page }) => {
     await openGarage(page, 1000);
     await page.getByRole('button', { name: 'Show parts' }).click();
     const sheet = page.getByTestId('context-sheet');
@@ -141,5 +162,9 @@ test.describe('the Garage', () => {
     await sheet.getByRole('button', { name: `Buy · ${BLUE_PRICE} XP` }).click();
     await expect(balance(page)).toHaveText(`${1000 - BLUE_PRICE} to spend`);
     await expect(sheet.getByTestId('selected-part')).toContainText('Owned');
+
+    // A swatch low in the sheet keeps its state and Buy in view above it.
+    await sheet.getByRole('list', { name: 'Finish parts' }).getByRole('button').last().click();
+    await expect(sheet.getByTestId('selected-part')).toBeInViewport();
   });
 });

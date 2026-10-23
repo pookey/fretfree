@@ -1,0 +1,15 @@
+/* The balance line as a link: a full-size tap target, even in small print. */
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tap);
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+@media (hover: hover) {
+  .link:hover {
+    color: var(--text);
+  }
+}

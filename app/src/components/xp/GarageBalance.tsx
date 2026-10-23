@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { toSpendText } from './copy';
 import { GARAGE_PATH } from './garage-path';
+import styles from './GarageBalance.module.css';
 
 export interface GarageBalanceProps {
   toSpend: number;
@@ -17,7 +18,11 @@ export function GarageBalance({
 }: GarageBalanceProps) {
   const text = toSpendText(toSpend);
   return garagePath ? (
-    <Link to={garagePath} className={className} data-testid="garage-balance">
+    <Link
+      to={garagePath}
+      className={className ? `${styles.link} ${className}` : styles.link}
+      data-testid="garage-balance"
+    >
       {text}
     </Link>
   ) : (

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { XpExplainer, formatXp, useXp } from '../../../components/xp';
+import { Link } from 'react-router';
+import { GARAGE_PATH, XpExplainer, formatXp, toSpendText, useXp } from '../../../components/xp';
 import { allCards, getDb, reviewCount } from '../../../storage';
 import type { PanelProps } from '../registry';
 import styles from '../../screens.module.css';
+import tile from './stats.module.css';
 
 export const id = 'stats';
 export const order = 10;
@@ -40,9 +42,25 @@ export function Panel({ revision }: PanelProps) {
           <dt>XP earned</dt>
           <dd data-testid="xp-earned">{formatXp(xp?.earned ?? 0)}</dd>
         </div>
-        <div>
+        <div className={GARAGE_PATH ? tile.linked : undefined}>
           <dt>To spend in the Garage</dt>
-          <dd data-testid="xp-to-spend">{formatXp(xp?.toSpend ?? 0)}</dd>
+          <dd data-testid="xp-to-spend">
+            {GARAGE_PATH ? (
+              // The whole tile is the link's tap target (stats.module.css).
+              <Link
+                to={GARAGE_PATH}
+                className={tile.link}
+                aria-label={toSpendText(xp?.toSpend ?? 0)}
+              >
+                {formatXp(xp?.toSpend ?? 0)}
+                <span className={tile.arrow} aria-hidden>
+                  →
+                </span>
+              </Link>
+            ) : (
+              formatXp(xp?.toSpend ?? 0)
+            )}
+          </dd>
         </div>
       </dl>
       <XpExplainer />

@@ -28,8 +28,21 @@ describe('<GarageBalance>', () => {
     );
   });
 
-  it('reads the Garage path from its route file, if there is one', () => {
-    expect(GARAGE_PATH === undefined || GARAGE_PATH.startsWith('/')).toBe(true);
+  it('reads the Garage path from its route file', () => {
+    expect(GARAGE_PATH).toBe('/progress/garage');
+  });
+
+  it('links by default, with a full-size tap target', () => {
+    render(
+      <MemoryRouter>
+        <GarageBalance toSpend={380} className="extra" />
+      </MemoryRouter>,
+    );
+    const link = screen.getByRole('link', { name: '380 to spend in the Garage' });
+    expect(link).toHaveAttribute('href', '/progress/garage');
+    // The module class sets min-block-size: var(--tap); the caller's class is kept.
+    expect(link.className).toMatch(/link/);
+    expect(link).toHaveClass('extra');
   });
 });
 

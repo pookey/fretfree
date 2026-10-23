@@ -312,7 +312,7 @@ describe('<ComboCounter>', () => {
 });
 
 describe('<SessionSummary> Garage balance', () => {
-  it('adds what there is to spend under the session XP, as plain text before the Garage', async () => {
+  it('adds what there is to spend under the session XP, linking to the Garage', async () => {
     const db = getDb();
     await saveGamification(db, { xpTotal: 500 });
     await db.garagePurchases.add({ itemId: 'finish.blue', price: 120, at: new Date(0) });
@@ -320,6 +320,8 @@ describe('<SessionSummary> Garage balance', () => {
     expect(screen.getByTestId('summary-xp')).toHaveTextContent('96');
     const line = await screen.findByTestId('garage-balance');
     expect(line).toHaveTextContent('380 to spend in the Garage');
-    if (!GARAGE_PATH) expect(line.tagName).toBe('SPAN');
+    expect(line).toHaveRole('link');
+    expect(line).toHaveAttribute('href', GARAGE_PATH);
+    expect(GARAGE_PATH).toBe('/progress/garage');
   });
 });
