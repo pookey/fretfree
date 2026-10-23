@@ -382,15 +382,22 @@ function Inlays({
   return (
     <g data-testid="inlays">
       {g.inlays.map((inlay) => {
-        const props = { key: inlay.fret, 'data-inlay': shape, 'data-fret': inlay.fret };
+        const props = { 'data-inlay': shape, 'data-fret': inlay.fret };
         if (shape === 'dots') {
           return inlay.double ? (
-            <g {...props} className={styles.inlay}>
+            <g key={inlay.fret} {...props} className={styles.inlay}>
               <circle cx={inlay.cx} cy={g.neckTop + STRING_GAP * 1.5} r={7} />
               <circle cx={inlay.cx} cy={g.neckBottom - STRING_GAP * 1.5} r={7} />
             </g>
           ) : (
-            <circle {...props} className={styles.inlay} cx={inlay.cx} cy={cy} r={7} />
+            <circle
+              key={inlay.fret}
+              {...props}
+              className={styles.inlay}
+              cx={inlay.cx}
+              cy={cy}
+              r={7}
+            />
           );
         }
         const cell = g.cell(inlay.fret) as Cell;
@@ -404,7 +411,12 @@ function Inlays({
         const x1 = inlay.cx + half;
         const points = `${x0},${cy - left} ${x1},${cy - right} ${x1},${cy + right} ${x0},${cy + left}`;
         return (
-          <polygon {...props} className={`${styles.inlay} ${styles.inlayPlate}`} points={points} />
+          <polygon
+            key={inlay.fret}
+            {...props}
+            className={`${styles.inlay} ${styles.inlayPlate}`}
+            points={points}
+          />
         );
       })}
     </g>
