@@ -3,7 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import * as audio from '../../../audio/audio';
 import { useAppStore } from '../../../app-store';
-import { SKILLS } from '../../../engine';
+import { SKILLS, deriveStatus, type SkillStatus } from '../../../engine';
 import { CIRCLE_OF_FIFTHS, keySignature, majorKey, minorKey } from '../../../theory';
 import {
   View,
@@ -23,7 +23,6 @@ import {
   wedgeId,
   wedgePath,
 } from './circle-of-fifths';
-import { frontierSkillIds } from './fretboard-explorer';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -170,27 +169,52 @@ describe('keyDetail', () => {
 describe('Quiz me on this', () => {
   const I3 = ['I3.sharp-signatures', 'I3.flat-signatures', 'I3.dominants', 'I3.relative-minors'];
 
+  /** Every skill's status from `seeded`, derived in registry order as the runner does. */
+  function statusesFrom(seeded: Record<string, SkillStatus>): Map<string, SkillStatus> {
+    const out = new Map(Object.entries(seeded));
+    for (const s of SKILLS) out.set(s.id, deriveStatus(s, out, out.get(s.id)));
+    return out;
+  }
+
   it('focuses the I3 skills the learner has open', () => {
-    expect(circleQuizFocus(new Set(SKILLS.map((s) => s.id)))).toEqual({ skillIds: I3 });
-    expect(circleQuizFocus(new Set(['I3.sharp-signatures', 'C4.sharp-keys']))).toEqual({
+    const all = new Map<string, SkillStatus>(SKILLS.map((s) => [s.id, 'practising']));
+    expect(circleQuizFocus(all)).toEqual({ skillIds: I3 });
+    expect(circleQuizFocus(statusesFrom({ 'C4.sharp-keys': 'practising' }))).toEqual({
       skillIds: ['I3.sharp-signatures'],
     });
   });
 
   it('walks back to the nearest open steps while I3 is gated', () => {
-    // I3 opens after C4's sharp keys, which open after F1's steps.
-    expect(circleQuizFocus(new Set(['C4.sharp-keys', 'F1.alphabet']))).toEqual({
-      skillIds: ['C4.sharp-keys'],
+    // I3 opens once C4's sharp keys are practising, and they once F1's steps are.
+    const steps = statusesFrom({
+      'F1.alphabet': 'mastered',
+      'F1.b-c-e-f': 'mastered',
+      'F1.half-steps': 'practising',
+      'F1.whole-steps': 'practising',
     });
-    const fresh = frontierSkillIds(SKILLS, new Map());
+    expect(circleQuizFocus(steps)).toEqual({ skillIds: ['C4.sharp-keys'] });
+    const fresh = statusesFrom({});
     const ids = circleQuizFocus(fresh).skillIds ?? [];
     expect(ids.length).toBeGreaterThan(0);
-    for (const id of ids) expect(fresh.has(id)).toBe(true);
+    for (const id of ids) expect(fresh.get(id)).toBe('unlocked');
+  });
+
+  it('walks back through soft gates still unmet, past those already met', () => {
+    // M10-02 (PM call): C4.sharp-keys waits on both F1 steps practising
+    // (soft). Half steps are, so the quiz offers whole steps only, not both.
+    const statuses = statusesFrom({
+      'F1.alphabet': 'mastered',
+      'F1.b-c-e-f': 'mastered',
+      'F1.half-steps': 'practising',
+    });
+    expect(statuses.get('F1.whole-steps')).toBe('unlocked');
+    expect(statuses.get('C4.sharp-keys')).toBe('locked');
+    expect(circleQuizFocus(statuses)).toEqual({ skillIds: ['F1.whole-steps'] });
   });
 
   it('falls back to every I3 skill when nothing on the way is open', () => {
     expect(circleQuizFocus()).toEqual({ skillIds: I3 });
-    expect(circleQuizFocus(new Set(), [])).toEqual({ skillIds: [] });
+    expect(circleQuizFocus(new Map(), [])).toEqual({ skillIds: [] });
   });
 });
 

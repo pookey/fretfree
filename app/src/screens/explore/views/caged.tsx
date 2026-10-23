@@ -7,8 +7,13 @@ import {
   type FretMarker,
   type MarkerStyle,
 } from '../../../components/fretboard/Fretboard';
-import { SKILLS, parseItemId, type Skill } from '../../../engine';
-import { focusHref, noteSkillIds, type SessionFocus } from '../../../session/focus';
+import { SKILLS, isFrontier, parseItemId, type Skill, type SkillStatus } from '../../../engine';
+import {
+  focusHref,
+  nearestOpenSkills,
+  noteSkillIds,
+  type SessionFocus,
+} from '../../../session/focus';
 import {
   STANDARD_TUNING,
   cagedChain,
@@ -24,7 +29,7 @@ import {
   type TriadCore,
 } from '../../../theory';
 import styles from '../../screens.module.css';
-import { EXPLORER_RANGE, Swatch, explorerContent, useFrontier } from './fretboard-explorer';
+import { EXPLORER_RANGE, Swatch, explorerContent, useSkillStatuses } from './fretboard-explorer';
 import css from './fretboard-explorer.module.css';
 import own from './caged.module.css';
 
@@ -166,29 +171,22 @@ export function cagedSkillIds(skills: readonly Skill[], quality: CagedQuality): 
 /**
  * "Quiz me on this" (design §7): a focused session on the shapes of the
  * chord's quality, all five, so C and A interleave (research/02 rule 6).
- * Gating stays on (rule 7), so until those skills are on the learner's
- * `frontier` the quiz walks back through their prerequisites and offers the
- * nearest open ones (the roots on strings 6 and 5, triads), and failing that
- * the notes on the neck. Skills are found by what they drill, so new ones
+ * Gating stays on (rule 7), so until those skills are open the quiz walks
+ * back through the gates each still waits for (`statuses`, M10-02) and offers
+ * the nearest open ones (the roots on strings 6 and 5, triads), and failing
+ * that the notes on the neck. Skills are found by what they drill, so new ones
  * join without editing this view.
  */
 export function cagedQuizFocus(
   quality: CagedQuality,
-  frontier: ReadonlySet<string> = new Set(),
+  statuses: ReadonlyMap<string, SkillStatus> = new Map(),
   skills: readonly Skill[] = SKILLS,
 ): Partial<SessionFocus> {
-  const byId = new Map(skills.map((s) => [s.id, s]));
-  let level = cagedSkillIds(skills, quality);
-  const seen = new Set(level);
-  while (level.length > 0) {
-    const open = level.filter((id) => frontier.has(id));
-    if (open.length > 0) return { skillIds: open };
-    level = [...new Set(level.flatMap((id) => byId.get(id)?.prerequisites ?? []))].filter(
-      (id) => byId.has(id) && !seen.has(id),
-    );
-    for (const id of level) seen.add(id);
-  }
-  return { skillIds: noteSkillIds(skills) };
+  const frontier = new Set(
+    skills.filter((s) => isFrontier(statuses.get(s.id) ?? 'locked')).map((s) => s.id),
+  );
+  const open = nearestOpenSkills(cagedSkillIds(skills, quality), frontier, skills, statuses);
+  return { skillIds: open ?? noteSkillIds(skills) };
 }
 
 const ROOT_OPTIONS = Array.from({ length: 12 }, (_, chroma) => {
@@ -233,8 +231,8 @@ export function View() {
   );
   const range = chainRange(content);
   const markers = useMemo(() => chainMarkers(content, step, labels), [content, step, labels]);
-  const frontier = useFrontier();
-  const quizHref = focusHref(cagedQuizFocus(quality, frontier));
+  const statuses = useSkillStatuses();
+  const quizHref = focusHref(cagedQuizFocus(quality, statuses));
   const link = step === null ? null : content.chain[step];
   const next = step === null ? null : content.chain[(step + 1) % content.chain.length];
   const legend = (['root', 'third', 'fifth', 'seventh', 'ghost'] as const).filter((s) =>

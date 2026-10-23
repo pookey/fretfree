@@ -16,8 +16,13 @@ import {
   type FretMarker,
   type MarkerStyle,
 } from '../../../components/fretboard/Fretboard';
-import { SKILLS, parseItemId, type Skill } from '../../../engine';
-import { focusHref, noteSkillIds, type SessionFocus } from '../../../session/focus';
+import { SKILLS, isFrontier, parseItemId, type Skill, type SkillStatus } from '../../../engine';
+import {
+  focusHref,
+  nearestOpenSkills,
+  noteSkillIds,
+  type SessionFocus,
+} from '../../../session/focus';
 import {
   STANDARD_TUNING,
   cellLabel,
@@ -35,7 +40,7 @@ import {
   type Tuning,
 } from '../../../theory';
 import styles from '../../screens.module.css';
-import { EXPLORER_RANGE, Swatch, useFrontier } from './fretboard-explorer';
+import { EXPLORER_RANGE, Swatch, useSkillStatuses } from './fretboard-explorer';
 import css from './fretboard-explorer.module.css';
 import own from './chord-finder.module.css';
 
@@ -615,42 +620,36 @@ function itemDrillsChord(itemId: string, chord: ParsedChord): boolean {
 /**
  * "Quiz me on this" (design §7): a focused session on the chord on show,
  * spelling it on its root and finding its tones (C5). Gating stays on
- * (research/02 rule 7): until those skills are on the learner's `frontier`
- * the quiz walks back through their prerequisites (intervals, keys) and
- * offers the nearest open ones, and failing that the notes on the neck. A
- * chord C5 doesn't teach (C6, Cmaj9) quizzes chord construction in general.
- * Skills are found by what they drill, so new ones join without editing this.
+ * (research/02 rule 7): until those skills are open the quiz walks back
+ * through the gates each still waits for (`statuses`, M10-02: intervals,
+ * keys) and offers the nearest open ones, and failing that the notes on the
+ * neck. A chord C5 doesn't teach (C6, Cmaj9) quizzes chord construction in
+ * general. Skills are found by what they drill, so new ones join without
+ * editing this.
  */
 export function chordQuizFocus(
   symbol: string | null,
-  frontier: ReadonlySet<string> = new Set(),
+  statuses: ReadonlyMap<string, SkillStatus> = new Map(),
   skills: readonly Skill[] = SKILLS,
 ): Partial<SessionFocus> {
   const chord = symbol ? c5Chord(symbol) : null;
-  const byId = new Map(skills.map((s) => [s.id, s]));
-  let level = chordSkillIds(skills, chord?.kind ?? null);
-  if (level.length === 0) level = chordSkillIds(skills, null);
-  const seen = new Set(level);
-  let first = true;
-  while (level.length > 0) {
-    const open = level.filter((id) => frontier.has(id));
-    if (open.length > 0) {
-      const itemIds =
-        first && chord
-          ? open
-              .flatMap((id) => byId.get(id)?.items() ?? [])
-              .filter((i) => itemDrillsChord(i.id, chord))
-              .map((i) => i.id)
-          : [];
-      return itemIds.length > 0 ? { itemIds } : { skillIds: open };
-    }
-    first = false;
-    level = [...new Set(level.flatMap((id) => byId.get(id)?.prerequisites ?? []))].filter(
-      (id) => byId.has(id) && !seen.has(id),
-    );
-    for (const id of level) seen.add(id);
-  }
-  return { skillIds: noteSkillIds(skills) };
+  const frontier = new Set(
+    skills.filter((s) => isFrontier(statuses.get(s.id) ?? 'locked')).map((s) => s.id),
+  );
+  let targets = chordSkillIds(skills, chord?.kind ?? null);
+  if (targets.length === 0) targets = chordSkillIds(skills, null);
+  const open = nearestOpenSkills(targets, frontier, skills, statuses);
+  if (!open) return { skillIds: noteSkillIds(skills) };
+  // Open chord skills narrow to this chord's items; a walk-back keeps its skills.
+  const itemIds =
+    chord && open.every((id) => targets.includes(id))
+      ? skills
+          .filter((s) => open.includes(s.id))
+          .flatMap((s) => s.items())
+          .filter((i) => itemDrillsChord(i.id, chord))
+          .map((i) => i.id)
+      : [];
+  return itemIds.length > 0 ? { itemIds } : { skillIds: open };
 }
 
 // ---------------------------------------------------------------------------
@@ -707,9 +706,9 @@ export function View() {
     () => lookUpVoicings(asked, dots === 'names' ? 'names' : 'degrees'),
     [asked, dots],
   );
-  const frontier = useFrontier();
+  const statuses = useSkillStatuses();
   const quizHref = focusHref(
-    chordQuizFocus(reading?.symbol ?? (lookup.ok ? lookup.symbol : null), frontier),
+    chordQuizFocus(reading?.symbol ?? (lookup.ok ? lookup.symbol : null), statuses),
   );
   const sound = { muted: !settings.soundOn, volume: settings.volume };
 

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { SKILLS } from '../../../engine';
+import { SKILLS, deriveStatus, type SkillStatus } from '../../../engine';
 import { focusHref, noteSkillIds } from '../../../session/focus';
 import { CAGED_QUALITIES, chromaOf, midiAt, type CagedQuality } from '../../../theory';
 import {
@@ -14,13 +14,24 @@ import {
   chainRange,
   linkMarkers,
 } from './caged';
-import { frontierSkillIds } from './fretboard-explorer';
 
-/** Every registered skill open, as for a learner who has unlocked them all. */
-const ALL_OPEN: ReadonlySet<string> = new Set(SKILLS.map((s) => s.id));
+/** Every skill's status from `seeded`, derived in registry order as the runner does. */
+function statusesFrom(seeded: Record<string, SkillStatus>): Map<string, SkillStatus> {
+  const out = new Map(Object.entries(seeded));
+  for (const s of SKILLS) out.set(s.id, deriveStatus(s, out, out.get(s.id)));
+  return out;
+}
 
-/** A fresh learner: nothing stored, so only the first skills are on the frontier. */
-const FRESH = frontierSkillIds(SKILLS, new Map());
+/** Every registered skill practising, as for a learner who has opened them all. */
+const ALL_OPEN = new Map<string, SkillStatus>(SKILLS.map((s) => [s.id, 'practising']));
+
+/** A fresh learner: nothing stored, so only the first skills are open. */
+const FRESH = statusesFrom({});
+
+/** The notes, the octaves and every interval mastered: C4's sharp keys open. */
+const BASE: Record<string, SkillStatus> = Object.fromEntries(
+  SKILLS.filter((s) => /^(F\d|C1|C2|C3)$/.test(s.topic)).map((s) => [s.id, 'mastered']),
+);
 
 function mockReducedMotion(matches: boolean) {
   const listeners = new Set<() => void>();
@@ -185,30 +196,40 @@ describe('"Quiz me on this"', () => {
     expect(cagedSkillIds(SKILLS, 'dominant7')).toEqual(['C6.dominant7-shapes']);
   });
 
+  /** Triads practising: the cores open, the shapes waiting on them. */
+  const CORES = statusesFrom({ ...BASE, 'C4.sharp-keys': 'practising', 'C5.triads': 'practising' });
+
   it('quizzes the open shapes of the quality on show', () => {
     expect(cagedQuizFocus('major', ALL_OPEN)).toEqual({
       skillIds: ['C6.triad-cores', 'C6.major-shapes'],
     });
-    expect(cagedQuizFocus('major', new Set(['C6.triad-cores']))).toEqual({
-      skillIds: ['C6.triad-cores'],
-    });
+    expect(CORES.get('C6.major-shapes')).toBe('locked');
+    expect(cagedQuizFocus('major', CORES)).toEqual({ skillIds: ['C6.triad-cores'] });
   });
 
   it('walks back to the nearest open prerequisites while the shapes are gated', () => {
-    expect(cagedQuizFocus('minor', new Set(['C6.triad-cores', 'F2.string6-naturals']))).toEqual({
-      skillIds: ['C6.triad-cores'],
-    });
+    expect(cagedQuizFocus('minor', CORES)).toEqual({ skillIds: ['C6.triad-cores'] });
     const fresh = cagedQuizFocus('major', FRESH).skillIds ?? [];
     expect(fresh.length).toBeGreaterThan(0);
     for (const id of fresh) {
-      expect(FRESH.has(id)).toBe(true);
+      expect(FRESH.get(id)).toBe('unlocked');
       expect(SKILLS.find((s) => s.id === 'C6.triad-cores')!.prerequisites).toContain(id);
     }
   });
 
+  it('walks back through soft gates still unmet while the shapes are locked', () => {
+    // M10-02 (PM call): C6.triad-cores has its hard gates (F2) mastered and
+    // waits only on C5.triads practising (soft), so that is what to practise.
+    const statuses = statusesFrom({ ...BASE, 'C4.sharp-keys': 'practising' });
+    expect(statuses.get('C5.triads')).toBe('unlocked');
+    expect(statuses.get('C6.triad-cores')).toBe('locked');
+    expect(cagedQuizFocus('major', statuses)).toEqual({ skillIds: ['C5.triads'] });
+    expect(cagedQuizFocus('minor', statuses)).toEqual({ skillIds: ['C5.triads'] });
+  });
+
   it('falls back to the notes when nothing on the way is open', () => {
     expect(cagedQuizFocus('dominant7')).toEqual({ skillIds: noteSkillIds(SKILLS) });
-    expect(cagedQuizFocus('major', new Set(), [])).toEqual({ skillIds: [] });
+    expect(cagedQuizFocus('major', new Map(), [])).toEqual({ skillIds: [] });
   });
 });
 

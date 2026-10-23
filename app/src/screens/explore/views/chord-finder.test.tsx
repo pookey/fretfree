@@ -5,7 +5,7 @@ import { Chord } from 'tonal';
 import guitar from '@tombatossals/chords-db/lib/guitar.json';
 import * as audio from '../../../audio/audio';
 import { useAppStore } from '../../../app-store';
-import { SKILLS } from '../../../engine';
+import { SKILLS, deriveStatus, type SkillStatus } from '../../../engine';
 import { noteSkillIds } from '../../../session/focus';
 import { DROP_D_TUNING, STANDARD_TUNING, chromaOf, midiAt } from '../../../theory';
 import {
@@ -27,13 +27,24 @@ import {
   togglePick,
   type ChordBook,
 } from './chord-finder';
-import { frontierSkillIds } from './fretboard-explorer';
 
-/** Every registered skill open, as for a learner who has unlocked them all. */
-const ALL_OPEN: ReadonlySet<string> = new Set(SKILLS.map((s) => s.id));
+/** Every skill's status from `seeded`, derived in registry order as the runner does. */
+function statusesFrom(seeded: Record<string, SkillStatus>): Map<string, SkillStatus> {
+  const out = new Map(Object.entries(seeded));
+  for (const s of SKILLS) out.set(s.id, deriveStatus(s, out, out.get(s.id)));
+  return out;
+}
 
-/** A fresh learner: nothing stored, so only the first skills are on the frontier. */
-const FRESH = frontierSkillIds(SKILLS, new Map());
+/** Every registered skill practising, as for a learner who has opened them all. */
+const ALL_OPEN = new Map<string, SkillStatus>(SKILLS.map((s) => [s.id, 'practising']));
+
+/** A fresh learner: nothing stored, so only the first skills are open. */
+const FRESH = statusesFrom({});
+
+/** The notes, the octaves and every interval mastered: C4's sharp keys open. */
+const BASE: Record<string, SkillStatus> = Object.fromEntries(
+  SKILLS.filter((s) => /^(F\d|C1|C2|C3)$/.test(s.topic)).map((s) => [s.id, 'mastered']),
+);
 
 const picks = (...cells: [number, number][]) => new Map(cells);
 
@@ -455,15 +466,25 @@ describe('"Quiz me on this"', () => {
 
   it('walks back to the nearest open prerequisites while the chord skills are gated', () => {
     const c5 = new Set(chordSkillIds(SKILLS, null));
-    const focus = chordQuizFocus('Bm7', new Set([...ALL_OPEN].filter((id) => !c5.has(id))));
+    const statuses = new Map([...ALL_OPEN].map(([id, st]) => [id, c5.has(id) ? 'locked' : st]));
+    const focus = chordQuizFocus('Bm7', statuses);
     expect(focus.itemIds).toBeUndefined();
     expect(focus.skillIds?.length).toBeGreaterThan(0);
     expect(focus.skillIds?.some((id) => c5.has(id))).toBe(false);
   });
 
   it('falls back to the notes when nothing on the way is open', () => {
-    expect(chordQuizFocus('Bm7', new Set())).toEqual({ skillIds: noteSkillIds(SKILLS) });
+    expect(chordQuizFocus('Bm7', new Map())).toEqual({ skillIds: noteSkillIds(SKILLS) });
     expect(chordQuizFocus('C', FRESH).skillIds?.length).toBeGreaterThan(0);
+  });
+
+  it('walks back through soft gates still unmet while the chord skills are locked', () => {
+    // M10-02 (PM call): C5.triads has C3.thirds mastered (hard) and waits
+    // only on C4's sharp keys practising (soft), so the quiz offers them.
+    const statuses = statusesFrom(BASE);
+    expect(statuses.get('C4.sharp-keys')).toBe('unlocked');
+    expect(statuses.get('C5.triads')).toBe('locked');
+    expect(chordQuizFocus('C', statuses)).toEqual({ skillIds: ['C4.sharp-keys'] });
   });
 });
 
