@@ -61,7 +61,8 @@ test.describe('M4-17 M4 QA fixes', () => {
     const drill = page.getByTestId('d13-drill');
     await expect(drill).toBeVisible();
     const capo = Number(await drill.getAttribute('data-capo'));
-    expect(capo).toBeGreaterThan(1);
+    // The rng picks the capo; at fret 1 only the open strings are behind it.
+    expect(capo).toBeGreaterThanOrEqual(1);
 
     const cells = page.getByTestId('d13-neck').getByRole('listitem');
     const shaded = await cells.evaluateAll((els) =>
