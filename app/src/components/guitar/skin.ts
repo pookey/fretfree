@@ -68,7 +68,8 @@ export function applyBoard(board: NeckBoard | null, root: HTMLElement = document
 
 /** The live skin: the equipped build, kept current with `liveQuery`, and the setting. */
 export function useNeckSkin(): NeckSkin {
-  const enabled = useAppStore((s) => s.settings.neckSkin);
+  // Until settings load, keep the default neck: it may be switched off.
+  const enabled = useAppStore((s) => s.loaded && s.settings.neckSkin);
   const [spec, setSpec] = useState<Partial<GuitarSpec> | undefined>();
   useEffect(() => {
     const sub = liveQuery(() => equipped(getDb())).subscribe({

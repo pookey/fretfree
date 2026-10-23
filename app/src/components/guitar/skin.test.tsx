@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
@@ -26,9 +26,11 @@ vi.mock('../../audio/audio', () => ({
 const db = getDb();
 const root = document.documentElement;
 
+beforeEach(() => useAppStore.setState({ loaded: true }));
+
 afterEach(async () => {
   await Promise.all([db.garage.clear(), db.settings.clear()]);
-  useAppStore.setState({ settings: DEFAULT_SETTINGS });
+  useAppStore.setState({ settings: DEFAULT_SETTINGS, loaded: false });
   applyBoard(null);
 });
 
@@ -81,6 +83,16 @@ describe('<NeckSkinProvider>', () => {
       </NeckSkinProvider>,
     );
   }
+
+  it('keeps the default neck until settings have loaded', async () => {
+    await equip('board.maple', 'inlay.blocks');
+    useAppStore.setState({ loaded: false });
+    renderNeck();
+    await act(() => new Promise((r) => setTimeout(r, 50)));
+    expect(root).not.toHaveAttribute('data-board');
+    act(() => useAppStore.setState({ loaded: true }));
+    expect(root.dataset.board).toBe('maple');
+  });
 
   it('puts the starter neck on a fresh install', async () => {
     renderNeck();
