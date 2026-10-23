@@ -22,6 +22,7 @@ describe('route registry', () => {
       ['/placement', 'fullscreen'],
       ['/privacy', 'shell'],
       ['/progress', 'shell'],
+      ['/progress/garage', 'shell'],
       ['/session', 'fullscreen'],
       ['/settings', 'shell'],
       ['/tools', 'shell'],

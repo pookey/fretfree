@@ -84,7 +84,9 @@ export function GarageScreen({ now = () => new Date() }: { now?: () => Date }) {
     if (!item) return;
     const next = tapPart(item, owned, trying);
     setTryOn(next.tryOn);
-    if (next.equip && build.spec[item.category] !== item.id) {
+    // Saved even when the build already has it: a purchase may have landed
+    // in the database before `build` caught up.
+    if (next.equip) {
       saveGarage(getDb(), { spec: { [item.category]: item.id } }).catch((e: unknown) =>
         console.error('Equipping a part failed', e),
       );

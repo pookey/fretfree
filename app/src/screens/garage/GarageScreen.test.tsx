@@ -80,6 +80,12 @@ describe('GarageScreen', () => {
     await waitFor(async () => expect((await getGarage(getDb())).spec.finish).toBe('finish.blue'));
     fireEvent.click(swatch(/^Red/));
     await waitFor(async () => expect((await getGarage(getDb())).spec.finish).toBe('finish.red'));
+    // And again once the screen has caught up with the purchase.
+    await waitFor(() => expect(swatch(/^Blue/)).toHaveTextContent('Owned'));
+    fireEvent.click(swatch(/^Blue/));
+    await waitFor(async () => expect((await getGarage(getDb())).spec.finish).toBe('finish.blue'));
+    fireEvent.click(swatch(/^Red/));
+    await waitFor(async () => expect((await getGarage(getDb())).spec.finish).toBe('finish.red'));
     expect(await listPurchases(getDb())).toHaveLength(1);
     expect(balance()).toHaveTextContent(`${(1000 - BLUE_PRICE).toLocaleString('en')} to spend`);
   });
