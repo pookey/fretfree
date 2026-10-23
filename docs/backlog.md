@@ -1821,7 +1821,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - PM decision (the user delegated these calls to the PM, 2026-10-20; they are the main learner): milestones mark mastery, never volume: one per module mastered (chords, CAGED shapes, harmony, progressions), plus one for the first song-ready progression; plain, encouraging names; no streak pressure. Speed demon becomes relative to the learner's own calibrated tap time (motor speed differs between people; the goal is fluent recall, not fast hands), with copy that says so.
 
 ### M10-18 · ♯/♭ on the neck and in worked-example traps
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user's top priority; follow-up from M10-08 and M10-14)
 - **Deps:** M10-08, M10-14
 - **Design:** §8 labels; research/02 rule 10; M10-05's `theory/pitch-display.ts`
