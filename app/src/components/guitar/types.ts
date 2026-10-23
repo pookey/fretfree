@@ -1,44 +1,19 @@
+import type { Category, RenderData } from '../../engine/garage/types';
+
 /**
  * What the guitar renderer draws (design §3.8). It takes resolved render
  * data, not catalogue IDs, so it stays independent of the catalogue: the
  * Garage looks each `GuitarSpec` ID up and passes the parts' names and
- * render data here.
- *
- * TODO(M11-01): the first block mirrors `engine/garage/types.ts`, which is
- * being built in parallel. Import those types from there once it lands and
- * keep only the renderer types below.
+ * render data here. The render data types are the Garage model's.
  */
-
-export const CATEGORIES = ['body', 'finish', 'pickguard', 'hardware', 'board', 'inlay'] as const;
-
-export type Category = (typeof CATEGORIES)[number];
-
-export type FinishType = 'solid' | 'sunburst' | 'natural' | 'metallic' | 'sparkle';
-
-/** One colour of a finish, at `offset` (0 to 1) along its gradient. */
-export interface ColourStop {
-  offset: number;
-  colour: string;
-}
-
-/** A fretboard palette: the neck tokens of `styles/tokens.css`. */
-export type BoardPalette = Readonly<
-  Record<'--wood' | '--wood-dark' | '--string' | '--fret-wire' | '--inlay', string>
->;
-
-export type InlayShape = 'dots' | 'blocks' | 'trapezoids';
-
-/** What the renderer needs for each category's parts. */
-export interface RenderData {
-  /** `shape` names a body file in `bodies/`. */
-  body: { shape: string };
-  finish: { type: FinishType; stops: readonly ColourStop[] };
-  /** `colour: null` is no pickguard. */
-  pickguard: { colour: string | null };
-  hardware: { colour: string };
-  board: { palette: BoardPalette };
-  inlay: { shape: InlayShape };
-}
+export type {
+  BoardPalette,
+  Category,
+  ColourStop,
+  FinishType,
+  InlayShape,
+  RenderData,
+} from '../../engine/garage/types';
 
 // ---- Renderer types --------------------------------------------------------
 
