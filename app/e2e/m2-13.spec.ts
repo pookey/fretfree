@@ -59,10 +59,18 @@ async function storedFit(page: Page): Promise<{ w: number[]; reviewCount: number
   });
 }
 
-/** Answer one prompt correctly, then end the session at the summary. */
+/**
+ * Answer one prompt correctly, then end the session at the summary. End is
+ * tapped only once the answer is stored and the next prompt is up: on a
+ * phone on its side the feedback bar covers the header (M1-28), so a tap
+ * pressed while the answer is still being written can be released on the
+ * bar and never reach End (M1-47).
+ */
 async function playOneAndFinish(page: Page): Promise<void> {
   await focusSession(page, SKILL);
   await answer(page, await targetNote(page));
+  await expect(page.getByTestId('feedback-correct')).toBeVisible();
+  await expect(page.getByTestId('feedback-bar')).not.toHaveAttribute('data-state');
   await page.getByRole('button', { name: 'End session' }).click();
   await expect(page.getByTestId('session-summary')).toBeVisible();
 }
