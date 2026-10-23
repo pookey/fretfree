@@ -29,8 +29,8 @@ afterEach(async () => {
   await db.delete();
 });
 
-// M11-01 ships only the free starter set, so a stand-in priced part and
-// mastery finish join the catalogue here.
+// A stand-in priced part and mastery finish, at fixed prices, replace the
+// catalogue's own parts of the same IDs so these tests don't follow pricing.
 vi.mock('../engine/garage/catalogue', async (importOriginal) => {
   const real = await importOriginal<typeof import('../engine/garage/catalogue')>();
   const extra: CatalogueItem[] = [
@@ -49,7 +49,7 @@ vi.mock('../engine/garage/catalogue', async (importOriginal) => {
       render: { type: 'metallic', stops: [{ offset: 0, colour: '#c9a227' }] },
     },
   ];
-  const all = [...real.CATALOGUE, ...extra];
+  const all = [...real.CATALOGUE.filter((i) => !extra.some((e) => e.id === i.id)), ...extra];
   return { ...real, CATALOGUE: all, catalogueItem: (id: string) => all.find((i) => i.id === id) };
 });
 
