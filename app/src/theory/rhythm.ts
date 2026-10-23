@@ -59,6 +59,13 @@ export interface RhythmEvent {
   /** Tied into the next event, which then isn't attacked again. */
   readonly tie?: boolean;
   readonly tuplet?: Tuplet;
+  /**
+   * Opens a new tuplet bracket. Neighbouring events with the same ratio share
+   * a bracket until the next start, so `3[8 8 8] 3[8 8 8]` is two triplets,
+   * each checked and drawn on its own. Events built without any start share
+   * one bracket per run of the same ratio.
+   */
+  readonly tupletStart?: boolean;
 }
 
 export type Rhythm = readonly RhythmEvent[];
@@ -90,13 +97,14 @@ function sameTuplet(a: Tuplet | undefined, b: Tuplet | undefined): boolean {
   return a === b || (!!a && !!b && a.num === b.num && a.inSpaceOf === b.inSpaceOf);
 }
 
-/** Runs of consecutive events sharing a tuplet: `[from, to)` index pairs. */
+/** Tuplet brackets, as `[from, to)` index pairs: a run of one ratio, split at each `tupletStart`. */
 function tupletRuns(r: Rhythm): [number, number][] {
   const runs: [number, number][] = [];
   r.forEach((e, i) => {
     if (!e.tuplet) return;
     const last = runs.at(-1);
-    if (last && last[1] === i && sameTuplet(r[i - 1]!.tuplet, e.tuplet)) last[1] = i + 1;
+    const joins = last && last[1] === i && !e.tupletStart && sameTuplet(r[i - 1]!.tuplet, e.tuplet);
+    if (joins) last[1] = i + 1;
     else runs.push([i, i + 1]);
   });
   return runs;
@@ -116,7 +124,7 @@ function defaultInSpaceOf(num: number): number {
 const TOKEN = /^(r)?(\d+)(\.{0,2})(~)?$/;
 const TUPLET_OPEN = /^(\d+)(?::(\d+))?\[(.*)$/;
 
-function parseToken(tok: string, tuplet?: Tuplet): RhythmEvent {
+function parseToken(tok: string, tuplet?: Tuplet, tupletStart = false): RhythmEvent {
   const m = TOKEN.exec(tok);
   const value = Number(m?.[2]);
   if (!m || !isNoteValue(value)) throw new RangeError(`Invalid rhythm token: ${tok}`);
@@ -128,6 +136,7 @@ function parseToken(tok: string, tuplet?: Tuplet): RhythmEvent {
     ...(m[1] ? { rest: true } : {}),
     ...(m[4] ? { tie: true } : {}),
     ...(tuplet ? { tuplet } : {}),
+    ...(tupletStart ? { tupletStart } : {}),
   };
 }
 
@@ -136,6 +145,7 @@ export function parseRhythm(text: string): RhythmEvent[] {
   const tokens = text.trim().split(/\s+/).filter(Boolean);
   const out: RhythmEvent[] = [];
   let tuplet: Tuplet | undefined;
+  let opened = -1; // where the open bracket's first event goes
   for (const raw of tokens) {
     let tok = raw;
     const open = TUPLET_OPEN.exec(tok);
@@ -146,6 +156,7 @@ export function parseRhythm(text: string): RhythmEvent[] {
       if (num < 2 || inSpaceOf < 1 || num === inSpaceOf)
         throw new RangeError(`Invalid tuplet: ${raw}`);
       tuplet = { num, inSpaceOf };
+      opened = out.length;
       tok = open[3]!;
       if (!tok) continue;
     }
@@ -154,8 +165,11 @@ export function parseRhythm(text: string): RhythmEvent[] {
       if (!tuplet) throw new RangeError(`Unopened tuplet: ${raw}`);
       tok = tok.slice(0, -1);
     }
-    if (tok) out.push(parseToken(tok, tuplet));
-    if (close) tuplet = undefined;
+    if (tok) out.push(parseToken(tok, tuplet, tuplet !== undefined && out.length === opened));
+    if (close) {
+      if (out.length === opened) throw new RangeError(`Empty tuplet: ${text}`);
+      tuplet = undefined;
+    }
   }
   if (tuplet) throw new RangeError(`Unclosed tuplet: ${text}`);
   if (out.length === 0) throw new RangeError('A rhythm needs at least one note or rest');
@@ -210,13 +224,16 @@ export interface BarCheck {
   /** What is left to fill; negative when over. */
   readonly remaining: Frac;
   /**
-   * Events that start off a felt beat and run across the next one, hiding it:
-   * in 6/8, the middle quarter of `4 4 4` crosses beat 2 (that is 3/4).
-   * Simple time allows the syncopation `8 4 8`, a note of one beat from the
-   * half beat, except across the middle of a four-beat bar.
+   * Events that hide a felt beat. One that starts off a beat must not run
+   * across the next: in 6/8, the middle quarter of `4 4 4` crosses beat 2
+   * (that is 3/4). Simple time allows the syncopation `8 4 8`, a note of one
+   * beat from the half beat, except across the middle of a four-beat bar.
+   * Where the beats are groups (compound time, odd meters in eighths), one
+   * that starts on a beat and crosses another must end on a beat: the half
+   * of `2 4` in 6/8 ends partway through beat 2.
    */
   readonly hiddenBeats: number[];
-  /** First index of each tuplet run that doesn't add up to whole plain values. */
+  /** First index of each tuplet bracket that doesn't add up to whole plain values. */
   readonly brokenTuplets: number[];
   /** Ties out of a rest or into a rest. */
   readonly badTies: number[];
@@ -228,7 +245,9 @@ export interface BarCheck {
  * Checks one bar of `r` against a time signature, for D29 and for bars the
  * drills generate. A note that starts on a beat may last whole beats; one
  * that starts between beats must end by the next (bar the syncopation, see
- * `hiddenBeats`), as notation shows the beat.
+ * `hiddenBeats`), as notation shows the beat. In pulse-beat meters a note
+ * from a beat may end mid-beat (`4. 8` in 4/4); in group-beat meters it may
+ * not once it crosses a beat.
  */
 export function checkBar(r: Rhythm, ts: TimeSignature): BarCheck {
   const length = rhythmLength(r);
@@ -247,9 +266,13 @@ export function checkBar(r: Rhythm, ts: TimeSignature): BarCheck {
     const start = starts[i]!;
     const len = eventLength(e);
     const end = fracAdd(start, len);
-    if (beatStarts.some((b) => fracEq(b, start))) return;
     const crossed = beatStarts.filter((b) => fracCmp(b, start) > 0 && fracCmp(b, end) < 0);
     if (crossed.length === 0) return;
+    if (beatStarts.some((b) => fracEq(b, start))) {
+      const endsOnBeat = fracCmp(end, bar) >= 0 || beatStarts.some((b) => fracEq(b, end));
+      if (!pulseBeats && !endsOnBeat) hiddenBeats.push(i);
+      return;
+    }
     const syncopation =
       pulseBeats &&
       fracCmp(len, pulseLength(ts)) <= 0 &&

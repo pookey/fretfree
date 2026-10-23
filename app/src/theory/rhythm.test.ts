@@ -43,16 +43,20 @@ describe('the text form', () => {
   });
 
   it('reads tuplets, with or without what they are in', () => {
-    expect(r('3[8 8 8]')).toEqual(Array(3).fill({ value: 8, tuplet: TRIPLET }));
+    expect(r('3[8 8 8]')).toEqual([
+      { value: 8, tuplet: TRIPLET, tupletStart: true },
+      { value: 8, tuplet: TRIPLET },
+      { value: 8, tuplet: TRIPLET },
+    ]);
     expect(r('3:2[ 8 8 8 ]')).toEqual(r('3[8 8 8]'));
     expect(r('5[16 16 16 16 16]')[0]!.tuplet).toEqual({ num: 5, inSpaceOf: 4 });
     expect(r('6[16 16 16 16 16 16]')[0]!.tuplet).toEqual({ num: 6, inSpaceOf: 4 });
     expect(r('7[16 16 16 16 16 16 16]')[0]!.tuplet).toEqual({ num: 7, inSpaceOf: 4 });
     expect(r('2:3[8 8]')[0]!.tuplet).toEqual({ num: 2, inSpaceOf: 3 });
-    expect(r('3[8]')).toEqual([{ value: 8, tuplet: TRIPLET }]);
+    expect(r('3[8]')).toEqual([{ value: 8, tuplet: TRIPLET, tupletStart: true }]);
     expect(r('4 3[8 r8 8] 4')).toEqual([
       { value: 4 },
-      { value: 8, tuplet: TRIPLET },
+      { value: 8, tuplet: TRIPLET, tupletStart: true },
       { value: 8, rest: true, tuplet: TRIPLET },
       { value: 8, tuplet: TRIPLET },
       { value: 4 },
@@ -77,6 +81,8 @@ describe('the text form', () => {
       '3:3[8 8 8]',
       '3:0[8 8 8]',
       '3[]',
+      '4 3[] 4',
+      '4 3[ ] 4',
     ])
       expect(() => r(bad), bad).toThrow(RangeError);
   });
@@ -87,12 +93,26 @@ describe('the text form', () => {
       '3[8 8 8] 2:3[8 8] 5[16 16 16 16 16]',
       '4:3[8 8 8 8]',
       '3[8 8 8] 4 3[4 8]',
+      '3[8 8 8] 3[8 8 8] 3[4 8] 3[8 4]',
       '1..',
     ]) {
       expect(formatRhythm(r(text)), text).toBe(text);
       expect(r(formatRhythm(r(text)))).toEqual(r(text));
     }
     expect(formatRhythm(r('3:2[8 8 8]'))).toBe('3[8 8 8]');
+    // Each bracket opens with a start, so neighbouring triplets stay apart.
+    const two = r('3[8 8 8] 3[8 8 8]');
+    expect(two.map((e) => e.tupletStart ?? false)).toEqual([
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+    ]);
+    // Hand-built events without starts share one bracket per run.
+    const bare: RhythmEvent[] = Array(6).fill({ value: 8, tuplet: TRIPLET });
+    expect(formatRhythm(bare)).toBe('3[8 8 8 8 8 8]');
   });
 
   it('gives VexFlow duration codes', () => {
@@ -169,6 +189,29 @@ describe('bar fill', () => {
     expect(checkBar(r('4 4 4'), ts('3/4')).ok).toBe(true);
   });
 
+  it('flags a note from a beat that stops partway through a later one, where beats are groups', () => {
+    // The 3/4 half and quarter, written in 6/8.
+    const half = checkBar(r('2 4'), ts('6/8'));
+    expect(half).toMatchObject({ fill: 'exact', ok: false });
+    expect(half.hiddenBeats).toEqual([0]);
+    expect(checkBar(r('2 8 8'), ts('6/8')).hiddenBeats).toEqual([0]);
+    expect(checkBar(r('4 2'), ts('6/8')).hiddenBeats).toEqual([1]);
+    // The dotted quarter runs over beat 2 (at 2/8) and stops mid-group.
+    expect(checkBar(r('4. 8 4.'), ts('7/8')).hiddenBeats).toEqual([0]);
+    expect(checkBar(r('2 8 8 8 8 8'), ts('9/8')).hiddenBeats).toEqual([0]);
+    // Whole beats from a beat are fine, to a beat or to the barline.
+    expect(checkBar(r('4. 4.'), ts('6/8')).ok).toBe(true);
+    expect(checkBar(r('2.'), ts('6/8')).ok).toBe(true);
+    expect(checkBar(r('2. 2.'), ts('12/8')).ok).toBe(true);
+    expect(checkBar(r('4. 2. 4.'), ts('12/8')).ok).toBe(true);
+    expect(checkBar(r('2 4.'), ts('7/8')).ok).toBe(true);
+    expect(checkBar(r('4. 2'), ts('7/8 (3+2+2)')).ok).toBe(true);
+    // Pulse-beat meters keep their allowance.
+    expect(checkBar(r('4. 8 2'), ts('4/4')).ok).toBe(true);
+    expect(checkBar(r('4 2 4'), ts('4/4')).ok).toBe(true);
+    expect(checkBar(r('2. 4 4'), ts('5/4')).ok).toBe(true);
+  });
+
   it('flags a 6/8 rhythm written in 3/4', () => {
     expect(checkBar(r('4. 4.'), ts('3/4')).hiddenBeats).toEqual([1]);
   });
@@ -202,6 +245,14 @@ describe('bar fill', () => {
     // Two runs side by side, one broken.
     const tuplets = [...r('3[8 8 8]'), ...r('5[16 16 16 16]'), ...r('16 2')];
     expect(checkBar(tuplets, ts('4/4')).brokenTuplets).toEqual([3]);
+    // Neighbouring brackets of one ratio are checked one by one: together
+    // these add up to a half, but neither does alone.
+    const merged = checkBar(r('3[8 8] 3[8 8 8 8]'), ts('2/4'));
+    expect(merged.fill).toBe('exact');
+    expect(merged.brokenTuplets).toEqual([0, 2]);
+    expect(merged.ok).toBe(false);
+    expect(checkBar(r('3[8 8 8] 3[8 8 8]'), ts('2/4')).ok).toBe(true);
+    expect(checkBar(r('3[8 8 8] 3[8 8 8 8] 3[8 8]'), ts('3/4')).brokenTuplets).toEqual([3, 7]);
   });
 
   it('flags ties into and out of rests', () => {
