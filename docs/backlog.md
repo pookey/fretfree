@@ -1701,7 +1701,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Existing tests updated, plus unit tests for each changed string.
 
 ### M10-09 · One vocabulary on the screens: "items", one learning/stable legend, Learn's names in Progress
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** M10-07
 - **Design:** §7; copy audit (screens) §9 items 1–3, Top 10 items 4, 5, 10
@@ -1782,7 +1782,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Use the stage IDs from M10-02 when it has landed, otherwise topic matches.
 
 ### M10-15 · Today: a first-day line, and streak freezes explained
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** none
 - **Design:** §3.7, §7 (Today); research/02 rule 15
