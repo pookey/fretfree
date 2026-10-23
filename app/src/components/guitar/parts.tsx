@@ -410,9 +410,11 @@ export function Controls({ at, paints }: { at: ControlAnchors; paints: Paints })
 
 /**
  * A carved edge (`BodyDetail` paint `bevel`): a band `width` mm in from the
- * path, lit, with a dark line where it meets the flat of the top. Both are
- * strokes of the outline clipped to the body, so the band stays even round
- * tight horns, and a mask keeps the line to the band's inner edge.
+ * path, lit where it faces the upper left and shaded where it faces the
+ * lower right, with a dark line where it meets the flat of the top. Both
+ * are strokes of the outline clipped to the body, so the band stays even
+ * round tight horns; a gradient across the body's box does the lighting,
+ * and a mask keeps the line to the band's inner edge.
  */
 export function Bevel({
   d,
@@ -427,19 +429,27 @@ export function Bevel({
 }) {
   const band = 2 * width;
   const edge = band + 1.6;
+  const light = `${id}-light`;
   return (
     <g clipPath={clip}>
-      <mask id={id} maskUnits="userSpaceOnUse" x={-500} y={-500} width={1000} height={1500}>
-        <path d={d} fill="none" stroke="#fff" strokeWidth={edge} />
-        <path d={d} fill="none" stroke="#000" strokeWidth={band} />
-      </mask>
-      <path d={d} fill="none" stroke="#fff" strokeOpacity={0.13} strokeWidth={band} />
-      <path d={d} fill="none" stroke="#fff" strokeOpacity={0.08} strokeWidth={band * 0.45} />
+      <defs>
+        <linearGradient id={light} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity={0.3} />
+          <stop offset="0.4" stopColor="#fff" stopOpacity={0.06} />
+          <stop offset="0.6" stopColor="#000" stopOpacity={0.06} />
+          <stop offset="1" stopColor="#000" stopOpacity={0.32} />
+        </linearGradient>
+        <mask id={id} maskUnits="userSpaceOnUse" x={-500} y={-500} width={1000} height={1500}>
+          <path d={d} fill="none" stroke="#fff" strokeWidth={edge} />
+          <path d={d} fill="none" stroke="#000" strokeWidth={band} />
+        </mask>
+      </defs>
+      <path d={d} fill="none" stroke={`url(#${light})`} strokeWidth={band} />
       <path
         d={d}
         fill="none"
         stroke="#000"
-        strokeOpacity={0.4}
+        strokeOpacity={0.35}
         strokeWidth={edge}
         mask={`url(#${id})`}
       />

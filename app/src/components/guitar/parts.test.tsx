@@ -81,6 +81,11 @@ describe('parts', () => {
       '26',
     ]);
     expect(el.querySelector('path[mask="url(#b1)"]')).not.toBeNull();
+    // Lit towards the upper left, shaded towards the lower right: not an even halo.
+    const stops = [...el.querySelectorAll('linearGradient#b1-light stop')];
+    expect(stops[0]).toHaveAttribute('stop-color', '#fff');
+    expect(stops.at(-1)).toHaveAttribute('stop-color', '#000');
+    expect(el.querySelector('path[stroke="url(#b1-light)"]')).toHaveAttribute('stroke-width', '26');
   });
 
   it("gives each guitar's bevel its own mask", () => {

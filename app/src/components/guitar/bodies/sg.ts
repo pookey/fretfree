@@ -172,13 +172,15 @@ const sg: BodyShape = {
     [98.1, 542.7],
     [101.9, 529.3],
     [105.1, 514.6],
-    [108.2, 500.0],
-    [109.5, 492.1],
-    [108.4, 485.3],
-    [104.4, 479.6],
-    [98.2, 476.4],
-    [91.3, 476.2],
-    [82.7, 478.9],
+    // The treble wing: a round lobe (r 16) that carries the toggle.
+    [115.8, 503.3],
+    [120, 496.1],
+    [120, 487.9],
+    [115.8, 480.7],
+    [108.7, 476.5],
+    [100.4, 476.5],
+    [91.5, 477.8],
+    [82.7, 479.2],
     [69.9, 479.4],
     [56.9, 474.4],
     [45.9, 464.3],
@@ -201,7 +203,7 @@ const sg: BodyShape = {
       { x: 86, y: SCALE + 60 },
       { x: 122, y: SCALE + 44 },
     ],
-    // On the treble side below the horn, through the guard's wing.
+    // On the treble side below the horn, on the guard's wing.
     switch: (() => {
       const [x, y] = inset(outline, 'treble', 492, 40);
       return { type: 'toggle' as const, x, y };
@@ -213,7 +215,7 @@ const sg: BodyShape = {
     })(),
   },
   neckJoint: { y: J },
-  details: [{ d: outline, paint: 'bevel', width: 13 }],
+  details: [{ d: outline, paint: 'bevel', width: 10 }],
 };
 
 export default sg;
