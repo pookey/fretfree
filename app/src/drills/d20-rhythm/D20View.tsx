@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import { useAppStore } from '../../app-store';
 import { ENGINE_CONFIG } from '../../engine/config';
 import type { GuideLevel } from '../../engine/model';
@@ -19,6 +19,7 @@ import type { DrillFeedback, DrillRenderProps } from '../types';
 import {
   d20DescribeOffset,
   d20Explain,
+  d20MarkX,
   d20Marks,
   type D20Answer,
   type D20Prompt,
@@ -257,6 +258,60 @@ export function RhythmDrill({
               ))}
             </fieldset>
           )}
+          {/* Start sits under the rhythm, in the prompt column, so a phone on its side shows it. */}
+          {!feedback && !calibrating && phase.name !== 'done' && (
+            <div className={styles.play}>
+              <div className={styles.status} aria-live="polite" data-testid="d20-status">
+                {phase.name === 'error' && (
+                  <p className={styles.error} role="alert">
+                    {errorCopy(input, phase.reason)}
+                  </p>
+                )}
+                {running && <p>{counting || position === null ? 'Count-in: listen…' : 'Go!'}</p>}
+              </div>
+              {running && input === 'tap' && (
+                <button
+                  ref={pad}
+                  type="button"
+                  className={styles.pad}
+                  aria-label="Tap the rhythm"
+                  aria-describedby="drill-prompt"
+                >
+                  <span
+                    className={styles.light}
+                    data-on={beat !== null}
+                    data-accent={beat?.accent}
+                  />
+                  <span aria-hidden="true">
+                    {counting && 'countIn' in position ? position.countIn : 'Tap'}
+                  </span>
+                </button>
+              )}
+              {running && input === 'mic' && (
+                <div className={styles.pad} role="img" aria-label="Listening for your guitar">
+                  <span
+                    className={styles.light}
+                    data-on={beat !== null}
+                    data-accent={beat?.accent}
+                  />
+                  <span aria-hidden="true">
+                    {counting && 'countIn' in position ? position.countIn : 'Listening…'}
+                  </span>
+                </div>
+              )}
+              <div className={styles.actions}>
+                {running ? (
+                  <button type="button" className={styles.button} onClick={cancel}>
+                    Stop
+                  </button>
+                ) : (
+                  <button type="button" className={styles.primary} onClick={start}>
+                    {phase.name === 'error' ? 'Try again' : 'Start'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           {idle && strum && (
             <p className={styles.note}>
               Use headphones, so the microphone hears your guitar and not the click. Mute the
@@ -286,51 +341,6 @@ export function RhythmDrill({
         {sizeClass === 'regular-wide' && aside}
       </div>
 
-      {!feedback && !calibrating && phase.name !== 'done' && (
-        <div className={styles.play}>
-          <div className={styles.status} aria-live="polite" data-testid="d20-status">
-            {phase.name === 'error' && (
-              <p className={styles.error} role="alert">
-                {errorCopy(input, phase.reason)}
-              </p>
-            )}
-            {running && <p>{counting || position === null ? 'Count-in: listen…' : 'Go!'}</p>}
-          </div>
-          {running && input === 'tap' && (
-            <button
-              ref={pad}
-              type="button"
-              className={styles.pad}
-              aria-label="Tap the rhythm"
-              aria-describedby="drill-prompt"
-            >
-              <span className={styles.light} data-on={beat !== null} data-accent={beat?.accent} />
-              <span aria-hidden="true">
-                {counting && 'countIn' in position ? position.countIn : 'Tap'}
-              </span>
-            </button>
-          )}
-          {running && input === 'mic' && (
-            <div className={styles.pad} role="img" aria-label="Listening for your guitar">
-              <span className={styles.light} data-on={beat !== null} data-accent={beat?.accent} />
-              <span aria-hidden="true">
-                {counting && 'countIn' in position ? position.countIn : 'Listening…'}
-              </span>
-            </div>
-          )}
-          <div className={styles.actions}>
-            {running ? (
-              <button type="button" className={styles.button} onClick={cancel}>
-                Stop
-              </button>
-            ) : (
-              <button type="button" className={styles.primary} onClick={start}>
-                {phase.name === 'error' ? 'Try again' : 'Start'}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
       {/* iPad portrait: the context panel sits below; compact styles it as a sheet. */}
       {sizeClass !== 'regular-wide' && aside}
     </div>
@@ -404,18 +414,41 @@ function PatternGrid({ prompt, counts, playhead }: PatternGridProps) {
   );
 }
 
-const VERDICT: Record<HitMark['verdict'], { symbol: string; text: (ms: number) => string }> = {
-  on: { symbol: '●', text: (ms) => `on time, ${d20DescribeOffset(ms)}` },
-  early: { symbol: '◀', text: (ms) => `too early, ${d20DescribeOffset(ms)}` },
-  late: { symbol: '▶', text: (ms) => `too late, ${d20DescribeOffset(ms)}` },
-  miss: { symbol: '✕', text: () => 'missed' },
+const VERDICT: Record<HitMark['verdict'], (ms: number) => string> = {
+  on: (ms) => `on time, ${d20DescribeOffset(ms)}`,
+  early: (ms) => `too early, ${d20DescribeOffset(ms)}`,
+  late: (ms) => `too late, ${d20DescribeOffset(ms)}`,
+  miss: () => 'missed',
 };
 
 function countOf(step: number): string {
   return `${COUNTS[step]}${step % STEPS_PER_PULSE ? ` of ${COUNTS[step - 1]}` : ''}`;
 }
 
-/** Every bar as played: each hit marked on time, early, late or missed, by shape and colour. */
+/**
+ * One hit as played, inside its box: a line for the click and a dot where the
+ * hit landed, left of the line when early and right when late, with a tail
+ * back to the line when it was off. A miss is a cross. Position and shape
+ * carry the verdict, not colour alone.
+ */
+function HitMarker({ mark }: { mark: HitMark }) {
+  if (mark.offsetMs === null) return <span className={styles.miss}>✕</span>;
+  const x = d20MarkX(mark.offsetMs);
+  const style = {
+    '--x': x,
+    '--tail-from': Math.min(0, x),
+    '--tail-len': Math.abs(x),
+  } as CSSProperties;
+  return (
+    <span className={styles.marker} style={style} data-side={x < 0 ? 'early' : 'late'}>
+      <span className={styles.click} />
+      {mark.verdict !== 'on' && <span className={styles.tail} />}
+      <span className={styles.hit} />
+    </span>
+  );
+}
+
+/** Every bar as played: each hit marked against its click, on time, early, late or missed. */
 function ResultGrid({
   prompt,
   feedback,
@@ -439,13 +472,11 @@ function ResultGrid({
                 data-beat={step % STEPS_PER_PULSE === 0}
                 data-verdict={mark?.verdict}
                 aria-label={
-                  mark
-                    ? `${count}: ${VERDICT[mark.verdict].text(mark.offsetMs ?? 0)}`
-                    : `${count}: rest`
+                  mark ? `${count}: ${VERDICT[mark.verdict](mark.offsetMs ?? 0)}` : `${count}: rest`
                 }
               >
                 <span className={styles.box} aria-hidden="true">
-                  {mark && VERDICT[mark.verdict].symbol}
+                  {mark && <HitMarker mark={mark} />}
                 </span>
                 <span className={styles.count} aria-hidden="true">
                   {COUNTS[step]}
@@ -455,6 +486,9 @@ function ResultGrid({
           })}
         </ol>
       ))}
+      <p className={styles.key}>
+        The line is the click and the dot is your hit: left of the line is early, right is late.
+      </p>
     </div>
   );
 }

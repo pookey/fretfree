@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppStore } from '../../app-store';
+import { ENGINE_CONFIG } from '../../engine/config';
 import { DEFAULT_SETTINGS, type GuideLevel, type Settings } from '../../engine/model';
 import { getTuning } from '../../theory';
 import { createFakeMetronome, type FakeMetronome } from '../../timing/fake-metronome';
@@ -109,6 +110,24 @@ describe('<RhythmDrill>', () => {
     expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
     // Taps only: mic mode is off.
     expect(screen.queryByRole('group', { name: 'Play by' })).not.toBeInTheDocument();
+  });
+
+  it('puts Start under the rhythm, in the prompt column, ahead of the notes', () => {
+    useAppStore.setState({
+      settings: { ...useAppStore.getState().settings, timingOffsets: { tap: null, mic: 0 } },
+    });
+    setup();
+    const grid = screen.getByTestId('d20-grid');
+    const start = screen.getByRole('button', { name: 'Start' });
+    const column = grid.parentElement!;
+    expect(column).toContainElement(start);
+    expect(column).toContainElement(screen.getByTestId('d20-prompt'));
+    expect(column).not.toContainElement(screen.getByTestId('aside'));
+    const follows = (a: Node, b: Node) =>
+      Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(follows(grid, start)).toBe(true);
+    // The timing-check reminder comes after Start, so it can't push it off a short screen.
+    expect(follows(start, screen.getByTestId('d20-calibrate'))).toBe(true);
   });
 
   it('fades the counts at guide level 0', () => {
@@ -309,7 +328,7 @@ describe('<RhythmDrill>', () => {
     expect(screen.getByTestId('d20-calibrate')).toBeInTheDocument();
   });
 
-  it('shows how each hit landed, by shape and label, after the answer', () => {
+  it('marks each hit against its click, by side, shape and label, after the answer', () => {
     const p = prompt('tap-rhythm:half-notes');
     const targetsMs = p.pulses.map((pulse) => 10_000 + pulse * 1000);
     const answer: D20Answer = {
@@ -318,24 +337,38 @@ describe('<RhythmDrill>', () => {
       onsetsMs: [targetsMs[0]! + 6, targetsMs[1]! - 80, targetsMs[2]! + 70],
       window: 'strict',
     };
+    const { matchMs } = ENGINE_CONFIG.rhythm.grade;
     setup({ id: 'tap-rhythm:half-notes', feedback: { answer } });
     expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
     const results = screen.getByTestId('d20-results');
     const bar1 = within(results).getByRole('list', { name: 'Bar 1' });
     const bar2 = within(results).getByRole('list', { name: 'Bar 2' });
-    const labels = (bar: HTMLElement) =>
+    // Each hit: its label, the side its dot is on, whether it has a tail
+    // back to the click, and where along the box the dot sits.
+    const marks = (bar: HTMLElement) =>
       within(bar)
         .getAllByRole('listitem')
         .filter((c) => c.dataset.hit === 'true')
-        .map((c) => [c.getAttribute('aria-label'), c.textContent]);
-    expect(labels(bar1)).toEqual([
-      ['1: on time, 6 ms late', '●1'],
-      ['3: too early, 80 ms early', '◀3'],
+        .map((c) => {
+          const marker = c.querySelector<HTMLElement>('[data-side]');
+          return [
+            c.getAttribute('aria-label'),
+            marker?.dataset.side ?? c.textContent,
+            Boolean(marker?.querySelector('[class*="tail"]')),
+            marker?.style.getPropertyValue('--x') ?? null,
+          ];
+        });
+    expect(marks(bar1)).toEqual([
+      ['1: on time, 6 ms late', 'late', false, String(Math.sqrt(6 / matchMs))],
+      ['3: too early, 80 ms early', 'early', true, String(-Math.sqrt(80 / matchMs))],
     ]);
-    expect(labels(bar2)).toEqual([
-      ['1: too late, 70 ms late', '▶1'],
-      ['3: missed', '✕3'],
+    expect(marks(bar2)).toEqual([
+      ['1: too late, 70 ms late', 'late', true, String(Math.sqrt(70 / matchMs))],
+      ['3: missed', '✕3', false, null],
     ]);
+    // Nothing reads as a play button.
+    expect(results).not.toHaveTextContent(/[▶◀]/);
+    expect(results).toHaveTextContent('left of the line is early, right is late');
     expect(screen.getByTestId('d20-explain')).toHaveTextContent(
       'Typically 6 ms off (aim for 30). 1 missed.',
     );

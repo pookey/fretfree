@@ -1,6 +1,9 @@
-/* D20 (design §7, iPad first): the prompt and the rhythm grid beside the
-   context panel, then a big pad to tap on below. */
+/* D20 (design §7, iPad first): the prompt, the rhythm grid and, under them,
+   Start or the big pad to tap on, beside the context panel. */
 .drill {
+  /* Every box of the grid is this size: in a rhythm, a bigger box reads as an accent. */
+  --cell: 3.5rem;
+  --dot: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
@@ -52,7 +55,8 @@
   text-align: center;
 }
 
-/* One bar: eight boxes, a beat's two eighths grouped by a wider gap. */
+/* One bar: eight boxes, a beat's two eighths grouped by a wider gap. The gap
+   is a margin outside the box, so grouping never shrinks one. */
 .results {
   display: grid;
   gap: var(--space-3);
@@ -60,7 +64,8 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(8, 3.5rem);
+  grid-template-columns: repeat(8, auto);
+  justify-content: center;
   column-gap: var(--space-1);
   margin: 0;
   padding: 0;
@@ -78,10 +83,12 @@
 }
 
 .box {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 100%;
-  aspect-ratio: 1;
+  width: var(--cell);
+  height: var(--cell);
+  box-sizing: border-box;
   border-radius: var(--radius-s);
   border: 2px dashed var(--border);
   font-size: 1.5rem;
@@ -112,6 +119,54 @@
   border-color: var(--wrong);
   background: color-mix(in srgb, var(--wrong) 20%, transparent);
   color: var(--text);
+}
+
+/* A hit in the results: the click is a line down the middle of its box, and
+   the dot sits where the hit landed, across a box that spans the match
+   window. An off hit has a tail back to the line, so early and late read by
+   side and shape. */
+.marker {
+  position: absolute;
+  inset: 0 calc(var(--dot) / 2 + 2px);
+}
+
+.click {
+  position: absolute;
+  top: 18%;
+  bottom: 18%;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--text-muted);
+}
+
+.hit {
+  position: absolute;
+  top: 50%;
+  left: calc(50% + var(--x) * 50%);
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.tail {
+  position: absolute;
+  top: 50%;
+  left: calc(50% + var(--tail-from) * 50%);
+  width: calc(var(--tail-len) * 50%);
+  height: 2px;
+  margin-top: -1px;
+  background: currentColor;
+}
+
+.key {
+  margin: 0;
+  max-width: 40rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  text-align: center;
 }
 
 .count {
@@ -327,9 +382,10 @@
   color: var(--accent-text);
 }
 
-/* Narrower screens: the grid shrinks to fit 8 boxes at 375pt. */
-.drill[data-size-class='compact'] .grid {
-  grid-template-columns: repeat(8, 2.25rem);
+/* Narrower screens: the boxes shrink, all alike, to fit 8 at 375pt. */
+.drill[data-size-class='compact'] {
+  --cell: 2.25rem;
+  --dot: 0.5rem;
 }
 
 .drill[data-size-class='compact'] .cell[data-beat='true']:not(:first-child) {
