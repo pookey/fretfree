@@ -1,0 +1,292 @@
+/* D30: the play button, the question and the meter names sit in the upper
+   band with the context panel beside them; the notation joins in feedback. */
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.ask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+/* The primary action: the sound is the prompt. */
+.play {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 3.5rem;
+  padding: 0 var(--space-5);
+  border: none;
+  border-radius: 999px;
+  background: var(--accent-fill);
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.play:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 3px;
+}
+
+.icon {
+  font-size: 1rem;
+}
+
+.notice {
+  margin: 0;
+  max-width: 40rem;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--wrong);
+  background: var(--bg-raised);
+  font-size: 0.9375rem;
+}
+
+.prompt {
+  margin: 0;
+  max-width: 44rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Up to six meters: one row on iPad, rows of three on a phone. */
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  max-width: 48rem;
+}
+
+.choice {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  min-width: 7rem;
+  min-height: 4.5rem;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.main {
+  font-size: 1.625rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.sub {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.choice:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .choice:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.choice:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+
+.choice:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.choice[data-state='correct'] {
+  background: var(--correct);
+  border-color: var(--correct);
+  color: #fff;
+  opacity: 1;
+}
+
+.choice[data-state='wrong'] {
+  background: var(--wrong);
+  border-color: var(--wrong);
+  color: #fff;
+  opacity: 1;
+}
+
+.choice[data-state='correct'] .sub,
+.choice[data-state='wrong'] .sub {
+  color: inherit;
+}
+
+/* The answer missed: a dashed edge, so it reads without colour. */
+.choice[data-state='expected'] {
+  border-color: var(--correct);
+  border-style: dashed;
+  opacity: 1;
+}
+
+.feedback {
+  max-width: 40rem;
+  text-align: center;
+}
+
+.feedback p {
+  margin: 0 0 var(--space-2);
+}
+
+.compare {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.compare button {
+  min-height: 2.75rem;
+  padding: 0 var(--space-4);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.compare button:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+
+/* The symbol, after the sound: one bar on the staff, its counting beneath. */
+.notation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.staff {
+  width: 18rem;
+  max-width: 100%;
+}
+
+.count {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1);
+  font-size: 1.125rem;
+}
+
+.count li {
+  min-width: 2rem;
+  padding: var(--space-1);
+  text-align: center;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* The beats are counted out loud: numbers bold, the bar's downbeat boxed too. */
+.count li[data-accent='beat'],
+.count li[data-accent='group'],
+.count li[data-accent='bar'] {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.count li[data-accent='bar'] {
+  border: 2px solid var(--root);
+  border-radius: var(--radius-m);
+}
+
+.count li[data-accent='group'] {
+  border-bottom: 2px solid var(--root);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .choice {
+    transition:
+      background 0.12s,
+      transform 0.08s;
+  }
+}
+
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .top {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .play {
+  min-height: 3rem;
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .choices {
+  max-width: calc(3 * 6rem + 2 * var(--space-2));
+}
+
+.drill[data-size-class='compact'] .choice {
+  min-width: 5.5rem;
+  min-height: 3.5rem;
+}
+
+.drill[data-size-class='compact'] .main {
+  font-size: 1.25rem;
+}
+
+.drill[data-size-class='compact'] .count {
+  font-size: 1rem;
+}
