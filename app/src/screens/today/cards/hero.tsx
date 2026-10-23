@@ -11,6 +11,8 @@ import {
 } from '../../../components/goal-ring';
 import { DRILLS } from '../../../drills/registry';
 import { SKILLS, type Settings, type Skill } from '../../../engine';
+import type { StatusOverlay } from '../../../engine/overlay';
+import { useStatusOverlay } from '../../settings/DeveloperTools';
 import { getDb, getSkillStates } from '../../../storage';
 import { firstLessonSkill } from '../first-lesson';
 import screens from '../../screens.module.css';
@@ -24,6 +26,8 @@ function goalCopy(minutes: number, goalMinutes: number, met: boolean): string {
   if (met) return 'Daily goal met. Come back tomorrow to keep it.';
   return `${goalMinutes - minutes} min to go for today's ${goalMinutes}-minute goal`;
 }
+
+const useOverlay: () => StatusOverlay | null = import.meta.env.DEV ? useStatusOverlay : () => null;
 
 /** Set once the freeze explainer has been shown on this device. */
 const FREEZE_EXPLAINED_KEY = 'fretwork.today.freezeExplained';
@@ -48,7 +52,10 @@ function markFreezeExplained(): void {
  * The skill a first session opens with, while the learner has no cards;
  * `null` otherwise, and `undefined` until the first read.
  */
-function useFirstLesson(settings: Settings): Skill | null | undefined {
+function useFirstLesson(
+  settings: Settings,
+  overlay: StatusOverlay | null,
+): Skill | null | undefined {
   const [skill, setSkill] = useState<Skill | null | undefined>(undefined);
   useEffect(() => {
     const db = getDb();
@@ -57,10 +64,10 @@ function useFirstLesson(settings: Settings): Skill | null | undefined {
       const statuses = new Map(
         [...(await getSkillStates(db)).values()].map((s) => [s.skillId, s.status]),
       );
-      return firstLessonSkill(SKILLS, DRILLS, settings, statuses, new Date());
+      return firstLessonSkill(SKILLS, DRILLS, settings, statuses, new Date(), overlay);
     }).subscribe({ next: setSkill, error: () => setSkill(null) });
     return () => sub.unsubscribe();
-  }, [settings]);
+  }, [settings, overlay]);
   return skill;
 }
 
@@ -75,7 +82,7 @@ export function Card() {
   const settings = useAppStore((s) => s.settings);
   const minutes = settings.sessionMinutes;
   const summary = useStreakSummary();
-  const firstLesson = useFirstLesson(settings);
+  const firstLesson = useFirstLesson(settings, useOverlay());
   // Read once per visit, so the explainer stays up while Today is open.
   const [explainedBefore] = useState(freezeExplained);
   const held = summary?.freezesHeld ?? 0;

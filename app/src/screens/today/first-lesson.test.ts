@@ -4,6 +4,7 @@ import { GOAL_PROFILES } from '../../engine/frontier';
 import { DRILLS } from '../../drills/registry';
 import { FretworkDB, getSkillStates, putSkillState } from '../../storage';
 import { SessionRunner } from '../../session/runner';
+import type { StatusOverlay } from '../../engine/overlay';
 import { firstLessonSkill } from './first-lesson';
 
 let db: FretworkDB;
@@ -23,7 +24,7 @@ async function statuses() {
 }
 
 /** What the runner actually serves first, and what Today predicts. */
-async function both(settings: Settings) {
+async function both(settings: Settings, overlay?: StatusOverlay) {
   const runner = await SessionRunner.start({
     db,
     scheduler: createScheduler({ enableFuzz: false }),
@@ -31,10 +32,11 @@ async function both(settings: Settings) {
     skills: SKILLS,
     drills: DRILLS,
     now: () => NOW,
+    ...(overlay ? { overlay } : {}),
   });
   return {
     served: runner.currentPrompt()?.entry.skillId,
-    predicted: firstLessonSkill(SKILLS, DRILLS, settings, await statuses(), NOW)?.id,
+    predicted: firstLessonSkill(SKILLS, DRILLS, settings, await statuses(), NOW, overlay)?.id,
   };
 }
 
@@ -68,6 +70,15 @@ describe('firstLessonSkill', () => {
     expect(predicted).not.toMatch(/^F1\./);
     expect(served).toBe(predicted);
   });
+
+  it.each(Object.keys(GOAL_PROFILES) as Goal[])(
+    'agrees with the runner under the "unlock every skill" overlay, goal %s',
+    async (goal) => {
+      const { served, predicted } = await both({ ...DEFAULT_SETTINGS, goal }, { unlockAll: true });
+      expect(predicted).toBeDefined();
+      expect(served).toBe(predicted);
+    },
+  );
 
   it('skips skills no drill can serve, and is null when nothing is', () => {
     expect(firstLessonSkill(SKILLS, [], DEFAULT_SETTINGS, new Map(), NOW)).toBeNull();
