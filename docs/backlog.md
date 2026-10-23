@@ -1794,7 +1794,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - RTL tests, and an e2e test for a fresh profile.
 
 ### M10-16 · Placement probes for octave shapes and triad cores, and test-out from the Learn map
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** M10-01
 - **After:** M10-09
