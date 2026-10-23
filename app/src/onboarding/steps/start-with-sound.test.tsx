@@ -29,19 +29,19 @@ describe('"Start with sound" onboarding step', () => {
   it('starts with the neck by default', () => {
     render(<startWithSound.Step onNext={vi.fn()} />);
     expect(screen.getByRole('group', { name: 'Start with' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /With the neck/ })).toBeChecked();
-    expect(screen.getByRole('radio', { name: /With sound/ })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: /^The neck/ })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /^Sound/ })).not.toBeChecked();
   });
 
   it('saves "start with sound" to settings', async () => {
-    await choose(/With sound/);
+    await choose(/^Sound/);
     expect((await getSettings(getDb())).startWithSound).toBe(true);
     expect(useAppStore.getState().settings.startWithSound).toBe(true);
   });
 
   it('shows the saved choice, and can switch back to the neck', async () => {
     useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, startWithSound: true } });
-    await choose(/With the neck/);
+    await choose(/^The neck/);
     expect((await getSettings(getDb())).startWithSound).toBe(false);
   });
 });

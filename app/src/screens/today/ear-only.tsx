@@ -101,7 +101,7 @@ export function earOnlyPlan(
 const scheduler = createScheduler();
 
 function earOnlyCopy(due: number): string {
-  if (due === 0) return 'Nothing is due, so it practises the sounds you are learning next.';
+  if (due === 0) return 'No ear cards are due, so it practises the sounds you are learning next.';
   return `Reviews ${due} ear ${due === 1 ? 'card' : 'cards'} due now.`;
 }
 

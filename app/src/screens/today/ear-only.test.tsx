@@ -154,7 +154,7 @@ describe('Quick drills card: Ear only', () => {
   it('starts an ear-only session through the URL focus and route state', async () => {
     renderCard();
     const link = await screen.findByRole('link', { name: 'Ear only (no guitar)' }, SLOW);
-    expect(screen.getByTestId('ear-only-copy')).toHaveTextContent(/nothing is due/i);
+    expect(screen.getByTestId('ear-only-copy')).toHaveTextContent(/no ear cards are due/i);
     await userEvent.click(link);
     expect(JSON.parse(screen.getByTestId('route-state').textContent!)).toEqual({
       minutes: 3,

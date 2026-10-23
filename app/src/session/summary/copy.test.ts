@@ -41,6 +41,8 @@ describe('competenceText', () => {
       'You learned open string 6 today',
     );
     expect(LEARNED_HINT).toMatch(/tomorrow/);
+    // The footer's spacing copy is the one that says "Come back tomorrow".
+    expect(LEARNED_HINT).not.toMatch(/come back/i);
     expect(
       competenceText({ kind: 'mastered', skillId: 's', skillTitle: 'Natural notes on string 6' }),
     ).toBe("You've mastered natural notes on string 6");

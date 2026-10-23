@@ -80,8 +80,8 @@ test.describe('M4-10 start with sound', () => {
       const pane = await choice(page).boundingBox();
       expect(pane!.x).toBeGreaterThan(explain!.x + explain!.width - 1);
     }
-    const neckFirst = choice(page).getByRole('radio', { name: /With the neck/ });
-    const soundFirst = choice(page).getByRole('radio', { name: /With sound/ });
+    const neckFirst = choice(page).getByRole('radio', { name: /^The neck/ });
+    const soundFirst = choice(page).getByRole('radio', { name: /^Sound/ });
     await expect(neckFirst).toBeChecked();
     for (const label of await choice(page).locator('label').all())
       expect((await label.boundingBox())!.height).toBeGreaterThanOrEqual(44);

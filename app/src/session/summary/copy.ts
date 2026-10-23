@@ -21,7 +21,7 @@ export function competenceText(line: CompetenceLine): string {
 }
 
 /** Shown with same-day gains: knowing it means recalling it after a gap. */
-export const LEARNED_HINT = 'Come back tomorrow to lock it in.';
+export const LEARNED_HINT = 'Recall it tomorrow to lock it in.';
 
 export function headline(c: Celebration): string {
   const first = c.competence[0];

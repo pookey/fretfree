@@ -27,10 +27,10 @@ type Start = 'neck' | 'sound';
 const START_OPTIONS: readonly Option<Start>[] = [
   {
     value: 'neck',
-    label: 'With the neck',
+    label: 'The neck',
     detail: 'Note names on the fretboard first, with ear training alongside',
   },
-  { value: 'sound', label: 'With sound', detail: 'Hear a note, then find it on the neck' },
+  { value: 'sound', label: 'Sound', detail: 'Hear a note, then find it on the neck' },
 ];
 
 export function Step({ onNext }: OnboardingStepProps) {

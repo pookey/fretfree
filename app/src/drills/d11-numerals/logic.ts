@@ -379,7 +379,9 @@ export function d11WorkedExample(prompt: D11Prompt): string {
   if (prompt.ask === 'numeral') {
     return `${chord} is built on ${root}, ${rootPlace(prompt)}, and it's ${quality}, so it's ${prettyNumeral(t.roman)}.`;
   }
-  return `${d11Cue(prompt)} is the chord on ${rootPlace(prompt)}, ${root}, and it's ${quality}: ${chord}.`;
+  // A major chord's symbol is its root, already named, and "Tap F" follows.
+  const symbol = chord === root ? '' : `: ${chord}`;
+  return `${d11Cue(prompt)} is the chord on ${rootPlace(prompt)}, ${root}, and it's ${quality}${symbol}.`;
 }
 
 /** The hint under the task (guide level 1+). It names the method, never the answer. */

@@ -513,9 +513,13 @@ describe('worked examples and guides', () => {
       "Bdim is built on B, the 7th note of C major, and it's diminished (lower case with °), so it's vii°.",
     );
     expect(d11WorkedExample(prompt('nashville:4@key=A'))).toBe(
-      "4 is the chord on the 4th note of A major, D, and it's major (a plain number): D.",
+      "4 is the chord on the 4th note of A major, D, and it's major (a plain number).",
     );
     expect(d11WorkedExample(prompt('nashville:7°@key=A'))).toContain('diminished (°)');
+    // A major chord is named by its root once; "Tap F to continue" follows.
+    expect(d11WorkedExample(prompt('numeral:IV@key=C'))).toBe(
+      "IV is the chord on the 4th note of C major, F, and it's major (upper case).",
+    );
   });
 
   it('fades the guides', () => {

@@ -211,6 +211,8 @@
 .skillTitle {
   margin: 0;
   font-size: 1rem;
+  /* A narrow column left "D" of "Roman numerals: C, G and D" alone on a line. */
+  text-wrap: balance;
 }
 
 .skillMeta {
