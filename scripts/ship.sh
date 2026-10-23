@@ -19,13 +19,40 @@ phase() { [[ -n "${SHIP_PHASE_FILE:-}" ]] && echo "$1" >"$SHIP_PHASE_FILE"; log 
 
 phase scan "Secret scan"
 ./scripts/secret-scan.sh
-phase verify "Verify"
-pnpm verify
-# Record the verified SHA (shared by all worktrees) so the pre-push hook can reuse it.
-git rev-parse HEAD >> "$(git rev-parse --git-common-dir)/fretwork-verified"
+# Reuse a verify of this commit, or of a recent ancestor when only docs changed
+# since (the same rule as the pre-push hook). FORCE_VERIFY=1 always verifies.
+stamps="$(git rev-parse --git-common-dir)/fretwork-verified"
+touch "$stamps"
+verified=""
+if [[ "${FORCE_VERIFY:-}" != 1 ]]; then
+  for sha in $(git rev-list -n 50 HEAD); do
+    grep -qx "$sha" "$stamps" || continue
+    changed="$(git diff --name-only "$sha" HEAD)"
+    if [[ -z "$changed" ]] || ! grep -qvE '^(docs/.*|.*\.md|LICENSE)$' <<<"$changed"; then
+      verified="$sha"
+    fi
+    break
+  done
+fi
+if [[ -n "$verified" ]]; then
+  phase verify "Verify: reusing the verify of ${verified:0:8} (FORCE_VERIFY=1 to re-run)"
+else
+  # Day to day, ipad-portrait and ipad-mini-landscape run only @layout tests
+  # (app/playwright.config.ts). The first ship after a week without a full
+  # matrix runs every test on all three iPads, as a safety net.
+  full_stamp="$(git rev-parse --git-common-dir)/fretwork-full-matrix"
+  if [[ "${PW_FULL_MATRIX:-}" == 1 || ! -f "$full_stamp" || -n "$(find "$full_stamp" -mtime +7)" ]]; then
+    export PW_FULL_MATRIX=1
+  fi
+  phase verify "Verify${PW_FULL_MATRIX:+ (full matrix)}"
+  pnpm verify
+  # Record the verified SHA (shared by all worktrees) so the pre-push hook can reuse it.
+  git rev-parse HEAD >> "$stamps"
+  [[ "${PW_FULL_MATRIX:-}" == 1 ]] && touch "$full_stamp"
+fi
 phase deploy "Deploy"
-if ./scripts/remote-run.sh --enabled; then
-  # Verify ran on the remote test runner, so build the same commit here to deploy.
+if [[ -n "$verified" ]] || ./scripts/remote-run.sh --enabled; then
+  # Verify was reused, or ran on the remote test runner: build this commit here to deploy.
   ./scripts/deploy.sh
 else
   SKIP_BUILD=1 ./scripts/deploy.sh   # pnpm verify already built app/dist
