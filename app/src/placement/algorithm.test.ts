@@ -308,7 +308,8 @@ describe('placementGroups', () => {
     const ms = (itemId: string) => (itemId.startsWith('caged-core:') ? 4500 : 2500);
     const expertMs = all.answers.reduce((t, a) => t + ms(a.itemId), 0);
     // An expert answers everything in the budget: the octave shapes, the cores
-    // and the C2 stages placement skips (M10-20) included.
+    // and the C2 stages placement skips (M10-20) included. It is 179 s, and the
+    // stage probes come last: a new probed skill must make room, or they fail here.
     expect(expertMs).toBeLessThanOrEqual(ENGINE_CONFIG.placement.budgetMs);
     expect(new Set(probedGroups(all))).toEqual(new Set(groups.map((g) => g.id)));
     expect(verdicts(all).get('C6.triad-cores')).toBe('known');

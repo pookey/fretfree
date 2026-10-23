@@ -10,7 +10,12 @@ export const placement = {
   topics: ['F1', 'F2', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C8'],
   // A skill of those topics that the test leaves out sets `skipPlacement`
   // in its own file (engine/model.ts `Skill`).
-  /** No new probe starts after this long: the test takes about 3 minutes. */
+  /**
+   * No new probe starts after this long: the test takes about 3 minutes.
+   * Full: a fast expert's run takes 179 s (`placement/algorithm.test.ts`).
+   * The stage probes below come last, so a new probed skill pushes them out
+   * unless it makes room; that test fails when it does.
+   */
   budgetMs: 180_000,
   /**
    * Probes per skill, by the skill's item count: the first tier whose `upTo`
