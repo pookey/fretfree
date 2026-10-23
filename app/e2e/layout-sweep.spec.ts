@@ -15,6 +15,7 @@ const SCREENS = [
   '/explore',
   '/tools',
   '/progress',
+  '/progress/garage',
   '/settings',
   '/about',
   '/privacy',
