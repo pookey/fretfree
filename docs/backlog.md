@@ -902,7 +902,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Proof in the report: each of the three tests passes `--repeat-each 10` on ipad-landscape under 5 workers, before-and-after numbers.
 
 ### M1-46 · Serve test-slot waiters in arrival order
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** none (tooling; CLAUDE.md "Commands")
 - **Owns:** `scripts/slot-lib.sh`, `scripts/slot-lib.test.sh` (new)
