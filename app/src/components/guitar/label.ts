@@ -1,3 +1,4 @@
+import { hasGuard } from './shapes';
 import type { GuitarLook, InlayShape } from './types';
 
 const INLAY_WORD: Record<InlayShape, string> = {
@@ -23,13 +24,15 @@ function named(name: string, noun: string): string {
 /**
  * The accessible name of a guitar, e.g. "Les Paul guitar, cherry
  * sunburst, cream pickguard, gold hardware, rosewood neck with block
- * inlays".
+ * inlays". A body drawn without a guard is named "no pickguard" whatever
+ * the spec holds, so the name matches the picture.
  */
 export function guitarLabel(look: GuitarLook): string {
   const body = look.body.name.trim();
-  const pickguard = look.pickguard.render.colour
-    ? named(look.pickguard.name, 'pickguard')
-    : 'no pickguard';
+  const pickguard =
+    look.pickguard.render.colour && hasGuard(look.body.render.shape)
+      ? named(look.pickguard.name, 'pickguard')
+      : 'no pickguard';
   return [
     `${body.replace(/\s*guitar$/i, '')} guitar`,
     lowerFirst(look.finish.name.trim()),

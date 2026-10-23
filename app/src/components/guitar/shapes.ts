@@ -13,3 +13,15 @@ export const BODY_SHAPES: readonly string[] = Object.keys(files).map((path) =>
 export function hasBody(shape: string): boolean {
   return BODY_SHAPES.includes(shape);
 }
+
+/**
+ * Bodies drawn without a pickguard, so a guard in the spec isn't drawn or
+ * named on them. Kept here, not read from the drawings, so it stays out of
+ * first-load JS; `registry.test.ts` checks it against the drawings.
+ */
+export const GUARDLESS_SHAPES: readonly string[] = ['superstrat'];
+
+/** Whether `shape` draws a pickguard (an unknown shape draws the Stratocaster's). */
+export function hasGuard(shape: string): boolean {
+  return !GUARDLESS_SHAPES.includes(shape);
+}

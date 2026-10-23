@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { area, flattenPath, footprints, margin } from './footprint';
 import { DEFAULT_FRETS, NECK_JOINT_Y, SCALE, boardEnd, boardHalfWidth } from './geometry';
 import { BODIES, bodyFor, collectBodies } from './registry';
-import { BODY_SHAPES, hasBody } from './shapes';
+import { BODY_SHAPES, GUARDLESS_SHAPES, hasBody } from './shapes';
 import type { BodyShape, Point } from './types';
 
 /** Every coordinate pair in a path, control points too: a slightly generous bounding box. */
@@ -116,6 +116,11 @@ describe('body registry', () => {
     expect(hasBody('les-paul')).toBe(true);
     expect(hasBody('sg')).toBe(true);
     expect(hasBody('no-such-shape')).toBe(false);
+  });
+
+  it('lists, without loading them, exactly the bodies drawn without a guard', () => {
+    const guardless = [...BODIES].filter(([, b]) => !b.pickguard).map(([id]) => id);
+    expect([...GUARDLESS_SHAPES].sort()).toEqual(guardless.sort());
   });
 
   it('falls back for an unknown shape', () => {

@@ -14,6 +14,14 @@ describe('guitarLabel', () => {
     expect(label).toContain(', no pickguard,');
   });
 
+  it("says there's no pickguard on a body drawn without one, whatever the spec holds", () => {
+    const label = guitarLabel(
+      look({ body: { name: 'Superstrat', render: { shape: 'superstrat' } } }),
+    );
+    expect(label).toContain(', no pickguard,');
+    expect(label).not.toContain('cream');
+  });
+
   it('keeps the model name as it is', () => {
     const label = guitarLabel(
       look({ body: { name: 'Stratocaster', render: { shape: 'stratocaster' } } }),

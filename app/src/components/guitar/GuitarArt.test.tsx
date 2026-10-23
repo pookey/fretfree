@@ -93,6 +93,18 @@ describe('<GuitarArt>', () => {
     }
   });
 
+  it('names no pickguard on a body that draws none, though the spec has one', () => {
+    render(
+      <GuitarArt
+        spec={look({ body: { name: 'Superstrat', render: { shape: 'superstrat' } } })}
+        size={20}
+      />,
+    );
+    const svg = screen.getByRole('img');
+    expect(svg).toHaveAccessibleName(/^Superstrat guitar, cherry sunburst, no pickguard, /);
+    expect(svg.querySelectorAll('path[fill="#efe3c8"]')).toHaveLength(0);
+  });
+
   it('paints the board wood and the hardware colour', () => {
     render(<GuitarArt spec={look()} size={20} />);
     const svg = screen.getByRole('img');
