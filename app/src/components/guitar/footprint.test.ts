@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { boxPoints, edgeDistance, ellipsePoints, flattenPath, inside, margin } from './footprint';
+import {
+  area,
+  boxPoints,
+  edgeDistance,
+  ellipsePoints,
+  flattenPath,
+  inside,
+  margin,
+} from './footprint';
 
 const SQUARE = flattenPath('M 0 0 L 100 0 L 100 100 L 0 100 Z');
 
@@ -14,6 +22,11 @@ describe('footprint helpers', () => {
 
   it('refuses commands body files must not use', () => {
     expect(() => flattenPath('M 0 0 A 5 5 0 0 1 10 0 Z')).toThrow(/unsupported command A/);
+  });
+
+  it('measures area either way round', () => {
+    expect(area(SQUARE)).toBe(10000);
+    expect(area([...SQUARE].reverse())).toBe(10000);
   });
 
   it('measures signed room to the edge', () => {

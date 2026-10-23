@@ -90,7 +90,7 @@ export function BridgeBase({ at, paints }: { at: BridgeAnchor; paints: Paints })
             fill={paints.metal}
             stroke={SHADOW}
           />
-          <path d="M -40 -12 L 40 -12" stroke={SHADOW} strokeWidth={1.2} />
+          <path d={`M ${x0 + 6} -12 L ${x1 - 6} -12`} stroke={SHADOW} strokeWidth={1.2} />
         </g>
       );
     }

@@ -29,7 +29,8 @@ export const PICKUP = {
 
 export const BRIDGE = {
   tremolo: box(37, -15, 35),
-  plate: box(46, -78, 46),
+  // An ashtray about 3.3 × 4.5 in.
+  plate: box(42, -70, 44),
   'tune-o-matic': box(45.5, -6, 6),
   acoustic: box(78, -18, 20),
 } as const;
@@ -131,6 +132,15 @@ export function edgeDistance(p: Point, poly: readonly Point[]): number {
     best = Math.min(best, Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy));
   }
   return best;
+}
+
+/** A polygon's area (shoelace), whichever way round it runs. */
+export function area(poly: readonly Point[]): number {
+  let sum = 0;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    sum += poly[j]!.x * poly[i]!.y - poly[i]!.x * poly[j]!.y;
+  }
+  return Math.abs(sum) / 2;
 }
 
 /** Signed room from `p` to the outline: positive inside, negative outside. */
