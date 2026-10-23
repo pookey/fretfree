@@ -1807,7 +1807,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Unit tests for the probe set; an e2e test for the header entry.
 
 ### M10-17 · Achievements for chords, CAGED, harmony and progressions, and a fair speed demon
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (M10 is the user's top priority; after M10-01 to M10-06)
 - **Deps:** M6-08
 - **After:** M10-02
