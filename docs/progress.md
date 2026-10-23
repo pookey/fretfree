@@ -387,6 +387,82 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
 
 **Not findings:** the walk's seeding masters the F2 skills, so "String 6 master" and "String 5 master" unlock on Progress, and the seeded CAGED reviews count as learning there while the summary says 0. The yellow 5th triangles are `--chord-fifth` (Okabe–Ito #f0e442), not the sunflower brand colour.
 
+## M4 definition of done (M4-11 QA, 2026-10-23)
+
+**M4 is done for its §11 scope, with one cut and one gap to fix: a "start with sound" learner with sound off.** Design §11 gives M4 no separate definition of done, so this checks its scope: "C8–C10, I3, I6 via D11–D15, progression player, audio playback everywhere". Every M4 package (M4-01 to M4-10, plus M4-12 to M4-15) is live. The pass ran on `origin/main` at bc859c51, and production served `index-BpuyiwBe.js`, the same build. First-load JS is 264.4 KB of the 300 KB budget.
+
+The evidence is `app/e2e/m4-11.spec.ts`. Its two walks are tagged `@smoke`, so they run on all four Playwright profiles, both locally and against https://fretfree.app (8 of 8 passed on production). The walks cover:
+- **The M4 screens:**
+  - the Harmony, Key signatures, Progressions and Ear modules on Learn, for a new learner;
+  - the circle of fifths (A major picked) and the progression player (its default chart, then B♭ in numerals with capo 3);
+  - the first prompt (a new skill's worked example, with its context panel) of D11, D40, D13, D12, D14 (intervals, chords and progressions) and D15;
+  - wrong-answer feedback from D11 (a quality slip), D14 (a progression) and D15 (a tap two frets low);
+  - the summary and Progress.
+- **A "start with sound" learner:**
+  - the onboarding choice;
+  - Today's "Ear only" card;
+  - the first daily prompt, D15's worked example;
+  - then Today and the first prompt again with sound off.
+
+Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep @screens`, the walks also save each screen in dark and light: 200 shots from production. The command is in the spec header. Three reviewers went through the shots (portrait, mini and phone), and I went through iPad landscape and checked their main findings myself. All 13 M4 specs passed locally on the four profiles (94 tests).
+
+| §11 scope | Status | Evidence |
+|---|---|---|
+| Harmony theory: diatonic chords, Roman and Nashville numerals, progression catalogue, capo maths, circle of fifths | ✅ | `theory/harmony.test.ts` (M4-01) |
+| C8 numerals ↔ chords (D11) | ✅ | `c8.test.ts`, `d11-numerals/*.test.ts*`; `m4-02`, `m4-11` (but see finding 9) |
+| C9 progressions (D12: drag, keyboard drag, transpose, the rotation pairing) | ✅ | `c9.test.ts`, `d12-progression-builder/*.test.ts*`; `m4-03`, `m4-11` |
+| C10 capo (D13, both directions) | ✅ | `c10.test.ts`, `d13-capo/*.test.ts*`; `m4-04`, `m4-11` (but see finding 7) |
+| I3 key signatures (D40) and the interactive circle of fifths | ✅ | `i3.test.ts`, `d40-key-signature/*.test.ts*`, `circle-of-fifths.test.tsx`; `m4-05`, `m4-11`. I3 lessons and the circle's "Quiz me" serve D40, so they are never empty |
+| I6 ear: intervals, chord qualities and progressions (D14) | ✂️ partial | `i6.test.ts`, `d14-ear-identify/*.test.ts*`; `m4-07`, `m4-11` (but see finding 2). Bass-movement ID isn't built (see "Cuts") |
+| I6 ear → fretboard (D15) | ✅ | `i6-ear-find.test.ts`, `d15-ear-find/*.test.ts*`; `m4-08`, `m4-11` (but see findings 1 and 6) |
+| Explore: progression player (chart, numerals, key, capo, looping playback) | ✅ | `progression-player.test.tsx`; `m4-09`, `m4-11` (but see finding 7) |
+| "Ear only" quick drill and "start with sound" | ⚠️ sound off | `start-with-sound.test.ts`, `ear-only.test.tsx`; `m4-10`, `m4-11` (see finding 1) |
+| Audio everywhere: nylon samples with a plucked fallback, strums, progressions on the Transport, volume and mute, silent mode on iOS | ✅ | `audio/*.test.ts`; `m4-06`, `m4-13`, `m4-14`, `m4-15`. Every drill returns `sounds` for feedback |
+| Sound on a real iPad and iPhone, on silent | ⏳ user | M4-14 and M4-15 ship notes: the user re-tests on their devices |
+
+**Cuts:**
+- **Bass-movement ID (research/03 I6) isn't built.** `skills/i6.ts` says so, but the backlog has no package for it (M4-07's review asked for one).
+
+**Checks the brief asked for:**
+- **The `m1-13` achievement-toast flake: not seen.** `m1-13` passed 5 of 5 on ipad-landscape here (`--repeat-each=5`), and it isn't in `.orchestrator/flaky.log`, which the lane has kept since 2026-10-20.
+- **I3 isn't empty (M4-05):** D40 serves it, and the walk opens a D40 worked example from a focused I3 session.
+- **The progression player restarting from bar 1** on a change while it loops is by design (M4-09). It isn't filed.
+- **The iPhone silent switch: covered by M4-14.** iOS gives Web Audio the ambient session, which silent mode mutes. Each unlocking tap now asks for the `playback` session, with a looping silent `<audio>` track where the setter doesn't stick. `m4-14` tests both paths with a stubbed `navigator.audioSession`. Whether it works on real devices is still for the user's re-test.
+- **The `DAY_ONE` gate (M4-07): for the PM, with a recommendation to keep it.** I6's first interval and chord sets open once `F1.alphabet` is practising, so a new learner's first session stays on the neck and the ear track joins from the second. Since M4-10, "start with sound" opens the ear track on day one for learners who want it. Keeping the gate needs only a copy fix (finding 3). Dropping it (`DAY_ONE = []`) would put ear cards into every learner's very first session. This is a curriculum call, so it goes to the PM per the delegation rule, not to the user.
+- **The new-item mix for a start-with-sound learner: fixed since the review, and healthy.** M4-10's review found that the lead held the neck back for weeks. de17b7d5 ends the lead once `I6.ear-find` is practising. I simulated six daily sessions through the real runner (fake IndexedDB, every answer right at 4.5 s, default 10-minute budget):
+  - Day 1 is all D15: 12 new `ear-find` cards.
+  - From day 2, new items come in the usual lanes, much like the default path's: on day 2, 6 F1, 3 F4 and 3 I6 interval cards. The 12 `ear-find` cards return as daily reviews.
+  - No new `ear-find` card arrives in days 2–6, because the Ear lane serves I6's interval and chord sets in goal order. Ear → fretboard therefore "leads" for one session only. That fits rule 6 (block briefly, then interleave), but the PM may want ear-find to keep a share of the Ear lane for this path.
+- **A start-with-sound learner with sound off: not usable (finding 1).**
+
+**Findings** (production screenshots, four profiles, plus code reading and the runner simulation). Fix 1–3 first:
+1. **With sound off, a start-with-sound learner's first session is all ear cards they can't hear.** The picker drops drills that set `requiresSound` (D14, D20), but D15 doesn't set it, because it also serves C2's named `find:` cards, which work without sound. So `ear-find:` cards are still planned with sound off, and `leadWithSound` puts them first. In the simulation, day 1 with sound off is 60 D15 prompts: 12 new `ear-find` cards and their stretches. From day 2 they still take a third of each session. Only each card's worked example names its note; every other rep shows only "Turn sound on". A tap on the neck is still graded, so a learner who keeps sound off guesses blind into FSRS. That is what M4-07's review ruled out for D14 (research/02 §3.7). Proposed fix: a per-item sound need on the picker, e.g. `requiresSound` that can take the item, true for `ear-find:` only. Sound-off sessions then drop ear-find cards as they drop D14, and a start-with-sound learner falls back to the neck. Related copy:
+   - The guided D15 prompt still says "Listen, then tap it." above "Sound is off, so you won't hear the note".
+   - Today's hero still says the session "starts with hear it, find it on the neck" with sound off. `firstDayLine` (`components/goal-ring/progress.ts`) lower-cases the skill title into the sentence; this title reads better quoted.
+2. **D14's progression feedback names the wrong answer twice.** "I–V–vi–IV has different chords: I–V–vi–IV." (`d14-ear-identify/text.ts:146`, pinned by `text.test.ts:55`). It should name what differs: the answer's chords in the key ("I–IV–V is C F G; I–V–vi–IV adds Am"), or the chord one has and the other lacks. The line that follows ("The three-chord backbone of folk, country and rock and roll") is also in the context panel on the same screen, and "folk, country and rock and roll" runs two items together.
+3. **The Ear module contradicts its gate, and its test-out can't run.** Learn says Ear runs "from your first day" and "alongside the others from day one". Yet for a new learner it is "Locked: preview", and the test-out says "Ear opens once you're practising The musical alphabet, Natural notes on string 6 and Progressions: pop and rock". That sentence (`waitsFor` in `placement/TestOut.tsx`) joins the gates of every Ear entry skill, and `I6.progressions-pop` is one: it gates on C9.pop, behind Harmony. Placement doesn't probe C9 (`config/placement.ts` topics), so that part of the test-out can't pass. Proposed:
+   - say "from your second session" (or "once you've started Neck basics");
+   - leave out of the sentence and the test any gate that placement can't probe, or that sits in another locked module.
+4. **Progress scrolls into about 840pt of blank space** (iPad mini 1612pt for a 768pt screen; iPad Pro 1585 for 834). The calendar's visually hidden labels (`.hidden` in `screens/progress/history/History.module.css`) are `position: absolute` with no positioned ancestor inside the scrolling `main`. They are laid out about 1500pt down and stretch the document under the shell. Fix: `position: relative` on `.calendar` (or `.day`). The achievement toast still covers the h1 and the top of the mastery map (M6 finding 9), and its two icons are plain blue discs.
+5. **Learn's prerequisite sentences repeat themselves.** Progressions says it "opens once you've mastered Spell major and minor triads and are practising Spell the sharp keys, Spell major and minor triads and Roman numerals: C, G and D". Triads is in both lists: C9.pop needs it mastered and C10's capo skills need it practising, and `waitsFor` (`placement/TestOut.tsx`) doesn't drop a practising gate that is already in the mastered list. Skill titles with colons, and "The" capitalised mid-sentence, make the lists hard to parse (M3 finding 7, M6 finding 7).
+6. **D15 on a phone: the window jumps, and cells are small.** The prompt shows "Frets 1–10" with no nut or string names; feedback switches to "Frets 0–9" with both, so the target slides sideways from where the learner tapped. The neck uses less than half the width of a sideways phone, with cells about 32×28pt. On iPad landscape and the mini, D15's page scrolls by 7–9pt.
+7. **Capo pictures disagree.**
+   - **Shading:** D13 darkens the frets *past* the capo, while the progression player darkens the frets *behind* it (the dead ones). The player's version is the physical one.
+   - **Light-theme legend:** the player's legend draws Root and 3rd in the light-theme `--root` (#965800) and `--tone`, while the neck markers above keep the dark-theme orange and sky blue, so the legend doesn't match the neck. This is the same token gap as M5 finding 2.
+   - **Repeated panel text:** D13's panel says the same thing twice ("raises every shape n half steps" and "A capo raises the pitch: count up one half step per fret").
+8. **Explore on iPad portrait and the mini:** the view tabs clip at the right edge ("Progres", "Progressic") without scrolling the active tab into view. In portrait the circle of fifths is about 380pt across, with over half the screen empty below it. Its wedges are still ≥44pt.
+9. **Smaller copy:**
+   - D11's worked example names F three times: "the 4th note of C major, F, and it's major (upper case): F. Tap F to continue."
+   - Onboarding reads "Start with" over "With the neck" and "With sound".
+   - On iPad portrait, Today shows two near-identical "Nothing is due…" lines side by side.
+   - On iPad portrait, Harmony's skill title "Roman numerals: C, G and D" leaves "D" alone on a line.
+   - The summary still says "come back tomorrow" twice (M3 finding 7).
+10. **Layout:**
+    - D13 pins its neck strip to the bottom of the screen, about 450pt below the answers on iPad landscape (the M3 finding 5 pattern).
+    - The progression player's neck is below the fold on every iPad.
+
+**Not findings:** the D12 tiles' numerals and the D11 chord strip appear on worked examples only: `d12Guides` shows tile numerals only at guide level 3, and D11 draws the strip only on a guided card or in feedback. "Song-ready" and "String 6 master" unlock on Progress because the walk seeds `C9.pop` and `F2.string6-naturals` as mastered. Full-page captures stop at the viewport where the shell scrolls inside `main` (Learn, Today, the player), so "Ear only" sits below the fold in its shot. `m4-10` and this walk check that it's there. The feedback bar over the session header on a sideways phone is M3 finding 10. Theory checked out everywhere the reviewers looked: the signatures, relatives and diatonic chords on the circle, the numerals, the capo sums (B♭ = A shapes at capo 1, G at 3, E at 6), the interval sizes, and D15's "2 frets too low".
+
 ## M5 definition of done (M5-08 QA, 2026-10-20)
 
 **M5 is done for its §11 scope, in software. Real-guitar tuning is still open.** Design §11 gives M5 no separate definition of done, so this checks its scope: "Tuner, D16 and D17, mic onboarding". Every M5 package (M5-01 to M5-07) is live. The pass ran on `origin/main` at e17426d, and production served `index-iGD_NodS.js`. Everything here was checked with a fake mic: a fake pitch source, or a sine wave fed to the shipped worklet. No real guitar or real iPad microphone was used. The hardware checks are listed after the table.
