@@ -74,8 +74,8 @@ test.describe('M1-13 achievements', () => {
     await freshStart(page);
     await openProgress(page);
     const panel = page.getByRole('region', { name: 'Achievements' });
-    await expect(panel.getByTestId('achievement-tally')).toHaveText('0 of 14 unlocked');
-    await expect(panel.getByRole('listitem')).toHaveCount(14);
+    await expect(panel.getByTestId('achievement-tally')).toHaveText('0 of 19 unlocked');
+    await expect(panel.getByRole('listitem')).toHaveCount(19);
     await expect(page.getByTestId('achievement-toast')).toHaveCount(0);
 
     await page.goto('/');
@@ -91,7 +91,7 @@ test.describe('M1-13 achievements', () => {
     await expect(page.getByTestId('achievement-toast')).toHaveCount(0);
 
     await openProgress(page);
-    await expect(panel.getByTestId('achievement-tally')).toHaveText('2 of 14 unlocked');
+    await expect(panel.getByTestId('achievement-tally')).toHaveText('2 of 19 unlocked');
     await expect(panel.getByTestId('achievement-string-6-master')).toHaveAttribute(
       'data-unlocked',
       'true',
@@ -111,7 +111,7 @@ test.describe('M1-13 achievements', () => {
 
     // Unlocks persist and are announced only once.
     await page.reload();
-    await expect(panel.getByTestId('achievement-tally')).toHaveText('2 of 14 unlocked');
+    await expect(panel.getByTestId('achievement-tally')).toHaveText('2 of 19 unlocked');
     await expect(page.getByTestId('achievement-toast')).toHaveCount(0);
   });
 
