@@ -180,7 +180,11 @@ function formatEvent(e: RhythmEvent): string {
   return `${e.rest ? 'r' : ''}${e.value}${'.'.repeat(e.dots ?? 0)}${e.tie ? '~' : ''}`;
 }
 
-/** The text form of a rhythm; `parseRhythm(formatRhythm(r))` gives `r` back. */
+/**
+ * The text form of a rhythm. For a parsed rhythm, `parseRhythm(formatRhythm(r))`
+ * gives `r` back; hand-built tuplets without `tupletStart` come back with the
+ * same brackets, each now marked with its start.
+ */
 export function formatRhythm(r: Rhythm): string {
   const runs = new Map(tupletRuns(r));
   const parts: string[] = [];
