@@ -27,14 +27,21 @@ const GUARD_MARGIN = 3;
  * models that have a big one, and the user's outer bound for every body.
  */
 // The area counts what is hidden under the board and the bridge plate too:
-// the visible shares are about 0.40 (Strat) and 0.19 (Tele).
-const GUARD_SHARE: Record<string, number> = { stratocaster: 0.45, telecaster: 0.24 };
+// the visible shares are about 0.40 (Strat) and 0.19 (Tele). A Jazzmaster's
+// guard is the largest, an SG's batwing about a third of the top.
+const GUARD_SHARE: Record<string, number> = {
+  stratocaster: 0.45,
+  telecaster: 0.24,
+  sg: 0.34,
+  jazzmaster: 0.53,
+  'es-335': 0.1,
+};
 const GUARD_SHARE_MAX = 0.55;
 /**
  * Guards that must read as smooth curves: no visible edge tighter than
  * this radius, in mm. The Les Paul guard has a deliberate point.
  */
-const SMOOTH_GUARDS = ['stratocaster', 'telecaster'];
+const SMOOTH_GUARDS = ['stratocaster', 'telecaster', 'sg', 'jazzmaster', 'es-335'];
 const MIN_GUARD_RADIUS = 7;
 
 type Cubic = [Point, Point, Point, Point];
@@ -84,9 +91,17 @@ function bounds(points: readonly Point[], pad: number) {
 const JACK_CLEARANCE = 8;
 
 describe('body registry', () => {
-  it('registers the first three shapes by file name', () => {
+  it('registers the electric shapes by file name', () => {
     expect([...BODIES.keys()]).toEqual(
-      expect.arrayContaining(['stratocaster', 'telecaster', 'les-paul']),
+      expect.arrayContaining([
+        'stratocaster',
+        'telecaster',
+        'les-paul',
+        'sg',
+        'jazzmaster',
+        'es-335',
+        'superstrat',
+      ]),
     );
   });
 
@@ -99,7 +114,8 @@ describe('body registry', () => {
   it('lists the drawn shapes without loading them', () => {
     expect([...BODY_SHAPES].sort()).toEqual([...BODIES.keys()].sort());
     expect(hasBody('les-paul')).toBe(true);
-    expect(hasBody('sg')).toBe(false);
+    expect(hasBody('sg')).toBe(true);
+    expect(hasBody('no-such-shape')).toBe(false);
   });
 
   it('falls back for an unknown shape', () => {
