@@ -1,8 +1,10 @@
 import { liveQuery } from 'dexie';
 import { useEffect, useMemo, useState } from 'react';
+import { useAppStore } from '../../../app-store';
 import { LearningLegend } from '../../../components/learning-legend/LearningLegend';
 import { ENGINE_CONFIG, SKILLS, type CardRecord, type Skill } from '../../../engine';
-import { MODULES, type Module } from '../../../engine/frontier';
+import { MODULES, moduleRank, type Module } from '../../../engine/frontier';
+import type { Goal } from '../../../engine/model';
 import { latestOutcomes, progressBySkill } from '../../../engine/progress';
 import { allCards, getDb } from '../../../storage';
 import { MasteryRing } from '../../learn/MasteryRing';
@@ -77,7 +79,8 @@ function add(into: Counts, from: Counts): void {
  * Learning and stable counts per started module, titled as on Learn: one with
  * a card in any of its topics. A started module counts every skill it holds,
  * as its Learn ring does, and lists its topics underneath when it has more
- * than one. Modules follow their first skill's frontier order. Counts are
+ * than one. Modules follow Learn's order for the learner's `goal`
+ * (`moduleRank`), then their first skill's frontier order. Counts are
  * capped per skill at its item count, as on the Learn map, and cards of
  * skills that no longer exist are ignored. A topic no module holds stands as
  * its own group.
@@ -87,7 +90,7 @@ export function buildModules(
   cards: readonly CardRecord[],
   outcomes: ReadonlyMap<string, boolean>,
   stabilityDays: number = ENGINE_CONFIG.mastery.stabilityDays,
-  modules: readonly Module[] = MODULES,
+  { modules = MODULES, goal = 'general' }: { modules?: readonly Module[]; goal?: Goal } = {},
 ): ModuleProgressView[] {
   const moduleOf = new Map(modules.flatMap((m) => m.topics.map((t) => [t, m] as const)));
   const groupOf = (topic: string) => moduleOf.get(topic)?.id ?? topic;
@@ -132,7 +135,12 @@ export function buildModules(
     }
   }
   return [...byModule.values()]
-    .sort((a, b) => a.order - b.order)
+    .sort((a, b) => {
+      // A topic no module holds ranks last (an infinite rank), so compare
+      // ranks without subtracting them.
+      const [ra, rb] = [moduleRank(a.id, goal), moduleRank(b.id, goal)];
+      return ra === rb ? a.order - b.order : ra < rb ? -1 : 1;
+    })
     .map(({ order: _order, topics, ...view }) => ({
       ...view,
       // In the module's own order (Learn's), not the order skills came in.
@@ -165,6 +173,7 @@ async function loadTopicData() {
  */
 export function Panel({ revision }: PanelProps) {
   const [data, setData] = useState<Awaited<ReturnType<typeof loadTopicData>> | null>(null);
+  const goal = useAppStore((s) => s.settings.goal);
 
   useEffect(() => {
     const sub = liveQuery(loadTopicData).subscribe({
@@ -175,8 +184,8 @@ export function Panel({ revision }: PanelProps) {
   }, [revision]);
 
   const modules = useMemo(
-    () => (data ? buildModules(SKILLS, data.cards, data.outcomes) : []),
-    [data],
+    () => (data ? buildModules(SKILLS, data.cards, data.outcomes, undefined, { goal }) : []),
+    [data, goal],
   );
 
   return (

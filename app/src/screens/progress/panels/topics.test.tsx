@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { Rating, State } from 'ts-fsrs';
-import { createScheduler, type CardRecord, type Skill } from '../../../engine';
+import { useAppStore } from '../../../app-store';
+import { DEFAULT_SETTINGS, createScheduler, type CardRecord, type Skill } from '../../../engine';
 import { getDb, recordAnswer } from '../../../storage';
 import { PROGRESS_PANELS } from '../registry';
-import { MODULES } from '../../../engine/frontier';
+import { MODULES, orderModules } from '../../../engine/frontier';
 import { Panel, TOPIC_TITLES, buildModules, id, order, title } from './topics';
 
 const scheduler = createScheduler({ enableFuzz: false });
@@ -35,6 +36,7 @@ const SKILLS = [
 ];
 
 afterEach(async () => {
+  useAppStore.setState({ settings: { ...DEFAULT_SETTINGS } });
   const db = getDb();
   await Promise.all([db.cards.clear(), db.reviewLogs.clear()]);
 });
@@ -87,6 +89,30 @@ describe('buildModules', () => {
       ['Natural notes', 5, 0],
       ['Fret markers', 2, 0],
     ]);
+  });
+
+  it('lists modules in Learn’s order for the learner’s goal', () => {
+    const skills = [
+      ...SKILLS,
+      skill('C5.triads', 'C5', 1500, 3),
+      skill('C8.numerals', 'C8', 1800, 2),
+    ];
+    const cards = [
+      card('C1.octaves#0', 'C1.octaves'),
+      card('C3.thirds#0', 'C3.thirds'),
+      card('C5.triads#0', 'C5.triads'),
+      card('C8.numerals#0', 'C8.numerals'),
+    ];
+    const ids = (goal: 'general' | 'songs' | 'improvise') =>
+      buildModules(skills, cards, new Map(), 21, { goal }).map((m) => m.id);
+    const learn = (goal: 'general' | 'songs' | 'improvise') =>
+      orderModules(goal)
+        .map((m) => m.id)
+        .filter((id) => ids(goal).includes(id));
+    // Songs promotes Harmony and Chords ahead of the neck, as Learn does.
+    expect(ids('songs')).toEqual(['harmony', 'chords', 'notes-2', 'intervals']);
+    for (const goal of ['general', 'songs', 'improvise'] as const)
+      expect(ids(goal), goal).toEqual(learn(goal));
   });
 
   it('caps counts at the item count, ignores unknown skills and names unknown topics by ID', () => {
@@ -204,5 +230,36 @@ describe('Progress topics panel', () => {
     expect(within(topics).getByTestId('topic-C2')).toHaveTextContent(
       /^All notes: 0 learning · 0 stable of \d+$/,
     );
+  });
+
+  it('reads in Learn’s order for the learner’s goal', async () => {
+    useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, goal: 'songs' } });
+    const now = new Date();
+    for (const [itemId, skillId] of [
+      ['octave:s6f3→s4', 'C1.octaves'],
+      ['spell-chord:C:maj', 'C5.triads'],
+    ] as const) {
+      await recordAnswer(getDb(), {
+        card: scheduler.review(scheduler.newCard({ id: itemId, skillId }, now), Rating.Good, now),
+        log: {
+          itemId,
+          skillId,
+          drillType: 'test',
+          correct: true,
+          responseMs: 1500,
+          rating: Rating.Good,
+          hintUsed: false,
+          answerGiven: '',
+          at: now,
+        },
+      });
+    }
+    render(<Panel revision={0} onDataChanged={() => {}} />);
+    await screen.findByTestId('progress-module-chords', {}, { timeout: 5000 });
+    // Songs promotes Chords ahead of the neck on Learn, so here too.
+    expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+      'Chords',
+      'Whole neck',
+    ]);
   });
 });
