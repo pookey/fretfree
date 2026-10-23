@@ -19,7 +19,7 @@ export function hasBody(shape: string): boolean {
  * named on them. Kept here, not read from the drawings, so it stays out of
  * first-load JS; `registry.test.ts` checks it against the drawings.
  */
-export const GUARDLESS_SHAPES: readonly string[] = ['superstrat'];
+export const GUARDLESS_SHAPES: readonly string[] = ['superstrat', 'classical'];
 
 /** Whether `shape` draws a pickguard (an unknown shape draws the Stratocaster's). */
 export function hasGuard(shape: string): boolean {

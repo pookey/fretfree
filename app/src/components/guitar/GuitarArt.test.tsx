@@ -39,7 +39,8 @@ describe('<GuitarArt>', () => {
       );
       const svg = screen.getByRole('img');
       expect(svg.tagName).toBe('svg');
-      expect(svg).toHaveAccessibleName(new RegExp(`^${BODIES.get(shape)!.name} guitar, `));
+      const name = BODIES.get(shape)!.name.replace(/[()]/g, '\\$&');
+      expect(svg).toHaveAccessibleName(new RegExp(`^${name} guitar, `));
       const d = BODIES.get(shape)!.outline;
       // Matched in JS: a selector on a long path string is unreliable in jsdom.
       const outline = [...svg.querySelectorAll('path')].filter((p) => p.getAttribute('d') === d);
@@ -103,6 +104,42 @@ describe('<GuitarArt>', () => {
     const svg = screen.getByRole('img');
     expect(svg).toHaveAccessibleName(/^Superstrat guitar, cherry sunburst, no pickguard, /);
     expect(svg.querySelectorAll('path[fill="#efe3c8"]')).toHaveLength(0);
+  });
+
+  it('draws a classical with its slotted head, nylon trebles, tie block and no guard', () => {
+    render(
+      <GuitarArt
+        spec={look({ body: { name: 'Classical', render: { shape: 'classical' } } })}
+        size={20}
+      />,
+    );
+    const svg = screen.getByRole('img');
+    expect(svg).toHaveAccessibleName(/^Classical guitar, cherry sunburst, no pickguard, /);
+    expect(svg.querySelectorAll('path[fill="#efe3c8"]')).toHaveLength(0);
+    // Two slots, and rollers across them.
+    expect(svg.querySelectorAll('path[fill="#140f0c"]')).toHaveLength(2);
+    expect(svg.querySelectorAll('rect[fill="#e9e0cf"]')).toHaveLength(6);
+    const strings = [...svg.querySelectorAll('g[data-string]')].map((g) =>
+      g.querySelectorAll('path')[1]!.getAttribute('stroke'),
+    );
+    expect(strings.slice(0, 3)).toEqual(Array(3).fill('#ece2c8'));
+    // A soundhole, a rosette and the tie block's mosaic; no pickups.
+    expect(svg.querySelectorAll('path[stroke-dasharray]').length).toBeGreaterThanOrEqual(2);
+    expect(svg.querySelectorAll('rect[width="80"]')).toHaveLength(0);
+  });
+
+  it('draws a steel-string acoustic with the solid head and a teardrop guard', () => {
+    render(
+      <GuitarArt
+        spec={look({ body: { name: 'Dreadnought', render: { shape: 'dreadnought' } } })}
+        size={20}
+      />,
+    );
+    const svg = screen.getByRole('img');
+    expect(svg).toHaveAccessibleName(/^Dreadnought guitar, cherry sunburst, cream pickguard, /);
+    expect(svg.querySelectorAll('path[fill="#efe3c8"]')).toHaveLength(1);
+    expect(svg.querySelectorAll('path[fill="#140f0c"]')).toHaveLength(0);
+    expect(svg.querySelectorAll('circle[r="3.1"]')).toHaveLength(6);
   });
 
   it('paints the board wood and the hardware colour', () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { area, flattenPath, footprints, margin } from './footprint';
-import { DEFAULT_FRETS, NECK_JOINT_Y, SCALE, boardEnd, boardHalfWidth } from './geometry';
+import { DEFAULT_FRETS, NECK_JOINT_Y, SCALE, boardEnd, boardHalfWidth, fretY } from './geometry';
+import { neckHalfWidth } from './Neck';
 import { BODIES, bodyFor, collectBodies } from './registry';
 import { BODY_SHAPES, GUARDLESS_SHAPES, hasBody } from './shapes';
 import type { BodyShape, Point } from './types';
@@ -35,13 +36,36 @@ const GUARD_SHARE: Record<string, number> = {
   sg: 0.34,
   jazzmaster: 0.53,
   'es-335': 0.08,
+  // An acoustic's teardrop is a small part beside the soundhole.
+  dreadnought: 0.07,
+  jumbo: 0.07,
+  concert: 0.07,
+  parlour: 0.07,
 };
 const GUARD_SHARE_MAX = 0.55;
 /**
  * Guards that must read as smooth curves: no visible edge tighter than
  * this radius, in mm. The Les Paul guard has a deliberate point.
  */
-const SMOOTH_GUARDS = ['stratocaster', 'telecaster', 'sg', 'jazzmaster', 'es-335'];
+const SMOOTH_GUARDS = [
+  'stratocaster',
+  'telecaster',
+  'sg',
+  'jazzmaster',
+  'es-335',
+  'dreadnought',
+  'jumbo',
+  'concert',
+  'parlour',
+];
+/** Acoustic bodies, and the fret at which each body meets its neck. */
+const ACOUSTIC_JOINT: Record<string, 12 | 14> = {
+  dreadnought: 14,
+  jumbo: 14,
+  concert: 14,
+  parlour: 12,
+  classical: 12,
+};
 const MIN_GUARD_RADIUS = 7;
 
 type Cubic = [Point, Point, Point, Point];
@@ -103,6 +127,11 @@ describe('body registry', () => {
         'jazzmaster',
         'es-335',
         'superstrat',
+        'dreadnought',
+        'jumbo',
+        'parlour',
+        'concert',
+        'classical',
       ]),
     );
   });
@@ -140,8 +169,9 @@ describe('body registry', () => {
       expect(box.maxY - box.minY).toBeLessThan(500);
     });
 
-    it('shares the neck joint and scale length', () => {
-      expect(body.neckJoint.y).toBeCloseTo(NECK_JOINT_Y);
+    it('shares the scale length, and the neck joint unless it is an acoustic', () => {
+      const joint = ACOUSTIC_JOINT[id];
+      expect(body.neckJoint.y).toBeCloseTo(joint ? fretY(joint) : NECK_JOINT_Y);
       expect(body.bridge.y).toBe(SCALE);
       expect(body.bridge.x).toBe(0);
     });
@@ -248,6 +278,51 @@ describe('body registry', () => {
         expect(on || clear, `${f.part} straddles the guard's edge`).toBe(true);
       }
     });
+
+    it.runIf(id in ACOUSTIC_JOINT)(
+      'is an acoustic: its body starts at its 12th or 14th fret, with a soundhole and no electronics',
+      () => {
+        // The top of the body on the centre line is the neck joint.
+        const top = Math.min(...outline.filter((p) => Math.abs(p.x) < 4).map((p) => p.y));
+        expect(top).toBeCloseTo(body.neckJoint.y, 0);
+        expect(body.pickups).toHaveLength(0);
+        expect(body.controls.knobs).toHaveLength(0);
+        expect(body.controls.switch ?? body.controls.jack ?? body.controls.plate).toBeUndefined();
+        expect(body.tailpiece).toBeUndefined();
+        expect(['acoustic', 'tie-block']).toContain(body.bridge.type);
+        expect(body.neck).toMatch(/^(acoustic|classical)$/);
+        const paints = (body.details ?? []).map((d) => d.paint);
+        expect(paints).toEqual(expect.arrayContaining(['hole', 'rosette']));
+        // The soundhole sits on the top, below the board's end, and clear of the bridge.
+        const hole = flattenPath(body.details!.find((d) => d.paint === 'hole')!.d);
+        const end = boardEnd(body.frets ?? DEFAULT_FRETS);
+        expect(Math.min(...hole.map((p) => p.y))).toBeGreaterThan(end);
+        expect(Math.max(...hole.map((p) => p.y))).toBeLessThan(body.bridge.y - 40);
+        expect(Math.min(...hole.map((p) => margin(p, outline)))).toBeGreaterThan(MIN_MARGIN);
+      },
+    );
+
+    it.runIf(id in ACOUSTIC_JOINT && !!body.pickguard)(
+      'puts its teardrop guard beside the soundhole, on the treble side',
+      () => {
+        const guard = flattenPath(body.pickguard!);
+        const hole = flattenPath(body.details!.find((d) => d.paint === 'hole')!.d);
+        const holeY = (Math.min(...hole.map((p) => p.y)) + Math.max(...hole.map((p) => p.y))) / 2;
+        const cx = guard.reduce((a, p) => a + p.x, 0) / guard.length;
+        const cy = guard.reduce((a, p) => a + p.y, 0) / guard.length;
+        expect(cx).toBeGreaterThan(40);
+        expect(Math.abs(cy - holeY)).toBeLessThan(60);
+        // Its point is up by the board, its broad end below the soundhole.
+        const tip = guard.reduce((a, p) => (p.y < a.y ? p : a));
+        const foot = guard.reduce((a, p) => (p.y > a.y ? p : a));
+        expect(tip.y).toBeLessThan(holeY - 40);
+        expect(foot.y).toBeGreaterThan(holeY + 40);
+        // Clear of the board beside it.
+        for (const p of guard.filter((q) => q.y <= boardEnd(body.frets ?? DEFAULT_FRETS))) {
+          expect(p.x).toBeGreaterThan(neckHalfWidth(body.neck ?? 'electric', p.y) + 2);
+        }
+      },
+    );
 
     it('keeps its pickguard out of the horns, below the neck joint', () => {
       if (!body.pickguard) return;
