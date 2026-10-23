@@ -15,6 +15,7 @@ import {
   d20Explain,
   d20GradedResponseMs,
   d20MakePrompt,
+  d20MarkX,
   d20Marks,
   d20Pulses,
   d20Rating,
@@ -258,6 +259,18 @@ describe('d20Explain', () => {
     expect(explain(t, take(t, [0], [10_250, 10_750]))).toMatch(
       /2 extra hits between the rhythm’s taps\.$/,
     );
+  });
+});
+
+describe('d20MarkX', () => {
+  it('places a hit across its box on a square-root scale, the match window at either edge', () => {
+    const { matchMs } = ENGINE_CONFIG.rhythm.grade;
+    expect(d20MarkX(0)).toBe(0);
+    expect(d20MarkX(matchMs / 4)).toBe(0.5);
+    expect(d20MarkX(-matchMs / 4)).toBe(-0.5);
+    expect(d20MarkX(-matchMs)).toBe(-1);
+    expect(d20MarkX(matchMs * 3)).toBe(1);
+    expect(d20MarkX(-matchMs * 3)).toBe(-1);
   });
 });
 

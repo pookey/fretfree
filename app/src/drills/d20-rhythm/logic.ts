@@ -209,6 +209,18 @@ export function d20Marks(prompt: D20Prompt, answer: D20Answer): HitMark[] {
   });
 }
 
+/**
+ * Where a hit sits in its box, for the feedback grid: -1 at the box's left
+ * edge (early), 0 on the click, 1 at its right edge (late). The edges are
+ * `grade.matchMs`, the furthest a hit can be and still be this note's. The
+ * scale is a square root, so a hit just outside the window sits clear of the
+ * click even in a phone's small boxes.
+ */
+export function d20MarkX(offsetMs: number): number {
+  const x = Math.sqrt(Math.min(1, Math.abs(offsetMs) / CFG.grade.matchMs));
+  return offsetMs < 0 ? -x : x;
+}
+
 /** "12 ms late", "right on the click". */
 export function d20DescribeOffset(ms: number): string {
   const r = Math.round(ms);
