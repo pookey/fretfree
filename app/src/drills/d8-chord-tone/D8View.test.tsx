@@ -112,9 +112,18 @@ describe('<D8View> tap mode', () => {
     expect(screen.getByTestId('d8-prompt')).toHaveTextContent(
       'The 5ths of A are marked. Tap one to continue.',
     );
-    expect(markers('target')).toEqual([
+    // Every note by its degree, as the legend draws it; the 5ths keep their triangles, ringed.
+    expect(markers('target')).toEqual([]);
+    expect(markers('fifth')).toEqual([
       { string: 4, fret: 2, label: '5' },
       { string: 1, fret: 0, label: '5' },
+    ]);
+    expect(markers('root').map((m) => m.label)).toEqual(['R', 'R']);
+    expect(markers('third')).toEqual([{ string: 2, fret: 2, label: '3' }]);
+    const ringed = [...neck().querySelectorAll('[data-emphasis="true"]')];
+    expect(ringed.map((m) => m.getAttribute('data-testid'))).toEqual([
+      'marker-fifth',
+      'marker-fifth',
     ]);
   });
 
@@ -193,7 +202,15 @@ describe('<D8View> name mode', () => {
     expect(screen.getByTestId('d8-prompt')).toHaveTextContent(
       'The ringed note is the ♭3rd of Am. Tap ♭3 to continue.',
     );
-    expect(markers('target')).toEqual([{ string: 2, fret: 1, label: '♭3' }]);
+    expect(markers('target')).toEqual([]);
+    expect(markers('third')).toEqual([{ string: 2, fret: 1, label: '♭3' }]);
+    expect(markers('fifth').map((m) => m.label)).toEqual(['5', '5']);
+    // Degrees only: no letter names beside them.
+    expect(markers('tone')).toEqual([]);
+    expect(neck().querySelector('[data-emphasis="true"]')).toHaveAttribute(
+      'data-testid',
+      'marker-third',
+    );
   });
 
   it('shows the right and wrong buttons after a wrong answer', () => {

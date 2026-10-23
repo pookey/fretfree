@@ -1,13 +1,12 @@
 import { useEffect } from 'react';
-import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
+import { Fretboard } from '../../components/fretboard/Fretboard';
 import { COMPACT_WINDOW_FRETS } from '../../shell/size-class';
-import { noteAt, samePosition, type Position } from '../../theory';
+import { samePosition, type Position } from '../../theory';
 import type { DrillRenderProps } from '../types';
 import {
   d8DegreeLabel,
   d8DegreeName,
   d8DegreeSpoken,
-  d8DegreeStyle,
   d8Display,
   d8Explain,
   d8KeyFor,
@@ -19,55 +18,9 @@ import {
   d8Window,
   type D8Answer,
   type D8Prompt,
-  type ToneNote,
 } from './logic';
+import { d8FeedbackMarkers, d8PromptMarkers } from './markers';
 import styles from './D8View.module.css';
-
-/** Every marker of the shape shares this group, so the neck outlines it (guide levels 2–3). */
-const GROUP = 'd8-shape';
-
-/** The markers before an answer: the shape, with the roots and the ringed note as guides allow. */
-function promptMarkers(prompt: D8Prompt, roots: boolean, guided: boolean): FretMarker[] {
-  const asked = new Set(guided ? d8Targets(prompt) : []);
-  return prompt.notes.map((n): FretMarker => {
-    const base = { string: n.string, fret: n.fret, group: GROUP, label: d8Display(n.name) };
-    const ringed = prompt.ringed && samePosition(n, prompt.ringed);
-    if (ringed || (prompt.mode === 'tap' && asked.has(n))) {
-      // A worked example names the degree; a recall prompt never labels a target.
-      return guided
-        ? { ...base, style: 'target', label: d8DegreeLabel(n.degree), forceLabel: true }
-        : { ...base, style: 'target' };
-    }
-    if (roots && n.degree === '1') return { ...base, style: 'root' };
-    return { ...base, style: prompt.mode === 'name' ? 'ghost' : 'tone' };
-  });
-}
-
-/** After an answer: every note by its degree, the answer marked correct and a wrong tap marked. */
-function feedbackMarkers(prompt: D8Prompt, answer: D8Answer, correct: boolean): FretMarker[] {
-  const tap = typeof answer === 'string' ? null : answer;
-  const isAnswer = (n: ToneNote) =>
-    prompt.ringed ? samePosition(n, prompt.ringed) : n.degree === prompt.degree;
-  const markers = prompt.notes.map((n): FretMarker => {
-    const wrong = !correct && tap && samePosition(n, tap);
-    let style: FretMarker['style'] = d8DegreeStyle(n.degree);
-    if (wrong) style = 'wrong';
-    else if (isAnswer(n)) style = 'correct';
-    return {
-      string: n.string,
-      fret: n.fret,
-      group: GROUP,
-      style,
-      label: d8DegreeLabel(n.degree),
-      forceLabel: true,
-    };
-  });
-  if (tap && !correct && !d8NoteAt(prompt, tap)) {
-    const name = noteAt(tap, prompt.tuning, prompt.accidentalPref).pc;
-    markers.push({ ...tap, style: 'wrong', label: d8Display(name), forceLabel: true });
-  }
-  return markers;
-}
 
 /**
  * D8 view (design §6 D8, §7). A chord shape is drawn on the neck. In tap mode
@@ -110,8 +63,8 @@ export function D8View({
 
   const roots = d8ShowsRoots(prompt, guideLevel, guided);
   const markers = feedback
-    ? feedbackMarkers(prompt, feedback.answer, feedback.result.correct)
-    : promptMarkers(prompt, roots, guided);
+    ? d8FeedbackMarkers(prompt, feedback.answer, feedback.result.correct)
+    : d8PromptMarkers(prompt, roots, guided);
 
   const tap = (pos: Position) => {
     if (feedback || naming) return;
