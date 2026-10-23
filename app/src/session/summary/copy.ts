@@ -34,7 +34,7 @@ export function headline(c: Celebration): string {
 export function accuracyNote(c: Celebration): string | null {
   if (c.answered === 0 || c.accuracy >= 1) return null;
   if (c.accuracy >= 0.75) return 'Right in the learning zone: hard enough to stick.';
-  return 'Misses show what to work on. Those notes come back sooner.';
+  return 'Misses show what to work on. Those cards come back sooner.';
 }
 
 /** Seconds with one decimal, e.g. "1.4s". */
@@ -78,30 +78,31 @@ export function reviewDayText(next: NonNullable<SessionProgress['nextReview']>):
   return p ? `${p.day} ${MONTHS[p.month - 1] as string}` : next.date;
 }
 
-function items(n: number): string {
-  return `${n} item${n === 1 ? '' : 's'}`;
+function cards(n: number): string {
+  return `${n} card${n === 1 ? '' : 's'}`;
 }
 
 /**
- * Today's items on the Learn map's scale, with the retention forecast
- * (research/02 rules 11 and 15): "14 items learning. They become stable as
- * you recall them over the next few days; today's items come back Tuesday."
- * Never framed as a loss. Null when nothing was answered.
+ * Today's cards on the Learn map's scale, with the retention forecast
+ * (research/02 rules 11 and 15): "14 cards learning. They become stable as
+ * you recall them over the next few days; today's cards come back Tuesday."
+ * "Card" is the learner's word for an item everywhere (M10-09). Never framed
+ * as a loss. Null when nothing was answered.
  */
 export function progressText(p: SessionProgress): string | null {
   if (!p.nextReview) return null;
-  // Scoped to these items: the daily return ("Come back tomorrow") stays the
+  // Scoped to these cards: the daily return ("Come back tomorrow") stays the
   // message, and other skills may be due sooner.
   const day = reviewDayText(p.nextReview);
-  const when = `today's items come back ${p.nextReview.inDays >= 7 ? `on ${day}` : day}.`;
+  const when = `today's cards come back ${p.nextReview.inDays >= 7 ? `on ${day}` : day}.`;
   const { learning: n, stable: s, becameStable: b } = p;
-  if (n === 0) return `One correct recall starts an item learning, and ${when}`;
+  if (n === 0) return `One correct recall starts a card learning, and ${when}`;
   const rest = n - s;
   if (rest === 0) {
     const lead =
       b === n
-        ? `${items(n)} became stable today.`
-        : `${items(n)} ${n === 1 ? 'is' : 'are'} stable${b > 0 ? `, ${b} of them new today` : ''}.`;
+        ? `${cards(n)} became stable today.`
+        : `${cards(n)} ${n === 1 ? 'is' : 'are'} stable${b > 0 ? `, ${b} of them new today` : ''}.`;
     return `${lead} Each recall stretches the gap, and ${when}`;
   }
   const stableNote =
@@ -118,7 +119,7 @@ export function progressText(p: SessionProgress): string | null {
       : rest === 1
         ? 'The other one becomes'
         : 'The rest become';
-  return `${items(n)} learning${stableNote}. ${subject} stable as you recall ${rest === 1 ? 'it' : 'them'} over the next few days; ${when}`;
+  return `${cards(n)} learning${stableNote}. ${subject} stable as you recall ${rest === 1 ? 'it' : 'them'} over the next few days; ${when}`;
 }
 
 function lowerFirst(s: string): string {

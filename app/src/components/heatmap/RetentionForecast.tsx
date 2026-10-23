@@ -23,7 +23,7 @@ export function RetentionForecast({
             <li key={f.string} data-testid={`forecast-string-${f.string}`}>
               {forecastSentence(f, forecastDays)}{' '}
               <span className={styles.muted}>
-                ({f.practised} {f.practised === 1 ? 'fact' : 'facts'} practised)
+                ({f.practised} {f.practised === 1 ? 'card' : 'cards'} practised)
               </span>
             </li>
           ))}

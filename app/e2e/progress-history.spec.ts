@@ -102,7 +102,7 @@ test.describe('Progress over time', () => {
     await expect(overTime.getByTestId('known-headline')).toHaveText(
       /^5 learning, 3 of them stable · up 4 since day 1$/,
     );
-    const known = overTime.getByRole('img', { name: /Items you know, by day/ });
+    const known = overTime.getByRole('img', { name: /Cards you know, by day/ });
     await expect(known).toBeVisible();
     // Hovering a day shows its counts; the same numbers are in a table.
     const chart = overTime.getByTestId('known-chart');
@@ -143,7 +143,7 @@ test.describe('Progress over time', () => {
     await seedFiveDays(page);
     await openProgress(page);
     await expect(
-      region(page, 'Over time').getByRole('img', { name: /Items you know/ }),
+      region(page, 'Over time').getByRole('img', { name: /Cards you know/ }),
     ).toBeVisible();
     await expect(region(page, 'Coming up').getByRole('img')).toBeVisible();
     await expect(region(page, 'Practice calendar').getByRole('table')).toBeVisible();

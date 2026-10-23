@@ -155,8 +155,18 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
         nextReview: { date: '2026-10-20', inDays: 2 },
       },
     });
-    const terms = screen.getAllByRole('term').map((t) => t.textContent);
+    const tiles = screen.getByText('Today’s accuracy').closest('dl')!;
+    const terms = within(tiles)
+      .getAllByRole('term')
+      .map((t) => t.textContent);
     expect(terms).toEqual(['Today’s accuracy', 'Learning', 'Became stable', 'XP earned']);
+    // The legend under the tiles says what learning and stable mean (M10-09).
+    const legend = screen.getByRole('note', { name: 'What the numbers mean' });
+    expect(
+      within(legend)
+        .getAllByRole('term')
+        .map((t) => t.textContent),
+    ).toEqual(['Learning', 'Stable', 'Mastered']);
     expect(screen.getByTestId('summary-accuracy')).toHaveTextContent('96%');
     expect(screen.getByTestId('summary-items')).toHaveTextContent('25');
     expect(screen.getByTestId('summary-learning')).toHaveTextContent('14');
@@ -165,7 +175,7 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
     expect(screen.getByTestId('summary-stable-of')).toHaveTextContent('of the 14 learning');
     expect(screen.queryByTestId('summary-stable-total')).toBeNull();
     expect(screen.getByTestId('summary-progress')).toHaveTextContent(
-      "14 items learning. They become stable as you recall them over the next few days; today's items come back Tuesday.",
+      "14 cards learning. They become stable as you recall them over the next few days; today's cards come back Tuesday.",
     );
     // The spacing explanation stays, and Done stays last.
     expect(screen.getByTestId('summary-spacing')).toHaveTextContent(/^Come back tomorrow/);
@@ -186,7 +196,7 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
     // Every stable item is new today: the tile says it all.
     expect(screen.queryByTestId('summary-stable-total')).toBeNull();
     expect(screen.getByTestId('summary-progress')).toHaveTextContent(
-      /^12 items learning, 3 of them newly stable\. The rest become stable .* today's items come back tomorrow\.$/,
+      /^12 cards learning, 3 of them newly stable\. The rest become stable .* today's cards come back tomorrow\.$/,
     );
   });
 
@@ -210,7 +220,7 @@ describe('<SessionSummary> learning and stable (M1-35)', () => {
       /^8 stable · \d+ stronger$/,
     );
     expect(screen.getByTestId('summary-progress')).toHaveTextContent(
-      "8 items are stable. Each recall stretches the gap, and today's items come back on 3 November.",
+      "8 cards are stable. Each recall stretches the gap, and today's cards come back on 3 November.",
     );
   });
 

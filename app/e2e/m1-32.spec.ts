@@ -124,7 +124,9 @@ test.describe('M1-32 the mastery map fits its panel', () => {
     const map = await openMap(page);
     await expectFretsInside(page, map);
     // Fret 12 is a tap away, not hidden past the edge.
-    await map.getByRole('button', { name: /^string 1, fret 12, E: remembered for 10 days$/ }).click();
+    await map
+      .getByRole('button', { name: /^string 1, fret 12, E: remembered for 10 days$/ })
+      .click();
     await expect(map.getByTestId('heat-cell-detail')).toContainText('String 1, fret 12 · E');
   });
 

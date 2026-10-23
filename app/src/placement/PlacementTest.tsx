@@ -448,7 +448,7 @@ function Result({
     <>
       <p className={onboarding.lead} ref={ref} tabIndex={-1} data-testid="placement-result">
         You already know {summary.knownSkills.length === 1 ? 'this' : 'these'}. Sessions skip ahead,
-        and check {summary.seeded} of those facts again in about {days} days to make sure they
+        and check {summary.seeded} of those cards again in about {days} days to make sure they
         stick.
       </p>
       <ul className={styles.known} aria-label="Already known">

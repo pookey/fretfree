@@ -13,7 +13,7 @@ const clearDue: QuestTemplate = {
       ? null
       : dailyQuest('clear-due', {
           title: 'Clear your due reviews',
-          description: 'Answer every review that comes due today. Spaced reviews make notes stick.',
+          description: 'Answer every review that comes due today. Spaced reviews make cards stick.',
           progress: (ctx) => (ctx.dueRemaining === 0 && ctx.answers.some(counts) ? 1 : 0),
         }),
 };

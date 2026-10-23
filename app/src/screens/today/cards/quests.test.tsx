@@ -58,14 +58,14 @@ describe('Today daily quests', () => {
     const section = screen.getByRole('region', { name: 'Daily quests' });
     expect(await within(section).findAllByTestId('quest')).toHaveLength(3);
     expect(screen.getByTestId('quests-tally')).toHaveTextContent('0 of 3 done');
-    const bar = screen.getByRole('progressbar', { name: 'Learn 3 new items' });
+    const bar = screen.getByRole('progressbar', { name: 'Learn 3 new cards' });
     expect(bar).toHaveAttribute('aria-valuenow', '0');
     expect(bar).toHaveAttribute('aria-valuemax', '3');
     expect(bar).toHaveAttribute('aria-valuetext', '0 of 3');
     const quest = bar.closest('li')!;
     expect(quest).toHaveAttribute('data-done', 'false');
     expect(within(quest).getByText('+20 XP')).toBeInTheDocument();
-    expect(within(quest).getByRole('heading', { level: 3 })).toHaveTextContent('Learn 3 new items');
+    expect(within(quest).getByRole('heading', { level: 3 })).toHaveTextContent('Learn 3 new cards');
   });
 
   it('completes a quest as practice lands, announcing its bonus XP once', async () => {
@@ -73,17 +73,17 @@ describe('Today daily quests', () => {
     expect(await screen.findAllByTestId('quest')).toHaveLength(3);
     for (const [i, id] of ['a', 'b', 'c'].entries()) await learn(id, i);
 
-    const bar = screen.getByRole('progressbar', { name: 'Learn 3 new items' });
+    const bar = screen.getByRole('progressbar', { name: 'Learn 3 new cards' });
     await expect.poll(() => bar.getAttribute('aria-valuetext')).toBe('Done');
     expect(bar.closest('li')).toHaveAttribute('data-done', 'true');
     expect(screen.getByTestId('quests-tally')).toHaveTextContent('1 of 3 done');
     // Fluent recall of 3 different items is progress toward 5.
-    expect(screen.getByRole('progressbar', { name: 'Recall 5 items fluently' })).toHaveAttribute(
+    expect(screen.getByRole('progressbar', { name: 'Recall 5 cards fluently' })).toHaveAttribute(
       'aria-valuenow',
       '3',
     );
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Quest complete: Learn 3 new items. +20 XP.',
+      'Quest complete: Learn 3 new cards. +20 XP.',
     );
     const logged = await getEvents(db, { type: 'quest-completed' });
     expect(logged.map((e) => e.type === 'quest-completed' && e.questId)).toEqual(['new-ground']);
@@ -96,7 +96,7 @@ describe('Today daily quests', () => {
     first.unmount();
 
     renderCard();
-    const bar = await screen.findByRole('progressbar', { name: 'Learn 3 new items' });
+    const bar = await screen.findByRole('progressbar', { name: 'Learn 3 new cards' });
     await expect.poll(() => bar.getAttribute('aria-valuetext')).toBe('Done');
     expect(screen.getByRole('status')).toHaveTextContent('');
     expect(await getEvents(db, { type: 'quest-completed' })).toHaveLength(1);

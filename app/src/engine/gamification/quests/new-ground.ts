@@ -8,7 +8,7 @@ const { target } = ENGINE_CONFIG.quests['new-ground'];
  * hint. A worked example alone doesn't count (research/02 rule 8).
  */
 export default everydayQuest('new-ground', {
-  title: `Learn ${target} new items`,
+  title: `Learn ${target} new cards`,
   description: 'Meet each one with a worked example, then recall it on your own.',
   progress: (ctx) => {
     const met = new Set(ctx.answers.filter((a) => a.kind === 'new').map((a) => a.itemId));

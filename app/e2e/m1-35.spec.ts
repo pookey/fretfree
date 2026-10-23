@@ -47,7 +47,7 @@ async function firstSession(page: Page): Promise<void> {
 }
 
 const NEXT_REVIEW =
-  /today's items come back (tomorrow|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|on \d{1,2} [A-Z][a-z]+)\.$/;
+  /today's cards come back (tomorrow|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|on \d{1,2} [A-Z][a-z]+)\.$/;
 
 async function expectLearningSummary(page: Page): Promise<void> {
   await expect(page.getByTestId('summary-accuracy')).toHaveText('100%');
@@ -56,7 +56,7 @@ async function expectLearningSummary(page: Page): Promise<void> {
   await expect(page.getByTestId('summary-stable')).toHaveText('0');
   const line = page.getByTestId('summary-progress');
   await expect(line).toHaveText(
-    new RegExp(`^${ANSWERS} items learning\\. They become stable as you recall them`),
+    new RegExp(`^${ANSWERS} cards learning\\. They become stable as you recall them`),
   );
   await expect(line).toHaveText(NEXT_REVIEW);
 }
@@ -65,7 +65,7 @@ test.describe('M1-35 session summary: learning and stable', () => {
   test('a first session names accuracy, learning and stable apart @layout', async ({ page }) => {
     await firstSession(page);
     await expectLearningSummary(page);
-    const stats = page.getByTestId('session-summary').locator('dl');
+    const stats = page.getByTestId('session-summary').locator('dl').first();
     await expect(stats.getByRole('term')).toHaveText([
       'Today’s accuracy',
       'Learning',

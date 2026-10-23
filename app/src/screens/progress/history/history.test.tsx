@@ -92,7 +92,7 @@ describe('the over-time panels', () => {
         '2 learning, 1 of them stable · up 1 since day 1',
       ),
     );
-    expect(screen.getByRole('img', { name: /Items you know, by day/ })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /Cards you know, by day/ })).toBeInTheDocument();
     expect(screen.getByTestId('speed-headline')).toHaveTextContent(
       '1.5 s on your latest day · 50% faster than your first day',
     );

@@ -9,7 +9,7 @@ const { target } = ENGINE_CONFIG.quests.fluent;
  * finish it.
  */
 export default everydayQuest('fluent', {
-  title: `Recall ${target} items fluently`,
-  description: 'Right and quick, without a hint. Each item counts once.',
+  title: `Recall ${target} cards fluently`,
+  description: 'Right and quick, without a hint. Each card counts once.',
   progress: (ctx) => distinctItems(ctx.answers.filter(fluent)),
 });

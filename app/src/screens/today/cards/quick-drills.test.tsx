@@ -96,7 +96,7 @@ describe('Quick drills card', () => {
     renderCard();
     const link = await screen.findByRole('link', { name: '2-minute fretboard warm-up' });
     expect(screen.getByTestId('warmup-copy')).toHaveTextContent(
-      'Reviews 2 fretboard items due now.',
+      'Reviews 2 fretboard cards due now.',
     );
     await userEvent.click(link);
     expect(JSON.parse(screen.getByTestId('route-state').textContent!)).toMatchObject({
@@ -104,13 +104,13 @@ describe('Quick drills card', () => {
     });
   });
 
-  it('says "item" for a single due review', async () => {
+  it('says "card" for a single due review', async () => {
     await getDb().cards.put(
       scheduler.seedKnownCard(item('F2.string6-naturals', 'note@s6f0'), old, 1),
     );
     renderCard();
     expect(await screen.findByTestId('warmup-copy')).toHaveTextContent(
-      'Reviews 1 fretboard item due now.',
+      'Reviews 1 fretboard card due now.',
     );
   });
 });

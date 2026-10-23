@@ -11,7 +11,7 @@ export const skippable = true;
 export const explanation = (
   <p>
     Each day you reach your goal, your streak grows. A little every day beats a long cram: spaced
-    practice is what makes notes stick. Start small; you can raise it later.
+    practice is what makes it stick. Start small; you can raise it later.
   </p>
 );
 

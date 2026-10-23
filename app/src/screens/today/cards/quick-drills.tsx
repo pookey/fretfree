@@ -71,7 +71,7 @@ const scheduler = createScheduler();
 
 function warmupCopy(due: number): string {
   if (due === 0) return 'Nothing is due, so it practises what you are learning next.';
-  return `Reviews ${due} fretboard ${due === 1 ? 'item' : 'items'} due now.`;
+  return `Reviews ${due} fretboard ${due === 1 ? 'card' : 'cards'} due now.`;
 }
 
 /** Quick drills (design §7 Today): short sessions that sit beside the daily one. */

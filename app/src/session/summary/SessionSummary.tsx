@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import { Confetti } from '../../components/confetti/Confetti';
+import { LearningLegend } from '../../components/learning-legend/LearningLegend';
 import { ENGINE_CONFIG } from '../../engine';
 import type { Celebration } from './celebrations';
 import {
@@ -25,7 +26,7 @@ export interface SessionSummaryProps {
 /**
  * The lesson-complete screen (design §3.7 session celebrations, §3.3 step 5):
  * what the learner can now do, the session's moments, its numbers, where its
- * items stand on Learn's learning / stable scale and why to come back.
+ * cards stand on Learn's learning / stable scale and why to come back.
  */
 export function SessionSummary({
   celebration: c,
@@ -160,6 +161,8 @@ export function SessionSummary({
             </div>
           </dl>
           {note && <p className={styles.note}>{note}</p>}
+          {/* What the tiles' learning and stable mean (copy audit, screens §9). */}
+          <LearningLegend className={styles.legend} />
 
           {progress && (
             <p className={styles.progress} data-testid="summary-progress">

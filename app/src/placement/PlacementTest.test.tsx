@@ -102,7 +102,7 @@ describe('PlacementTest', () => {
     choose(probeNote());
     const result = await screen.findByTestId('placement-result');
     expect(result).toHaveTextContent(/You already know this/);
-    expect(result).toHaveTextContent(/check 8 of those facts again in about 10 days/);
+    expect(result).toHaveTextContent(/check 8 of those cards again in about 10 days/);
     expect(screen.getByRole('list', { name: 'Already known' })).toHaveTextContent(
       'Natural notes on string 6',
     );

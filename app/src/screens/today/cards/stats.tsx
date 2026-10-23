@@ -33,7 +33,7 @@ async function loadStats(): Promise<TodayStats> {
   return { due: await countDue(db, now), newAvailable, freezesHeld };
 }
 
-/** Due reviews, new items queued and freezes held (design §7 Today). */
+/** Due reviews, new cards queued and freezes held (design §7 Today). */
 export function Card() {
   const [stats, setStats] = useState<TodayStats | null>(null);
 
@@ -52,7 +52,7 @@ export function Card() {
         <dd data-testid="due-count">{stats?.due ?? '–'}</dd>
       </div>
       <div>
-        <dt>New notes waiting</dt>
+        <dt>New cards waiting</dt>
         <dd data-testid="new-count">{stats?.newAvailable ?? '–'}</dd>
       </div>
       <div>

@@ -168,7 +168,7 @@ describe('Quick drills card: Ear only', () => {
     await getDb().cards.bulkPut([dueEarFind, dueNamedFind]);
     renderCard();
     await screen.findByRole('link', { name: 'Ear only (no guitar)' }, SLOW);
-    expect(screen.getByTestId('ear-only-copy')).toHaveTextContent('Reviews 1 ear item due now.');
+    expect(screen.getByTestId('ear-only-copy')).toHaveTextContent('Reviews 1 ear card due now.');
   });
 
   it('says when the ear track has not opened yet', async () => {

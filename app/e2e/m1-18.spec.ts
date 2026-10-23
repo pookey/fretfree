@@ -82,7 +82,7 @@ test.describe('M1-18 Today quick drills', () => {
   test('with fretboard items due, the warm-up reviews exactly those', async ({ page }) => {
     await freshStart(page);
     await seedDueNotes(page);
-    await expect(page.getByTestId('warmup-copy')).toHaveText('Reviews 3 fretboard items due now.');
+    await expect(page.getByTestId('warmup-copy')).toHaveText('Reviews 3 fretboard cards due now.');
 
     await warmup(page).click();
     await expect(timeLeft(page)).toHaveText('2 min left');

@@ -354,3 +354,9 @@
     min-width: 0;
   }
 }
+
+/* The learning legend: a left-aligned block, centred under the tiles. */
+.legend {
+  align-self: center;
+  max-width: 34rem;
+}

@@ -35,7 +35,7 @@ function KnownChart({ data }: { data: HistoryData }) {
       <TimeChart
         kind="area"
         testId="known-chart"
-        label="Items you know, by day"
+        label="Cards you know, by day"
         summary={`Today: ${today.learning} learning, ${today.stable} of them stable.`}
         dates={days.map((d) => d.date)}
         series={[

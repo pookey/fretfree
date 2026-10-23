@@ -96,7 +96,7 @@ test.describe('M2-10 daily quests', () => {
     }
     await expect(quests(page).getByTestId('quests-tally')).toHaveText('0 of 3 done');
     await expect(
-      quests(page).getByRole('progressbar', { name: 'Learn 3 new items' }),
+      quests(page).getByRole('progressbar', { name: 'Learn 3 new cards' }),
     ).toHaveAttribute('aria-valuetext', '0 of 3');
     await expectNoHorizontalOverflow(page);
 
@@ -105,7 +105,7 @@ test.describe('M2-10 daily quests', () => {
     await expect(quest(page, 'new-ground').getByTestId('quest-progress')).toHaveText('Done');
     await expect(quests(page).getByTestId('quests-tally')).toHaveText('1 of 3 done');
     await expect(
-      quests(page).getByRole('progressbar', { name: 'Recall 5 items fluently' }),
+      quests(page).getByRole('progressbar', { name: 'Recall 5 cards fluently' }),
     ).toHaveAttribute('aria-valuetext', '3 of 5');
     await expect.poll(async () => (await storedQuestXp(page)).events).toHaveLength(1);
     const first = await storedQuestXp(page);
@@ -135,8 +135,8 @@ test.describe('M2-10 daily quests', () => {
     await page.getByRole('button', { name: 'End session' }).click();
     await page.getByRole('link', { name: 'Done' }).click();
 
-    // New notes recalled on their own count toward "Learn 3 new items".
-    const bar = quests(page).getByRole('progressbar', { name: 'Learn 3 new items' });
+    // New notes recalled on their own count toward "Learn 3 new cards".
+    const bar = quests(page).getByRole('progressbar', { name: 'Learn 3 new cards' });
     await expect
       .poll(async () => Number(await bar.getAttribute('aria-valuenow')))
       .toBeGreaterThan(0);

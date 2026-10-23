@@ -161,7 +161,7 @@ test.describe('M1-14 Progress fretboard heatmap', () => {
     // Retention forecasts from FSRS retrievability, per string.
     const forecast = map(page).getByTestId('retention-forecast');
     await expect(forecast.getByTestId('forecast-string-5')).toHaveText(
-      /^You'll remember ~\d+% of string 5 next week\. \(2 facts practised\)$/,
+      /^You'll remember ~\d+% of string 5 next week\. \(2 cards practised\)$/,
     );
     await expect(forecast.getByTestId('forecast-string-6')).toContainText('of string 6 next week');
     await expect(forecast.getByTestId('forecast-string-1')).toHaveCount(0);
@@ -201,7 +201,9 @@ test.describe('M1-14 Progress fretboard heatmap', () => {
     const neck = map(page).getByRole('group', { name: 'Fretboard mastery map' });
     await expect(neck).toBeVisible();
     await expect(tile(page, 's5f3')).toHaveAttribute('data-band', '2');
-    const cell = neck.getByRole('button', { name: /^string 5, fret 3, C: remembered for 10 days$/ });
+    const cell = neck.getByRole('button', {
+      name: /^string 5, fret 3, C: remembered for 10 days$/,
+    });
     await cell.scrollIntoViewIfNeeded();
     const box = (await cell.boundingBox())!;
     expect(box.width).toBeGreaterThanOrEqual(44);

@@ -257,7 +257,7 @@ describe('<RetentionForecast>', () => {
     });
     render(<RetentionForecast forecasts={forecasts} forecastDays={7} />);
     expect(screen.getByTestId('forecast-string-5')).toHaveTextContent(
-      /^You'll remember ~\d+% of string 5 next week\. \(1 fact practised\)$/,
+      /^You'll remember ~\d+% of string 5 next week\. \(1 card practised\)$/,
     );
     expect(screen.getByTestId('forecast-string-6')).toBeInTheDocument();
     expect(screen.queryByTestId('forecast-string-1')).toBeNull();
@@ -267,7 +267,7 @@ describe('<RetentionForecast>', () => {
     const { rerender } = render(
       <RetentionForecast forecasts={[{ string: 4, practised: 3, recall: 0.8 }]} forecastDays={7} />,
     );
-    expect(screen.getByTestId('forecast-string-4')).toHaveTextContent('(3 facts practised)');
+    expect(screen.getByTestId('forecast-string-4')).toHaveTextContent('(3 cards practised)');
     rerender(
       <RetentionForecast
         forecasts={[{ string: 4, practised: 0, recall: null }]}

@@ -208,7 +208,7 @@ test.describe('M1-24 the first week', () => {
     const dueThursday = await dueCount(page);
     expect(dueThursday).toBeGreaterThan(0);
     await expect(page.getByTestId('warmup-copy')).toHaveText(
-      `Reviews ${dueThursday} fretboard item${dueThursday === 1 ? '' : 's'} due now.`,
+      `Reviews ${dueThursday} fretboard card${dueThursday === 1 ? '' : 's'} due now.`,
     );
     await page.getByTestId('warmup').click();
     await expect(page.getByTestId('session')).toBeVisible();
