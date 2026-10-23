@@ -191,20 +191,14 @@ test.describe('D15 "Hear it, find it"', () => {
     await expect(page.getByTestId('feedback-wrong')).toBeHidden();
   });
 
-  test('asks for sound on an ear card with sound off, then plays it', async ({ page }, info) => {
+  test('keeps a due ear card out of the session while sound is off', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await seedDueCard(page, EAR);
     await soundOff(page);
-    await startD15(page, EAR);
-
-    await expect(page.getByTestId('d15-prompt')).toHaveText('Find the note you hear on string 4');
-    await expect(page.getByTestId('d15-explain')).toHaveText(
-      'Sound is off. Turn it on to hear the note.',
-    );
-    await page.getByRole('button', { name: 'Turn sound on' }).click();
-    await expect(page.getByRole('button', { name: 'Hear it again' })).toBeEnabled();
-    await expect
-      .poll(() => audioLevel(page), { timeout: 10_000, intervals: [50] })
-      .toBeGreaterThan(0.01);
+    // M4-16 (research/02 §3.7): an unheard ear card is never served, so no
+    // blind tap is graded. The view's "Turn sound on" fallback is unit-tested.
+    await page.goto(`/session?item=${encodeURIComponent(EAR)}`);
+    await expect(page.getByTestId('session-empty')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('d15-prompt')).toHaveCount(0);
   });
 });
