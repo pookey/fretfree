@@ -85,6 +85,10 @@ export const skills: Skill[] = [
     title: 'Double octaves: strings 6 and 1',
     prerequisites: ['C1.octaves'],
     softUnlock: true,
+    // One shape, two octaves apart: whoever knows the single-octave shapes
+    // meets it as a few new cards that Easy answers space out, so placement
+    // spends its 3 minutes on them instead (M10-16).
+    skipPlacement: true,
     drillTypes: DRILLS,
     items: memo(() => octaveItems('C1.double-octaves', [[6, 1]])),
   },

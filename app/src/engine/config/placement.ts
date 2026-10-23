@@ -4,8 +4,10 @@ export const placement = {
    * Topics the test probes, in curriculum order. A topic whose skills or
    * drills don't exist yet simply has nothing to probe until they land.
    * C4 (keys) is here because Chords needs both Intervals and Keys mastered.
+   * C1 probes its octave shapes and C6 its triad cores (M10-16): the first
+   * skill of each, so an experienced player doesn't meet them as new items.
    */
-  topics: ['F1', 'F2', 'C2', 'C3', 'C4', 'C5', 'C8'],
+  topics: ['F1', 'F2', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C8'],
   // A skill of those topics that the test leaves out sets `skipPlacement`
   // in its own file (engine/model.ts `Skill`).
   /** No new probe starts after this long: the test takes about 3 minutes. */
@@ -15,11 +17,16 @@ export const placement = {
    * covers it applies, and the last covers anything larger. A skill is known
    * once `knownAt` probes are fluent (correct within the speed target), and
    * not known once that can no longer happen.
+   *
+   * Breadth over depth, to fit the budget: every probed skill settles in a
+   * few answers, and a large skill asks no more than a mid-sized one (it
+   * asked 6, 5 to pass, until C1 and C6 joined in M10-16). A known skill is
+   * only seeded at ≈10 days, so FSRS soon corrects a lucky pass, and the
+   * stricter test-out below is what marks a skill mastered.
    */
   tiers: [
-    { upTo: 8, probes: 3, knownAt: 3 },
-    { upTo: 40, probes: 4, knownAt: 3 },
-    { upTo: Number.MAX_SAFE_INTEGER, probes: 6, knownAt: 5 },
+    { upTo: 8, probes: 2, knownAt: 2 },
+    { upTo: Number.MAX_SAFE_INTEGER, probes: 4, knownAt: 3 },
   ],
   /**
    * The guide level a known skill starts at: inlays only. Full guides help

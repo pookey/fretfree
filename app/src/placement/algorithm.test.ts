@@ -52,10 +52,10 @@ const probedGroups = (s: PlacementState) => s.answers.map((a) => a.groupId);
 
 describe('probeTier', () => {
   it('scales the probes with the group size and caps them at its items', () => {
-    expect(probeTier(4)).toEqual({ probes: 3, knownAt: 3 });
+    expect(probeTier(4)).toEqual({ probes: 2, knownAt: 2 });
     expect(probeTier(15)).toEqual({ probes: 4, knownAt: 3 });
-    expect(probeTier(138)).toEqual({ probes: 6, knownAt: 5 });
-    expect(probeTier(2)).toEqual({ probes: 2, knownAt: 2 });
+    expect(probeTier(138)).toEqual({ probes: 4, knownAt: 3 });
+    expect(probeTier(1)).toEqual({ probes: 1, knownAt: 1 });
   });
 
   it('falls back to the last tier when none covers the size', () => {
@@ -165,7 +165,7 @@ describe('the adaptive probe', () => {
   it('a beginner settles quickly: two misses a group, nothing known', () => {
     const groups = [group('a', 15), group('b', 15), group('c', 4), group('d', 150, ['a'])];
     const s = run(startPlacement(groups, lcg()), () => 'wrong');
-    // 4-probe groups need 2 misses, the 3-of-3 group 1, the dependent group none.
+    // 4-probe groups need 2 misses, the 2-of-2 group 1, the dependent group none.
     expect(s.answers).toHaveLength(5);
     expect(knownItems(s)).toEqual([]);
   });
@@ -264,12 +264,51 @@ describe('placementGroups', () => {
     expect(() => startPlacement(all, lcg())).not.toThrow();
   });
 
+  it('probes the octave shapes and the CAGED triad cores, and leaves the rest of C1 and C6 out', () => {
+    const picker = createDrillPicker(SKILLS, DRILLS);
+    const ids = placementGroups(SKILLS, (i) => picker.canServe(i)).map((g) => g.id);
+    const of = (topic: string) => ids.filter((id) => id.startsWith(`${topic}.`));
+    expect(of('C1')).toEqual(['C1.octaves', 'C1.octaves-gb-shift']);
+    expect(of('C6')).toEqual(['C6.triad-cores']);
+    // Every other skill of those topics says why it's left out, in its own file.
+    for (const s of SKILLS.filter((s) => ['C1', 'C6'].includes(s.topic) && !ids.includes(s.id)))
+      expect(s.skipPlacement, s.id).toBe(true);
+    // Never probed: notes on strings 4–1 come via C2, and the rest is practice.
+    for (const t of ['F3', 'C7', 'C10', 'I3']) expect(of(t)).toEqual([]);
+  });
+
+  it('asks the octave and core probes only once their prerequisites are known', () => {
+    const picker = createDrillPicker(SKILLS, DRILLS);
+    const groups = placementGroups(SKILLS, (i) => picker.canServe(i));
+    const g = (id: string) => groups.find((x) => x.id === id)!;
+    expect(g('C1.octaves').prerequisites).toEqual(['F2.string6-naturals', 'F2.string5-naturals']);
+    expect(g('C1.octaves-gb-shift').prerequisites).toEqual(['C1.octaves']);
+    expect(g('C6.triad-cores').prerequisites).toEqual([
+      'F2.string6-naturals',
+      'F2.string5-naturals',
+    ]);
+    expect(g('C6.triad-cores').softPrerequisites).toEqual(['C5.triads']);
+    // A player who doesn't know string 6 is never asked an octave shape or a core.
+    const s = run(startPlacement(groups, lcg()), (id) =>
+      id === 'F2.string6-naturals' ? 'wrong' : 'fluent',
+    );
+    const v = verdicts(s);
+    for (const id of ['C1.octaves', 'C1.octaves-gb-shift', 'C6.triad-cores'])
+      expect(v.get(id)).toBe('skipped');
+    expect(v.get('F2.string5-naturals')).toBe('known');
+  });
+
   it('fits about 3 minutes of probes for a fast expert, and the budget stops a slower one', () => {
     const picker = createDrillPicker(SKILLS, DRILLS);
     const groups = placementGroups(SKILLS, (i) => picker.canServe(i));
     const all = run(startPlacement(groups, lcg()), () => 'fluent');
-    // At ~2.5 s a probe (answer plus feedback), an expert answers everything in the budget.
-    expect(all.answers.length * 2500).toBeLessThanOrEqual(ENGINE_CONFIG.placement.budgetMs);
+    // ~2.5 s a probe (answer plus feedback). A CAGED core is three taps, so ~4.5 s.
+    const ms = (itemId: string) => (itemId.startsWith('caged-core:') ? 4500 : 2500);
+    const expertMs = all.answers.reduce((t, a) => t + ms(a.itemId), 0);
+    // An expert answers everything in the budget, the octave shapes and cores included.
+    expect(expertMs).toBeLessThanOrEqual(ENGINE_CONFIG.placement.budgetMs);
+    expect(new Set(probedGroups(all))).toEqual(new Set(groups.map((g) => g.id)));
+    expect(verdicts(all).get('C6.triad-cores')).toBe('known');
 
     // At ~3.5 s a probe the budget ends it first: it still reaches intervals and keys,
     // and a locked module's test-out covers whatever it didn't (M2-16).

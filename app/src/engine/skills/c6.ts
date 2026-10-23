@@ -33,6 +33,8 @@ interface Group {
   softUnlock: boolean;
   kind: 'caged' | 'caged-core';
   quality: CagedQuality;
+  /** Probed by the placement test; the others set `skipPlacement` (M10-16). */
+  probe?: boolean;
 }
 
 const GROUPS: readonly Group[] = [
@@ -48,6 +50,10 @@ const GROUPS: readonly Group[] = [
     softUnlock: false,
     kind: 'caged-core',
     quality: 'major',
+    // The gate into CAGED (rule 7), so placement probes it. The whole shapes
+    // and minor cores open on it softly and build on it, and placement's
+    // 3 minutes don't stretch to them.
+    probe: true,
   },
   {
     id: 'C6.major-shapes',
@@ -92,6 +98,7 @@ export const skills: Skill[] = GROUPS.map((g, i) => ({
   prerequisites: g.prerequisites,
   ...(g.softPrerequisites ? { softPrerequisites: g.softPrerequisites } : {}),
   softUnlock: g.softUnlock,
+  ...(g.probe ? {} : { skipPlacement: true }),
   drillTypes: g.kind === 'caged' ? SHAPE_DRILLS : DRILLS,
   items: memo(() =>
     itemsOf(

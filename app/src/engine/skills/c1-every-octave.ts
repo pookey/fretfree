@@ -21,6 +21,9 @@ export const skills: Skill[] = [
     title: 'Every octave across the neck',
     prerequisites: ['C1.octaves', 'C1.octaves-gb-shift'],
     softUnlock: true,
+    // It applies both probed shape skills across the neck, and one "tap every
+    // G" probe takes several taps, so placement leaves it to practice (M10-16).
+    skipPlacement: true,
     drillTypes: ['octave-finder'],
     items: memo(() =>
       itemsOf(

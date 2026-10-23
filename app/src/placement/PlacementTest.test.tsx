@@ -97,7 +97,7 @@ describe('PlacementTest', () => {
   it('seeds a skill answered fluently and names it in the result', async () => {
     renderTest();
     fireEvent.click(screen.getByRole('button', { name: 'Start the test' }));
-    await answerRight();
+    // D1 serves 8 of the skill's items: a small group, two fluent answers to pass.
     await answerRight();
     choose(probeNote());
     const result = await screen.findByTestId('placement-result');
@@ -114,7 +114,7 @@ describe('PlacementTest', () => {
       status: 'practising',
       guideLevel: 1,
     });
-    expect(await db.reviewLogs.count()).toBe(3);
+    expect(await db.reviewLogs.count()).toBe(2);
   });
 
   it('waits for a drill view still downloading, keeping it out of the response time', async () => {
@@ -137,7 +137,7 @@ describe('PlacementTest', () => {
     arrive();
     expect(await screen.findByRole('dialog', { name: 'Placement test' })).toBeInTheDocument();
     expect(screen.queryByText('Loading…')).not.toBeInTheDocument();
-    await answerRight();
+    // D1 serves 8 of the skill's items: a small group, two fluent answers to pass.
     await answerRight();
     choose(probeNote());
     expect(await screen.findByTestId('placement-result')).toHaveTextContent(
