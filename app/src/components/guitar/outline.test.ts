@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { flattenPath, margin } from './footprint';
-import { along, edgeAngle, edgeAt, inset, smoothClosed, stadium, type Pt } from './outline';
+import {
+  along,
+  edgeAngle,
+  edgeAt,
+  inset,
+  insetOutline,
+  smoothClosed,
+  stadium,
+  type Pt,
+} from './outline';
 
 // A diamond: the curve through it is a rounded square, symmetric about both axes.
 const DIAMOND: readonly Pt[] = [
@@ -52,5 +61,19 @@ describe('outline helpers', () => {
     expect(Math.min(...xs)).toBeCloseTo(-10);
     expect(Math.max(...ys)).toBeCloseTo(110);
     expect(along([0, 0], [10, 20], 0.5)).toEqual([5, 10]);
+  });
+
+  it('insets a whole outline, whichever way round it runs', () => {
+    const square: Pt[] = [
+      [0, 0],
+      [100, 0],
+      [100, 100],
+      [0, 100],
+    ];
+    for (const pts of [square, [...square].reverse()]) {
+      const rim = insetOutline(pts, 10);
+      const poly = flattenPath(smoothClosed(pts));
+      for (const [x, y] of rim) expect(margin({ x, y }, poly)).toBeGreaterThan(5);
+    }
   });
 });

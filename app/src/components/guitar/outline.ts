@@ -100,3 +100,22 @@ export function stadium(a: Pt, b: Pt, r: number): string {
 export function along(a: Pt, b: Pt, t: number): Pt {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 }
+
+/**
+ * Every outline point moved `d` mm inwards, along the normal of its
+ * neighbours' chord: the outline's rim, for a pickguard that follows it.
+ */
+export function insetOutline(points: readonly Pt[], d: number): Pt[] {
+  const n = points.length;
+  const at = (i: number) => points[((i % n) + n) % n]!;
+  // Shoelace sign: which side of the direction of travel is inside.
+  let area = 0;
+  for (let i = 0; i < n; i++) area += at(i - 1)[0] * at(i)[1] - at(i)[0] * at(i - 1)[1];
+  const sign = area > 0 ? 1 : -1;
+  return points.map((p, i) => {
+    const [ax, ay] = at(i - 1);
+    const [bx, by] = at(i + 1);
+    const len = Math.hypot(bx - ax, by - ay) || 1;
+    return [p[0] - (sign * d * (by - ay)) / len, p[1] + (sign * d * (bx - ax)) / len] as Pt;
+  });
+}
