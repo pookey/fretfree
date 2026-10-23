@@ -7,6 +7,7 @@
  * app calls only when the learner enables mic mode.
  */
 import workletUrl from './worklet/pitch-processor.ts?worker&url';
+import { silentMode } from '../audio/session';
 import { DETECTOR_DRIVER, DETECTOR_TRACKER } from './worklet/config';
 import { PITCH_PROCESSOR, type PitchMessage } from './worklet/protocol';
 import { createPitchSource, setPitchSourceFactory } from './source';
@@ -97,6 +98,8 @@ interface Graph {
   stream: MediaStream;
   input: MediaStreamAudioSourceNode;
   node: AudioWorkletNode;
+  /** Gives the audio session back once the mic stops (`audio/session.ts`). */
+  endMic: () => void;
 }
 
 /** Releases the microphone and the audio thread. */
@@ -129,6 +132,8 @@ export function createWorkletPitchDriver(options: DetectorOptions = {}): PitchDr
       } catch (err) {
         return Promise.reject(new PitchSourceError('failed', message(err)));
       }
+      // Capture needs the play-and-record session; ask for it before the prompt.
+      const endMic = silentMode.holdMic();
       const media = attempt(() => mediaDevices.getUserMedia(MIC_CONSTRAINTS));
       const resumed = settle(attempt(() => context.resume()));
       const loaded = settle(attempt(() => context.audioWorklet.addModule(url)));
@@ -160,7 +165,7 @@ export function createWorkletPitchDriver(options: DetectorOptions = {}): PitchDr
           input.connect(node);
           // The node outputs silence; connecting it keeps every browser pulling it.
           node.connect(context.destination);
-          graph = { context, stream, input, node };
+          graph = { context, stream, input, node, endMic };
           // Frames just stop when the input goes away, so watch for it: an
           // unplugged mic or a call ends the track, and iOS interrupts or
           // suspends the context when the page goes to the background.
@@ -179,6 +184,7 @@ export function createWorkletPitchDriver(options: DetectorOptions = {}): PitchDr
           }
         } catch (err) {
           release(context, stream);
+          endMic();
           throw err instanceof PitchSourceError
             ? err
             : new PitchSourceError('failed', message(err));
@@ -187,7 +193,7 @@ export function createWorkletPitchDriver(options: DetectorOptions = {}): PitchDr
     },
     stop() {
       if (!graph) return;
-      const { context, stream, input, node } = graph;
+      const { context, stream, input, node, endMic } = graph;
       graph = null;
       context.onstatechange = null;
       stream.getTracks().forEach((track) => (track.onended = null));
@@ -195,6 +201,7 @@ export function createWorkletPitchDriver(options: DetectorOptions = {}): PitchDr
       input.disconnect();
       node.disconnect();
       release(context, stream);
+      endMic();
     },
   };
 }

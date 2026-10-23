@@ -12,6 +12,7 @@ import {
   type ProgressionTiming,
 } from './progression';
 import { strumHits, type StrumOptions } from './strum';
+import { silentMode } from './session';
 import { claimTransport } from './transport';
 import { createGuitar, type Guitar } from './voice';
 
@@ -93,6 +94,8 @@ function contextInGesture(): AudioContext | null {
  * pointerdown) and only while their handler runs.
  */
 export function unlockAudio(): Promise<void> {
+  // Through iOS silent mode, unless the learner has turned sound off.
+  if (!output.muted) silentMode.keepPlaying();
   if (unlocked) return Promise.resolve();
   let start: Promise<void>;
   if (toneModule) {
@@ -116,12 +119,16 @@ export function unlockAudio(): Promise<void> {
 /**
  * Unlock audio on a tap or key press anywhere in the app. It stays installed:
  * iOS suspends the context when the app is backgrounded, and the next tap
- * resumes it from inside the gesture, where Safari allows it.
+ * resumes it from inside the gesture, where Safari allows it. Each tap also
+ * keeps sound playing through iOS silent mode (`session.ts`), which a hidden
+ * page lets go of.
  */
 export function installAudioUnlock(
-  target: Pick<Document, 'addEventListener' | 'removeEventListener'> = document,
+  target: Pick<Document, 'addEventListener' | 'removeEventListener'> &
+    Partial<Pick<Document, 'visibilityState'>> = document,
 ) {
   const handler = () => {
+    if (!output.muted) silentMode.keepPlaying();
     if (toneModule) {
       if (toneModule.getContext().state === 'running') return;
       unlocked = false;
@@ -131,6 +138,9 @@ export function installAudioUnlock(
     });
   };
   for (const type of UNLOCK_EVENTS) target.addEventListener(type, handler, true);
+  target.addEventListener('visibilitychange', () => {
+    if (target.visibilityState === 'hidden') silentMode.release();
+  });
   return handler;
 }
 
@@ -157,6 +167,8 @@ export function getAudioOutput(): AudioOutput {
 /** Change the master volume or silent mode. It applies at once, mid-progression too. */
 export function setAudioOutput(next: Partial<AudioOutput>): void {
   output = { ...output, ...next };
+  // Sound off: stop holding the playback session. The next tap takes it back.
+  if (output.muted) silentMode.release();
   if (!guitar) return;
   guitar.output.volume.value = volumeToDb(output.volume);
   guitar.output.mute = output.muted;

@@ -69,6 +69,13 @@ const fake = vi.hoisted(() => {
 vi.mock('tone', () => ({ ...fake.tone, start: fake.start, setContext: fake.setContext }));
 vi.mock('./voice', () => ({ createGuitar: fake.createGuitar }));
 
+const silentMode = vi.hoisted(() => ({
+  keepPlaying: vi.fn(() => 'session'),
+  release: vi.fn(),
+  holdMic: vi.fn(() => () => undefined),
+}));
+vi.mock('./session', () => ({ silentMode }));
+
 const allAttacks = () => fake.guitar.plucks;
 
 beforeEach(() => {
@@ -86,6 +93,8 @@ beforeEach(() => {
   fake.drawQueue.length = 0;
   fake.start.mockClear();
   fake.ctx.state = 'running';
+  silentMode.keepPlaying.mockClear();
+  silentMode.release.mockClear();
 });
 
 async function unlocked() {
@@ -206,6 +215,44 @@ describe('unlocking', () => {
     expect(fake.start).toHaveBeenCalledTimes(2);
     expect(audio.isAudioUnlocked()).toBe(false);
     await vi.waitFor(() => expect(audio.isAudioUnlocked()).toBe(true));
+  });
+});
+
+describe('iOS silent mode', () => {
+  it('asks to play through it on every tap, even with audio already running', async () => {
+    const audio = await unlocked();
+    expect(silentMode.keepPlaying).toHaveBeenCalledTimes(1);
+    const target = new EventTarget() as unknown as Document;
+    audio.installAudioUnlock(target);
+    target.dispatchEvent(new Event('pointerdown'));
+    target.dispatchEvent(new Event('pointerup'));
+    expect(silentMode.keepPlaying).toHaveBeenCalledTimes(3);
+    expect(fake.start).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets go when sound is turned off, and leaves taps alone while it is off', async () => {
+    const audio = await unlocked();
+    const target = new EventTarget() as unknown as Document;
+    audio.installAudioUnlock(target);
+    audio.setAudioOutput({ muted: true });
+    expect(silentMode.release).toHaveBeenCalledTimes(1);
+    silentMode.keepPlaying.mockClear();
+    target.dispatchEvent(new Event('pointerup'));
+    expect(silentMode.keepPlaying).not.toHaveBeenCalled();
+    audio.setAudioOutput({ muted: false });
+    target.dispatchEvent(new Event('pointerup'));
+    expect(silentMode.keepPlaying).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets go when the page is hidden', async () => {
+    const audio = await import('./audio');
+    const target = Object.assign(new EventTarget(), { visibilityState: 'visible' });
+    audio.installAudioUnlock(target as unknown as Document);
+    target.dispatchEvent(new Event('visibilitychange'));
+    expect(silentMode.release).not.toHaveBeenCalled();
+    target.visibilityState = 'hidden';
+    target.dispatchEvent(new Event('visibilitychange'));
+    expect(silentMode.release).toHaveBeenCalledTimes(1);
   });
 });
 

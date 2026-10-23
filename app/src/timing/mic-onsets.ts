@@ -9,6 +9,7 @@
  * the learner's tap (design §9: permission only when they enable the mic).
  */
 import { loadTone, unlockAudio } from '../audio/audio';
+import { silentMode } from '../audio/session';
 import { MIC_CONSTRAINTS, mediaError } from '../mic/detector';
 import { DETECTOR_DRIVER } from '../mic/worklet/config';
 import { createOnsetSource, OnsetSourceError, type OnsetDriver, type OnsetSource } from './onsets';
@@ -84,6 +85,8 @@ interface Graph {
   input: Connectable;
   node: ReturnType<OnsetContext['createAudioWorkletNode']>;
   watch: () => void;
+  /** Gives the audio session back once the mic stops (`audio/session.ts`). */
+  endMic: () => void;
 }
 
 export function createMicOnsetDriver(options: MicOnsetOptions = {}): OnsetDriver {
@@ -101,6 +104,7 @@ export function createMicOnsetDriver(options: MicOnsetOptions = {}): OnsetDriver
     g.node.port.onmessage = null;
     g.input.disconnect();
     g.node.disconnect();
+    g.endMic();
   };
 
   return {
@@ -112,6 +116,8 @@ export function createMicOnsetDriver(options: MicOnsetOptions = {}): OnsetDriver
         );
       }
       // Both now, inside the tap: iOS grants the mic and resumes audio only in a gesture.
+      // Capture needs the play-and-record session; ask for it before the prompt.
+      const endMic = silentMode.holdMic();
       const media = attempt(() => devices.getUserMedia(MIC_CONSTRAINTS));
       const ready = attempt(options.context ?? toneContext);
       // A refused mic is reported first; don't leave this rejection unhandled meanwhile.
@@ -156,13 +162,14 @@ export function createMicOnsetDriver(options: MicOnsetOptions = {}): OnsetDriver
           const watch = () => {
             if (raw.state !== 'running') lost(`Audio is ${raw.state}`);
           };
-          graph = { context, stream, input, node, watch };
+          graph = { context, stream, input, node, watch, endMic };
           raw.addEventListener('statechange', watch);
           for (const track of stream.getTracks()) {
             track.onended = () => lost('The microphone was disconnected');
           }
         } catch (err) {
           stream?.getTracks().forEach((track) => track.stop());
+          endMic();
           throw err instanceof OnsetSourceError
             ? err
             : new OnsetSourceError('failed', message(err));

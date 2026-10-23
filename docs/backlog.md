@@ -1011,7 +1011,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Report what you confirmed as the root cause. The user tests on real devices after the ship.
 
 ### M4-14 · Fix: sound muted by iOS silent mode until the mic is allowed
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user report, 2026-10-23: on new devices, sound is often missing until they enable the mic in Settings and Safari asks for permission)
 - **Deps:** none
 - **Design:** §9
