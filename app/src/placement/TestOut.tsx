@@ -23,13 +23,11 @@ import {
 } from './test-out';
 import styles from './TestOut.module.css';
 
+const PROBED_TOPICS: readonly string[] = ENGINE_CONFIG.placement.topics;
+
 /** A skill the placement probe covers, so a test-out can prove it. */
 function probeable(skill: Skill | undefined): boolean {
-  return (
-    skill !== undefined &&
-    !skill.skipPlacement &&
-    ENGINE_CONFIG.placement.topics.includes(skill.topic)
-  );
+  return skill !== undefined && !skill.skipPlacement && PROBED_TOPICS.includes(skill.topic);
 }
 
 /**
