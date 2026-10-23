@@ -25,7 +25,7 @@ test.beforeEach(async ({ page }) => {
   await enableIntros(page);
 });
 
-test('a first session opens with the alphabet intro, then the worked rep; the next one does not @smoke', async ({
+test('a first session opens with the alphabet intro, then the worked rep; the next one does not @smoke @layout', async ({
   page,
 }) => {
   await focusSession(page, 'F1.alphabet');
@@ -57,7 +57,7 @@ test('the card takes focus and Enter dismisses it', async ({ page }) => {
   await expect(workedPrompt(page)).toContainText('to continue.');
 });
 
-test('Space dismisses it, and a neck intro fits the screen', async ({ page }) => {
+test('Space dismisses it, and a neck intro fits the screen @layout', async ({ page }) => {
   await focusSession(page, 'F2.string6-naturals');
   await expect(card(page)).toHaveAttribute('data-intro', 'f2-string6-naturals');
   const neck = card(page).getByRole('group', { name: /String 6: E open/ });

@@ -101,7 +101,7 @@ test.describe('M3-02 D7 spell it', () => {
     await masterSkills(page, F1_SKILLS);
   });
 
-  test('a worked example, then the key spelled in order', async ({ page }) => {
+  test('a worked example, then the key spelled in order @layout', async ({ page }) => {
     await focusSession(page, 'C4.sharp-keys');
     await expect(drill(page)).toBeVisible();
     const key = await subjectKey(page);
@@ -199,7 +199,7 @@ test.describe('M3-02 D7 spell it', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('spells a key on a phone @smoke', async ({ page }) => {
+  test('spells a key on a phone @smoke @phone', async ({ page }) => {
     await focusSession(page, 'C4.sharp-keys');
     await spellCorrectly(page);
     await expect(drill(page)).toBeVisible();

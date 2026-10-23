@@ -55,7 +55,7 @@ test.describe('Tools section', () => {
     await expect(page).toHaveURL(/\/tools$/);
   });
 
-  test('keeps every tab at least 44pt at 375pt wide, and lists tools on compact @smoke', async ({
+  test('keeps every tab at least 44pt at 375pt wide, and lists tools on compact @smoke @layout', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 667 });
@@ -77,7 +77,7 @@ test.describe('Tools section', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('never lists the test tool for learners @smoke', async ({ page }) => {
+  test('never lists the test tool for learners', async ({ page }) => {
     await freshStart(page, '/tools');
     await expect(page.getByRole('heading', { name: 'Tools', level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: /Test tool/ })).toHaveCount(0);

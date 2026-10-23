@@ -39,7 +39,7 @@ test.describe('M4-13 sound on iOS', () => {
     expect(errors).toEqual([]);
   });
 
-  test('still sounds when the browser refuses worklet modules @smoke', async ({ page }) => {
+  test('still sounds when the browser refuses worklet modules', async ({ page }) => {
     await refuseAudioWorklets(page);
     const errors = await openSettingsOffline(page);
     await expectTestNoteSounds(page);

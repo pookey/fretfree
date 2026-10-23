@@ -34,7 +34,7 @@ async function showVoicings(page: Page, symbol: string) {
 }
 
 test.describe('M3-09 chord finder', () => {
-  test('tapped notes are named and shaped by degree', async ({ page }) => {
+  test('tapped notes are named and shaped by degree @layout', async ({ page }) => {
     await freshStart(page, '/explore');
     await page
       .getByRole('navigation', { name: 'Explore views' })
@@ -134,7 +134,7 @@ test.describe('M3-09 chord finder', () => {
     await expect(page.getByTestId('d7-subject')).toContainText('C');
   });
 
-  test('the chord finder on a phone @smoke', async ({ page }) => {
+  test('the chord finder on a phone @smoke @phone', async ({ page }) => {
     await freshStart(page, '/explore?view=chord-finder');
     await tap(page, 's5f0', 's4f2', 's3f2', 's2f1', 's1f0');
     await expect(named(page)).toHaveText('Am (minor)');

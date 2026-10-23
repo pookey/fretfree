@@ -18,7 +18,9 @@ async function answerCorrectly(page: Page): Promise<number> {
 }
 
 test.describe('M2-11 focused sessions', () => {
-  test('"Quiz me on this" in Explore quizzes the notes the explorer shows', async ({ page }) => {
+  test('"Quiz me on this" in Explore quizzes the notes the explorer shows @layout', async ({
+    page,
+  }) => {
     await freshStart(page, '/explore');
     await page.getByRole('link', { name: 'Quiz me on this' }).click();
     await expect(page).toHaveURL(NOTE_SKILLS);
@@ -68,7 +70,7 @@ test.describe('M2-11 focused sessions', () => {
     await expect(page.getByText(/^This is/)).toBeVisible();
   });
 
-  test('"Quiz me on this" on a phone @smoke', async ({ page }) => {
+  test('"Quiz me on this" on a phone @smoke @phone', async ({ page }) => {
     await freshStart(page, '/explore');
     await page.getByRole('link', { name: 'Quiz me on this' }).click();
     await expect(page).toHaveURL(NOTE_SKILLS);

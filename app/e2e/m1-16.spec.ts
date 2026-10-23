@@ -11,7 +11,7 @@ async function openLearn(page: Page): Promise<void> {
 }
 
 test.describe('M1-16 Learn screen', () => {
-  test('two panes: the module map with rings beside the skill detail', async ({ page }) => {
+  test('two panes: the module map with rings beside the skill detail @layout', async ({ page }) => {
     await freshStart(page);
     await openLearn(page);
     const map = page.getByRole('region', { name: 'Modules' });
@@ -61,7 +61,9 @@ test.describe('M1-16 Learn screen', () => {
     await expect(cards.first()).toHaveAttribute('data-testid', 'module-harmony');
   });
 
-  test('opens a module from the map, one pane at a time on phones @smoke', async ({ page }) => {
+  test('opens a module from the map, one pane at a time on phones @smoke @layout @phone', async ({
+    page,
+  }) => {
     await freshStart(page);
     await openLearn(page);
     await expectNoHorizontalOverflow(page);

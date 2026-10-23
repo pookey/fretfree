@@ -32,7 +32,7 @@ async function next(page: Page): Promise<void> {
 }
 
 test.describe('M10-13 neck-basics worked examples', () => {
-  test('the alphabet: B–C worked with its ghost, then E–F unaided', async ({ page }) => {
+  test('the alphabet: B–C worked with its ghost, then E–F unaided @layout', async ({ page }) => {
     await openExample(page, 'F1.b-c-e-f');
     await expect(prompt(page)).toHaveText('Find the letter after B on string 5.');
     await expect(neck(page).getByTestId('marker-target')).toHaveAttribute('data-fret', '3');
@@ -131,7 +131,7 @@ test.describe('M10-13 neck-basics worked examples', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('a neck-basics worked example on a phone @smoke', async ({ page }) => {
+  test('a neck-basics worked example on a phone @smoke @phone', async ({ page }) => {
     await openExample(page, 'F1.whole-steps');
     await tap(page, 6, 2);
     await next(page);

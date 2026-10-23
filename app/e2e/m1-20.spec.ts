@@ -60,7 +60,7 @@ async function startD1Session(page: Page): Promise<void> {
 }
 
 test.describe('M1-20 compact (iPhone) polish', () => {
-  test('the session degrades from iPad to a phone in either orientation', async ({
+  test('the session degrades from iPad to a phone in either orientation @layout', async ({
     page,
   }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
@@ -93,7 +93,9 @@ test.describe('M1-20 compact (iPhone) polish', () => {
     await expect(panel.getByTestId('note-wheel')).toBeVisible();
   });
 
-  test('D2 on a phone on its side slides a wider window over the neck', async ({ page }, info) => {
+  test('D2 on a phone on its side slides a wider window over the neck @layout', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await startFindSession(page);
     // The guided first reps on the iPad's whole neck.
@@ -129,7 +131,7 @@ test.describe('M1-20 compact (iPhone) polish', () => {
     await expect(page.getByTestId('d2-window')).toHaveText('Frets 0–4');
   });
 
-  test('the Today context panel is a sheet on a phone', async ({ page }, info) => {
+  test('the Today context panel is a sheet on a phone @layout', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await expect(page.getByTestId('context-panel')).toBeVisible();
@@ -148,7 +150,9 @@ test.describe('M1-20 compact (iPhone) polish', () => {
     const phoneOnly = (project: string) =>
       test.skip(project !== 'iphone-smoke', 'phone happy path');
 
-    test('a phone on its side gets a wider, letterboxed neck', async ({ page }, info) => {
+    test('a phone on its side gets a wider, letterboxed neck @layout @phone', async ({
+      page,
+    }, info) => {
       phoneOnly(info.project.name);
       await startD1Session(page);
       expect(await windowFrets(page)).toBe(10);
@@ -158,7 +162,9 @@ test.describe('M1-20 compact (iPhone) polish', () => {
       await expect(page.getByTestId('feedback-correct')).toBeVisible();
     });
 
-    test('session help opens as a sheet and closes again', async ({ page }, info) => {
+    test('session help opens as a sheet and closes again @layout @phone', async ({
+      page,
+    }, info) => {
       phoneOnly(info.project.name);
       await startD1Session(page);
       const panel = page.getByTestId('context-panel');
@@ -179,7 +185,9 @@ test.describe('M1-20 compact (iPhone) polish', () => {
       await expect(page.getByTestId('feedback-correct')).toBeVisible();
     });
 
-    test('Today context opens as a sheet over the tab bar', async ({ page }, info) => {
+    test('Today context opens as a sheet over the tab bar @layout @phone', async ({
+      page,
+    }, info) => {
       phoneOnly(info.project.name);
       await freshStart(page);
       await page.getByRole('button', { name: 'Show why daily practice' }).click();

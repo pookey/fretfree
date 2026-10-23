@@ -237,7 +237,7 @@ async function reviewLogs(page: Page): Promise<Log[]> {
 const switches = (seq: readonly string[]) => seq.filter((d, i) => i > 0 && d !== seq[i - 1]).length;
 
 test.describe('M2-14 a cross-drill session', () => {
-  test('due octave and interval reviews run through D4, D5 and D6, interleaved @smoke', async ({
+  test('due octave and interval reviews run through D4, D5 and D6, interleaved', async ({
     page,
   }) => {
     test.slow();
@@ -273,9 +273,7 @@ test.describe('M2-14 a cross-drill session', () => {
     await expect(page.getByTestId('due-count')).toHaveText('0');
   });
 
-  test('identically seeded reviews still interleave their drills (rule 6) @smoke', async ({
-    page,
-  }) => {
+  test('identically seeded reviews still interleave their drills (rule 6)', async ({ page }) => {
     test.slow();
     // Equal retrievability: item-ID order would serve each drill's items together.
     await startM2Reviews(page, true);
@@ -356,7 +354,9 @@ async function shoot(page: Page, info: TestInfo, name: string): Promise<void> {
 }
 
 test.describe('M2-14 screenshot pass', () => {
-  test('every M2 screen renders without overflow @smoke @screens', async ({ page }, info) => {
+  test('every M2 screen renders without overflow @smoke @screens @layout', async ({
+    page,
+  }, info) => {
     test.slow();
     // The placement test, the last onboarding step.
     await skipInstallTip(page);

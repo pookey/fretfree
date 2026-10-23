@@ -146,7 +146,7 @@ async function seedCoreReviews(page: Page): Promise<void> {
 }
 
 test.describe('M3-05 D9 builds the CAGED shape at a root', () => {
-  test('triad cores first: a worked example, then built from the root @smoke', async ({
+  test('triad cores first: a worked example, then built from the root @smoke @layout', async ({
     page,
   }, info) => {
     await freshStart(page);
@@ -238,7 +238,7 @@ test.describe('M3-05 D9 builds the CAGED shape at a root', () => {
     await expect(page.getByTestId('d9-explain')).not.toContainText('A shape');
   });
 
-  test('whole shapes follow the cores, over the whole neck', async ({ page }, info) => {
+  test('whole shapes follow the cores, over the whole neck @layout', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     // About 17 s on an idle machine, past 30 s under lane load on the mini.
     test.slow();

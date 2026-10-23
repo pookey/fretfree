@@ -196,7 +196,9 @@ async function endSession(page: Page): Promise<void> {
 }
 
 test.describe('M6-10 screenshot pass', () => {
-  test('every M6 screen renders without overflow @smoke @screens', async ({ page }, info) => {
+  test('every M6 screen renders without overflow @smoke @screens @layout', async ({
+    page,
+  }, info) => {
     test.setTimeout(240_000);
     // D20's hits come from the e2e onset fake (timing/e2e-hook.ts).
     await page.addInitScript((key) => localStorage.setItem(key, '1'), FAKE_ONSETS_KEY);

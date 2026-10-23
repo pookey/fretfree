@@ -57,7 +57,7 @@ async function pcAt(page: Page, testId: string): Promise<string> {
 }
 
 test.describe('M10-06 teach on a miss', () => {
-  test('a wrong D5 answer says what it meant and counts the shape @smoke', async ({ page }) => {
+  test('a wrong D5 answer says what it meant and counts the shape', async ({ page }) => {
     await startOn(page, 'interval-name:M3@s6→s5', 'C3.thirds');
     await expect(page.getByTestId('d5-drill')).toBeVisible();
     await expect(page.locator('#drill-prompt')).toHaveText('Name the interval');
@@ -85,7 +85,9 @@ test.describe('M10-06 teach on a miss', () => {
     await expect(page.getByTestId('feedback-wrong')).toBeHidden();
   });
 
-  test('a G–B miss names the shift, and the line fits above Continue @smoke', async ({ page }) => {
+  test('a G–B miss names the shift, and the line fits above Continue @smoke @layout', async ({
+    page,
+  }) => {
     await startOn(page, 'interval-name:M3@s3→s2', 'C3.thirds');
     // P4 is the G–B misreading; one window in four around M3 leaves it out.
     const p4 = choices(page).getByRole('button', { name: d5ButtonName('P4'), exact: true });
@@ -109,7 +111,9 @@ test.describe('M10-06 teach on a miss', () => {
     await expect(page.getByTestId('feedback-wrong')).toBeHidden();
   });
 
-  test('a wrong D39 marker answer counts the dots from the nut @smoke', async ({ page }) => {
+  test('a wrong D39 marker answer counts the dots from the nut @smoke @layout', async ({
+    page,
+  }) => {
     await startOn(page, 'marker:f7', 'F3.markers');
     await expect(page.locator('#drill-prompt')).toHaveText('Which fret is this marker on?');
     await choices(page).getByRole('button', { name: 'Fret 5', exact: true }).click();

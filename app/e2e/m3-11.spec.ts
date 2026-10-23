@@ -147,7 +147,7 @@ async function expectNoOverflow(el: Locator): Promise<void> {
 test.describe('M3-11 session context panels', () => {
   test.skip(() => test.info().project.name === 'iphone-smoke', 'iPad flow');
 
-  test('D9: the CAGED order before an answer, the chain mini-map after it', async ({
+  test('D9: the CAGED order before an answer, the chain mini-map after it @layout', async ({
     page,
   }, info) => {
     await startD9(page, 2);
@@ -172,7 +172,9 @@ test.describe('M3-11 session context panels', () => {
     await expectFits(page, info.project.name, true);
   });
 
-  test('D9 at guide level 1 keeps the mini-map back, even once answered', async ({ page }) => {
+  test('D9 at guide level 1 keeps the mini-map back, even once answered @layout', async ({
+    page,
+  }) => {
     await startD9(page, 1);
     await expect(panel(page).getByRole('list', { name: 'CAGED order' })).toBeVisible();
     await page.getByRole('button', { name: 'Done' }).click();
@@ -191,7 +193,7 @@ test.describe('M3-11 session context panels', () => {
     await expect(panel(page)).toHaveCount(0);
   });
 
-  test('D8: the current chord diagram, labelled by degree only once answered', async ({
+  test('D8: the current chord diagram, labelled by degree only once answered @layout', async ({
     page,
   }, info) => {
     await startD8(page, 2);
@@ -212,7 +214,7 @@ test.describe('M3-11 session context panels', () => {
     await expectFits(page, info.project.name, true);
   });
 
-  test('D7: the key’s diatonic chords, named only once the key is spelled', async ({
+  test('D7: the key’s diatonic chords, named only once the key is spelled @layout', async ({
     page,
   }, info) => {
     await startD7(page, 2);
@@ -239,7 +241,7 @@ test.describe('M3-11 session context panels', () => {
   });
 });
 
-test('on a phone, help opens the CAGED chain as a sheet @smoke', async ({ page }, info) => {
+test('on a phone, help opens the CAGED chain as a sheet @smoke @phone', async ({ page }, info) => {
   test.skip(info.project.name !== 'iphone-smoke', 'phone flow');
   await freshStart(page);
   await masterSkills(page, D9_PREREQS);

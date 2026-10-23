@@ -130,7 +130,7 @@ async function startSession(page: Page): Promise<void> {
 }
 
 test.describe('M2-05 D5 names the interval from two dots', () => {
-  test('a fresh C3 session: worked examples, then recall by button @smoke', async ({ page }) => {
+  test('a fresh C3 session: worked examples, then recall by button', async ({ page }) => {
     await freshStart(page);
     await seedThirds(page);
     await startSession(page);
@@ -151,7 +151,7 @@ test.describe('M2-05 D5 names the interval from two dots', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('on a phone, the legend opens as a sheet from "Show help" @smoke', async ({
+  test('on a phone, the legend opens as a sheet from "Show help" @smoke @layout @phone', async ({
     page,
   }, info) => {
     test.skip(info.project.name !== 'iphone-smoke', 'phone flow');
@@ -225,7 +225,7 @@ test.describe('M2-05 D5 names the interval from two dots', () => {
     await expect(page.getByTestId('feedback-correct')).toHaveText(`✓ ${next}`);
   });
 
-  test('the interval legend fades with the guide level', async ({ page }, info) => {
+  test('the interval legend fades with the guide level @layout', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
 

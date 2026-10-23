@@ -161,7 +161,9 @@ async function drillReady(page: Page, testId: string): Promise<void> {
 }
 
 test.describe('M3-12 screenshot pass', () => {
-  test('every M3 screen renders without overflow @smoke @screens', async ({ page }, info) => {
+  test('every M3 screen renders without overflow @smoke @screens @layout', async ({
+    page,
+  }, info) => {
     test.slow();
 
     // Learn: each M3 module (locked for a new learner), and its worked examples.
@@ -248,7 +250,7 @@ test.describe('M3-12 Explore load failure', () => {
   // The service worker would answer from its cache, past the aborted route.
   test.use({ serviceWorkers: 'block' });
 
-  test("Explore's Reload button is a full tap target @smoke", async ({ page }) => {
+  test("Explore's Reload button is a full tap target @smoke @layout", async ({ page }) => {
     await freshStart(page);
     await page.route(/\/caged-[^/]*\.js$/, (route) => route.abort());
     await page.goto('/explore?view=caged');

@@ -176,7 +176,7 @@ const tile = (page: Page, cell: string) =>
   map(page).locator(`[data-testid="heat-tile"][data-cell="${cell}"]`);
 
 test.describe('M1-24 the first week', () => {
-  test('onboarding, three daily sessions, due reviews, the heatmap and a weekend @smoke', async ({
+  test('onboarding, three daily sessions, due reviews, the heatmap and a weekend', async ({
     page,
   }, info) => {
     // A week of sessions in one test.
@@ -299,7 +299,9 @@ async function shoot(page: Page, info: TestInfo, name: string): Promise<void> {
 }
 
 test.describe('M1-24 screenshot pass', () => {
-  test('every M1 screen renders without overflow @smoke @screens', async ({ page }, info) => {
+  test('every M1 screen renders without overflow @smoke @screens @layout', async ({
+    page,
+  }, info) => {
     test.slow(SCREENSHOTS, 'full-page screenshots in two themes');
     await firstLaunch(page);
     await shoot(page, info, '01-onboarding');

@@ -71,7 +71,7 @@ test.describe('M1-25 recall prompts hide the answer', () => {
     if ((await ownString.count()) > 0) await expect(ownString).not.toHaveText(note);
   });
 
-  test('the first D3 (F1) recall prompt shows only its starting note @smoke', async ({ page }) => {
+  test('the first D3 (F1) recall prompt shows only its starting note', async ({ page }) => {
     await freshStart(page);
     await page.getByTestId('start-session').click();
 

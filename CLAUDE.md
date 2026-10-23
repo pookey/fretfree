@@ -24,7 +24,7 @@ An iPad-first guitar-learning PWA (iPhone is best-effort). It is public and MIT-
 | `pnpm ship` | On a clean `main`: secret scan → verify → deploy (`scripts/deploy.sh`) → smoke test production (`scripts/smoke.sh`) |
 | `pnpm secret-scan [range]` | Scan a git range for account IDs, zone IDs and keys |
 
-Playwright projects: `ipad-landscape`, `ipad-portrait` and `ipad-mini-landscape` run everything. `iphone-smoke` runs only tests tagged `@smoke`. The whole matrix runs only in the integration lane (`pnpm verify`, once per batch, with one retry per test, and tests that pass on retry are logged to `.orchestrator/flaky.log`). Everything else runs `e2e:fast` or the branch's own specs.
+Playwright projects: all four are WebKit and differ only in viewport, so a test runs at a size only where the size can change its outcome. `ipad-landscape` runs everything except `@phone` tests. `ipad-portrait` and `ipad-mini-landscape` run only `@layout` tests (they measure, scroll, branch on the project, use the context panel or take screenshots), plus `layout-sweep.spec.ts`, which checks every screen and topic for overflow at every size. `iphone-smoke` runs `@smoke` tests, and `@phone` tests run only there. `app/e2e/meta/tags.ts` holds the rules, and its Vitest test fails if a viewport-dependent test lacks `@layout`. The release gate (`pnpm verify`, in the integration lane once per batch, with one retry per test; tests that pass on retry are logged to `.orchestrator/flaky.log`) runs this matrix. `pnpm ship` reuses a verify of the same commit (or of an ancestor with only docs changes since), and runs the full matrix (`PW_FULL_MATRIX=1`, every test on all three iPads; also `pnpm --filter app e2e:full`) once a week as a safety net. Everything else runs `e2e:fast` or the branch's own specs.
 
 ## Architecture (`app/src`)
 
@@ -48,7 +48,7 @@ Playwright projects: `ipad-landscape`, `ipad-portrait` and `ipad-mini-landscape`
 - A new item kind means a new file in `engine/items/`: `<family>.ts` adds its refs to `ItemRefs` with a `declare module '../model'` block keyed by its file name, default-exports an `ItemKind` (its kinds, ID builder and parser), and is tested in its own `<family>.test.ts`. `model.ts` collects it, and `itemId`/`parseItemId` serve it. Import its helpers from `engine/items/<family>`; don't add a re-export to `model.ts`. A skill that the placement test leaves out sets `skipPlacement` in its own file.
 - A skill may name only drills that are registered, or that are listed in `PENDING` in `drills/registry.test.ts` with the open backlog WP that builds them. Otherwise its lesson opens to an empty session.
 - CSS Modules plus the tokens in `styles/tokens.css`. Dark-first. Use the Okabe–Ito colours for highlights, and distinguish markers by shape as well as colour. Use rem units and respect `prefers-reduced-motion`.
-- E2E selectors: roles and names first, `data-testid` where needed. Tag phone-relevant specs `@smoke`.
+- E2E selectors: roles and names first, `data-testid` where needed. Tag a test `@smoke` only if it matters on a phone, `@phone` (with `@smoke`) if it only makes sense on one, and `@layout` if its outcome depends on the viewport (the tag test enforces this).
 - Commit messages: imperative subject, with a body explaining why. Small logical commits.
 
 ## Orchestration

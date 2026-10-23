@@ -85,7 +85,7 @@ test.describe('M4-15 nylon guitar samples', () => {
   test.describe('without the samples', () => {
     test.use({ serviceWorkers: 'block' });
 
-    test('still sounds, on the plucked voice @smoke', async ({ page }) => {
+    test('still sounds, on the plucked voice', async ({ page }) => {
       const errors: string[] = [];
       page.on('pageerror', (e) => errors.push(e.message));
       await page.route('**/samples/**', (route) => route.abort());

@@ -146,7 +146,7 @@ async function confusionPairs(page: Page): Promise<string[][]> {
 }
 
 test.describe('M6-02 pentatonic boxes over their CAGED shapes', () => {
-  test('minor boxes: a worked example, then built around the chord @smoke', async ({
+  test('minor boxes: a worked example, then built around the chord @smoke @layout', async ({
     page,
   }, info) => {
     await freshStart(page);
@@ -179,7 +179,9 @@ test.describe('M6-02 pentatonic boxes over their CAGED shapes', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('a tap in the next box is that confusion, and the box is shown', async ({ page }, info) => {
+  test('a tap in the next box is that confusion, and the box is shown @layout', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await masterSkills(page, ['C6.minor-cores', 'C6.minor-shapes']);

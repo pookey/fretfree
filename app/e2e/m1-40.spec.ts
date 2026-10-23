@@ -80,7 +80,7 @@ async function startD2(page: Page): Promise<void> {
 }
 
 test.describe('M1-40 D1 and D2 on iPad portrait', () => {
-  test('D1: prompt, answers, neck and help form one column', async ({ page }, info) => {
+  test('D1: prompt, answers, neck and help form one column @layout', async ({ page }, info) => {
     test.skip(info.project.name !== PORTRAIT, 'iPad portrait layout');
     await startD1(page);
     await expect(page.getByTestId('context-panel')).toBeVisible();
@@ -95,7 +95,7 @@ test.describe('M1-40 D1 and D2 on iPad portrait', () => {
     expect(last.y + last.height).toBeLessThanOrEqual(neck.y);
   });
 
-  test('D2: prompt, neck and help form one column', async ({ page }, info) => {
+  test('D2: prompt, neck and help form one column @layout', async ({ page }, info) => {
     test.skip(info.project.name !== PORTRAIT, 'iPad portrait layout');
     await startD2(page);
     await expect(page.getByTestId('context-panel')).toBeVisible();
@@ -108,7 +108,7 @@ test.describe('M1-40 D1 and D2 on iPad portrait', () => {
     await expect(cells.last()).toBeInViewport({ ratio: 1 });
   });
 
-  test('hiding help leaves the column at the top', async ({ page }, info) => {
+  test('hiding help leaves the column at the top @layout', async ({ page }, info) => {
     test.skip(info.project.name !== PORTRAIT, 'iPad portrait layout');
     for (const [start, name] of [
       [startD1, 'd1'],
@@ -121,7 +121,7 @@ test.describe('M1-40 D1 and D2 on iPad portrait', () => {
     }
   });
 
-  test('@smoke the D1 prompt, answers and neck fit the screen', async ({ page }) => {
+  test('@smoke the D1 prompt, answers and neck fit the screen @layout', async ({ page }) => {
     await startD1(page);
     await expect(page.locator('#drill-prompt')).toBeInViewport();
     await expect(page.locator(neckSelector)).toBeVisible();

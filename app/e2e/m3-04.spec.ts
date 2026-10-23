@@ -218,7 +218,7 @@ async function confusionPairs(page: Page): Promise<string[][]> {
 }
 
 test.describe('M3-04 D8 finds the chord tone in a shape', () => {
-  test('the root first, as a worked example, then both directions @smoke', async ({
+  test('the root first, as a worked example, then both directions @smoke @layout', async ({
     page,
   }, info) => {
     await freshStart(page);

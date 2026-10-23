@@ -146,13 +146,15 @@ test.describe('M10-05 D1 teaches on a miss', () => {
     );
   });
 
-  test('a wrong answer explains itself on a phone @smoke', async ({ page }) => {
+  test('a wrong answer explains itself on a phone @smoke @phone', async ({ page }) => {
     await d1MissExplains(page);
   });
 });
 
 test.describe('M10-05 D3 fades the wheel and teaches on a miss', () => {
-  test('at guide level 1 the wheel names only the start until answered', async ({ page }, info) => {
+  test('at guide level 1 the wheel names only the start until answered @layout', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     const items = [1, -1].flatMap((s) =>

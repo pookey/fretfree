@@ -45,7 +45,7 @@ async function answerCorrectly(page: Page): Promise<void> {
 }
 
 test.describe('D39 "Fret landmarks"', () => {
-  test('the fret markers lesson serves prompts and grades them @smoke', async ({ page }) => {
+  test('the fret markers lesson serves prompts and grades them', async ({ page }) => {
     await freshStart(page);
     await focusSession(page, 'F3.markers');
 
@@ -66,7 +66,7 @@ test.describe('D39 "Fret landmarks"', () => {
     await expect(promptText(page)).toBeVisible();
   });
 
-  test('an open marker prompt shows the whole neck to fret 12, with no fret numbers', async ({
+  test('an open marker prompt shows the whole neck to fret 12, with no fret numbers @layout', async ({
     page,
   }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad layout');
@@ -90,7 +90,7 @@ test.describe('D39 "Fret landmarks"', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('the 12th-fret repeat lesson serves repeat prompts @smoke', async ({ page }) => {
+  test('the 12th-fret repeat lesson serves repeat prompts', async ({ page }) => {
     await freshStart(page);
     await masterSkills(page, ['F3.markers']);
     await focusSession(page, 'F3.repeat-12');
@@ -100,7 +100,7 @@ test.describe('D39 "Fret landmarks"', () => {
     await expect(neckArea(page)).toHaveAttribute('data-mode', 'repeat');
   });
 
-  test('a session with nothing to serve says so @smoke', async ({ page }, info) => {
+  test('a session with nothing to serve says so @smoke @layout', async ({ page }, info) => {
     await freshStart(page);
     // Mastered, with no cards: nothing is due and nothing is new.
     await masterSkills(page, ['F3.markers']);

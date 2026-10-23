@@ -103,7 +103,7 @@ test.describe('M4-05 circle of fifths', () => {
     await expect(keyName(page)).toHaveText('G major');
   });
 
-  test('"Quiz me on this" starts a session of key-signature cards', async ({ page }) => {
+  test('"Quiz me on this" starts a session of key-signature cards @layout', async ({ page }) => {
     await open(page, ['C4.sharp-keys']);
     const quiz = view(page).getByRole('link', { name: 'Quiz me on this' });
     await expect(quiz).toHaveAttribute('href', '/session?skill=I3.sharp-signatures');
@@ -148,7 +148,7 @@ test.describe('M4-05 circle of fifths', () => {
     await expect(card.locator('[data-state="expected"]')).toHaveCount(1);
   });
 
-  test('picks a key on a phone @smoke', async ({ page }) => {
+  test('picks a key on a phone @smoke @phone', async ({ page }) => {
     await open(page);
     await wedge(page, /^E flat major, 3 flats/).click();
     await expect(keyName(page)).toHaveText('E♭ major');
@@ -159,7 +159,7 @@ test.describe('M4-05 circle of fifths', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('a key-signature card on a phone @smoke', async ({ page }) => {
+  test('a key-signature card on a phone @smoke @phone', async ({ page }) => {
     await open(page, ['C4.sharp-keys']);
     await view(page).getByRole('link', { name: 'Quiz me on this' }).click();
     await expect(page.getByTestId('d40-drill')).toBeVisible();

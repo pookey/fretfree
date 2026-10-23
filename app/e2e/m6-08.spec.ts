@@ -49,7 +49,7 @@ async function expectCorrect(page: Page, text: string) {
 }
 
 test.describe('M6-08 D20 tap and strum rhythm', () => {
-  test('counts in, clicks, and grades a rep in time @smoke', async ({ page }) => {
+  test('counts in, clicks, and grades a rep in time @smoke @layout', async ({ page }) => {
     test.setTimeout(90_000);
     const errors = await openEighths(page);
     const drill = session(page);

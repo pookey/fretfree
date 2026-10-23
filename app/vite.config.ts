@@ -86,6 +86,11 @@ export default defineConfig({
         // Build plugins (build/), e.g. split-declarations.
         test: { name: 'build', environment: 'node', include: ['build/**/*.test.ts'] },
       },
+      {
+        extends: true,
+        // Checks on the Playwright specs themselves (e2e/meta), e.g. tags.
+        test: { name: 'e2e-meta', environment: 'node', include: ['e2e/meta/*.test.ts'] },
+      },
     ],
     // Verify runs while several worktrees verify at once (load 40–50 on 10
     // cores). The 5 s default failed healthy tests in the integration lane.

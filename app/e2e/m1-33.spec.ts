@@ -125,7 +125,7 @@ async function expectBusySummary(page: Page): Promise<void> {
 }
 
 test.describe('M1-33 session summary: Done in view', () => {
-  test('a short session puts Done in view without scrolling @smoke', async ({ page }) => {
+  test('a short session puts Done in view without scrolling @smoke @layout', async ({ page }) => {
     await freshStart(page);
     await finishSession(page, 3);
     await expect(page.getByTestId('summary-progress')).toBeVisible();
@@ -133,7 +133,7 @@ test.describe('M1-33 session summary: Done in view', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('the busiest summary keeps Done in view @smoke', async ({ page }) => {
+  test('the busiest summary keeps Done in view @smoke @layout', async ({ page }) => {
     await freshStart(page);
     await seedSlowHistory(page);
     await finishSession(page, 12);

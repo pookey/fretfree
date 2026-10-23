@@ -81,7 +81,7 @@ test.describe('M1-27 D3 says "note" and answers on the neck', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('recall by neck taps: a wrong tap marks the tapped and the right cells', async ({
+  test('recall by neck taps: a wrong tap marks the tapped and the right cells @layout', async ({
     page,
   }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');

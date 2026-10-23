@@ -41,7 +41,9 @@ async function next(page: Page) {
 test.beforeEach(({ page }) => skipInstallTip(page));
 
 test.describe('M1-06 onboarding', () => {
-  test('first launch completes onboarding and keeps the choices @smoke', async ({ page }, info) => {
+  test('first launch completes onboarding and keeps the choices @smoke @layout', async ({
+    page,
+  }, info) => {
     await firstLaunch(page);
     await expect(
       page.getByRole('heading', { name: 'Welcome to FretFree', level: 1 }),
@@ -121,7 +123,7 @@ test.describe('M1-06 onboarding', () => {
     await expect(choice(page).getByRole('radio', { name: /15 minutes/ })).toBeChecked();
   });
 
-  test('the whole flow can be skipped @smoke', async ({ page }) => {
+  test('the whole flow can be skipped', async ({ page }) => {
     await firstLaunch(page);
     await page.getByRole('button', { name: 'Skip setup' }).click();
     await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();

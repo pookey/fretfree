@@ -91,7 +91,7 @@ test.describe('M4-02 D11 numerals', () => {
     await masterSkills(page, C8_PREREQS);
   });
 
-  test('a worked example, then numerals both ways', async ({ page }) => {
+  test('a worked example, then numerals both ways @layout', async ({ page }) => {
     await focusSession(page, 'C8.numerals-major');
     await expect(drill(page)).toBeVisible();
 
@@ -172,7 +172,7 @@ test.describe('M4-02 D11 numerals', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('names a chord of the key on a phone @smoke', async ({ page }) => {
+  test('names a chord of the key on a phone @smoke @layout @phone', async ({ page }) => {
     await focusSession(page, 'C8.numerals-major');
     await answerCorrectly(page);
     await expect(drill(page)).toBeVisible();

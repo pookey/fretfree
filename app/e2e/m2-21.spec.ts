@@ -122,7 +122,9 @@ async function expectNoOverflow(el: Locator): Promise<void> {
 
 test.describe('M2-21 drill help on the session context panel', () => {
   for (const c of CASES) {
-    test(`${c.drill}: its help is the session's one context panel`, async ({ page }, info) => {
+    test(`${c.drill}: its help is the session's one context panel @layout`, async ({
+      page,
+    }, info) => {
       test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
       await freshStart(page);
       await c.start(page);
@@ -167,7 +169,9 @@ test.describe('M2-21 drill help on the session context panel', () => {
   // D5 at its widest scope (all 12 intervals) with the full level-3 legend:
   // one-line legend rows and answers in rows of six keep both columns within
   // the room above the neck (M2-22).
-  test('D5 at its widest scope still fits above the neck on iPad mini', async ({ page }, info) => {
+  test('D5 at its widest scope still fits above the neck on iPad mini @layout', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name !== 'ipad-mini-landscape', 'iPad mini landscape budget');
     test.setTimeout(240_000);
     await freshStart(page);
@@ -183,7 +187,7 @@ test.describe('M2-21 drill help on the session context panel', () => {
     expect(neckBox.y + neckBox.height).toBeLessThanOrEqual(bar.y + 1);
   });
 
-  test('on a phone, help opens the note wheel as a sheet @smoke', async ({ page }, info) => {
+  test('on a phone, help opens the note wheel as a sheet @smoke @phone', async ({ page }, info) => {
     test.skip(info.project.name !== 'iphone-smoke', 'phone flow');
     await freshStart(page);
     await CASES[0]!.start(page);

@@ -121,7 +121,9 @@ async function confusionPairs(page: Page): Promise<string[][]> {
 }
 
 test.describe('M4-04 D13 capo calculator', () => {
-  test('a worked example, then each direction from recall @smoke', async ({ page }, info) => {
+  test('a worked example, then each direction from recall @smoke @layout', async ({
+    page,
+  }, info) => {
     await freshStart(page);
     await masterSkills(page, PREREQS);
     await focusSession(page, 'C10.capo-g-c-d');
@@ -205,7 +207,9 @@ test.describe('M4-04 D13 capo calculator', () => {
     await expect(page.getByTestId('feedback-wrong')).toBeHidden();
   });
 
-  test('the neck fits a phone in portrait, up to the capo at fret 7', async ({ page }, info) => {
+  test('the neck fits a phone in portrait, up to the capo at fret 7 @layout', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'sets its own phone viewport');
     await page.setViewportSize({ width: 375, height: 667 });
     await freshStart(page);

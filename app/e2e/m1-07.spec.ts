@@ -57,7 +57,7 @@ test.describe('M1-07 latency calibration', () => {
     await page.clock.install();
   });
 
-  test('onboarding ends with a calibration that sets the tap time @smoke', async ({
+  test('onboarding ends with a calibration that sets the tap time @smoke @layout', async ({
     page,
   }, info) => {
     await firstLaunch(page);

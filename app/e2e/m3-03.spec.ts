@@ -140,7 +140,7 @@ test.describe('M3-03 C5 chord construction', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('spells a triad on a phone @smoke', async ({ page }) => {
+  test('spells a triad on a phone @smoke @phone', async ({ page }) => {
     await focusSession(page, 'C5.triads');
     const first = await spellCorrectly(page);
     expect(first).toMatch(/^[A-G][♯♭]?m?$/);

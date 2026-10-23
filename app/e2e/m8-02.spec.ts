@@ -27,7 +27,7 @@ const centreY = async (l: Locator) => {
 };
 
 test.describe('M8-02 <Staff>', () => {
-  test('engraves the phrase with clef, signatures, notes and VoiceOver names', async ({
+  test('engraves the phrase with clef, signatures, notes and VoiceOver names @layout', async ({
     page,
   }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
@@ -59,7 +59,7 @@ test.describe('M8-02 <Staff>', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('the tab under the staff fades with the guide level', async ({ page }, info) => {
+  test('the tab under the staff fades with the guide level @layout', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     const { phrase } = await openViewer(page);
     const tab = phrase.locator('.vf-tab');
@@ -99,7 +99,7 @@ test.describe('M8-02 <Staff>', () => {
     await expect(phrase.getByRole('img').first()).toHaveAccessibleName('E 2, quarter note');
   });
 
-  test('a tap picks the line or space under it, with 44pt between lines', async ({
+  test('a tap picks the line or space under it, with 44pt between lines @layout', async ({
     page,
   }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
@@ -166,7 +166,7 @@ test.describe('M8-02 <Staff>', () => {
     expect(colours[0]).not.toBe(colours[1]);
   });
 
-  test('the notation viewer renders on the phone @smoke', async ({ page }) => {
+  test('the notation viewer renders on the phone @smoke @phone', async ({ page }) => {
     const { phrase, finder } = await openViewer(page);
     await expect(phrase.getByRole('img')).toHaveCount(12);
     await finder.getByRole('button', { name: 'line 4' }).click();

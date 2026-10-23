@@ -34,7 +34,7 @@ const chart = (page: Page) => cards(page).allInnerTexts();
 const flat = (texts: string[]) => texts.map((t) => t.replace(/\s+/g, ''));
 
 test.describe('M4-09 progression player', () => {
-  test('shows a chart as chords or numerals, in any key, with a capo', async ({ page }) => {
+  test('shows a chart as chords or numerals, in any key, with a capo @layout', async ({ page }) => {
     const errors = await open(page);
     await expect(view(page).getByTestId('player-title')).toHaveText('I–V–vi–IV in C major');
     expect(flat(await chart(page))).toEqual(['CI', 'GV', 'Amvi', 'FIV']);
@@ -137,7 +137,7 @@ test.describe('M4-09 progression player', () => {
     await expect(page.getByTestId('d12-drill')).toBeVisible();
   });
 
-  test('plays and stops on a phone @smoke', async ({ page }) => {
+  test('plays and stops on a phone @smoke @phone', async ({ page }) => {
     const errors = await open(page);
     await view(page).getByRole('button', { name: 'Play' }).click();
     await expect(cards(page).nth(0)).toHaveAttribute('data-playing', 'true', { timeout: 10_000 });

@@ -68,7 +68,7 @@ test.describe('M1-22 settings', () => {
     await expect(page.getByTestId('start-session')).toHaveText('Start session (15 min)');
   });
 
-  test('the settings sit in cards with tappable controls, side by side when wide', async ({
+  test('the settings sit in cards with tappable controls, side by side when wide @layout', async ({
     page,
   }) => {
     await freshStart(page, '/settings');
@@ -111,7 +111,7 @@ test.describe('M1-22 About', () => {
     await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
   });
 
-  test('shows the summary beside the page at regular-wide', async ({ page }) => {
+  test('shows the summary beside the page at regular-wide @layout', async ({ page }) => {
     await freshStart(page, '/about');
     const width = page.viewportSize()!.width;
     const panel = page.getByTestId('context-panel');

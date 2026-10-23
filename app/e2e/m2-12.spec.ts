@@ -24,7 +24,7 @@ const fillOf = (page: Page, style: string) =>
     .evaluate((el) => getComputedStyle(el).fill);
 
 test.describe('M2-12 fretboard explorer', () => {
-  test('picks a chord, colours its tones across the whole neck and relabels them', async ({
+  test('picks a chord, colours its tones across the whole neck and relabels them @layout', async ({
     page,
   }) => {
     await freshStart(page, '/explore');
@@ -105,7 +105,7 @@ test.describe('M2-12 fretboard explorer', () => {
     await expect(page.getByTestId('d5-drill')).toBeVisible();
   });
 
-  test('a chord on a phone @smoke', async ({ page }) => {
+  test('a chord on a phone @smoke @phone', async ({ page }) => {
     await freshStart(page, '/explore');
     await pick(page, 'D', 'Minor seventh');
     await expect(page.getByTestId('explorer-name')).toContainText('Dm7');

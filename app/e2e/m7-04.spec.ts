@@ -170,7 +170,9 @@ test.describe('M7-04 save your progress', () => {
     await expect(page.getByLabel('Email address')).toHaveValue(EMAIL);
   });
 
-  test('Today offers it gently after a few sessions, and "Not now" hides it', async ({ page }) => {
+  test('Today offers it gently after a few sessions, and "Not now" hides it @layout', async ({
+    page,
+  }) => {
     await mockAuth(page);
     await freshStart(page);
     const card = page.getByRole('region', { name: 'Save your progress across devices' });
@@ -194,7 +196,9 @@ test.describe('M7-04 save your progress', () => {
     await expect(card).toHaveCount(0);
   });
 
-  test('lays the panel out beside its explanation on a wide iPad', async ({ page }, info) => {
+  test('lays the panel out beside its explanation on a wide iPad @layout', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name !== 'ipad-landscape', 'regular-wide layout');
     await mockAuth(page);
     await freshStart(page, '/progress');

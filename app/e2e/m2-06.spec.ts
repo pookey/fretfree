@@ -144,7 +144,7 @@ test.describe('M2-06 D6 interval tap', () => {
     await expect(neck(page).getByTestId('marker-correct')).toHaveText('♭3');
   });
 
-  test('a forgotten G–B shift is wrong, and named', async ({ page }, info) => {
+  test('a forgotten G–B shift is wrong, and named @layout', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await seedDueIntervals(page);

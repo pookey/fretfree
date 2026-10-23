@@ -84,7 +84,7 @@ test.describe('the tuner', () => {
     expect((await fake(page)).state).toBe('idle');
   });
 
-  test('plays reference tones without a mic, and pauses the needle while one sounds', async ({
+  test('plays reference tones without a mic, and pauses the needle while one sounds @layout', async ({
     page,
   }) => {
     await useFakePitch(page);
@@ -176,9 +176,7 @@ test.describe('the tuner on the real detector', () => {
   const micRequests = (page: Page) =>
     page.evaluate(() => (window as unknown as { micRequests?: number }).micRequests ?? 'reloaded');
 
-  test('@smoke opens from Tools without asking for the mic, and explains a refusal', async ({
-    page,
-  }) => {
+  test('opens from Tools without asking for the mic, and explains a refusal', async ({ page }) => {
     await freshStart(page, '/tools');
     await refuseMic(page);
     // Opened in-app, so the page (and its refusing mic) stays loaded.
@@ -199,7 +197,7 @@ test.describe('the tuner on the real detector', () => {
   });
 });
 
-test('@smoke stacks on a phone and reads a note', async ({ page }) => {
+test('@smoke stacks on a phone and reads a note @layout', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await useFakePitch(page);
   await openTuner(page);

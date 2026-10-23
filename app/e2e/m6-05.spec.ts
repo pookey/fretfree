@@ -141,7 +141,7 @@ test.describe('M6-05 I2 arpeggios on D8', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('the 5th stage finds the 5th in shapes that hold one', async ({ page }, info) => {
+  test('the 5th stage finds the 5th in shapes that hold one @layout', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await masterSkills(page, [...PREREQS, 'I2.sevenths-roots']);

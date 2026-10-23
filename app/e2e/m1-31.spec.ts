@@ -57,7 +57,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
     expect(contrast(over(name, wood), wood)).toBeGreaterThanOrEqual(4.5);
   });
 
-  test(`inactive frets recede in ${colorScheme}`, async ({ page }, info) => {
+  test(`inactive frets recede in ${colorScheme} @layout`, async ({ page }, info) => {
     test.skip(!info.project.name.includes('landscape'), 'only regular-wide shows frets 13–15');
     await page.emulateMedia({ colorScheme });
     await openNeck(page);
@@ -69,7 +69,7 @@ for (const colorScheme of ['dark', 'light'] as const) {
   });
 }
 
-test('screenshots the session neck in both themes for review', async ({ page }, info) => {
+test('screenshots the session neck in both themes for review @layout', async ({ page }, info) => {
   test.skip(info.project.name !== 'ipad-landscape', 'review shots on iPad landscape');
   await openNeck(page);
   const neck = page.locator('svg[data-fret-from]').first();

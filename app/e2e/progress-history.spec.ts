@@ -138,7 +138,7 @@ test.describe('Progress over time', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('fits a phone @smoke', async ({ page }) => {
+  test('fits a phone @smoke @layout @phone', async ({ page }) => {
     await freshStart(page);
     await seedFiveDays(page);
     await openProgress(page);

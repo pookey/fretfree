@@ -223,7 +223,9 @@ test.describe('M1-12 session celebrations', () => {
     await expect(page.getByTestId('confetti')).toHaveCount(0);
   });
 
-  test('the combo resets quietly after a miss and the summary fits @smoke', async ({ page }) => {
+  test('the combo resets quietly after a miss and the summary fits @smoke @layout', async ({
+    page,
+  }) => {
     await freshStart(page);
     // Keys open with F1 and would take the goal lane's share of new items (M10-03).
     await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS, ...C4_SKILLS, ...I3_SKILLS]);

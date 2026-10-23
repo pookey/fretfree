@@ -64,7 +64,7 @@ test.describe('M10-03 the new-item cap', () => {
     await expect(page.getByText('Daily goal met. Come back tomorrow to keep it.')).toBeVisible();
   });
 
-  test('the reason reads on a phone @smoke', async ({ page }) => {
+  test('the reason reads on a phone @smoke @phone', async ({ page }) => {
     await freshStart(page);
     await focusSession(page, SKILL);
     await playToTheCap(page);

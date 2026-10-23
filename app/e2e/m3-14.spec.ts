@@ -126,7 +126,9 @@ test.describe('M3-14 D37 chord tones across the neck', () => {
     await expect(page.getByTestId('feedback-correct')).toHaveText('✓ B, the 3rd of G major');
   });
 
-  test('widens to the whole neck on iPad once the boxes are fluent', async ({ page }, info) => {
+  test('widens to the whole neck on iPad once the boxes are fluent @layout', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     test.setTimeout(120_000);
     await freshStart(page);

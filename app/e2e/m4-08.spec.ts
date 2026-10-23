@@ -155,7 +155,7 @@ test.describe('D15 "Hear it, find it"', () => {
     await expect(page.getByTestId('marker-correct')).toHaveAttribute('data-fret', '5');
   });
 
-  test('finds an I6 ear card by ear @smoke', async ({ page }) => {
+  test('finds an I6 ear card by ear', async ({ page }) => {
     await seedDueCard(page, EAR);
     await startD15(page, EAR);
 

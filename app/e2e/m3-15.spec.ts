@@ -117,7 +117,9 @@ test.describe('M3-15 D38 builds the chord from a root', () => {
   // Each test builds several chords, each with a feedback pause: slow under load.
   test.slow();
 
-  test('a worked example, then any voicing built from the root @smoke', async ({ page }, info) => {
+  test('a worked example, then any voicing built from the root @smoke @layout', async ({
+    page,
+  }, info) => {
     await freshStart(page);
     await masterSkills(page, PREREQS);
     await focusSession(page, 'C5.build-triads');
@@ -151,7 +153,7 @@ test.describe('M3-15 D38 builds the chord from a root', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('feedback names each degree and the missing tones; the minor for the major is a confusion', async ({
+  test('feedback names each degree and the missing tones; the minor for the major is a confusion @layout', async ({
     page,
   }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');

@@ -49,7 +49,7 @@ async function answerRepeat(page: Page): Promise<void> {
 }
 
 test.describe('M1-41 D39 neck fits above the feedback bar', () => {
-  test('the 0–12 marker neck clears the bar on every iPad', async ({ page }, info) => {
+  test('the 0–12 marker neck clears the bar on every iPad @layout', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad layout');
     await freshStart(page);
     await focusSession(page, 'F3.markers');
@@ -58,7 +58,9 @@ test.describe('M1-41 D39 neck fits above the feedback bar', () => {
     await expectNeckFits(page);
   });
 
-  test('both octaves of the repeat neck clear the bar on every iPad', async ({ page }, info) => {
+  test('both octaves of the repeat neck clear the bar on every iPad @layout', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad layout');
     test.setTimeout(120_000);
     await freshStart(page);
@@ -78,7 +80,7 @@ test.describe('M1-41 D39 neck fits above the feedback bar', () => {
     expect([...seen].sort()).toEqual(['0', '12']);
   });
 
-  test('on a phone the neck stays on screen @smoke', async ({ page }, info) => {
+  test('on a phone the neck stays on screen @smoke @layout @phone', async ({ page }, info) => {
     test.skip(info.project.name !== 'iphone-smoke', 'phone flow');
     await freshStart(page);
     await focusSession(page, 'F3.markers');

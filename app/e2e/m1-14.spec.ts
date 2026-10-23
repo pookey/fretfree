@@ -96,7 +96,7 @@ const tile = (page: Page, cell: string) =>
   map(page).locator(`[data-testid="heat-tile"][data-cell="${cell}"]`);
 
 test.describe('M1-14 Progress fretboard heatmap', () => {
-  test('shows per-cell mastery, a legend, cell stats and a retention forecast', async ({
+  test('shows per-cell mastery, a legend, cell stats and a retention forecast @layout', async ({
     page,
   }) => {
     await freshStart(page);
@@ -191,7 +191,9 @@ test.describe('M1-14 Progress fretboard heatmap', () => {
     await expect(map(page).getByTestId('retention-forecast')).toContainText('next week');
   });
 
-  test('a phone shows the map, scrolls the neck, and taps a cell @smoke', async ({ page }) => {
+  test('a phone shows the map, scrolls the neck, and taps a cell @smoke @layout @phone', async ({
+    page,
+  }) => {
     await freshStart(page);
     await seed(page, [{ itemId: 'note@s5f3', stabilityDays: 10, answersMs: [1200] }]);
     await openProgress(page);

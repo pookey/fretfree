@@ -54,7 +54,7 @@ async function seed(page: Page, { streak, freezes, minutesToday }: Seed): Promis
 const hero = (page: Page) => page.getByRole('region', { name: 'Streak and daily goal' });
 
 test.describe('M1-11 Today hero and sidebar streak', () => {
-  test('the hero shows the streak, goal ring and freezes beside the due and new counts', async ({
+  test('the hero shows the streak, goal ring and freezes beside the due and new counts @layout', async ({
     page,
   }) => {
     await freshStart(page);
@@ -87,7 +87,7 @@ test.describe('M1-11 Today hero and sidebar streak', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('the iPad sidebar always shows the streak and ring, compact in the icon sidebar', async ({
+  test('the iPad sidebar always shows the streak and ring, compact in the icon sidebar @layout', async ({
     page,
   }, info) => {
     await freshStart(page);
@@ -146,7 +146,9 @@ test.describe('M1-11 Today hero and sidebar streak', () => {
     expect(parseFloat(still.transition)).toBeLessThanOrEqual(0.001);
   });
 
-  test('the phone shows the hero, with no streak in the tab bar @smoke', async ({ page }) => {
+  test('the phone shows the hero, with no streak in the tab bar @smoke @phone', async ({
+    page,
+  }) => {
     await freshStart(page);
     await seed(page, { streak: 3, freezes: 1, minutesToday: 2 });
     await expect(hero(page).getByTestId('streak-count')).toHaveText('3');

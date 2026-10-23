@@ -40,7 +40,9 @@ async function neckTexts(page: Page): Promise<string[]> {
 }
 
 test.describe('D3 "Note-wheel steps"', () => {
-  test('a first session walks the musical alphabet with the note wheel', async ({ page }, info) => {
+  test('a first session walks the musical alphabet with the note wheel @layout', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await page.getByTestId('start-session').click();
@@ -124,7 +126,7 @@ test.describe('D3 "Note-wheel steps"', () => {
     }
   });
 
-  test('answers a note-wheel prompt on a phone @smoke', async ({ page }) => {
+  test('answers a note-wheel prompt on a phone @smoke @phone', async ({ page }) => {
     await freshStart(page);
     await page.getByTestId('start-session').click();
     await tap(page, await currentAnswer(page));

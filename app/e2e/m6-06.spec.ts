@@ -189,7 +189,7 @@ test.describe('M6-06 minor-key harmony and chord function', () => {
     await expect(page.getByTestId('feedback-correct')).toBeVisible();
   });
 
-  test('works the harmonic V on a phone @smoke', async ({ page }) => {
+  test('works the harmonic V on a phone @smoke @phone', async ({ page }) => {
     await masterSkills(page, ['C9.minor', 'I4.minor-numerals']);
     await focusSession(page, 'I4.harmonic-minor');
     await answerCorrectly(page);

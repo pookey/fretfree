@@ -247,7 +247,7 @@ test.describe('M3-17 chord tones in stages', () => {
     expect(after).not.toContain('C5.tones-fifths');
   });
 
-  test('an existing learner keeps their chord-tone progress @smoke', async ({ page }) => {
+  test('an existing learner keeps their chord-tone progress', async ({ page }) => {
     await seedV2Learner(page);
     // Opening the app upgrades the database: the old skill's cards and
     // mastery move onto its stages, so the learner's next stage is the 7th.

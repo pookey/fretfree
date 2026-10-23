@@ -108,7 +108,7 @@ async function seedShapeReviews(
 const MAJOR: readonly Shape[] = ['C', 'A', 'G', 'E', 'D'];
 
 test.describe('M3-06 D10 names CAGED shapes and their neighbours', () => {
-  test('names shapes and the next along the chain, in varied keys and positions @smoke', async ({
+  test('names shapes and the next along the chain, in varied keys and positions @smoke @layout', async ({
     page,
   }, info) => {
     await seedRandom(page);

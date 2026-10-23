@@ -25,7 +25,7 @@ async function openMicStep(page: Page) {
 }
 
 test.describe('M5-04 mic onboarding', () => {
-  test('@smoke turning mic mode on hears the guitar and saves the choice', async ({
+  test('@smoke turning mic mode on hears the guitar and saves the choice @layout', async ({
     page,
   }, info) => {
     await fakeMic(page, { kind: 'tone', frequency: 110 });
@@ -96,9 +96,7 @@ test.describe('M5-04 mic onboarding', () => {
 });
 
 test.describe('M5-04 mic settings', () => {
-  test('@smoke mic mode switches on from Settings, checks the mic, and switches off', async ({
-    page,
-  }) => {
+  test('mic mode switches on from Settings, checks the mic, and switches off', async ({ page }) => {
     await fakeMic(page, { kind: 'tone', frequency: 196 });
     await freshStart(page, '/settings');
     await expect(micToggle(page)).not.toBeChecked();

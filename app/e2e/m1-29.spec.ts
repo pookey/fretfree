@@ -17,7 +17,7 @@ async function stepCount(page: Page): Promise<number> {
 }
 
 test.describe('M1-29 install step and Today card', () => {
-  test('onboarding opens with the install step on iPad Safari', async ({ page }, info) => {
+  test('onboarding opens with the install step on iPad Safari @layout', async ({ page }, info) => {
     await firstLaunch(page);
     await choice(page).getByRole('button', { name: 'Get started' }).click();
 

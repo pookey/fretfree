@@ -27,7 +27,9 @@ async function cellsOf(page: Page, style: string): Promise<string[]> {
 }
 
 test.describe('M3-08 CAGED visualiser', () => {
-  test('a chord plays its chain of five shapes, triad cores highlighted', async ({ page }) => {
+  test('a chord plays its chain of five shapes, triad cores highlighted @layout', async ({
+    page,
+  }) => {
     await page.clock.install();
     await freshStart(page, '/explore');
     await page
@@ -126,7 +128,7 @@ test.describe('M3-08 CAGED visualiser', () => {
     await expect(page.getByTestId('d9-prompt')).toContainText(/shape/);
   });
 
-  test('the visualiser on a phone @smoke', async ({ page }) => {
+  test('the visualiser on a phone @smoke @phone', async ({ page }) => {
     await page.clock.install();
     await freshStart(page, '/explore?view=caged');
     await expect(shown(page)).toHaveText('C: C shape');

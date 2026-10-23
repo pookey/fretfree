@@ -117,7 +117,7 @@ async function tapCorrect(page: Page): Promise<Ask> {
 }
 
 test.describe('M1-04 D2 "Find the note"', () => {
-  test('runs a full find prompt on the iPad neck', async ({ page }, info) => {
+  test('runs a full find prompt on the iPad neck @layout', async ({ page }, info) => {
     await startFindSession(page);
     const landscape = info.project.name !== 'ipad-portrait';
     const neck = page.locator('svg[data-fret-from]');
@@ -206,7 +206,9 @@ test.describe('M1-04 D2 "Find the note"', () => {
     await expect(page.getByTestId('feedback-wrong')).toBeHidden();
   });
 
-  test('finds notes on the phone with a sliding window @smoke', async ({ page }, info) => {
+  test('finds notes on the phone with a sliding window @smoke @layout @phone', async ({
+    page,
+  }, info) => {
     await startFindSession(page);
     for (let i = 0; i < 4; i++) await tapCorrect(page);
     if (info.project.name === 'iphone-smoke') {

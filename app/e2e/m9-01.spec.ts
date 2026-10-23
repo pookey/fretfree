@@ -11,7 +11,9 @@ async function openTabViewer(page: Page) {
 }
 
 test.describe('M9-01 <TabStaff>', () => {
-  test('renders six lines with fret numbers, names and 44pt line targets', async ({ page }) => {
+  test('renders six lines with fret numbers, names and 44pt line targets @layout', async ({
+    page,
+  }) => {
     const staff = await openTabViewer(page);
 
     const lines = staff.getByTestId('tab-line');
@@ -69,7 +71,7 @@ test.describe('M9-01 <TabStaff>', () => {
     await expect(g).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('the tab viewer renders on the phone @smoke', async ({ page }) => {
+  test('the tab viewer renders on the phone @smoke @layout @phone', async ({ page }) => {
     const staff = await openTabViewer(page);
     await expect(staff.getByTestId('tab-line')).toHaveCount(6);
     await expect(staff.getByRole('img')).toHaveCount(6);

@@ -70,7 +70,7 @@ async function askedFrets(page: Page): Promise<[number, number]> {
 }
 
 test.describe('M2-03 D4 octave finder', () => {
-  test('taps every G, region by region on compact screens @smoke', async ({ page }) => {
+  test('taps every G, region by region on compact screens @smoke @layout', async ({ page }) => {
     const dot = await startEveryG(page);
     // Compact screens ask region by region; the iPad asks for the whole neck at once.
     const region = page.getByTestId('d4-region');
@@ -88,7 +88,9 @@ test.describe('M2-03 D4 octave finder', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('shows the whole neck on iPad, marking each G as it is found', async ({ page }, info) => {
+  test('shows the whole neck on iPad, marking each G as it is found @layout', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     const dot = await startEveryG(page);
     await expect(page.getByTestId('d4-region')).toHaveCount(0);
@@ -178,7 +180,7 @@ test.describe('M2-03 D4 octave finder', () => {
 test.describe('M2-03 D4 on a phone in portrait', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('runs "tap every G" region by region, starting at the dot', async ({ page }) => {
+  test('runs "tap every G" region by region, starting at the dot @layout', async ({ page }) => {
     const dot = await startEveryG(page);
     const seen: number[] = [];
     for (let i = 0; i < 3; i++) {

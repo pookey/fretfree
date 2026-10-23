@@ -3,7 +3,7 @@ import { expectNoHorizontalOverflow, freshStart } from './helpers';
 
 // iPad-first layout system (design §7).
 test.describe('iPad layout', () => {
-  test('uses the right shell for the size class', async ({ page }, info) => {
+  test('uses the right shell for the size class @layout', async ({ page }, info) => {
     await freshStart(page);
     const sidebar = page.getByTestId('sidebar');
     await expect(sidebar).toBeVisible();
@@ -21,7 +21,7 @@ test.describe('iPad layout', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('sessions show the whole neck on iPad', async ({ page }, info) => {
+  test('sessions show the whole neck on iPad @layout', async ({ page }, info) => {
     await freshStart(page);
     await page.getByTestId('start-session').click();
     const neck = page.locator('svg[data-fret-from]');

@@ -194,7 +194,7 @@ async function confusionPairs(page: Page): Promise<string[][]> {
 }
 
 test.describe('M6-07 major scale in five positions', () => {
-  test('positions: a worked example, then filled in around the box @smoke', async ({
+  test('positions: a worked example, then filled in around the box @smoke @layout', async ({
     page,
   }, info) => {
     await freshStart(page);
@@ -231,7 +231,7 @@ test.describe('M6-07 major scale in five positions', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('runs from a degree, in order, and a wrong start is that confusion', async ({
+  test('runs from a degree, in order, and a wrong start is that confusion @layout', async ({
     page,
   }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
@@ -286,7 +286,7 @@ test.describe('M6-07 major scale in five positions', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('a tap in the next position is that confusion', async ({ page }, info) => {
+  test('a tap in the next position is that confusion @layout', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await masterSkills(page, ['C7.major-boxes']);

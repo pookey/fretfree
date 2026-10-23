@@ -55,7 +55,7 @@ async function skipToMicStep(page: Page): Promise<void> {
 }
 
 test.describe('M5-08 screenshot pass', () => {
-  test('mic setup: onboarding and Settings @smoke @screens', async ({ page }, info) => {
+  test('mic setup: onboarding and Settings @smoke @screens @layout', async ({ page }, info) => {
     test.slow();
     await skipInstallTip(page);
     await fakeMic(page, { kind: 'tone', frequency: 110 });
@@ -84,7 +84,7 @@ test.describe('M5-08 screenshot pass', () => {
     await shoot(page, info, '03b-settings-mic-check');
   });
 
-  test('the tuner: Tools, flat and in tune @smoke @screens', async ({ page }, info) => {
+  test('the tuner: Tools, flat and in tune @smoke @screens @layout', async ({ page }, info) => {
     await page.addInitScript(() => localStorage.setItem('fretwork.e2e.fakePitch', '1'));
     await freshStart(page, '/tools');
     await expect(page.getByRole('link', { name: /Tuner/ })).toBeVisible();
@@ -115,7 +115,7 @@ test.describe('M5-08 screenshot pass', () => {
     await shoot(page, info, '05c-tuner-in-tune');
   });
 
-  test('a refused mic is explained @smoke @screens', async ({ page }, info) => {
+  test('a refused mic is explained @smoke @screens @layout', async ({ page }, info) => {
     await skipInstallTip(page);
     await fakeMic(page, { kind: 'denied' });
 
@@ -132,7 +132,7 @@ test.describe('M5-08 screenshot pass', () => {
     await shoot(page, info, '06b-tuner-refused');
   });
 
-  test('the mic drills and the mic quest @smoke @screens', async ({ page }, info) => {
+  test('the mic drills and the mic quest @smoke @screens @layout', async ({ page }, info) => {
     test.slow();
     await installDbHelper(page);
     await useFakeMic(page);

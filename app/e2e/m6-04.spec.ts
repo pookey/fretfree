@@ -134,7 +134,7 @@ async function focusItem(page: Page, itemId: string): Promise<void> {
 }
 
 test.describe('M6-04 voice-leading puzzle', () => {
-  test('a worked example, then each move solved from the starting triad @smoke', async ({
+  test('a worked example, then each move solved from the starting triad @smoke @layout', async ({
     page,
   }, info) => {
     await freshStart(page);
@@ -167,7 +167,7 @@ test.describe('M6-04 voice-leading puzzle', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test("a note of the key's V for the IV is that confusion, and the panel lists the moves", async ({
+  test("a note of the key's V for the IV is that confusion, and the panel lists the moves @layout", async ({
     page,
   }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');

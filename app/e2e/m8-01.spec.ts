@@ -50,7 +50,7 @@ async function peakLevel(page: Page, ms: number): Promise<number> {
 }
 
 test.describe('M8-01 timing calibration', () => {
-  test('counts in, clicks, measures the offset and keeps it @smoke', async ({ page }) => {
+  test('counts in, clicks, measures the offset and keeps it @smoke @layout', async ({ page }) => {
     test.setTimeout(60_000);
     const errors = await openSettings(page);
     await expect(timing(page).getByTestId('timing-offset-tap')).toHaveText('not checked');

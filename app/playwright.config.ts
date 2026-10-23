@@ -5,13 +5,23 @@ const port = Number(process.env.E2E_PORT ?? 4173);
 const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${port}`;
 const external = Boolean(process.env.E2E_BASE_URL);
 
-// iPad-first (design §2, §7). iPad profiles run the full suite; the iPhone
-// profile is best-effort and only runs specs tagged @smoke.
-// The whole matrix runs in the integration lane (`pnpm e2e`). Worker checks
-// run `pnpm e2e:fast`: ipad-landscape (the primary size class) plus the phone
-// smoke tests, a third of the matrix (scripts/verify-quick.sh).
+// iPad-first (design §2, §7). All four profiles are WebKit and differ only
+// in viewport, so a test runs at a size only where the size can change it:
+// - ipad-landscape (the primary size class) runs every test but @phone ones;
+// - ipad-portrait and ipad-mini-landscape run @layout tests: those that
+//   measure, scroll, branch on the project or take screenshots
+//   (e2e/meta/tags.ts says which, and `tags.test.ts` fails on a test that
+//   needs the tag and lacks it), plus layout-sweep.spec.ts;
+// - iphone-smoke, best-effort, runs @smoke tests; @phone ones run only there.
+// PW_FULL_MATRIX=1 runs every test on all three iPads, as the whole matrix
+// did before (`pnpm e2e:full`, the scheduled safety net). Worker checks run
+// `pnpm e2e:fast`: ipad-landscape plus the phone (scripts/verify-quick.sh).
+const fullMatrix = process.env.PW_FULL_MATRIX === '1';
+const extraIpad = fullMatrix ? { grepInvert: /@phone/ } : { grep: /@layout/, grepInvert: /@phone/ };
 export default defineConfig({
   testDir: './e2e',
+  // e2e/meta holds Vitest tests about the specs, not Playwright tests.
+  testMatch: '**/*.spec.ts',
   fullyParallel: true,
   // Two e2e slots (plus the lane's) run at once; cap browsers per run so they
   // share the machine. The integration lane raises it.
@@ -28,9 +38,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'ipad-landscape', use: { ...devices['iPad Pro 11 landscape'] } },
-    { name: 'ipad-portrait', use: { ...devices['iPad Pro 11'] } },
-    { name: 'ipad-mini-landscape', use: { ...devices['iPad Mini landscape'] } },
+    { name: 'ipad-landscape', use: { ...devices['iPad Pro 11 landscape'] }, grepInvert: /@phone/ },
+    { name: 'ipad-portrait', use: { ...devices['iPad Pro 11'] }, ...extraIpad },
+    { name: 'ipad-mini-landscape', use: { ...devices['iPad Mini landscape'] }, ...extraIpad },
     { name: 'iphone-smoke', use: { ...devices['iPhone 15 landscape'] }, grep: /@smoke/ },
   ],
   webServer: external

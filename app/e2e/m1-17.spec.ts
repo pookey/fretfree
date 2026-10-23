@@ -79,7 +79,7 @@ test.describe('M1-17 multi-drill sessions', () => {
     await expect(page.getByTestId('summary-items')).toHaveText('2');
   });
 
-  test('shows the time left on a phone @smoke', async ({ page }) => {
+  test('shows the time left on a phone @smoke @phone', async ({ page }) => {
     await startNoteSession(page);
     await expect(timeLeft(page)).toHaveText('10 min left');
     await nameCorrectly(page);

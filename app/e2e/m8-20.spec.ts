@@ -154,7 +154,7 @@ test.describe('the metronome', () => {
     await expectSilent(page);
   });
 
-  test('starts, changes tempo and stops on a phone @smoke', async ({ page }) => {
+  test('starts, changes tempo and stops on a phone @smoke @layout @phone', async ({ page }) => {
     await openMetronome(page);
     await page.getByRole('button', { name: 'Start', exact: true }).click();
     await expectClicking(page);

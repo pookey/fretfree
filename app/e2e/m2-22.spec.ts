@@ -55,7 +55,7 @@ async function rowMark(row: Locator): Promise<{ mark: string; border: string }> 
 }
 
 test.describe('M2-22 D5 at its widest scope', () => {
-  test('one-line legend, rows of six, and the neck below', async ({ page }, info) => {
+  test('one-line legend, rows of six, and the neck below @layout', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     test.setTimeout(240_000);
     const landscape = info.project.name !== 'ipad-portrait';
@@ -106,7 +106,9 @@ test.describe('M2-22 D5 at its widest scope', () => {
     await expect(page.getByTestId('feedback-wrong')).toBeHidden();
   });
 
-  test('on a phone, the wide legend wraps inside the help sheet @smoke', async ({ page }, info) => {
+  test('on a phone, the wide legend wraps inside the help sheet @smoke @phone', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name !== 'iphone-smoke', 'phone flow');
     test.setTimeout(240_000);
     await freshStart(page);

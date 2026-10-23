@@ -145,7 +145,7 @@ async function stored(page: Page) {
 test.beforeEach(({ page }) => skipInstallTip(page));
 
 test.describe('M2-09 placement test', () => {
-  test('an expert answers fluently and their skills are seeded as known', async ({
+  test('an expert answers fluently and their skills are seeded as known @layout', async ({
     page,
   }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'The full flow runs on the iPad projects.');

@@ -113,7 +113,9 @@ test.describe('M4-03 D12 progression builder', () => {
     await masterSkills(page, C9_PREREQUISITES);
   });
 
-  test('a worked example, built by pointer drag, keyboard drag and a tap', async ({ page }) => {
+  test('a worked example, built by pointer drag, keyboard drag and a tap @layout', async ({
+    page,
+  }) => {
     await focusSession(page, 'C9.pop');
     await expect(drill(page)).toBeVisible();
     await expect(page.getByTestId('d12-subject')).toHaveText('I–IV–V');
@@ -221,7 +223,7 @@ test.describe('M4-03 D12 progression builder', () => {
     await expect(page.getByTestId('feedback-correct')).toBeVisible();
   });
 
-  test('a 12-bar chart to transpose fits the screen @smoke', async ({ page }) => {
+  test('a 12-bar chart to transpose fits the screen @smoke @layout', async ({ page }) => {
     // The blues opens once pop is under way and sevenths are known.
     await masterSkills(page, [...C9_PREREQUISITES, 'C9.pop', 'C5.sevenths']);
     await focusItem(page, 'prog:12-bar-blues:transpose');
@@ -252,7 +254,7 @@ test.describe('M4-03 D12 progression builder', () => {
     }
   });
 
-  test('a phone builds the progression by tapping @smoke', async ({ page }) => {
+  test('a phone builds the progression by tapping @smoke @phone', async ({ page }) => {
     await focusSession(page, 'C9.pop');
     await expect(drill(page)).toBeVisible();
     const key = await targetKey(page);

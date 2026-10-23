@@ -118,7 +118,7 @@ async function expectFretsInside(page: Page, map: Locator): Promise<void> {
 }
 
 test.describe('M1-32 the mastery map fits its panel', () => {
-  test('every fret up to 12 is inside the map and the viewport, with 44pt cells @smoke', async ({
+  test('every fret up to 12 is inside the map and the viewport, with 44pt cells @smoke @layout', async ({
     page,
   }) => {
     const map = await openMap(page);
@@ -128,7 +128,9 @@ test.describe('M1-32 the mastery map fits its panel', () => {
     await expect(map.getByTestId('heat-cell-detail')).toContainText('String 1, fret 12 · E');
   });
 
-  test('a neck too long for its box scrolls inside it to the last fret', async ({ page }) => {
+  test('a neck too long for its box scrolls inside it to the last fret @layout', async ({
+    page,
+  }) => {
     const map = await openMap(page);
     const container = map.getByTestId('heatmap-scroll');
     const edges = container.locator('..');

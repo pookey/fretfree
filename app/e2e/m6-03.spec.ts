@@ -154,7 +154,7 @@ async function focusItem(page: Page, itemId: string): Promise<void> {
 }
 
 test.describe('M6-03 triad inversions on a string set', () => {
-  test('a worked example, then each inversion built from its root @smoke', async ({
+  test('a worked example, then each inversion built from its root @smoke @layout', async ({
     page,
   }, info) => {
     await freshStart(page);
@@ -224,7 +224,7 @@ test.describe('M6-03 triad inversions on a string set', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('the ♭3 for the 3 is logged against the minor card', async ({ page }, info) => {
+  test('the ♭3 for the 3 is logged against the minor card @layout', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await freshStart(page);
     await masterSkills(page, ['C6.triad-cores']);

@@ -69,9 +69,7 @@ test.describe('M4-14 sound through iOS silent mode', () => {
     expect(s.tracks).toEqual([]);
   });
 
-  test('where the session setting is ignored, a silent track plays instead @smoke', async ({
-    page,
-  }) => {
+  test('where the session setting is ignored, a silent track plays instead', async ({ page }) => {
     await stubSession(page, false);
     await tapAudioOutput(page);
     await freshStart(page, '/settings');

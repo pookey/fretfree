@@ -67,7 +67,9 @@ async function sessionReady(page: Page): Promise<void> {
 test.beforeEach(({ page }) => skipInstallTip(page));
 
 test.describe('M4-10 start with sound', () => {
-  test('choosing "With sound" starts the path with ear → fretboard', async ({ page }, info) => {
+  test('choosing "With sound" starts the path with ear → fretboard @layout', async ({
+    page,
+  }, info) => {
     await firstLaunch(page);
     await choice(page).getByRole('button', { name: 'Get started' }).click();
     await skipTo(page, START_STEP);
@@ -121,7 +123,7 @@ test.describe('M4-10 start with sound', () => {
 });
 
 test.describe('M4-10 ear only', () => {
-  test('"Ear only" runs a short session of ear drills @smoke', async ({ page }) => {
+  test('"Ear only" runs a short session of ear drills @smoke @layout', async ({ page }) => {
     await freshStart(page);
     await saveSettings(page, { startWithSound: true });
     const link = earOnly(page);
@@ -147,7 +149,7 @@ test.describe('M4-10 ear only', () => {
       );
   });
 
-  test('with sound off, "Ear only" offers to turn sound on', async ({ page }) => {
+  test('with sound off, "Ear only" offers to turn sound on @layout', async ({ page }) => {
     await freshStart(page);
     await saveSettings(page, { startWithSound: true, soundOn: false });
     await expect(quickDrills(page).getByTestId('ear-only-copy')).toHaveText(

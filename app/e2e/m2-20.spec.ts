@@ -89,7 +89,7 @@ async function expectPortraitColumn(page: Page, name: string): Promise<void> {
 }
 
 test.describe('M2-20 D5 and D6 on iPad portrait', () => {
-  test('D5: prompt, answers, neck and legend form one column', async ({ page }, info) => {
+  test('D5: prompt, answers, neck and legend form one column @layout', async ({ page }, info) => {
     test.skip(info.project.name !== PORTRAIT, 'iPad portrait layout');
     await freshStart(page);
     await seedThirds(page, 'interval-name');
@@ -113,7 +113,7 @@ test.describe('M2-20 D5 and D6 on iPad portrait', () => {
     await expectPortraitColumn(page, 'd5-portrait-feedback');
   });
 
-  test('D6: prompt, neck and help form one column', async ({ page }, info) => {
+  test('D6: prompt, neck and help form one column @layout', async ({ page }, info) => {
     test.skip(info.project.name !== PORTRAIT, 'iPad portrait layout');
     await freshStart(page);
     await seedThirds(page, 'interval');
@@ -129,7 +129,7 @@ test.describe('M2-20 D5 and D6 on iPad portrait', () => {
     await expect(cells.last()).toBeInViewport({ ratio: 1 });
   });
 
-  test('hiding help leaves the column at the top', async ({ page }, info) => {
+  test('hiding help leaves the column at the top @layout', async ({ page }, info) => {
     test.skip(info.project.name !== PORTRAIT, 'iPad portrait layout');
     await freshStart(page);
     await seedThirds(page, 'interval');

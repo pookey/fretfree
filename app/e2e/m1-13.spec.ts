@@ -115,7 +115,7 @@ test.describe('M1-13 achievements', () => {
     await expect(page.getByTestId('achievement-toast')).toHaveCount(0);
   });
 
-  test('a phone shows the unlock toast and the badge @smoke', async ({ page }) => {
+  test('a phone shows the unlock toast and the badge @smoke @layout @phone', async ({ page }) => {
     await freshStart(page);
     await seed(page, { mastered: ['F2.string5-naturals'] });
 

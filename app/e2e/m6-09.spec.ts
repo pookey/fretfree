@@ -109,7 +109,9 @@ async function seedShapeReviews(page: Page, shapes: readonly Shape[]): Promise<v
 const MAJOR: readonly Shape[] = ['C', 'A', 'G', 'E', 'D'];
 
 test.describe('M6-09 D21 pictures a CAGED shape and taps its roots', () => {
-  test('pictures shapes at varied positions on a blank neck @smoke', async ({ page }, info) => {
+  test('pictures shapes at varied positions on a blank neck @smoke @layout', async ({
+    page,
+  }, info) => {
     await seedRandom(page);
     await freshStart(page);
     await seedShapeReviews(page, MAJOR);

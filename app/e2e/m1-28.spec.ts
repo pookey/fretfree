@@ -176,7 +176,7 @@ async function expectBarClearOfDrill(page: Page): Promise<void> {
 
 test.describe('M1-28 wrong-answer feedback stays on screen', () => {
   for (const c of CASES) {
-    test(`${c.drill}: Continue is on screen, focused, and Enter continues`, async ({
+    test(`${c.drill}: Continue is on screen, focused, and Enter continues @layout`, async ({
       page,
     }, info) => {
       test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
@@ -188,7 +188,7 @@ test.describe('M1-28 wrong-answer feedback stays on screen', () => {
     });
   }
 
-  test('a tap on Continue continues too, and a right answer still auto-advances', async ({
+  test('a tap on Continue continues too, and a right answer still auto-advances @layout', async ({
     page,
   }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
@@ -209,7 +209,9 @@ test.describe('M1-28 wrong-answer feedback stays on screen', () => {
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
   });
 
-  test('the wrong message meets AA contrast on its bar, dark and light', async ({ page }, info) => {
+  test('the wrong message meets AA contrast on its bar, dark and light @layout', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     const d1 = CASES[0]!;
     for (const colorScheme of ['dark', 'light'] as const) {
@@ -236,7 +238,7 @@ test.describe('M1-28 wrong-answer feedback stays on screen', () => {
     }
   });
 
-  test('on a phone, the help sheet stays readable beside a wrong answer @smoke', async ({
+  test('on a phone, the help sheet stays readable beside a wrong answer @smoke @layout', async ({
     page,
   }, info) => {
     test.skip(info.project.name !== 'iphone-smoke', 'phone flow');
@@ -260,7 +262,9 @@ test.describe('M1-28 wrong-answer feedback stays on screen', () => {
   });
 
   for (const c of CASES) {
-    test(`${c.drill} on a phone, on its side and upright @smoke`, async ({ page }, info) => {
+    test(`${c.drill} on a phone, on its side and upright @smoke @layout`, async ({
+      page,
+    }, info) => {
       test.skip(info.project.name !== 'iphone-smoke', 'phone flow');
       for (const size of [page.viewportSize()!, SMALL_PHONE_LANDSCAPE, PHONE_PORTRAIT]) {
         await page.setViewportSize(size);

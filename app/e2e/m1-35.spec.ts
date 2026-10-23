@@ -62,7 +62,7 @@ async function expectLearningSummary(page: Page): Promise<void> {
 }
 
 test.describe('M1-35 session summary: learning and stable', () => {
-  test('a first session names accuracy, learning and stable apart', async ({ page }) => {
+  test('a first session names accuracy, learning and stable apart @layout', async ({ page }) => {
     await firstSession(page);
     await expectLearningSummary(page);
     const stats = page.getByTestId('session-summary').locator('dl');
@@ -88,7 +88,7 @@ test.describe('M1-35 session summary: learning and stable', () => {
     ).toHaveText(new RegExp(`^${ANSWERS} learning · 0 stable of \\d+$`));
   });
 
-  test('the summary shows learning and the next review, with Done in view @smoke', async ({
+  test('the summary shows learning and the next review, with Done in view @smoke @layout', async ({
     page,
   }) => {
     await firstSession(page);

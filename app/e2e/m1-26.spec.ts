@@ -23,7 +23,9 @@ async function openReadingStep(page: Page) {
 test.beforeEach(({ page }) => skipInstallTip(page));
 
 test.describe('M1-26 reading question', () => {
-  test('picks several notations to read and to learn, and keeps them @smoke', async ({ page }) => {
+  test('picks several notations to read and to learn, and keeps them @smoke @layout', async ({
+    page,
+  }) => {
     await openReadingStep(page);
     await expect(page.getByText(/teaches the neck by name, position and sound/)).toBeVisible();
     await expect(page.getByText(/is extra/)).toBeVisible();

@@ -105,7 +105,7 @@ test.describe('M1-18 Today quick drills', () => {
     await expect(timeLeft(page)).toHaveText('10 min left');
   });
 
-  test('starts the warm-up from Today on a phone @smoke', async ({ page }) => {
+  test('starts the warm-up from Today on a phone @smoke @phone', async ({ page }) => {
     await freshStart(page);
     await expect(warmup(page)).toBeVisible();
     await expectNoHorizontalOverflow(page);

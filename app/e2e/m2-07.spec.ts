@@ -20,7 +20,7 @@ async function tap(page: Page, string: number, fret: number): Promise<void> {
 const stage = (page: Page) => page.getByTestId('worked-example');
 
 test.describe('M2-07 worked examples', () => {
-  test('a worked example fades its guides, then practice is focused on the skill', async ({
+  test('a worked example fades its guides, then practice is focused on the skill @layout', async ({
     page,
   }) => {
     await openModule(page, 'notes-1');
@@ -117,7 +117,7 @@ test.describe('M2-07 worked examples', () => {
     ).toContainText('G–B shift');
   });
 
-  test('a worked example and focused practice on a phone @smoke', async ({ page }) => {
+  test('a worked example and focused practice on a phone @smoke @phone', async ({ page }) => {
     await openModule(page, 'notes-1');
     const skill = page.getByTestId('skill-F2.string6-naturals');
     await skill.getByRole('button', { name: 'Worked example' }).click();

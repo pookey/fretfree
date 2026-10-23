@@ -48,7 +48,7 @@ test.describe('M1-38 copy polish', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('@smoke the stable tile counts within the learning one', async ({ page }) => {
+  test('@smoke the stable tile counts within the learning one @layout', async ({ page }) => {
     await freshStart(page);
     await focusSession(page, 'F2.string6-naturals');
     await answerCorrectly(page);

@@ -92,7 +92,7 @@ test.describe('M10-14 worked examples', () => {
     await expect(page.getByTestId('example-done')).toBeVisible();
   });
 
-  test('the capo example counts up on a phone @smoke', async ({ page }) => {
+  test('the capo example counts up on a phone @smoke @phone', async ({ page }) => {
     await openExample(page, 'progressions', 'C10.capo-g-c-d');
     await expect(exampleNeck(page).getByTestId('marker-ghost')).toHaveAttribute('data-fret', '1');
     await tap(page, 6, 5);

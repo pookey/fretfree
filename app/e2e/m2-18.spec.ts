@@ -22,7 +22,7 @@ async function startD4(page: Page, guideLevel: 1 | 2 | 3): Promise<void> {
 }
 
 test.describe('M2-18 per-drill context panels', () => {
-  test('a D4 session shows the octave shapes, not the alphabet', async ({ page }, info) => {
+  test('a D4 session shows the octave shapes, not the alphabet @layout', async ({ page }, info) => {
     test.skip(info.project.name === 'iphone-smoke', 'iPad flow');
     await startD4(page, 3);
 
@@ -78,7 +78,9 @@ test.describe('M2-18 per-drill context panels', () => {
     await expect(panel(page).getByTestId('octave-panel')).toHaveCount(0);
   });
 
-  test('on a phone, help opens the octave shapes as a sheet @smoke', async ({ page }, info) => {
+  test('on a phone, help opens the octave shapes as a sheet @smoke @phone', async ({
+    page,
+  }, info) => {
     test.skip(info.project.name !== 'iphone-smoke', 'phone flow');
     await startD4(page, 3);
     await expect(panel(page)).toHaveCount(0);

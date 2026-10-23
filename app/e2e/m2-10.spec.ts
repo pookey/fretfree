@@ -142,7 +142,9 @@ test.describe('M2-10 daily quests', () => {
       .toBeGreaterThan(0);
   });
 
-  test('quests sit between the hero and the stats, inside the content column', async ({ page }) => {
+  test('quests sit between the hero and the stats, inside the content column @layout', async ({
+    page,
+  }) => {
     await freshStart(page);
     await expect(quests(page).getByTestId('quest')).toHaveCount(3);
     const hero = (await page.getByRole('region', { name: 'Streak and daily goal' }).boundingBox())!;

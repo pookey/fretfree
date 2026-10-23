@@ -4,9 +4,7 @@ import { expectNoHorizontalOverflow, freshStart } from './helpers';
 // Settings as its own section (design §7) and the Privacy page.
 
 test.describe('Settings and Privacy', () => {
-  test('Settings is a section of its own, and leads to Privacy and back @smoke', async ({
-    page,
-  }) => {
+  test('Settings is a section of its own, and leads to Privacy and back', async ({ page }) => {
     await freshStart(page);
     await page
       .getByRole('navigation', { name: 'Sections' })
@@ -40,7 +38,7 @@ test.describe('Settings and Privacy', () => {
     await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
   });
 
-  test('every section in the nav keeps a full-size tap target @smoke', async ({ page }) => {
+  test('every section in the nav keeps a full-size tap target @smoke @layout', async ({ page }) => {
     await freshStart(page);
     const links = page.getByRole('navigation', { name: 'Sections' }).getByRole('link');
     // Five sections, plus Tools once a tool is registered (design §7).
