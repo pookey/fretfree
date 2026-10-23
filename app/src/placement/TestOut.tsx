@@ -85,8 +85,10 @@ function waitsFor(
       gates[gate].filter((p) => !meetsGate(gate, statuses.get(p)));
     return { master: titles(unmet('mastered')), practise: titles(unmet('practising')) };
   });
+  // Mastering a skill meets a gate on practising it too.
   const within = (a: Waits, b: Waits) =>
-    a.master.every((t) => b.master.includes(t)) && a.practise.every((t) => b.practise.includes(t));
+    a.master.every((t) => b.master.includes(t)) &&
+    a.practise.every((t) => b.practise.includes(t) || b.master.includes(t));
   // Keep the first of two identical sets; drop any set strictly wider than another.
   return sets.filter(
     (b, i) => !sets.some((a, j) => j !== i && within(a, b) && (j < i || !within(b, a))),
@@ -101,10 +103,12 @@ function orList(words: readonly string[]): string {
 
 /** "you’ve mastered A and are practising B", joining each gate's titles with `join`. */
 function gatesClause(
-  { master, practise }: Waits,
+  { master, practise: all }: Waits,
   join: (words: readonly string[]) => string,
   and: string,
 ): string {
+  // A skill to master needn't be listed again as one to be practising.
+  const practise = all.filter((t) => !master.includes(t));
   return [
     master.length > 0 && `you’ve mastered ${join(master)}`,
     practise.length > 0 && `${master.length > 0 ? 'are' : 'you’re'} practising ${join(practise)}`,

@@ -129,6 +129,16 @@ describe('opensOnceText', () => {
     );
   });
 
+  it('names a skill once when an opener needs it mastered and practising', () => {
+    expect(
+      opensOnceText('Progressions', [
+        { master: ['Triads'], practise: ['Sharp keys', 'Triads', 'Numerals'] },
+      ]),
+    ).toBe(
+      'Progressions opens once you’ve mastered Triads and are practising Sharp keys and Numerals.',
+    );
+  });
+
   it('says "or" between openers that each wait for one thing: any one opens it (M10-21)', () => {
     expect(
       opensOnceText('Ear', [
@@ -234,6 +244,30 @@ describe('TestOut', () => {
     const offer = screen.getByRole('region', { name: 'Already know this?' });
     expect(offer).toHaveTextContent(
       /Gated opens once you’ve mastered Natural notes on string 6 or Natural notes on string 5\. /,
+    );
+  });
+
+  it('names a skill once across openers: mastering it meets practising it', () => {
+    // One way in needs string 6 mastered, another only practising: the second will do.
+    const soft: Skill = {
+      ...GATED,
+      id: 'T1.soft',
+      order: 1,
+      prerequisites: [],
+      softPrerequisites: [STRING6.id],
+    };
+    const skills = [STRING6, GATED, soft];
+    const statuses = new Map<string, SkillStatus>();
+    for (const s of skills) statuses.set(s.id, deriveStatus(s, statuses, undefined));
+    expect(statuses.get(soft.id)).toBe('locked');
+    render(
+      <MemoryRouter>
+        <TestOut module={MODULE} offer statuses={statuses} skills={skills} drills={DRILLS} />
+      </MemoryRouter>,
+    );
+    const offer = screen.getByRole('region', { name: 'Already know this?' });
+    expect(offer).toHaveTextContent(
+      /Gated opens once you’re practising Natural notes on string 6\. /,
     );
   });
 

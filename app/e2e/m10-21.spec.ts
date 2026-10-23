@@ -48,9 +48,12 @@ test.describe('M10-21 the test-out says when a module opens', () => {
   test('where a first skill needs several things, it names only the nearest', async ({ page }) => {
     // Pop progressions need triads mastered; capo keys only practised.
     const offer = await offerFor(page, 'progressions');
-    await expect(offer).toContainText(
+    // The gate sentence only: the offer then lists what the test covers.
+    const text = (await offer.getByText(/^Progressions opens once/).innerText()).split(
+      ' Already there?',
+    )[0];
+    expect(text).toBe(
       'Progressions opens once you’re practising Spell the sharp keys and Spell major and minor triads.',
     );
-    await expect(offer).not.toContainText(/opens once .*Roman numerals/);
   });
 });
