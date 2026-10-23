@@ -83,8 +83,10 @@ function waitsFor(
 /** "Chords opens once you’ve mastered 3rds and are practising Sharp keys." */
 export function opensOnceText(
   title: string,
-  { master, practise }: { master: readonly string[]; practise: readonly string[] },
+  { master, practise: all }: { master: readonly string[]; practise: readonly string[] },
 ): string {
+  // A skill to master needn't be listed again as one to be practising.
+  const practise = all.filter((t) => !master.includes(t));
   const parts = [
     master.length > 0 && `you’ve mastered ${listOf(master)}`,
     practise.length > 0 && `${master.length > 0 ? 'are' : 'you’re'} practising ${listOf(practise)}`,

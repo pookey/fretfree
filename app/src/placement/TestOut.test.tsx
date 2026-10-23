@@ -127,6 +127,18 @@ describe('opensOnceText', () => {
       'Keys opens once you’ve mastered what it builds on.',
     );
   });
+
+  it('names a skill once when one entry needs it mastered and another practising', () => {
+    // Progressions: C9.pop needs triads mastered, C10's capo skills practising.
+    expect(
+      opensOnceText('Progressions', {
+        master: ['Triads'],
+        practise: ['Sharp keys', 'Triads', 'Numerals'],
+      }),
+    ).toBe(
+      'Progressions opens once you’ve mastered Triads and are practising Sharp keys and Numerals.',
+    );
+  });
 });
 
 describe('TestOut', () => {
