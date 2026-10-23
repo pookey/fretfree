@@ -3,11 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { Guitar } from './index';
 import { look } from './test/fixtures';
 
-const SOURCES = import.meta.glob<string>(['./index.tsx', './frame.ts', './label.ts'], {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-});
+const SOURCES = import.meta.glob<string>(
+  ['./index.tsx', './frame.ts', './label.ts', './shapes.ts'],
+  {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  },
+);
 
 // A value import (not `import type`) of a module.
 const valueImport = (module: string) =>

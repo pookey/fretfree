@@ -22,7 +22,7 @@ export function collectBodies(mods: Record<string, BodyShape>): ReadonlyMap<stri
 
 export const BODIES = collectBodies(modules);
 
-/** The body for `shape`, or the first registered one when it isn't known. */
+/** The body for `shape`, or the Stratocaster when it isn't known (`hasBody` in `shapes.ts` tells). */
 export function bodyFor(shape: string): BodyShape {
   const body = BODIES.get(shape) ?? BODIES.get('stratocaster') ?? [...BODIES.values()][0];
   if (!body) throw new Error('no guitar bodies are registered');
