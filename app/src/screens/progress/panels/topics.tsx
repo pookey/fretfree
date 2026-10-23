@@ -42,6 +42,8 @@ export const TOPIC_TITLES: Readonly<Record<string, string>> = {
   I6: 'Ear training',
   I7: 'Scale positions',
   TAB: 'Reading tab',
+  T1: 'Time signatures',
+  T2: 'Simple and compound meter',
 };
 
 /** Card counts: all of them, those learning (stable ones included) and those stable. */
