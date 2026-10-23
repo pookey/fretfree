@@ -3,7 +3,7 @@ import { area, flattenPath, footprints, margin } from './footprint';
 import { DEFAULT_FRETS, NECK_JOINT_Y, SCALE, boardEnd, boardHalfWidth } from './geometry';
 import { BODIES, bodyFor, collectBodies } from './registry';
 import { BODY_SHAPES, hasBody } from './shapes';
-import type { BodyShape } from './types';
+import type { BodyShape, Point } from './types';
 
 /** Every coordinate pair in a path, control points too: a slightly generous bounding box. */
 function bbox(d: string) {
@@ -26,8 +26,60 @@ const GUARD_MARGIN = 3;
  * How much of the top a guard may cover: the real part's share for the
  * models that have a big one, and the user's outer bound for every body.
  */
-const GUARD_SHARE: Record<string, number> = { stratocaster: 0.42, telecaster: 0.22 };
+// The area counts what is hidden under the board and the bridge plate too:
+// the visible shares are about 0.40 (Strat) and 0.19 (Tele).
+const GUARD_SHARE: Record<string, number> = { stratocaster: 0.45, telecaster: 0.24 };
 const GUARD_SHARE_MAX = 0.55;
+/**
+ * Guards that must read as smooth curves: no visible edge tighter than
+ * this radius, in mm. The Les Paul guard has a deliberate point.
+ */
+const SMOOTH_GUARDS = ['stratocaster', 'telecaster'];
+const MIN_GUARD_RADIUS = 7;
+
+type Cubic = [Point, Point, Point, Point];
+
+/** The cubic segments of an absolute `M … C … Z` path. */
+function cubics(d: string): Cubic[] {
+  const nums = (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
+  const pts: Point[] = [];
+  for (let i = 0; i + 1 < nums.length; i += 2) pts.push({ x: nums[i]!, y: nums[i + 1]! });
+  const out: Cubic[] = [];
+  for (let i = 0; i + 3 < pts.length; i += 3)
+    out.push([pts[i]!, pts[i + 1]!, pts[i + 2]!, pts[i + 3]!]);
+  return out;
+}
+
+/** Radius of curvature |B'|³ / |B' × B''| and the point, at `t` along a cubic. */
+function radiusAt([p0, p1, p2, p3]: Cubic, t: number): { r: number; p: Point } {
+  const u = 1 - t;
+  const d1 = (k: 'x' | 'y') =>
+    3 * u * u * (p1[k] - p0[k]) + 6 * u * t * (p2[k] - p1[k]) + 3 * t * t * (p3[k] - p2[k]);
+  const d2 = (k: 'x' | 'y') =>
+    6 * u * (p2[k] - 2 * p1[k] + p0[k]) + 6 * t * (p3[k] - 2 * p2[k] + p1[k]);
+  const at = (k: 'x' | 'y') =>
+    u ** 3 * p0[k] + 3 * u * u * t * p1[k] + 3 * u * t * t * p2[k] + t ** 3 * p3[k];
+  const cross = Math.abs(d1('x') * d2('y') - d1('y') * d2('x'));
+  const speed = Math.hypot(d1('x'), d1('y'));
+  return { r: cross === 0 ? Infinity : speed ** 3 / cross, p: { x: at('x'), y: at('y') } };
+}
+
+/**
+ * The bounding box of a footprint's sample points, grown by `pad`.
+ * (`boxPoints` gives a grid, not an ordered polygon, so `inside` can't be used.)
+ */
+function bounds(points: readonly Point[], pad: number) {
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  return {
+    has: (p: Point) =>
+      p.x >= Math.min(...xs) - pad &&
+      p.x <= Math.max(...xs) + pad &&
+      p.y >= Math.min(...ys) - pad &&
+      p.y <= Math.max(...ys) + pad,
+  };
+}
+
 /** Room between the jack plate and the guard, in mm. */
 const JACK_CLEARANCE = 8;
 
@@ -111,6 +163,35 @@ describe('body registry', () => {
       const bass = flattenPath(body.pickguard).filter((p) => p.x < 0);
       expect(Math.max(...bass.map((p) => p.y))).toBeLessThan(body.bridge.y + 30);
     });
+
+    it('draws its pickguard as cubic curves only', () => {
+      if (!body.pickguard) return;
+      expect(body.pickguard).toMatch(/^M [-\d. ]+( C [-\d. ]+)+ Z$/);
+    });
+
+    it.runIf(SMOOTH_GUARDS.includes(id))(
+      `bends its visible pickguard edge no tighter than ${MIN_GUARD_RADIUS} mm`,
+      () => {
+        const end = boardEnd(body.frets ?? DEFAULT_FRETS);
+        const covers = footprints(body)
+          .filter((f) => f.part === 'bridge' || f.part.startsWith('pickup'))
+          .map((f) => bounds(f.points, 3));
+        let worst = { r: Infinity, p: { x: 0, y: 0 } };
+        for (const c of cubics(body.pickguard!)) {
+          for (let t = 0; t <= 1.0001; t += 0.02) {
+            const s = radiusAt(c, Math.min(t, 1));
+            const hidden =
+              (s.p.y <= end && Math.abs(s.p.x) <= boardHalfWidth(s.p.y) + 2) ||
+              covers.some((b) => b.has(s.p));
+            if (!hidden && s.r < worst.r) worst = s;
+          }
+        }
+        expect(
+          worst.r,
+          `at ${worst.p.x.toFixed(0)}, ${worst.p.y.toFixed(0)}`,
+        ).toBeGreaterThanOrEqual(MIN_GUARD_RADIUS);
+      },
+    );
 
     it('keeps its jack clear of the guard', () => {
       const jack = footprints(body).find((f) => f.part === 'jack');

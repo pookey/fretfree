@@ -47,19 +47,19 @@ const OUTLINE: readonly Pt[] = [
   [-123.0, 495.5],
   [-129.5, 480.0],
   [-137.0, 464.5],
-  // The shoulder is re-eased by hand to the ~30 mm radius of D164,227 Fig. 3,
-  // its top falling slightly from the pocket towards the corner.
-  [-142.5, 448.5],
-  [-144.5, 428.0],
-  [-142.0, 416.5],
-  [-135.5, 407.0],
-  [-126.0, 400.5],
-  [-114.5, 398.0],
-  [-97.0, 397.5],
-  [-80.0, 397.0],
-  [-63.0, 396.5],
-  [-46.0, 396.0],
-  [-29.0, 395.5],
+  // The shoulder is re-eased by hand to a 38 mm arc (centre (-106.5, 436)),
+  // rounder than D164,227 Fig. 3's ~30 mm so it doesn't read square at body
+  // scale, and the top bows about 2.6 mm from the pocket to the corner.
+  [-142.5, 449.5],
+  [-144.5, 436.0],
+  [-141.6, 421.5],
+  [-133.4, 409.1],
+  [-121.0, 400.9],
+  [-106.5, 398.0],
+  [-89.0, 396.7],
+  [-71.0, 396.0],
+  [-53.0, 395.6],
+  [-35.0, 395.4],
   [-12.0, 395.5],
   [13.0, 397.0],
   // The cutaway leaves the pocket in one curve.
@@ -116,40 +116,52 @@ const telecaster: BodyShape = {
   name: 'Telecaster',
   outline,
   // Hand-placed on smooth curves, as the real part: about 15 mm in from the
-  // upper bass edge, round the shoulder and down the bass side to the front
-  // of the bridge plate, narrow on the treble side just past the neck
-  // pickup, with only a strip beside the pocket under the cutaway.
+  // upper bass edge, round the shoulder and down the bass side, tucked under
+  // the front of the bridge plate, then a narrow strip beside the neck
+  // pickup whose rounded top tucks under the board's end. Anchors are kept
+  // evenly spaced so the Catmull-Rom curve never folds into a cusp.
   pickguard: smoothClosed([
     // Along the top, under the board at its right-hand end.
     [-24, J + 18],
     [-46, J + 20],
-    [-70, J + 21],
-    [-94, J + 22],
-    // Round the shoulder, concentric with it.
-    [-105, J + 24],
-    [-112, J + 34],
-    [-120, J + 48],
-    // Down the bass side, 15–17 mm in.
-    [-125, J + 63],
-    [-119, J + 80],
-    [-110, J + 98],
-    [-99, J + 116],
-    // Curving in from the waist to the front of the bridge plate.
-    [-94, J + 136],
-    [-80, J + 154],
-    [-60, J + 170],
-    [-44, SCALE - 77],
-    [40, SCALE - 77],
-    // Up the treble side, just past the neck pickup.
-    [46, SCALE - 84],
+    [-70, J + 20.5],
+    [-90, J + 21.5],
+    // Round the shoulder, concentric with it (r 23, centre (-106.5, J + 45.2)).
+    [-106.5, J + 22.2],
+    [-115.3, J + 24],
+    [-122.8, J + 28.9],
+    [-127.8, J + 36.4],
+    [-129.5, J + 45.2],
+    // Down the bass side, 15–17 mm in, then one convex line to the plate.
+    [-127, J + 62],
+    [-120, J + 80],
+    [-111, J + 98],
+    [-104, J + 116],
+    [-101, J + 132],
+    [-95, J + 146],
+    [-87, J + 158],
+    [-77, J + 168],
+    [-66, J + 176],
+    [-55, SCALE - 76],
+    [-46, SCALE - 73],
+    [-36, SCALE - 66],
+    // Tucked under the front of the bridge plate.
+    [-28, SCALE - 60],
+    [28, SCALE - 60],
+    [36, SCALE - 68],
+    [44, SCALE - 76],
+    // Up a narrow strip beside the neck pickup, its rounded top under the board.
+    [47, SCALE - 86],
     [49, J + 150],
-    [48, J + 118],
-    [45, J + 92],
-    // A strip beside the pocket, under the cutaway.
-    [42, J + 66],
-    [33, J + 50],
-    [29, J + 34],
-    [20, J + 22],
+    [48, J + 124],
+    [47, J + 108],
+    [45.2, J + 99],
+    [42.5, J + 89.5],
+    [36, J + 82],
+    [26, J + 76],
+    [21, J + 64],
+    [20, J + 44],
+    [10, J + 20],
   ]),
   pickups: [
     { type: 'single', x: 0, y: SCALE - 160 },
