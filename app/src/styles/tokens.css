@@ -54,7 +54,10 @@
   --fret-wire: #c9c3bb;
   --string: #ddd3c4;
   --inlay: #e8dfd2;
+  --nut: #efe6d6;
   --dim: rgb(19 15 28 / 0.55);
+  /* Label text on a neck marker (dark on the Okabe–Ito fills). */
+  --marker-text: #10141a;
 
   --radius-s: 0.5rem;
   --radius-m: 0.875rem;

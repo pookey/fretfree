@@ -253,6 +253,9 @@ describe('board palettes keep the neck readable', async () => {
       // Fret numbers sit off the neck, and the dim overlay has its own test.
       '--text-muted',
       '--dim',
+      // Set per board by the neck skin, and checked in skin.contrast.test.ts.
+      '--nut',
+      '--marker-text',
     ]);
     expect([...used].filter((t) => !checked.has(t))).toEqual([]);
   });

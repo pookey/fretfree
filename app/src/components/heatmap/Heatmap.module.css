@@ -82,7 +82,7 @@
 }
 
 .nut {
-  fill: #efe6d6;
+  fill: var(--nut);
 }
 
 .wire {

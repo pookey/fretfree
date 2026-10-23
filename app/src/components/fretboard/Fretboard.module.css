@@ -18,8 +18,14 @@
   opacity: 0.55;
 }
 
+/* Blocks and trapezoids cover the strings, so notes and guide labels sit on
+   them: they stay pale enough for labels to keep 4.5:1 (skin.contrast.test.ts). */
+.inlayPlate {
+  opacity: 0.25;
+}
+
 .nut {
-  fill: #efe6d6;
+  fill: var(--nut);
 }
 
 .wire {
@@ -80,7 +86,7 @@
   font-size: 17px;
   font-weight: 700;
   text-anchor: middle;
-  fill: #10141a;
+  fill: var(--marker-text);
 }
 
 .target circle {
