@@ -2059,7 +2059,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - Tests: RTL for the picker states. An e2e that seeds XP, tries on a part, buys it, re-equips the starter for free and reloads to check it persisted. A `@layout` check of the context panel on iPad. A `@smoke` buy flow on a phone.
 
 ### M11-07 · Your guitar in the sidebar and on Progress
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request 2026-10-23)
 - **Deps:** M11-06
 - **After:** M11-02
