@@ -54,7 +54,9 @@ export interface BuildPatch {
 /**
  * Equip parts and/or rename the guitar. Equipping is free, but only owned
  * parts can be equipped: a try-on stays in the UI until it is bought.
- * Throws `GarageError` for an unknown, misfiled or unowned part.
+ * Throws `GarageError` for an unknown, misfiled or unowned part in the patch.
+ * Parts already in the build aren't re-checked: a sync pull can land the
+ * build before the purchase it equips, and that mustn't block other equips.
  */
 export async function saveGarage(db: FretworkDB, patch: BuildPatch): Promise<GarageBuild> {
   return db.transaction('rw', [db.garage, db.garagePurchases, db.achievements], async () => {
@@ -66,7 +68,8 @@ export async function saveGarage(db: FretworkDB, patch: BuildPatch): Promise<Gar
     if (patch.spec) {
       const mine = owned(await db.garagePurchases.toArray(), await db.achievements.toArray());
       for (const category of CATEGORIES) {
-        const id = next.spec[category];
+        const id = patch.spec[category];
+        if (id === undefined) continue;
         if (catalogueItem(id)?.category !== category) {
           throw new GarageError(`${id} is not a ${category} part`);
         }

@@ -14,7 +14,9 @@ const modules = import.meta.glob<{ default?: readonly CatalogueItem[] }>(
 /**
  * Every part among `mods`, grouped by category in `CATEGORIES` order. Throws
  * on a file not named after a category, a part filed under another category,
- * or an ID used twice: the registry is a contract, so a bad file fails loudly.
+ * a part with neither a price nor an `unlockedBy` badge (a missing or
+ * mistyped `garage.prices` key), or an ID used twice: the registry is a
+ * contract, so a bad file fails loudly.
  */
 export function collectCatalogue(
   mods: Record<string, { default?: readonly CatalogueItem[] }>,
@@ -30,6 +32,9 @@ export function collectCatalogue(
     for (const item of items) {
       if (item.category !== file) {
         throw new Error(`${item.id} is a ${item.category} part, filed in ${file}.ts`);
+      }
+      if (item.price === undefined && item.unlockedBy === undefined) {
+        throw new Error(`${item.id} has no price in engine/config/garage.ts and no unlockedBy`);
       }
     }
     byCategory.set(file as Category, [...items]);

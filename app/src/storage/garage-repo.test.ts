@@ -81,7 +81,28 @@ describe('the equipped build', () => {
     await expect(saveGarage(db, { spec: { finish: STARTER_SPEC.body } })).rejects.toThrow(
       /is not a finish part/,
     );
+    await expect(saveGarage(db, { spec: { finish: 'finish.blue' } })).rejects.toThrow(
+      /finish\.blue is not owned/,
+    );
     expect(await getGarage(db)).toEqual(STARTER_BUILD);
+  });
+
+  it('checks only the patched parts, so a build synced before its purchase never blocks', async () => {
+    // A sync pull landed the other device's build; its purchase row hasn't arrived yet.
+    await db.garage.put({
+      key: 'singleton',
+      spec: { ...STARTER_SPEC, finish: 'finish.blue' },
+      name: 'Blue Moon',
+    });
+    await saveGarage(db, { spec: { body: STARTER_SPEC.body } });
+    await saveGarage(db, { name: 'Still blue' });
+    expect(await getGarage(db)).toEqual({
+      spec: { ...STARTER_SPEC, finish: 'finish.blue' },
+      name: 'Still blue',
+    });
+    await expect(
+      saveGarage(db, { spec: { body: STARTER_SPEC.body, finish: 'finish.blue' } }),
+    ).rejects.toThrow(/finish\.blue is not owned/);
   });
 
   it('falls back to the starter part for a missing or unknown stored part', async () => {

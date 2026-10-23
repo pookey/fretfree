@@ -52,6 +52,23 @@ describe('the catalogue registry', () => {
     ).toThrow(/finish\.x is a finish part, filed in body\.ts/);
   });
 
+  it('rejects a part with neither a price nor a badge, so it is never unobtainable', () => {
+    const { price: _price, ...unpriced } = part('finish.x');
+    expect(() =>
+      collectCatalogue({ './catalogue/finish.ts': { default: [unpriced as CatalogueItem] } }),
+    ).toThrow(/finish\.x has no price/);
+    const mastery = { ...unpriced, unlockedBy: 'whole-neck' } as CatalogueItem;
+    expect(collectCatalogue({ './catalogue/finish.ts': { default: [mastery] } })).toEqual([
+      mastery,
+    ]);
+  });
+
+  it('has a registered part for every price in the config', () => {
+    for (const id of Object.keys(ENGINE_CONFIG.garage.prices)) {
+      expect(catalogueItem(id)?.price, id).toBe(ENGINE_CONFIG.garage.prices[id]);
+    }
+  });
+
   it('rejects an ID used twice', () => {
     expect(() =>
       collectCatalogue({
