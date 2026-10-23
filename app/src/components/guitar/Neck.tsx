@@ -96,13 +96,21 @@ export function Board({
         ))}
       <path d={d} fill="none" stroke={palette['--wood-dark']} strokeWidth={1.2} />
       {inlayMarks(inlay, frets).map((m) => {
-        // The marks are drawn for the electric board; widen them to this one.
+        // The marks are drawn for the electric board; fit them to this one.
+        // Blocks and trapezoids widen with it; a dot keeps its size and only
+        // moves out with the board.
         const cy = (fretY(m.fret - 1) + fretY(m.fret)) / 2;
         const k = half(cy) / boardHalfWidth(cy);
         return (
-          <g key={m.fret} transform={k === 1 ? undefined : `scale(${k.toFixed(3)} 1)`}>
+          <g key={m.fret}>
             {m.paths.map((p, i) => (
-              <path key={i} d={p} fill={palette['--inlay']} fillOpacity={0.85} />
+              <path
+                key={i}
+                d={p}
+                transform={k === 1 ? undefined : fitMark(inlay, p, k)}
+                fill={palette['--inlay']}
+                fillOpacity={0.85}
+              />
             ))}
           </g>
         );
@@ -125,6 +133,15 @@ export function Board({
       <rect x={-half(0)} y={-3} width={half(0) * 2} height={4} fill={NUT} />
     </g>
   );
+}
+
+/** The transform that fits one electric-board inlay mark to a board `k` times as wide. */
+function fitMark(inlay: InlayShape, d: string, k: number): string {
+  if (inlay !== 'dots') return `scale(${k.toFixed(3)} 1)`;
+  // A dot is `M (cx - r) cy a r r …`: move its centre, keep it round.
+  const [, x, r] = /^M (-?[\d.]+) -?[\d.]+ a ([\d.]+)/.exec(d) ?? [];
+  const cx = Number(x) + Number(r);
+  return `translate(${((k - 1) * cx).toFixed(3)} 0)`;
 }
 
 /** Where the board meets the body: a soft shadow under the heel. */

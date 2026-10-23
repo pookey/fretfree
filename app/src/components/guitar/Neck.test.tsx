@@ -64,17 +64,31 @@ describe('<Board>', () => {
     expect(shades('classical')).toBe(0);
   });
 
-  it('widens the inlays and the nut with the board', () => {
+  it('widens block inlays and the nut with the board', () => {
     const el = svg(<Board palette={ROSEWOOD} inlay="blocks" frets={19} neck="classical" />);
-    const scaled = [...el.querySelectorAll('g[transform^="scale("]')];
+    const scaled = [...el.querySelectorAll('path[transform^="scale("]')];
     expect(scaled.length).toBe(8);
-    for (const g of scaled) {
-      expect(Number(/scale\(([\d.]+)/.exec(g.getAttribute('transform')!)![1])).toBeGreaterThan(1);
+    for (const p of scaled) {
+      expect(Number(/scale\(([\d.]+)/.exec(p.getAttribute('transform')!)![1])).toBeGreaterThan(1);
     }
     expect(el.querySelector('rect')).toHaveAttribute('width', '52');
-    // The electric board needs no scaling.
+    // The electric board needs no fitting.
     const electric = svg(<Board palette={ROSEWOOD} inlay="blocks" frets={22} />);
-    expect(electric.querySelectorAll('g[transform^="scale("]')).toHaveLength(0);
+    expect(electric.querySelectorAll('path[transform]')).toHaveLength(0);
+  });
+
+  it('keeps dots round on a wider board, moving the octave pair out with it', () => {
+    const el = svg(<Board palette={ROSEWOOD} inlay="dots" frets={19} neck="classical" />);
+    const dots = [...el.querySelectorAll(`path[fill="${ROSEWOOD['--inlay']}"]`)];
+    expect(dots).toHaveLength(9);
+    for (const d of dots) expect(d.getAttribute('transform')).toMatch(/^translate\(/);
+    const shifts = dots.map((d) =>
+      Number(/translate\((-?[\d.]+)/.exec(d.getAttribute('transform')!)![1]),
+    );
+    // Centre dots stay put; the 12th fret's pair moves apart.
+    expect(shifts.filter((x) => x === 0)).toHaveLength(7);
+    expect(Math.min(...shifts)).toBeLessThan(0);
+    expect(Math.max(...shifts)).toBeGreaterThan(0);
   });
 
   it('casts the heel shadow to the width of the neck', () => {
