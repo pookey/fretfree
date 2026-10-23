@@ -1079,8 +1079,6 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - e2e (`m4-15.spec.ts`, iPad profiles plus `@smoke`): with the service worker active, the test note requests `/samples/nylon/*.mp3`, decodes, and the output level is > 0. With sample requests blocked, it still sounds (the fallback).
   - The user listens on a real iPad after the ship.
 
-## M5: Mic mode
-
 ### M4-16 · Ear cards stay out of sound-off sessions, and the Ear module copy matches its gate
 - **Status:** todo
 - **Priority:** high (research/02 §3.7: no grading of mistakes the learner can't avoid; found by the M4-11 QA)
@@ -1116,6 +1114,9 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Finding 8: Explore tabs don't clip the active tab on portrait and the mini; the circle is larger in portrait.
   - Finding 10: D13's neck sits near its answers; the player's neck is above the fold on iPad landscape.
   - `@layout` e2e checks for each, on the projects where the size changes the outcome. Coordinate with M4-16 (both touch D15: this one only its CSS module).
+
+
+## M5: Mic mode
 
 ### M5-01 · [contract] Pitch-input API
 - **Status:** done
