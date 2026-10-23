@@ -253,7 +253,7 @@ test.describe('M4-11 screenshot pass', () => {
       ).toBeVisible();
     }
     await expect(step).toBeVisible();
-    await page.getByRole('radio', { name: /With sound/ }).check();
+    await page.getByRole('radio', { name: /^Sound/ }).check();
     await shoot(page, info, '30-onboarding-start-with-sound');
 
     // Today offers "Ear only" on day one, and the daily session leads with
