@@ -3,27 +3,24 @@ import { useAppStore } from '../../app-store';
 import { ENGINE_CONFIG } from '../../engine/config';
 import { COMPACT_WINDOW_FRETS } from '../../shell/size-class';
 import { playNotes } from '../../audio/audio';
-import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
-import { noteAt, samePosition, type Position, type ShapeNote } from '../../theory';
+import { Fretboard } from '../../components/fretboard/Fretboard';
+import { noteAt, samePosition, type Position } from '../../theory';
 import type { DrillRenderProps } from '../types';
 import {
   d19Chord,
-  d19DegreeStyle,
   d19Explain,
   d19Found,
   d19IsLive,
   d19Missed,
   d19Rule,
-  d19SpellTap,
-  d19NoteName,
   d19Subject,
   d19TargetAt,
   d19Window,
-  d19WrongTaps,
   type D19Answer,
   type D19Prompt,
 } from './logic';
 import { d18StringSpan } from '../d18-inversions/logic';
+import { d19Markers } from './markers';
 import styles from './D19View.module.css';
 
 interface ViewState {
@@ -31,9 +28,6 @@ interface ViewState {
   /** Taps so far this round. */
   taps: Position[];
 }
-
-/** The next chord's dots share this group, so the neck outlines it (guide levels 2–3). */
-const GROUP = 'd19-next';
 
 /**
  * D19 view (design §6 D19, §7). The starting triad is drawn as dashed rings
@@ -91,56 +85,14 @@ export function D19View({
   const level = guided ? 3 : guideLevel;
   const named = guided || feedback !== null || level >= cfg.noteNamesGuideLevel;
 
-  const toMarker = (n: ShapeNote): FretMarker => ({
-    string: n.string,
-    fret: n.fret,
-    style: d19DegreeStyle(n.degree),
-    label: d19NoteName(prompt, prompt.to, n),
-    forceLabel: true,
-    group: GROUP,
-  });
-  // The next chord's notes: those found, and in feedback all of them (the answer).
-  const shown = feedback ? prompt.targets : d19Found(prompt, taps);
-  // A worked example marks the rest to copy (rule 8).
-  const copy = guided && !feedback ? d19Missed(prompt, taps) : [];
-  const markers: FretMarker[] = [
-    // The starting triad, but not under a note of the next chord drawn on it.
-    ...prompt.fromNotes
-      .filter((n) => ![...shown, ...copy].some((t) => samePosition(t, n)))
-      .map((n): FretMarker => ({
-        string: n.string,
-        fret: n.fret,
-        style: 'ghost',
-        label: d19NoteName(prompt, prompt.from, n),
-        forceLabel: named,
-      })),
-    ...shown.map(toMarker),
-  ];
-  if (feedback) {
-    markers.push(
-      ...d19WrongTaps(prompt, taps).map((p): FretMarker => ({
-        ...p,
-        style: 'wrong',
-        label: d19SpellTap(prompt, p),
-        forceLabel: true,
-      })),
-    );
-  } else {
-    markers.push(
-      ...copy.map((n): FretMarker => ({
-        string: n.string,
-        fret: n.fret,
-        style: 'target',
-        group: GROUP,
-      })),
-    );
-  }
+  const markers = d19Markers(prompt, { taps, guided, answered: feedback !== null, named });
 
   const fromChord = <strong>{from}</strong>;
   const toChord = <strong>{to}</strong>;
   const question = guided ? (
     <>
-      This is {fromChord} to {toChord} on {strings}. Tap each note of {to} to continue.
+      This is {fromChord} to {toChord} on {strings}. Tap the {prompt.targets.length} ringed notes of{' '}
+      {to} to continue.
     </>
   ) : (
     <>

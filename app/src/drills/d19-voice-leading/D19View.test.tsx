@@ -114,13 +114,17 @@ describe('<D19View>', () => {
   it('marks the notes to copy on a guided rep, with the rings named', () => {
     view(cToF(), { guided: true });
     expect(screen.getByTestId('d19-prompt')).toHaveTextContent(
-      'This is C to F on strings 3–1. Tap each note of F to continue.',
+      'This is C to F on strings 3–1. Tap the 3 ringed notes of F to continue.',
     );
-    expect(markers('target').map((m) => `s${m.string}f${m.fret}`)).toEqual([
-      's3f5',
-      's2f6',
-      's1f5',
-    ]);
+    // Each target named and in its degree shape (F the root square), ringed on top.
+    expect(markers('target')).toEqual([]);
+    expect(markers('fifth')).toEqual([{ string: 3, fret: 5, label: 'C' }]);
+    expect(markers('root')).toEqual([{ string: 2, fret: 6, label: 'F' }]);
+    expect(markers('third')).toEqual([{ string: 1, fret: 5, label: 'A' }]);
+    const ringed = [...neck().querySelectorAll('[data-emphasis="true"]')];
+    expect(
+      ringed.map((m) => `s${m.getAttribute('data-string')}f${m.getAttribute('data-fret')}`),
+    ).toEqual(['s3f5', 's2f6', 's1f5']);
     // The held C is a target, so only E and G stay as rings.
     expect(markers('ghost').map((m) => m.label)).toEqual(['E', 'G']);
     expect(neck()).toHaveAttribute('data-guide-level', '3');
