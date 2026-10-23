@@ -10,8 +10,8 @@ import { skipInstallTip } from './helpers/install';
 // each M4 drill's first prompt (a new skill's worked example, with its context
 // panel), wrong-answer feedback from D11, D14 and D15, the summary and
 // Progress. A second walk follows a "start with sound" learner: the
-// onboarding choice, Today's "Ear only" card, and the first daily prompt with
-// sound on and with sound off.
+// onboarding choice, Today's "Ear only" card, and the first daily prompt. A
+// third, with sound off, waits on M4-16 (test.fixme).
 //
 // The walks are tagged @smoke, so they also run against production on every
 // profile (run from app/):
@@ -230,9 +230,7 @@ test.describe('M4-11 screenshot pass', () => {
     await shoot(page, info, '19-progress');
   });
 
-  test('a "start with sound" learner, with sound on and off @smoke @screens @layout', async ({
-    page,
-  }, info) => {
+  test('a "start with sound" learner @smoke @screens @layout', async ({ page }, info) => {
     test.setTimeout(120_000);
     await skipInstallTip(page);
 
@@ -270,21 +268,25 @@ test.describe('M4-11 screenshot pass', () => {
     await drillReady(page, 'hear-it-find-it');
     await expect(page.getByTestId('d15-prompt')).toContainText('Listen, then tap it.');
     await shoot(page, info, '32-session-d15-first');
+  });
 
-    // With sound off, the same path still leads with ear → fretboard. A card
-    // heard by ear asks for sound rather than naming its note, and Today says
-    // "Ear only" needs sound.
-    await page.goto('/');
-    await saveSettings(page, { soundOn: false });
+  // M4-16: ear-find cards must not be served with sound off
+  test.fixme('a "start with sound" learner with sound off starts on the neck @smoke @screens @layout', async ({
+    page,
+  }, info) => {
+    await skipInstallTip(page);
+    await freshStart(page);
+    await saveSettings(page, { startWithSound: true, soundOn: false });
+    const quick = page.getByRole('region', { name: 'Quick drills' });
     await expect(quick.getByTestId('ear-only-copy')).toHaveText(
       'Ear only (no guitar) needs sound.',
     );
     await shoot(page, info, '33-today-sound-off');
+    // No card heard by ear is graded unheard (research/02 §3.7): the path
+    // falls back to the neck until sound is on.
     await startDaily(page);
-    await drillReady(page, 'hear-it-find-it');
-    const named = page.getByTestId('d15-prompt').getByText('Listen, then tap it.');
-    const turnOn = page.getByRole('button', { name: 'Turn sound on' });
-    await expect(named.or(turnOn).first()).toBeVisible();
-    await shoot(page, info, '34-session-d15-sound-off');
+    await expect(page.locator('#drill-prompt')).toBeVisible();
+    await expect(page.locator('[data-drill]')).not.toHaveAttribute('data-drill', 'hear-it-find-it');
+    await shoot(page, info, '34-session-sound-off');
   });
 });

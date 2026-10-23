@@ -402,7 +402,7 @@ The evidence is `app/e2e/m4-11.spec.ts`. Its two walks are tagged `@smoke`, so t
   - the onboarding choice;
   - Today's "Ear only" card;
   - the first daily prompt, D15's worked example;
-  - then Today and the first prompt again with sound off.
+  - then, in a third walk marked `test.fixme` until M4-16 lands, Today and the first prompt with sound off. That walk expects a neck drill, not D15 (finding 1). The production pass ran before the split, so the sound-off shots show the defect.
 
 Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep @screens`, the walks also save each screen in dark and light: 200 shots from production. The command is in the spec header. Three reviewers went through the shots (portrait, mini and phone), and I went through iPad landscape and checked their main findings myself. All 13 M4 specs passed locally on the four profiles (94 tests).
 
@@ -428,7 +428,7 @@ Each screen is checked for horizontal overflow. With `SCREENSHOTS=1` and `--grep
 - **I3 isn't empty (M4-05):** D40 serves it, and the walk opens a D40 worked example from a focused I3 session.
 - **The progression player restarting from bar 1** on a change while it loops is by design (M4-09). It isn't filed.
 - **The iPhone silent switch: covered by M4-14.** iOS gives Web Audio the ambient session, which silent mode mutes. Each unlocking tap now asks for the `playback` session, with a looping silent `<audio>` track where the setter doesn't stick. `m4-14` tests both paths with a stubbed `navigator.audioSession`. Whether it works on real devices is still for the user's re-test.
-- **The `DAY_ONE` gate (M4-07): for the PM, with a recommendation to keep it.** I6's first interval and chord sets open once `F1.alphabet` is practising, so a new learner's first session stays on the neck and the ear track joins from the second. Since M4-10, "start with sound" opens the ear track on day one for learners who want it. Keeping the gate needs only a copy fix (finding 3). Dropping it (`DAY_ONE = []`) would put ear cards into every learner's very first session. This is a curriculum call, so it goes to the PM per the delegation rule, not to the user.
+- **The `DAY_ONE` gate (M4-07): kept (PM decision, 2026-10-23), as recommended here; M4-16 fixes the Ear module's copy.** I6's first interval and chord sets open once `F1.alphabet` is practising, so a new learner's first session stays on the neck and the ear track joins from the second. Since M4-10, "start with sound" opens the ear track on day one for learners who want it. Keeping the gate needs only a copy fix (finding 3). Dropping it (`DAY_ONE = []`) would put ear cards into every learner's very first session. This was a curriculum call, so the PM made it under the delegation rule.
 - **The new-item mix for a start-with-sound learner: fixed since the review, and healthy.** M4-10's review found that the lead held the neck back for weeks. de17b7d5 ends the lead once `I6.ear-find` is practising. I simulated six daily sessions through the real runner (fake IndexedDB, every answer right at 4.5 s, default 10-minute budget):
   - Day 1 is all D15: 12 new `ear-find` cards.
   - From day 2, new items come in the usual lanes, much like the default path's: on day 2, 6 F1, 3 F4 and 3 I6 interval cards. The 12 `ear-find` cards return as daily reviews.
