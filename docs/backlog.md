@@ -913,7 +913,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - A shell test (`scripts/slot-lib.test.sh`, run by `pnpm verify:static` or a documented command) starts several fake waiters with staggered start times on one slot and checks they get it in arrival order, the lane jumps the queue, and a killed waiter's ticket doesn't block the next one.
 
 ### M1-47 · Settle the M2-13 refit spec on the phone
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** none (test reliability)
 - **Owns:** `app/e2e/m2-13.spec.ts`
