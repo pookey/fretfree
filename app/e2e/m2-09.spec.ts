@@ -75,6 +75,13 @@ async function solve(page: Page, itemId: string): Promise<Answer | null> {
     const fret = OPEN_MIDI[rs]! + rf + INTERVAL_SEMITONES[tap[1]!]! - OPEN_MIDI[string]!;
     return { kind: 'cell', string, fret };
   }
+  // D4 taps the octave on the item's other string, the one nearest in fret (M10-16).
+  const octave = /^octave:s(\d)f(\d+)→s(\d)$/.exec(itemId);
+  if (octave) {
+    const [from, to] = [Number(octave[1]), Number(octave[3])];
+    const gap = OPEN_MIDI[to]! - OPEN_MIDI[from]!;
+    return { kind: 'cell', string: to, fret: Number(octave[2]) + 12 * Math.round(gap / 12) - gap };
+  }
   const find = /^find:([A-G]#?)@s(\d)$/.exec(itemId);
   if (find) {
     const string = Number(find[2]);
