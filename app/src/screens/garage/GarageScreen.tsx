@@ -26,6 +26,7 @@ import {
   type TryOn,
 } from './model';
 import { PartPicker } from './PartPicker';
+import { ShareGuitar } from './share/ShareGuitar';
 import styles from './Garage.module.css';
 
 interface GarageData {
@@ -163,6 +164,7 @@ export function GarageScreen({ now = () => new Date() }: { now?: () => Date }) {
             >
               Reset to my build
             </button>
+            <ShareGuitar spec={build.spec} name={build.name} achievements={wallet.achievements} />
           </div>
         </div>
       </div>
