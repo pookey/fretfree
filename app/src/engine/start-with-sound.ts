@@ -1,4 +1,5 @@
 import { ENGINE_CONFIG } from './config';
+import type { FrontierLane } from './frontier';
 import type { Skill, SkillStatus } from './model';
 
 /**
@@ -15,6 +16,9 @@ import type { Skill, SkillStatus } from './model';
  *   ear → fretboard (D15) first, but only until ear → fretboard is being
  *   practised. After that new items interleave in the usual goal order
  *   (rule 6), so the neck isn't held back for weeks.
+ * - `keepLeadLane` then gives ear → fretboard its own turn in the Ear
+ *   track, so its new cards keep coming after day one (rule 16: the
+ *   learner chose to start by ear).
  *
  * Both are the identity when the setting is off.
  */
@@ -67,4 +71,34 @@ export function leadWithSound(
     .map((skill, i) => ({ skill, i, rank: rank(skill) }))
     .sort((a, b) => a.rank - b.rank || a.i - b.i)
     .map((e) => e.skill);
+}
+
+/**
+ * After the lead, the session lanes with the `leading` skills split from
+ * the lane they share (the Ear track's) into a lane of their own, which
+ * takes half that lane's share and the same group. Without it, ear →
+ * fretboard sorts last in the Ear lane (its `order` is after D14's sets),
+ * and once its first day is done no new ear-find card comes for weeks
+ * (M4-16). The split stays within the lane rules (M10-03): the parallel
+ * share is unchanged, and the tracks in it take turns as the session
+ * builder deals them. The identity when the setting is off.
+ */
+export function keepLeadLane(
+  lanes: readonly FrontierLane[],
+  on: boolean,
+  cfg: Config = ENGINE_CONFIG.startWithSound,
+): FrontierLane[] {
+  if (!on) return [...lanes];
+  const leading = new Set(cfg.leading);
+  return lanes.flatMap((lane) => {
+    const lead = lane.skills.filter((s) => leading.has(s.id));
+    if (lead.length === 0 || lead.length === lane.skills.length) return [lane];
+    const share = lane.share / 2;
+    const rest = lane.skills.filter((s) => !leading.has(s.id));
+    // The lead lane first: on a tie, ear → fretboard takes the turn.
+    return [
+      { ...lane, id: `${lane.id}-lead`, share, skills: lead },
+      { ...lane, share, skills: rest },
+    ];
+  });
 }

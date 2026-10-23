@@ -34,7 +34,7 @@ import {
 } from '../engine';
 import { toLocalDate, type CardKind, type GamificationEvent } from '../engine/gamification';
 import { frontierLanes, orderFrontier } from '../engine/frontier';
-import { leadWithSound, startWithSoundSkills } from '../engine/start-with-sound';
+import { keepLeadLane, leadWithSound, startWithSoundSkills } from '../engine/start-with-sound';
 import { overlayStatus, type StatusOverlay } from '../engine/overlay';
 import { SessionGuides } from '../engine/guides';
 import type { AnyDrillType, DrillCheck, DrillSounds } from '../drills/types';
@@ -318,9 +318,11 @@ export class SessionRunner {
     // very first session (no cards yet) stays Neck basics, unless it is a
     // focus, which serves what it names. "Start with sound" instead leads with
     // the ear track until ear-find is practising (M4-10): one lane in that
-    // order, still capped; lanes take over after.
+    // order, still capped; lanes take over after, ear-find with its own
+    // (M4-16). With sound off there is nothing to lead with: lanes as usual.
     const ordered = orderFrontier(frontierInOrder, deps.settings.goal);
-    const led = leadWithSound(ordered, deps.settings.startWithSound, statuses);
+    const { startWithSound } = deps.settings;
+    const led = leadWithSound(ordered, startWithSound && deps.settings.soundOn, statuses);
     const leading = led.some((skill, i) => skill !== ordered[i]);
     const itemsOf = (skills: readonly Skill[]) =>
       skills.flatMap((skill) => skill.items().filter(serves));
@@ -328,9 +330,12 @@ export class SessionRunner {
       ? []
       : leading
         ? [{ id: 'lead', share: 1, items: itemsOf(led) }]
-        : frontierLanes(frontierInOrder, deps.settings.goal, {
-            firstSession: cards.length === 0 && !deps.focus,
-          }).map((lane) => ({
+        : keepLeadLane(
+            frontierLanes(frontierInOrder, deps.settings.goal, {
+              firstSession: cards.length === 0 && !deps.focus,
+            }),
+            startWithSound,
+          ).map((lane) => ({
             id: lane.id,
             share: lane.share,
             items: itemsOf(lane.skills),

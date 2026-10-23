@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { deriveStatus, isFrontier } from './mastery';
-import { orderFrontier } from './frontier';
+import { frontierLanes, orderFrontier } from './frontier';
 import type { Skill, SkillStatus } from './model';
 import { SKILLS } from './skills';
-import { leadWithSound, startWithSoundSkills } from './start-with-sound';
+import { keepLeadLane, leadWithSound, startWithSoundSkills } from './start-with-sound';
 
 const skill = (id: string, topic: string, prerequisites: string[] = []): Skill => ({
   id,
@@ -130,5 +130,58 @@ describe('leadWithSound', () => {
       expect(out).not.toBe(frontier);
       expect(out[0]?.id).toBe('F1.alphabet');
     }
+  });
+});
+
+describe('keepLeadLane', () => {
+  const open = SKILLS.filter((s) =>
+    [
+      'F1.alphabet',
+      'F4.pulse',
+      'I6.intervals-fourths-fifths',
+      'I6.chords-major-minor',
+      'I6.ear-find',
+    ].includes(s.id),
+  );
+  const lanes = frontierLanes(open, 'general');
+  const summary = (ls: ReturnType<typeof frontierLanes>) =>
+    ls.map((l) => ({ id: l.id, share: l.share, skills: l.skills.map((s) => s.id), group: l.group }));
+
+  it('leaves the lanes alone when the setting is off', () => {
+    expect(keepLeadLane(lanes, false)).toEqual(lanes);
+  });
+
+  it('gives ear → fretboard its own lane, out of the Ear lane’s share', () => {
+    // Without it, ear-find sorts last in the Ear lane, behind every D14 set.
+    expect(lanes.find((l) => l.id === 'ear')?.skills.at(-1)?.id).toBe('I6.ear-find');
+    const out = keepLeadLane(lanes, true);
+    expect(summary(out)).toEqual([
+      { id: 'neck', share: 1, skills: ['F1.alphabet'], group: undefined },
+      { id: 'rhythm', share: 0.5, skills: ['F4.pulse'], group: 'parallel' },
+      { id: 'ear-lead', share: 0.25, skills: ['I6.ear-find'], group: 'parallel' },
+      {
+        id: 'ear',
+        share: 0.25,
+        skills: ['I6.intervals-fourths-fifths', 'I6.chords-major-minor'],
+        group: 'parallel',
+      },
+    ]);
+    // The parallel share is unchanged (M10-03).
+    const parallel = (ls: typeof out) =>
+      ls.filter((l) => l.group === 'parallel').reduce((n, l) => n + l.share, 0);
+    expect(parallel(out)).toBe(parallel(lanes));
+  });
+
+  it('keeps a lane that is all ear → fretboard, or has none of it', () => {
+    const alone = frontierLanes(
+      open.filter((s) => s.id === 'I6.ear-find' || s.id === 'F1.alphabet'),
+      'general',
+    );
+    expect(keepLeadLane(alone, true)).toEqual(alone);
+    const without = frontierLanes(
+      open.filter((s) => s.id !== 'I6.ear-find'),
+      'general',
+    );
+    expect(keepLeadLane(without, true)).toEqual(without);
   });
 });

@@ -10,7 +10,7 @@ import {
   type SkillStatus,
 } from '../../engine';
 import { frontierLanes, orderFrontier } from '../../engine/frontier';
-import { leadWithSound, startWithSoundSkills } from '../../engine/start-with-sound';
+import { keepLeadLane, leadWithSound, startWithSoundSkills } from '../../engine/start-with-sound';
 import { overlayStatus, type StatusOverlay } from '../../engine/overlay';
 import type { AnyDrillType } from '../../drills/types';
 import { createDrillPicker } from '../../session/drill-picker';
@@ -25,7 +25,7 @@ type LessonSettings = Pick<
  * (M10-15), so Today can say what to expect before the first tap. It builds
  * the lanes as `SessionRunner.start` does (frontier skills under the gates
  * and "start with sound", in goal order, led by the ear track while that
- * leads, only items a drill can serve) and plans the session the same way,
+ * leads and sound is on, only items a drill can serve) and plans the session the same way,
  * so the lane quotas decide which comes first. `overlay` is the development
  * build's status overlay, applied as the runner applies it. `null` when
  * nothing is open.
@@ -52,10 +52,13 @@ export function firstLessonSkill(
   const itemsOf = (ss: readonly Skill[]): Item[] =>
     ss.flatMap((skill) => skill.items().filter((item) => picker.canServe(item)));
   const ordered = orderFrontier(frontier, settings.goal);
-  const led = leadWithSound(ordered, settings.startWithSound, statuses);
+  const led = leadWithSound(ordered, settings.startWithSound && settings.soundOn, statuses);
   const lanes: SessionLane[] = led.some((skill, i) => skill !== ordered[i])
     ? [{ id: 'lead', share: 1, items: itemsOf(led) }]
-    : frontierLanes(frontier, settings.goal, { firstSession: true }).map((lane) => ({
+    : keepLeadLane(
+        frontierLanes(frontier, settings.goal, { firstSession: true }),
+        settings.startWithSound,
+      ).map((lane) => ({
         id: lane.id,
         share: lane.share,
         items: itemsOf(lane.skills),

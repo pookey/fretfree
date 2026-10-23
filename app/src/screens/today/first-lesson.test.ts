@@ -62,6 +62,28 @@ describe('firstLessonSkill', () => {
     expect(served).toBe(predicted);
   });
 
+  it('names the neck, not ear → fretboard, when sound is off (M4-16)', async () => {
+    const { served, predicted } = await both({
+      ...DEFAULT_SETTINGS,
+      startWithSound: true,
+      soundOn: false,
+    });
+    expect(predicted).toBe('F1.alphabet');
+    expect(served).toBe(predicted);
+  });
+
+  it('agrees with the runner once ear → fretboard is practising', async () => {
+    await putSkillState(db, {
+      skillId: 'I6.ear-find',
+      status: 'practising',
+      guideLevel: 3,
+      rollingAccuracy: 1,
+    });
+    const { served, predicted } = await both({ ...DEFAULT_SETTINGS, startWithSound: true });
+    expect(predicted).toBeDefined();
+    expect(served).toBe(predicted);
+  });
+
   it('follows placement: skills already mastered are skipped', async () => {
     for (const skillId of ['F1.alphabet', 'F1.b-c-e-f', 'F1.half-steps', 'F1.whole-steps']) {
       await putSkillState(db, { skillId, status: 'mastered', guideLevel: 0, rollingAccuracy: 1 });
