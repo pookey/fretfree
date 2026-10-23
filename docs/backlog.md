@@ -2085,7 +2085,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
   - An e2e spec equips maple with blocks, opens D1, and checks the attribute and the inlay shape. A `@layout` screenshot comparison isn't required.
 
 ### M11-09 · Share my guitar
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (user request 2026-10-23)
 - **Deps:** M11-06
 - **Design:** §3.8 sharing
