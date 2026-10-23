@@ -269,3 +269,27 @@
   margin: 0;
   color: var(--text-muted);
 }
+
+/* The "Map on" slider: rewinds the neck to an earlier day. */
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.timeline input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--tap);
+  accent-color: var(--accent);
+}
+
+.timeline output {
+  min-width: 3.5rem;
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

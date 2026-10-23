@@ -441,9 +441,12 @@ User request, 2026-10-19. Utilities a guitarist reaches for while practising, ke
 
 ### Progress
 
-- A **fretboard heatmap** of mastery per cell (colour = stability; dimmed = slow).
+- A **fretboard heatmap** of mastery per cell (colour = stability; dimmed = slow). A "Map on" slider rewinds it to any day since the first.
 - Skill mastery rings and retention forecasts ("you'll remember ~92% of string 5 next week").
-- Session history and streak.
+- **Over time** (`engine/history.ts`): items learning and stable at the end of each day, and the median time of correct, unguided answers per day for one drill at a time, against the mastery target. Only current cards are stored, so past days are rebuilt by replaying each item's review log through FSRS with today's weights; today's point always comes from the stored cards.
+- **Coming up:** reviews due on each of the next 7 days (overdue counts as today), and the mean recall of practised items 30 days out if practice stopped today.
+- **Practice calendar:** session history and streak days, a week per row, shaded by minutes against the daily goal, with ✓ for goal days and ❄ for freezes.
+- Accuracy over time is deliberately not charted: the adaptive band (§3.3 step 4) holds it at 80–90%, so a flat line would read as "not improving".
 
 ### Settings
 

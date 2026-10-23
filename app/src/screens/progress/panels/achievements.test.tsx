@@ -9,10 +9,11 @@ afterEach(async () => {
 });
 
 describe('Progress achievements panel', () => {
-  it('is registered under the stats panel', () => {
+  it('is registered under the stats panel and the practice calendar', () => {
     const ids = PROGRESS_PANELS.map((p) => p.id);
     expect(ids).toContain(id);
-    expect(ids.indexOf(id)).toBe(ids.indexOf('stats') + 1);
+    expect(ids.indexOf(id)).toBe(ids.indexOf('calendar') + 1);
+    expect(ids.indexOf('calendar')).toBe(ids.indexOf('stats') + 1);
     expect(title).toBe('Achievements');
   });
 

@@ -1,0 +1,162 @@
+/* The over-time panels on Progress (design §7). Two columns of charts on
+   regular-wide, one below. */
+
+.panel {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  align-items: start;
+}
+
+.block {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.headline {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.note {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  max-width: 40rem;
+}
+
+.select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.select select {
+  min-height: var(--tap);
+  max-width: 14rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+}
+
+/* The practice calendar: a week per row, Monday first. */
+.calendar {
+  justify-self: start;
+  border-collapse: separate;
+  border-spacing: 0.3125rem;
+  margin: 0 -0.3125rem;
+}
+
+.calendar th {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.calendar abbr {
+  text-decoration: none;
+}
+
+.calendar td {
+  padding: 0;
+}
+
+.day {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.day[data-level='1'] {
+  background: color-mix(in oklab, var(--chart-stable) 30%, var(--bg-raised));
+}
+
+.day[data-level='2'] {
+  background: color-mix(in oklab, var(--chart-stable) 60%, var(--bg-raised));
+}
+
+.day[data-level='3'] {
+  background: var(--chart-stable);
+  border-color: var(--chart-stable);
+  color: var(--bg);
+}
+
+.day[data-freeze] {
+  border: 2px dashed var(--chart-learning);
+}
+
+.day[data-future] {
+  background: transparent;
+  border-style: dotted;
+}
+
+.day[data-today] {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+.calendarLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.calendarLegend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.calendarLegend .day {
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.75rem;
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

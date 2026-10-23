@@ -83,9 +83,9 @@ describe('buildTopics', () => {
 });
 
 describe('Progress topics panel', () => {
-  it('is registered after the mastery map, ahead of the stats', () => {
+  it('is registered after the mastery map and its over-time charts, ahead of the stats', () => {
     const ids = PROGRESS_PANELS.map((p) => p.id);
-    expect(ids.indexOf(id)).toBe(ids.indexOf('heatmap') + 1);
+    expect(ids.indexOf(id)).toBe(ids.indexOf('coming-up') + 1);
     expect(ids.indexOf('stats')).toBe(ids.indexOf(id) + 1);
     expect(title).toBe('Topics');
     expect(PROGRESS_PANELS.filter((p) => p.order === order)).toHaveLength(1);

@@ -54,7 +54,16 @@ test.describe('M1-01 registries', () => {
     const panels = page.locator('[data-progress-panel]');
     expect(
       await panels.evaluateAll((els) => els.map((e) => e.getAttribute('data-progress-panel'))),
-    ).toEqual(['heatmap', 'topics', 'stats', 'achievements', 'account']);
+    ).toEqual([
+      'heatmap',
+      'over-time',
+      'coming-up',
+      'topics',
+      'stats',
+      'calendar',
+      'achievements',
+      'account',
+    ]);
 
     await page.goto('/settings');
     await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();

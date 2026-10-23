@@ -44,6 +44,11 @@
   --chord-fifth: #f0e442; /* yellow: chord 5ths */
   --chord-seventh: #cc79a7; /* reddish purple: chord 7ths */
   --streak: #ff9600;
+  /* Progress chart series (Okabe–Ito), checked as a pair for colour-vision
+     separation against --bg in both themes. Sky blue is too light for a
+     filled area on the dark page, so "learning" takes the deeper blue. */
+  --chart-learning: #0072b2;
+  --chart-stable: var(--correct);
   --wood: #4a2f22;
   --wood-dark: #3a2419;
   --fret-wire: #c9c3bb;

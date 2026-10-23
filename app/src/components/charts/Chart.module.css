@@ -1,0 +1,154 @@
+/* Progress charts (design §7). Thin marks, a recessive grid, text in text
+   tokens; series colours come from the --chart-* tokens. */
+
+.chart {
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.swatch {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 0.1875rem;
+  flex: none;
+}
+
+.plot {
+  position: relative;
+  min-width: 0;
+}
+
+.svg {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.tick {
+  fill: var(--text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.area {
+  opacity: 0.85;
+}
+
+.line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* A 2px surface ring so markers stay distinct where they meet the line. */
+.marker {
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.reference {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}
+
+.referenceLabel {
+  fill: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.crosshair {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+}
+
+.hit {
+  fill: transparent;
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+
+.tooltip {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  font-size: 0.8125rem;
+  color: var(--text);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.25);
+}
+
+.tooltipRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.table summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+}
+
+.table table {
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  padding: var(--space-1) var(--space-3);
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+
+.table th:first-child {
+  text-align: left;
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
