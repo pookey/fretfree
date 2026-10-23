@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useAppStore } from '../../app-store';
 import { LearningLegend } from '../../components/learning-legend/LearningLegend';
@@ -117,6 +117,43 @@ export function firstTestOut(
   );
 }
 
+/** Scroll to and focus the test-out offer in `pane`; false if it isn't there. */
+function focusOffer(pane: HTMLElement | null): boolean {
+  const offer = pane?.querySelector<HTMLElement>('[data-testid="test-out"]');
+  if (!offer) return false;
+  offer.scrollIntoView({ block: 'nearest' });
+  offer.querySelector<HTMLButtonElement>('button')?.focus();
+  return true;
+}
+
+/**
+ * Bring a module's test-out offer into view and focus it, once that module's
+ * detail shows in `pane`. Returns the setter: call it with the module ID as
+ * the header opens the module. Moving to another module drops the jump, so a
+ * later visit never has its focus taken.
+ */
+export function useOfferJump(
+  selectedId: string | undefined,
+  pane: RefObject<HTMLElement | null>,
+): (moduleId: string) => void {
+  // Refs, not state: only a change of module needs to run the jump.
+  const jumpTo = useRef<string | null>(null);
+  const shown = useRef(selectedId);
+  useEffect(() => {
+    shown.current = selectedId;
+    if (jumpTo.current && (selectedId !== jumpTo.current || focusOffer(pane.current)))
+      jumpTo.current = null;
+  }, [selectedId, pane]);
+  return useCallback(
+    (moduleId: string) => {
+      jumpTo.current = moduleId;
+      // Already showing: there's no change of module to wait for.
+      if (shown.current === moduleId && focusOffer(pane.current)) jumpTo.current = null;
+    },
+    [pane],
+  );
+}
+
 /**
  * Learn (design §7): the module map with a mastery ring per module, ordered
  * by the learner's goal. Two panes on iPad — the map on the left, the picked
@@ -156,18 +193,12 @@ export function LearnScreen() {
   const picked = map.find((m) => m.module.id === params.get('module'));
   const selected = picked ?? (compact ? undefined : defaultModule(map));
   const showMap = !compact || !selected;
-  const testOut = loaded && statuses ? firstTestOut(map, statuses) : undefined;
-  // The module whose test-out offer to bring into view once its detail shows.
-  const [jumpTo, setJumpTo] = useState<string | null>(null);
+  const testOut = useMemo(
+    () => (loaded && statuses ? firstTestOut(map, statuses) : undefined),
+    [loaded, map, statuses],
+  );
   const detailPane = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!jumpTo || selected?.module.id !== jumpTo) return;
-    const offer = detailPane.current?.querySelector<HTMLElement>('[data-testid="test-out"]');
-    if (!offer) return;
-    offer.scrollIntoView({ block: 'nearest' });
-    offer.querySelector<HTMLButtonElement>('button')?.focus();
-    setJumpTo(null);
-  }, [jumpTo, selected]);
+  const jumpToOffer = useOfferJump(selected?.module.id, detailPane);
 
   return (
     <ScreenLayout title="Learn">
@@ -196,7 +227,7 @@ export function LearnScreen() {
                   type="button"
                   className={styles.testOutButton}
                   onClick={() => {
-                    setJumpTo(testOut.module.id);
+                    jumpToOffer(testOut.module.id);
                     void navigate(
                       { search: `?module=${testOut.module.id}` },
                       { replace: !compact },
