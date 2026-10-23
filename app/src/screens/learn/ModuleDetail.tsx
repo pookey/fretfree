@@ -8,7 +8,8 @@ import styles from './Learn.module.css';
 
 const TRACK_NOTE = {
   core: null,
-  parallel: 'A parallel track: it runs alongside the others from day one.',
+  // Not "from day one": Ear waits for the first neck skill unless the learner starts with sound.
+  parallel: 'A parallel track: it runs alongside the others, not after them.',
   optional: 'Optional: lower payoff, for when the core is solid.',
   future: 'A future track, planned for a later release.',
 } as const;

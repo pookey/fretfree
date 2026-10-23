@@ -81,6 +81,16 @@ describe('<LearnScreen>', () => {
     );
   });
 
+  it('says a parallel track runs alongside the others, without promising day one', async () => {
+    renderAt('/learn?module=ear');
+    await loaded();
+    const detail = screen.getByTestId('module-detail');
+    expect(detail).toHaveTextContent(
+      'A parallel track: it runs alongside the others, not after them.',
+    );
+    expect(detail).not.toHaveTextContent('from day one');
+  });
+
   it('fills rings from stored progress and marks mastered skills', async () => {
     const db = getDb();
     const skill = getSkill('F2.string6-naturals')!;
