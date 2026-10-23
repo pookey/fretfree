@@ -100,7 +100,13 @@ describe('displayUrl and cardFileName', () => {
     expect(cardFileName('My guitar')).toBe('fretfree-my-guitar.png');
     expect(cardFileName('  Café Noir!! ')).toBe('fretfree-cafe-noir.png');
     expect(cardFileName('🎸')).toBe('fretfree-guitar.png');
+    // A long name is cut between words, or inside a word only if it's one long word.
+    expect(cardFileName('The Sunburst Dream of Saturday Nights Forever')).toBe(
+      'fretfree-the-sunburst-dream-of-saturday-nights.png',
+    );
     expect(cardFileName('a'.repeat(39) + ' b')).toBe(`fretfree-${'a'.repeat(39)}.png`);
+    expect(cardFileName('a'.repeat(40) + ' b')).toBe(`fretfree-${'a'.repeat(40)}.png`);
+    expect(cardFileName('a'.repeat(50))).toBe(`fretfree-${'a'.repeat(40)}.png`);
   });
 });
 

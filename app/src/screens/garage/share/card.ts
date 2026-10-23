@@ -26,8 +26,9 @@ const TEXT_WIDTH = CARD.width - PAD - TEXT_X;
 /** The card's colours: FretFree's dark theme, whatever the page's theme. */
 const COLOURS = {
   top: '#261f35',
-  bottom: '#130f1c',
-  light: 'rgba(255, 244, 220, 0.16)',
+  // The page background, not the sunken shade: a black body needs a wall to stand on.
+  bottom: '#1b1626',
+  light: 'rgba(255, 244, 220, 0.26)',
   text: '#f7f2ff',
   muted: '#b4aaca',
   brand: '#f5c542',
@@ -146,17 +147,20 @@ export function displayUrl(href: string): string {
   return `${url.host}${url.pathname.replace(/\/$/, '')}`;
 }
 
-/** The PNG's file name: `fretfree-<guitar name>.png`. */
+/** The PNG's file name: `fretfree-<guitar name>.png`, cut short between words. */
 export function cardFileName(name: string): string {
   const slug = name
     .normalize('NFKD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40)
-    .replace(/-+$/, '');
-  return `fretfree-${slug || 'guitar'}.png`;
+    .replace(/^-+|-+$/g, '');
+  // Up to 40 characters, ending at a word break when there is one.
+  const head = slug.slice(0, 41);
+  const lastBreak = head.lastIndexOf('-');
+  const cut =
+    slug.length <= 40 ? slug : lastBreak > 0 ? head.slice(0, lastBreak) : head.slice(0, 40);
+  return `fretfree-${cut || 'guitar'}.png`;
 }
 
 /**
@@ -184,20 +188,22 @@ export function drawCard(ctx: CardContext, guitar: CanvasImageSource, text: Card
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, CARD.width, CARD.height);
 
-  // The same warm spotlight the Garage stage puts behind the guitar.
+  // A warm spotlight on the body, where a dark finish needs it most, wide
+  // enough to reach the headstock.
   const cx = GUITAR_BOX.x + GUITAR_BOX.width / 2;
-  const cy = GUITAR_BOX.y + GUITAR_BOX.height * 0.45;
-  const spot = ctx.createRadialGradient(cx, cy, 0, cx, cy, GUITAR_BOX.height * 0.55);
+  const cy = GUITAR_BOX.y + GUITAR_BOX.height * 0.68;
+  const spot = ctx.createRadialGradient(cx, cy, 0, cx, cy, GUITAR_BOX.height * 0.7);
   spot.addColorStop(0, COLOURS.light);
   spot.addColorStop(1, 'rgba(255, 244, 220, 0)');
   ctx.fillStyle = spot;
   ctx.fillRect(0, 0, CARD.width, CARD.height);
 
-  // Lifted off the wall, as on the Garage stage.
+  // Lifted off the wall, as on the Garage stage, but lightly: a deep shadow
+  // would swallow the edge of a black body.
   ctx.save();
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-  ctx.shadowBlur = 40;
-  ctx.shadowOffsetY = 24;
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+  ctx.shadowBlur = 32;
+  ctx.shadowOffsetY = 16;
   ctx.drawImage(guitar, GUITAR_BOX.x, GUITAR_BOX.y, GUITAR_BOX.width, GUITAR_BOX.height);
   ctx.restore();
 

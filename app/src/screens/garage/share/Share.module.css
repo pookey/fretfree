@@ -3,6 +3,7 @@
 .share {
   display: grid;
   justify-items: start;
+  position: relative;
   gap: var(--space-2);
   min-width: 0;
 }
@@ -46,6 +47,11 @@
   overflow-wrap: anywhere;
 }
 
+/* Visually hidden while empty, but still rendered, so a screen reader announces its first message. */
 .status:empty {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
