@@ -1081,6 +1081,42 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 ## M5: Mic mode
 
+### M4-16 · Ear cards stay out of sound-off sessions, and the Ear module copy matches its gate
+- **Status:** todo
+- **Priority:** high (research/02 §3.7: no grading of mistakes the learner can't avoid; found by the M4-11 QA)
+- **Deps:** none
+- **Design:** research/02 §3.7 and rule 16; design §3.4
+- **Owns:** `app/src/session/drill-picker.ts`, `app/src/engine/start-with-sound.ts`, `app/src/drills/d15-ear-find/**`, `app/src/screens/today/first-lesson.ts`, `app/src/placement/TestOut.tsx`, `app/src/engine/frontier.ts` (Ear module copy only), `app/e2e/m4-16.spec.ts`, `app/e2e/m4-11.spec.ts` (un-fixme the sound-off test)
+- **Acceptance:**
+  - From M4-11 finding 1: with sound off, `ear-find:` cards are still served by D15 (only D14 and D20 set `requiresSound`), so a start-with-sound learner's whole first session is ear cards they can't hear, and their blind taps are graded into FSRS. Add a per-item sound need (true for `ear-find:`) in the drill picker so those cards aren't served with sound off. With sound off the session falls back to the next lane; nothing is graded that needs sound.
+  - D15's "Listen, then tap it." and Today's hero line don't promise sound when sound is off.
+  - M4-11 finding 3: the Ear module copy says "from your first day" but the module is gated behind `F1.alphabet` (PM decision 2026-10-23: keep the gate). Fix the copy, and drop `Progressions: pop and rock` (C9, which placement can't probe) from the Ear test-out's `waitsFor` in `placement/TestOut.tsx`.
+  - PM decision (rule 16, the learner chose an ear goal): while sound is on, a start-with-sound learner keeps a share of new `ear-find` cards after day 1 (the M4-11 simulation saw none on days 2–6). Find why and fix it within the lane rules (M10-03), with a unit test over a simulated week.
+  - Un-fixme the sound-off test in `app/e2e/m4-11.spec.ts` so it asserts the fixed behaviour.
+
+### M4-17 · M4 QA copy and picture fixes
+- **Status:** todo
+- **Deps:** none
+- **Design:** design §8; research/02 rule 4
+- **Owns:** `app/src/drills/d14-ear-identify/**`, `app/src/drills/d13-capo/**`, `app/src/screens/explore/views/progression-player.tsx`, `app/src/screens/explore/views/progression-player.module.css`, `app/src/screens/learn/**` (prerequisite sentence only), `app/e2e/m4-17.spec.ts`
+- **Acceptance (from the M4-11 QA, `.orchestrator/reports/M4-11.md` and docs/progress.md):**
+  - Finding 2: D14 progression feedback says "X has different chords: X." (`d14-ear-identify/text.ts:146`, its test pins it) and repeats the panel's line. Fix the sentence and the test.
+  - Finding 5: Learn's prerequisite sentence lists triads as both mastered and practising (Progressions).
+  - Finding 7: D13 and the progression player shade opposite sides of the capo; make both shade the frets behind the capo. In light theme the player's legend colours must match its neck. D13's panel stops repeating itself.
+  - Finding 9: the copy nits listed in the QA.
+
+### M4-18 · M4 QA layout fixes
+- **Status:** todo
+- **Deps:** none
+- **Design:** design §7 (iPad first), §8
+- **Owns:** `app/src/screens/progress/history/History.module.css`, `app/src/drills/d15-ear-find/D15View.module.css`, `app/src/screens/explore/ExploreScreen.tsx`, `app/src/screens/explore/views/circle-of-fifths.module.css`, `app/e2e/m4-18.spec.ts`
+- **Acceptance (from the M4-11 QA):**
+  - Finding 4: Progress scrolls about 840pt of blank space (`position: relative` on `.calendar`); the achievement toast no longer covers the h1.
+  - Finding 6: D15 on a phone keeps the same fret window between prompt and feedback, cells ≥44pt where the design requires, and the neck uses the width; no 7–9pt page scroll on iPad landscape and the mini.
+  - Finding 8: Explore tabs don't clip the active tab on portrait and the mini; the circle is larger in portrait.
+  - Finding 10: D13's neck sits near its answers; the player's neck is above the fold on iPad landscape.
+  - `@layout` e2e checks for each, on the projects where the size changes the outcome. Coordinate with M4-16 (both touch D15: this one only its CSS module).
+
 ### M5-01 · [contract] Pitch-input API
 - **Status:** done
 - **Deps:** —
