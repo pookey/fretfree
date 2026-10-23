@@ -7,6 +7,7 @@ import { getDb, getSettings } from '../../storage';
 import * as step from '../steps/calibration';
 import { Calibration } from './Calibration';
 import { CalibrationSetting } from './CalibrationSetting';
+import { scaled } from '../../test/timeouts';
 
 const CFG = ENGINE_CONFIG.calibration;
 
@@ -54,7 +55,7 @@ async function settled(check: () => unknown) {
   await waitFor(check);
 }
 
-describe('<Calibration>', { timeout: 20_000 }, () => {
+describe('<Calibration>', { timeout: scaled(20_000) }, () => {
   it('lights one dot at a time after a pause and stores the trimmed median', async () => {
     render(<Calibration now={now} rng={rng} doneAction={<button type="button">Next</button>} />);
     expect(screen.getByText(/Tap each dot as soon as it lights up: 16 dots/)).toBeInTheDocument();
@@ -123,7 +124,7 @@ describe('<Calibration>', { timeout: 20_000 }, () => {
   });
 });
 
-describe('calibration onboarding step', { timeout: 20_000 }, () => {
+describe('calibration onboarding step', { timeout: scaled(20_000) }, () => {
   it('is the skippable step after session length, and continues once saved', async () => {
     expect([step.id, step.order, step.skippable]).toEqual(['calibration', 60, true]);
     expect(step.title).toBe('Tap the lit dots');
@@ -137,7 +138,7 @@ describe('calibration onboarding step', { timeout: 20_000 }, () => {
   });
 });
 
-describe('<CalibrationSetting>', { timeout: 20_000 }, () => {
+describe('<CalibrationSetting>', { timeout: scaled(20_000) }, () => {
   it('shows the stored tap time and re-runs the calibration in place', async () => {
     useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, latencyBaselineMs: 640 } });
     render(<CalibrationSetting />);

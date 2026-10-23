@@ -8,6 +8,7 @@ import { getDb } from '../storage';
 import { ConceptCard } from './ConceptCard';
 import { SKIP_INTROS_KEY } from './intro-gate';
 import { SessionScreen } from './SessionScreen';
+import { scaled } from '../test/timeouts';
 
 vi.mock('../audio/audio', () => ({ playNotes: vi.fn(() => Promise.resolve()) }));
 
@@ -103,7 +104,7 @@ describe('<ConceptCard>', () => {
   });
 });
 
-describe('a session with a new skill (M10-04)', { timeout: 40_000 }, () => {
+describe('a session with a new skill (M10-04)', { timeout: scaled(40_000) }, () => {
   let now = 0;
 
   beforeEach(async () => {
@@ -121,7 +122,7 @@ describe('a session with a new skill (M10-04)', { timeout: 40_000 }, () => {
 
   /** Tap the answer the worked rep shows. */
   async function answerWorkedRep(): Promise<void> {
-    const prompt = await screen.findByText(/to continue\./, {}, { timeout: 20_000 });
+    const prompt = await screen.findByText(/to continue\./, {}, { timeout: scaled(20_000) });
     const answer = prompt.querySelector('strong')!.textContent!;
     const choices = screen.getByRole('group', { name: prompt.textContent! });
     fireEvent.click(within(choices).getByRole('button', { name: answer }));
@@ -136,14 +137,14 @@ describe('a session with a new skill (M10-04)', { timeout: 40_000 }, () => {
 
   it('opens with the intro, then the worked rep, timed from the dismissal', async () => {
     renderSession();
-    const card = await screen.findByTestId('concept-card', {}, { timeout: 20_000 });
+    const card = await screen.findByTestId('concept-card', {}, { timeout: scaled(20_000) });
     expect(card).toHaveAttribute('data-intro', 'f1-alphabet');
     expect(screen.queryByRole('group', { name: /Tap/ })).toBeNull();
 
     // A minute reading the card, then a second to answer.
     now = 60_000;
     fireEvent.keyDown(window, { key: 'Enter' });
-    await screen.findByText(/to continue\./, {}, { timeout: 20_000 });
+    await screen.findByText(/to continue\./, {}, { timeout: scaled(20_000) });
     expect(screen.queryByTestId('concept-card')).toBeNull();
     now = 61_000;
     await answerWorkedRep();
@@ -156,7 +157,7 @@ describe('a session with a new skill (M10-04)', { timeout: 40_000 }, () => {
 
   it('shows no intro once the skill has cards', async () => {
     const first = renderSession();
-    await screen.findByTestId('concept-card', {}, { timeout: 20_000 });
+    await screen.findByTestId('concept-card', {}, { timeout: scaled(20_000) });
     fireEvent.click(screen.getByRole('button', { name: 'Got it' }));
     await answerWorkedRep();
     await waitFor(async () => expect(await getDb().cards.count()).toBe(1));
@@ -165,7 +166,7 @@ describe('a session with a new skill (M10-04)', { timeout: 40_000 }, () => {
     // The next session starts on the drill.
     renderSession();
     await waitFor(() => expect(screen.queryByText('Preparing your session…')).toBeNull(), {
-      timeout: 20_000,
+      timeout: scaled(20_000),
     });
     expect(document.querySelector('[data-drill="note-wheel"]')).not.toBeNull();
     expect(screen.queryByTestId('concept-card')).toBeNull();
@@ -174,7 +175,7 @@ describe('a session with a new skill (M10-04)', { timeout: 40_000 }, () => {
   it('shows no intro under the e2e switch', async () => {
     localStorage.setItem(SKIP_INTROS_KEY, '1');
     renderSession();
-    await screen.findByText(/to continue\./, {}, { timeout: 20_000 });
+    await screen.findByText(/to continue\./, {}, { timeout: scaled(20_000) });
     expect(screen.queryByTestId('concept-card')).toBeNull();
     localStorage.removeItem(SKIP_INTROS_KEY);
   });
