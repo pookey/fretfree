@@ -1874,7 +1874,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
     - `canBuy(item, state)` is false for mastery-only items, owned items and unaffordable items;
     - `buy(item, state, now)` returns the purchase record or a typed refusal.
   - Unit tests reach 90% or more.
-  - Schema **v6** appends `garagePurchases: 'itemId'` (`{ itemId, price, at, uid }`) and `garage: 'key'` (singleton `{ key, spec, name }`). Earlier versions are not edited.
+  - Schema **v6** appends `garagePurchases: 'itemId'` (`{ itemId, price, at }`: sync identity is the item ID, design §3.8) and `garage: 'key'` (singleton `{ key, spec, name }`). Earlier versions are not edited.
   - `storage/garage-repo.ts` has get build, save build, list purchases, and `purchase()` in one transaction that re-checks `canBuy` against stored XP.
   - `getGarage` falls back to the starter build. `xpTotal` is never written by the garage.
   - Sync: add both tables to `SYNC_TABLES`. Purchases merge as fields with `at: 'min'`, so two devices buying the same part union to one row. The build merges as a record (last write wins). `model.test.ts` stays green.
@@ -1919,7 +1919,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
 - **Owns:** `app/src/engine/garage/catalogue/**`, `app/src/engine/config/garage.ts`, `app/src/engine/garage/catalogue.test.ts`
 - **Acceptance:**
   - The full catalogue:
-    - all 12 body shapes, with the exact model names (design §3.8, user decision 2026-10-23): Stratocaster, Telecaster, Les Paul, SG, Jazzmaster, ES-335, Superstrat, dreadnought, jumbo, parlour, concert and classical. A body whose file hasn't landed yet (M11-05, M11-11) is still listed. The Garage hides parts whose body isn't registered (`bodyFor` throws), so add a `registered` check or a test fixture rather than failing;
+    - all 12 body shapes, with the exact model names (design §3.8, user decision 2026-10-23): Stratocaster, Telecaster, Les Paul, SG, Jazzmaster, ES-335, Superstrat, dreadnought, jumbo, parlour, concert and classical. A body whose file hasn't landed yet (M11-05, M11-11) is still listed. The Garage hides parts whose body isn't registered: check `hasBody(shape)` from `components/guitar/registry.ts` (`bodyFor` falls back to the Stratocaster drawing rather than throwing);
     - about 15 finishes across all five types;
     - pickguards (including "none");
     - chrome, gold and black hardware;
@@ -1945,7 +1945,7 @@ User request, 2026-10-23. XP was earned but its total was never shown and it had
     - ES-335: a semi-hollow double-cut with f-holes, binding and a trapeze or stop tailpiece;
     - Superstrat: a sharper double-cut with deep cutaways, 24 frets, and a humbucker-single-humbucker layout.
   - If the Superstrat needs a locking tremolo, add a `locking` bridge type in `types.ts` and `parts.tsx`. Keep it additive.
-  - All outlines and headstocks are original artwork, recognisable as the shape but not traced from a product.
+  - Headstocks are original artwork. Body outlines may come from published dimensions, CC0 (public-domain) drawings or public-domain design patents, rescaled and smoothed, never from a product photo; each body file names its source (design §3.8).
   - The existing render tests now cover all registered shapes. Check the drawings visually (render to PNG) before reporting.
 
 ### M11-11 · Acoustic bodies: dreadnought, jumbo, parlour, concert and classical
