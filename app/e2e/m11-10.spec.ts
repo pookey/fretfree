@@ -63,7 +63,7 @@ test.describe('M11-10 badge unlocks name their Garage finish', () => {
     ).toHaveCount(0);
   });
 
-  test('a phone shows the finish line in the toast @smoke @layout', async ({ page }) => {
+  test('a phone shows the finish line in the toast @smoke @layout @phone', async ({ page }) => {
     await freshStart(page);
     await masterSkills(page, WHOLE_NECK);
     const toast = page.getByTestId('achievement-toast');
