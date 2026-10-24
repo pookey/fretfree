@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import type { AccidentalPref } from './fretboard';
-import { chordKeySpelling, keySpelledRoot } from './key-spelling';
+import { Note } from 'tonal';
+import { spellChord } from './chords';
+import { DROP_D_TUNING, chromaOf, midiAt, type AccidentalPref } from './fretboard';
+import {
+  chordKeySpelling,
+  chordToneNames,
+  keySpelledRoot,
+  noteInChord,
+  spellInChord,
+} from './key-spelling';
 import type { CagedQuality } from './shapes';
 
 /** Each root's key spelling by quality: a fixed direction, or `pref` where the key has none. */
@@ -100,5 +108,90 @@ describe('chordKeySpelling', () => {
     expect(chordKeySpelling(22, 'major', 'sharp')).toBe('flat');
     expect(chordKeySpelling(-2, 'major', 'sharp')).toBe('flat');
     expect(keySpelledRoot(-2, 'major', 'sharp')).toBe('Bb');
+  });
+});
+
+const KINDS = { major: 'major', minor: 'minor', dominant7: '7' } as const;
+const LETTERS = 'CDEFGAB';
+
+describe('chordToneNames', () => {
+  it('spells D♭7 with C♭ and F♯7 with E, whatever the preference', () => {
+    for (const pref of PREFS) {
+      expect([...chordToneNames(1, 'dominant7', pref)]).toEqual([
+        [1, 'Db'],
+        [5, 'F'],
+        [8, 'Ab'],
+        [11, 'Cb'],
+      ]);
+      expect(chordToneNames(6, 'dominant7', pref).get(4)).toBe('E');
+      expect(chordToneNames(10, 'major', pref).get(2)).toBe('D');
+      expect(chordToneNames(1, 'minor', pref).get(8)).toBe('G#');
+    }
+  });
+
+  for (const quality of QUALITIES) {
+    for (const pref of PREFS) {
+      it(`spells every ${quality} chord in thirds from its key-spelled root, preferring ${pref}s`, () => {
+        for (let chroma = 0; chroma < 12; chroma++) {
+          const root = keySpelledRoot(chroma, quality, pref);
+          const tones = chordToneNames(chroma, quality, pref);
+          expect([...tones.values()]).toEqual(spellChord(root, KINDS[quality]));
+          expect(tones.get(chroma)).toBe(root);
+          // Stacked thirds: each tone is two letters above the last.
+          const letters = [...tones.values()].map((pc) => LETTERS.indexOf(pc[0] as string));
+          letters.forEach((l, i) => {
+            if (i > 0) expect(l).toBe(((letters[i - 1] as number) + 2) % 7);
+          });
+          for (const [c, pc] of tones) expect(chromaOf(pc)).toBe(c);
+        }
+      });
+    }
+  }
+});
+
+describe('spellInChord', () => {
+  it('names a chord tone as the chord spells it', () => {
+    expect(spellInChord(11, 1, 'dominant7', 'sharp')).toBe('Cb');
+    expect(spellInChord(4, 6, 'dominant7', 'flat')).toBe('E');
+    expect(spellInChord(23, 1, 'dominant7', 'sharp')).toBe('Cb');
+  });
+
+  it("names any other note by the chord's key", () => {
+    expect(spellInChord(6, 1, 'dominant7', 'sharp')).toBe('Gb'); // not in D♭7
+    expect(spellInChord(1, 4, 'major', 'flat')).toBe('C#'); // not in E
+    expect(spellInChord(-2, 0, 'major', 'sharp')).toBe('A#'); // C: the preference
+  });
+});
+
+describe('noteInChord', () => {
+  it('counts the octave from the letter: D♭7 on the open B string is C♭4', () => {
+    const open = { string: 2, fret: 0 };
+    expect(noteInChord(open, 1, 'dominant7', 'sharp')).toEqual({
+      pc: 'Cb',
+      name: 'Cb4',
+      midi: 59,
+      chroma: 11,
+    });
+    expect(Note.midi('Cb4')).toBe(midiAt(open));
+    expect(noteInChord(open, 4, 'major', 'flat').name).toBe('B3');
+    expect(noteInChord({ string: 3, fret: 3 }, 6, 'dominant7', 'flat').name).toBe('A#3');
+  });
+
+  it('reads the cell in the tuning given', () => {
+    const low = { string: 6, fret: 0 };
+    expect(noteInChord(low, 2, 'major', 'sharp', DROP_D_TUNING).name).toBe('D2');
+    expect(noteInChord(low, 2, 'major', 'sharp').name).toBe('E2');
+  });
+
+  it('keeps the pitch of every cell, whatever the chord', () => {
+    for (const quality of QUALITIES) {
+      for (let chroma = 0; chroma < 12; chroma++) {
+        for (let fret = 0; fret <= 12; fret++) {
+          const pos = { string: 2, fret };
+          const note = noteInChord(pos, chroma, quality, 'flat');
+          expect(Note.midi(note.name)).toBe(midiAt(pos));
+        }
+      }
+    }
   });
 });

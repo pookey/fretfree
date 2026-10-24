@@ -1,4 +1,15 @@
-import { chromaToPc, type AccidentalPref } from './fretboard';
+import { Note } from 'tonal';
+import { spellChord, type ChordKind } from './chords';
+import {
+  STANDARD_TUNING,
+  chromaOf,
+  chromaToPc,
+  midiAt,
+  type AccidentalPref,
+  type FretNote,
+  type Position,
+  type Tuning,
+} from './fretboard';
 import type { CagedQuality } from './shapes';
 
 /**
@@ -37,4 +48,62 @@ export function keySpelledRoot(
   accidentalPref: AccidentalPref,
 ): string {
   return chromaToPc(rootChroma, chordKeySpelling(rootChroma, quality, accidentalPref));
+}
+
+const CHORD_KIND: Record<CagedQuality, ChordKind> = {
+  major: 'major',
+  minor: 'minor',
+  dominant7: '7',
+};
+
+/**
+ * A chord's tones by chroma, spelled from the chord itself (tonal's chord
+ * notes on `keySpelledRoot`), as the CAGED view names them: D♭7's ♭7 is C♭,
+ * not B, and B♭'s 3rd is D (research/02 rule 4).
+ */
+export function chordToneNames(
+  rootChroma: number,
+  quality: CagedQuality,
+  accidentalPref: AccidentalPref,
+): ReadonlyMap<number, string> {
+  const root = keySpelledRoot(rootChroma, quality, accidentalPref);
+  return new Map(spellChord(root, CHORD_KIND[quality]).map((pc) => [chromaOf(pc), pc]));
+}
+
+/**
+ * A pitch class named within a chord: a chord tone as the chord spells it
+ * (`chordToneNames`), any other note by the chord's key (`chordKeySpelling`).
+ */
+export function spellInChord(
+  chroma: number,
+  rootChroma: number,
+  quality: CagedQuality,
+  accidentalPref: AccidentalPref,
+): string {
+  const c = mod12(chroma);
+  return (
+    chordToneNames(rootChroma, quality, accidentalPref).get(c) ??
+    chromaToPc(c, chordKeySpelling(rootChroma, quality, accidentalPref))
+  );
+}
+
+const LETTER_CHROMA: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+/**
+ * A cell's note named within a chord (`spellInChord`), its octave counted
+ * from the letter: D♭7's ♭7 on the open B string is Cb4, the pitch of B3.
+ */
+export function noteInChord(
+  pos: Position,
+  rootChroma: number,
+  quality: CagedQuality,
+  accidentalPref: AccidentalPref,
+  tuning: Tuning = STANDARD_TUNING,
+): FretNote {
+  const midi = midiAt(pos, tuning);
+  const chroma = mod12(midi);
+  const pc = spellInChord(chroma, rootChroma, quality, accidentalPref);
+  const { letter, alt } = Note.get(pc);
+  const octave = (midi - alt - (LETTER_CHROMA[letter] ?? 0)) / 12 - 1;
+  return { pc, name: `${pc}${octave}`, midi, chroma };
 }
