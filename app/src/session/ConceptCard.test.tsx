@@ -141,6 +141,10 @@ describe('a session with a new skill (M10-04)', { timeout: scaled(90_000) }, () 
     expect(card).toHaveAttribute('data-intro', 'f1-alphabet');
     expect(screen.queryByRole('group', { name: /Tap/ })).toBeNull();
 
+    // The effect that focuses the card also listens for Enter. The card is in
+    // the DOM a task before it runs, and a key pressed then is lost (M1-51).
+    await waitFor(() => expect(card).toHaveFocus());
+
     // A minute reading the card, then a second to answer.
     now = 60_000;
     fireEvent.keyDown(window, { key: 'Enter' });
