@@ -1,0 +1,52 @@
+/* Deleting the account (M7-06): the choice for this device's progress. Each
+   option is a whole-row tap target, at least 44pt tall. */
+.choices {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.choices legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+}
+
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.choice:has(input:checked) {
+  border-color: var(--accent);
+}
+
+.choice input {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0.125rem 0 0;
+  accent-color: var(--accent-fill);
+}
+
+.choice > span {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* Destructive: outlined in the text colour, never a theory or brand colour. */
+.destructive {
+  border: 2px solid var(--text);
+  font-weight: 700;
+}

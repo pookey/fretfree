@@ -1,5 +1,6 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useSyncExternalStore } from 'react';
 import { syncApiUrl } from '../../../account/endpoint';
+import { loadDeletion, subscribe } from '../../../account/store';
 
 export const id = 'account';
 // Last: practice comes first, and the account is optional (design §1 principle 8).
@@ -12,7 +13,9 @@ const AccountPanel = lazy(() =>
 
 /** "Save your progress across devices" (M7-04), or nothing when this build has no accounts. */
 export function Panel() {
-  if (!syncApiUrl()) return null;
+  // While an account delete is in flight, its own panel (account-manage.tsx) says so.
+  const deleting = useSyncExternalStore(subscribe, loadDeletion, () => null);
+  if (!syncApiUrl() || deleting) return null;
   return (
     <Suspense fallback={null}>
       <AccountPanel />
