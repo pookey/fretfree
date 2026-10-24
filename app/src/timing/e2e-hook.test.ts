@@ -37,4 +37,20 @@ describe('fakeOnsetsForE2E', () => {
     // Tone isn't loaded here, so there is no output latency to add.
     expect(heard).toEqual([525]);
   });
+
+  it('echoes with a strength per click when set (D31’s accents)', async () => {
+    const target: { fretworkFakeOnsets?: FakeOnsetsHook } = {};
+    const metronome = createFakeMetronome({ startMs: 0 });
+    const tap = fakeOnsetsForE2E('tap', target, on, metronome)!;
+    const heard: number[] = [];
+    tap.onOnset((o) => heard.push(o.strength));
+    await tap.start();
+    await metronome.start({ meter: METER_PRESETS['4/4'], bpm: 120, countInBars: 0 });
+    target.fretworkFakeOnsets!.echo = 0;
+    metronome.tick();
+    target.fretworkFakeOnsets!.strength = (c) => (c.accent === 'bar' ? 1 : 0.5);
+    metronome.tick();
+    metronome.tick();
+    expect(heard).toEqual([1, 0.5, 0.5]);
+  });
 });

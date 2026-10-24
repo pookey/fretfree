@@ -1,6 +1,6 @@
 import { currentOutputLatencyMs } from './device';
 import type { OnsetKind } from './latency';
-import { getMetronome, type Metronome } from './metronome';
+import { getMetronome, type Click, type Metronome } from './metronome';
 import { createFakeOnsetSource, type FakeOnsetSource } from './onsets';
 
 /** Set to "1" in localStorage (e2e only) to time calibration and drills from a fake onset source. */
@@ -16,6 +16,8 @@ export interface FakeOnsetsHook {
    * `null` stops echoing.
    */
   echo: number | null;
+  /** While echoing, each onset's strength for its click (D31's accents); 1 when unset. */
+  strength?: ((click: Click) => number) | null;
 }
 
 interface HookWindow {
@@ -48,7 +50,8 @@ export function fakeOnsetsForE2E(
     metronome.onClick((click) => {
       if (hook.echo === null) return;
       const at = click.at + currentOutputLatencyMs() + hook.echo;
-      for (const source of Object.values(hook.sources)) source.emit(at);
+      const strength = hook.strength?.(click) ?? 1;
+      for (const source of Object.values(hook.sources)) source.emit(at, strength);
     });
   }
   return target.fretworkFakeOnsets.sources[kind];
