@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Item } from '../../engine/model';
 import { STANDARD_TUNING } from '../../theory';
-import { formReadingMakePrompt, type FormReadingPrompt } from './logic';
+import { getSkill } from '../../engine/skills';
+import { expectedText, formReadingMakePrompt, pickupStart, type FormReadingPrompt } from './logic';
 import {
   ENDING_RULES,
   PICKUP_RULES,
@@ -116,6 +117,41 @@ describe('form reading words', () => {
     expect(choiceLabel(endings, 4)).toBe('Bar 5');
     expect(choiceLabel(prompt('pickup:6/8:1:start'), 6)).toBe('Eighth 6');
     expect(choiceLabel(prompt('pickup:3/4:1:start'), 3)).toBe('Beat 3');
+  });
+
+  it('never names a start card’s answer in the panel’s rules (rule 4)', () => {
+    const starts = ['T6.pickups', 'T6.pickups-compound'].flatMap((id) =>
+      getSkill(id)!
+        .items()
+        .filter((i) => i.id.endsWith(':start')),
+    );
+    expect(starts).toHaveLength(7);
+    for (const it of starts) {
+      const p = prompt(it.id);
+      const start = pickupStart(p.meter, p.pickup);
+      for (const level of [1, 2, 3] as const) {
+        const rules = formReadingGuides(p, level).rules.join(' ').toLowerCase();
+        expect(rules, it.id).not.toContain(expectedText(p).toLowerCase());
+        expect(rules, it.id).not.toContain(countIn(start).toLowerCase());
+        // No worked beat at all: any one could be another card’s answer.
+        expect(rules, it.id).not.toMatch(/\b(?:beat|eighth)s? \d/);
+      }
+    }
+  });
+
+  it('explains going back past the begin repeat an end repeat closes', () => {
+    // |: 1 2 :||: 3 4 :|, after bar 4: back to bar 3, never bar 1.
+    const twice = prompt('form:repeat-twice:next');
+    expect(formReadingExplain(twice, [0])).toBe(
+      'This end repeat goes back to the begin repeat at bar 3, not past it.',
+    );
+    expect(formReadingExplain(twice, [1])).toBe(
+      'This end repeat goes back to the begin repeat at bar 3, not past it.',
+    );
+    const order = prompt('form:repeat-twice:order');
+    expect(formReadingExplain(order, [0, 1, 0, 1, 2, 3, 0])).toBe(
+      'This end repeat goes back to the begin repeat at bar 3, not past it.',
+    );
   });
 
   it('counts a bar’s notes', () => {

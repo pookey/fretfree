@@ -118,6 +118,11 @@ function explainTurn(prompt: FormReadingPrompt, step: number, chose: number): st
   if (chose === from + 1 && prompt.bars[from]?.repeatEnd) {
     return `Bar ${chose + 1} is straight on, but the end repeat sends you back first.`;
   }
+  // Back past the begin repeat this end repeat closes (|: 1 2 :||: 3 4 :|,
+  // bar 4 back to bar 1): it goes back no further than that sign.
+  if (prompt.bars[from]?.repeatEnd && prompt.bars[right]?.repeatStart && chose < right) {
+    return `This end repeat goes back to the begin repeat at bar ${right + 1}, not past it.`;
+  }
   if (prompt.bars[chose]?.ending === 2 && !secondTime) {
     return `Bar ${chose + 1} is the 2nd ending: play the 1st ending the first time.`;
   }
@@ -238,7 +243,8 @@ export interface FormReadingGuides {
 
 export const PICKUP_RULES = [
   "A pickup is the short bar before bar 1. It isn't counted: bar 1 is the first full bar.",
-  'A pickup fills the end of a bar. One beat of 4/4 starts on beat 4: count 1 2 3, then play.',
+  // General, never a worked number: a number here could be a card's answer (rule 4).
+  'A pickup fills the end of a bar: it starts as many beats before the barline as it holds. Count the beats before it, then play.',
 ];
 
 export const REPEAT_RULES = [

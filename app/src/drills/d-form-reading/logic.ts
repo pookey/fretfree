@@ -8,6 +8,7 @@ import {
   formReadingConcept as concept,
   formReadingParse as parse,
 } from './meta';
+import { T6_COMPOUND_PICKUPS, T6_SIMPLE_PICKUPS } from '../../engine/skills/t6';
 import { ROAD_MAP_METERS, pickupTune, roadMapTune, type TuneBar } from './tunes';
 
 export {
@@ -80,9 +81,11 @@ export type FormReadingAnswer = readonly number[];
 const WITHOUT_BEGIN: Partial<Record<FormShape, FormShape>> = {
   'repeat-inner': 'repeat-from-start',
   'repeat-tail': 'repeat-from-start',
-  'repeat-twice': 'repeat-all',
   'endings-inner': 'endings-from-start',
 };
+
+/** The pickups T6 has cards for, as `<meter>:<beats>`. */
+const T6_PICKUPS: readonly string[] = [...T6_SIMPLE_PICKUPS, ...T6_COMPOUND_PICKUPS];
 
 function level(scopeLevel: number): number {
   return Math.max(
@@ -234,9 +237,10 @@ export function formReadingCheck(prompt: FormReadingPrompt, answer: FormReadingA
 
   let confusedWith: string | undefined;
   if (prompt.task === 'start') {
-    // Starting on that beat is a pickup of another length.
+    // Starting on that beat is a pickup of another length: keyed only when
+    // T6 has cards for it, so the session can seed that pair back.
     const beats = barPulses(prompt.meter) - (answer[0] ?? 0) + 1;
-    if (beats >= 1 && beats < barPulses(prompt.meter)) {
+    if (T6_PICKUPS.includes(`${prompt.meter}:${beats}`)) {
       confusedWith = concept({ kind: 'pickup', meter: prompt.meter, beats, task: 'bar' });
     }
   } else if (prompt.task === 'next' || prompt.task === 'order') {

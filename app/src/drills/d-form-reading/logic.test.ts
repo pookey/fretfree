@@ -123,6 +123,13 @@ describe('form reading checks', () => {
     });
     // Beat 1 is no pickup at all.
     expect(formReadingCheck(p, [1]).confusedWith).toBeUndefined();
+    // Only pickups T6 has cards for: 6/8 has 1- and 3-eighth pickups.
+    const compound = prompt('pickup:6/8:1:start');
+    expect(formReadingCheck(compound, [4]).confusedWith).toBe('pickup:6/8:3');
+    for (const eighth of [2, 3, 5]) {
+      expect(formReadingCheck(compound, [eighth]).confusedWith, String(eighth)).toBeUndefined();
+    }
+    expect(formReadingCheck(prompt('pickup:3/4:1:start'), [2]).confusedWith).toBe('pickup:3/4:2');
     expect(expectedText(prompt('pickup:6/8:1:start'))).toBe('Eighth 6');
   });
 
@@ -137,6 +144,10 @@ describe('form reading checks', () => {
     expect(formReadingCheck(p, [3]).confusedWith).toBeUndefined();
     expect(misreadShape(p, 0, 0)).toBeNull();
     expect(misreadShape(prompt('form:repeat-from-start:next'), 0, 1)).toBeNull();
+    // |: 1 2 :||: 3 4 :| back to bar 1 is no other road map: playOrder never goes there.
+    const twice = prompt('form:repeat-twice:next');
+    expect(formReadingCheck(twice, [0])).toMatchObject({ correct: false });
+    expect(formReadingCheck(twice, [0]).confusedWith).toBeUndefined();
   });
 
   it('grades a play order whole, and keys a wrong turn by where it went', () => {
