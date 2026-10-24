@@ -27,8 +27,8 @@ describe('R2 skills', () => {
       'R2.pos12',
     ]);
     expect(skills.map((s) => s.prerequisites)).toEqual([
-      ['F2.string6-naturals', 'F2.string5-naturals', 'T1.simple-meters'],
-      ['R2.open'],
+      ['R1.ledger-below'],
+      ['R2.open', 'R1.ledger-above'],
       ['R2.pos5'],
       ['R2.pos7'],
       ['R2.pos9'],

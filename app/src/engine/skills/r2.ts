@@ -42,9 +42,11 @@ import { itemsOf, memo } from './helpers';
  *
  * Order within a position: the notes on the staff first, the ledger lines
  * after, nearest the staff first, as R1 introduces them; low to high within
- * each. Reading builds on the natural notes of strings 6 and 5 and on time
- * signatures, as R1 does (design §5 M-Reading). Reading is an optional track,
- * so R2 stays out of the placement test.
+ * each. Reading a note in position builds on reading it (R1): open position
+ * opens once R1's ledger lines below the staff are practising, since it reads
+ * down to open low E, and 5th position also waits on the ledger lines above,
+ * which it reads up to C5. Reading is an optional track, so R2 stays out of
+ * the placement test.
  */
 
 export const R2_DRILLS = ['staff-to-fret'];
@@ -82,17 +84,17 @@ export function positionNaturals(
 
 /** Skill IDs by position, in teaching order. IDs are literals, which e2e seeds read from this file. */
 const POSITION_SKILLS = [
-  { id: 'R2.open', title: 'Read the staff in open position' },
-  { id: 'R2.pos5', title: 'Read the staff in 5th position' },
+  { id: 'R2.open', title: 'Read the staff in open position', reads: ['R1.ledger-below'] },
+  { id: 'R2.pos5', title: 'Read the staff in 5th position', reads: ['R1.ledger-above'] },
   { id: 'R2.pos7', title: 'Read the staff in 7th position' },
   { id: 'R2.pos9', title: 'Read the staff in 9th position' },
   { id: 'R2.pos12', title: 'Read the staff in 12th position' },
 ] as const;
 
-/** The reading-track gates R1 opens with (design §5 M-Reading). */
-const READING_GATES = ['F2.string6-naturals', 'F2.string5-naturals', 'T1.simple-meters'];
-
-export const skills: Skill[] = POSITION_SKILLS.map(({ id, title }, i): Skill => {
+export const skills: Skill[] = POSITION_SKILLS.map((s, i): Skill => {
+  const { id, title } = s;
+  // The R1 skill that reads the new ledger lines a position needs, if any.
+  const reads: readonly string[] = 'reads' in s ? s.reads : [];
   const position = READING_POSITIONS[i] as ReadingPosition;
   const prev = POSITION_SKILLS[i - 1];
   return {
@@ -100,7 +102,7 @@ export const skills: Skill[] = POSITION_SKILLS.map(({ id, title }, i): Skill => 
     topic: 'R2',
     order: 3000 + i * 10,
     title,
-    prerequisites: prev ? [prev.id] : READING_GATES,
+    prerequisites: [...(prev ? [prev.id] : []), ...reads],
     softUnlock: true,
     skipPlacement: true,
     drillTypes: R2_DRILLS,

@@ -1,4 +1,5 @@
 import type { Item } from '../../engine/model';
+import { staffConcept } from '../../engine/items/staff';
 import { parseStaffFretItemId } from '../../engine/items/staff-fret';
 import { staffPosition } from '../../theory';
 
@@ -29,16 +30,13 @@ export function d23CanTest(item: Item): boolean {
 }
 
 /**
- * The confusion-matrix key: the staff place (`staff@2` is the 2nd line), as
- * R1's staff cards key theirs. Misreading a line as the space beside it is
- * the error a reading drill pairs items on, and a place, not a position, so
- * a misread learned in one position pairs the place in every position.
+ * The confusion-matrix key: the staff place, R1's `staff@<position>`
+ * (`staffConcept`). Misreading a line as the space beside it is the error a
+ * reading drill pairs items on, and it is a place, so a misread learned in
+ * R1 or in one position pairs the place in every position, and R1's seed
+ * neighbours (`engine/confusions.ts`) apply here too.
  */
-export function d23StaffConcept(place: number): string {
-  return `staff@${place}`;
-}
-
 export function d23ConceptOf(item: Item): string | null {
   const ref = parseStaffFretItemId(item.id);
-  return ref ? d23StaffConcept(staffPosition(ref.note)) : null;
+  return ref ? staffConcept(staffPosition(ref.note)) : null;
 }

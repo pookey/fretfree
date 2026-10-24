@@ -1,3 +1,4 @@
+import { staffConcept } from '../../engine/items/staff';
 import { parseStaffFretItemId } from '../../engine/items/staff-fret';
 import { R2_MAX_LEDGERS, positionNaturals } from '../../engine/skills/r2';
 import type { GuideLevel, Item } from '../../engine/model';
@@ -24,17 +25,9 @@ import type { PositionRange, StaffNote } from '../../components/staff';
 import { compactWindowFrets, isShortLandscape } from '../../shell/size-class';
 import { d2SpanWindow } from '../d2-find-the-note/logic';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
-import { D23_SCOPES, d23StaffConcept, type D23Scope } from './meta';
+import { D23_SCOPES, type D23Scope } from './meta';
 
-export {
-  D23_ID,
-  D23_SCOPE,
-  D23_SCOPES,
-  d23CanTest,
-  d23ConceptOf,
-  d23StaffConcept,
-  type D23Scope,
-} from './meta';
+export { D23_ID, D23_SCOPE, D23_SCOPES, d23CanTest, d23ConceptOf, type D23Scope } from './meta';
 
 /**
  * D23 "Staff → fretboard by position" (design §6, §12; research/03 R2): one
@@ -169,7 +162,7 @@ export function d23Miss(prompt: D23Prompt, answer: Position): D23Miss {
 
 export function d23Check(prompt: D23Prompt, answer: D23Answer): DrillCheck {
   const expected = `${displayPc(prompt.note)}, string ${prompt.target.string}, fret ${prompt.target.fret}`;
-  const concept = d23StaffConcept(prompt.staff);
+  const concept = staffConcept(prompt.staff);
   if (samePosition(answer, prompt.target) || d23InPosition(prompt, answer)) {
     return { correct: true, expected, concept };
   }
@@ -179,7 +172,7 @@ export function d23Check(prompt: D23Prompt, answer: D23Answer): DrillCheck {
   if (d23IsLive(prompt, answer) && d23Miss(prompt, answer) === 'misread') {
     const place = placeAt(prompt, answer);
     if (place !== prompt.staff) {
-      return { correct: false, expected, concept, confusedWith: d23StaffConcept(place) };
+      return { correct: false, expected, concept, confusedWith: staffConcept(place) };
     }
   }
   return { correct: false, expected, concept };

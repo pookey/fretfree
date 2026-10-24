@@ -7,8 +7,8 @@ import { focusSession } from './helpers/focus';
 // drawn and the rest dimmed, and the learner taps where the position plays
 // the note. The first rep of each new item is a worked example.
 
-/** What the reading track opens with (engine/skills/r2.ts, as R1). */
-const READING_GATES = ['F2.string6-naturals', 'F2.string5-naturals', 'T1.simple-meters'];
+/** R1, which R2's positions build on (engine/skills/r2.ts): the staff and its ledger lines. */
+const R1_SKILLS = ['R1.staff', 'R1.ledger-below', 'R1.ledger-above'];
 
 /** Open position's one cell for each staff place R2.open reads (0 = bottom line). */
 const OPEN: Readonly<Record<number, readonly [string: number, fret: number]>> = {
@@ -44,9 +44,9 @@ async function tapCell(page: Page, string: number, fret: number): Promise<void> 
   await cell.click();
 }
 
-/** A learner past the reading track's gates starts a focused session on one position. */
+/** A learner who reads the staff (R1) starts a focused session on one position. */
 async function startReading(page: Page, skillId: string, more: string[] = []): Promise<void> {
-  await masterSkills(page, [...READING_GATES, ...more]);
+  await masterSkills(page, [...R1_SKILLS, ...more]);
   await focusSession(page, skillId);
   await expect(page.locator('[data-drill]')).toHaveAttribute('data-drill', 'staff-to-fret');
   await expect(prompt(page)).toBeVisible();
