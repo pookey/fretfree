@@ -1332,7 +1332,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Finding 9: no needless scroll on iPad landscape and mini for the relative-minor, I7 and D19 prompts; I7's open-string markers don't cover the nut names; Progress's achievement toast doesn't cover the h1, and fret ranges use a non-breaking dash.
 
 ### M6-15 · Chord roots spelled from their key in the shape drills and the CAGED view
-- **Status:** todo
+- **Status:** done
 - **Deps:** M6-13
 - **Design:** design §8 (note names); research/02 rule 4 (a label must never mislead); follow-up from the M6-13 review
 - **Owns:** `app/src/theory/key-spelling.ts`, `app/src/theory/key-spelling.test.ts`, `app/src/drills/d9-build-caged/**`, `app/src/drills/d10-which-shape/**`, `app/src/screens/explore/views/caged.tsx`, `app/src/screens/explore/views/caged.test.tsx`, `app/e2e/m6-15.spec.ts`
