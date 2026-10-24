@@ -1,0 +1,14 @@
+/* D22's context panel. The session's panel supplies the box and the heading colour. */
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.panel strong {
+  letter-spacing: 0.08em;
+}
+
+.panel .note {
+  color: var(--text-muted);
+}

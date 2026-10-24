@@ -1,0 +1,176 @@
+/* D22: the staff above the neck (design §12 screens), the context panel beside them. */
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.prompt {
+  margin: 0;
+  max-width: 44rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+/* A reading staff grows with the room, up to its own largest scale. */
+.staffBox {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 20rem;
+  /* An interactive staff keeps 44pt between lines and may be wider than a phone. */
+  overflow-x: auto;
+}
+
+.staffBox[data-placing] {
+  max-width: 36rem;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  max-width: 44rem;
+}
+
+.choice {
+  min-width: 4rem;
+  min-height: 3.5rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    transform 0.08s;
+}
+
+.choice:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .choice:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.choice:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.choice[data-state='correct'] {
+  background: var(--correct);
+  border-color: var(--correct);
+  color: #fff;
+  opacity: 1;
+}
+
+.choice[data-state='wrong'] {
+  background: var(--wrong);
+  border-color: var(--wrong);
+  color: #fff;
+  opacity: 1;
+}
+
+/* The right answer after a miss: a dashed edge, so it reads without colour. */
+.choice[data-state='expected'] {
+  border-color: var(--correct);
+  border-style: dashed;
+  opacity: 1;
+}
+
+.explain {
+  margin: 0;
+  min-height: 1.5em;
+  max-width: 44rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.neckArea {
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choice {
+    transition: none;
+  }
+
+  .choice:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* iPad portrait: one column from the top, help below the neck. */
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .explain {
+  font-size: 0.875rem;
+}
+
+.drill[data-size-class='compact'] .staffBox {
+  max-width: 12rem;
+}
+
+.drill[data-size-class='compact'] .staffBox[data-placing] {
+  max-width: 100%;
+}
+
+.drill[data-size-class='compact'] .choice {
+  min-width: 2.9rem;
+  min-height: 2.9rem;
+  font-size: 1.125rem;
+}
+
+/* A phone on its side: no empty line before the answer. */
+@media (max-height: 499px) {
+  .drill[data-size-class='compact'] .explain:empty {
+    display: none;
+  }
+}
+
+/* Best-effort iPhone: keep the neck within short landscape viewports. */
+.drill[data-size-class='compact'] .neckArea svg {
+  max-height: calc(100dvh - 12rem);
+}
