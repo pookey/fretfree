@@ -65,6 +65,7 @@ test.describe('M1-01 registries', () => {
       'guitar',
       'achievements',
       'account',
+      'account-manage',
     ]);
 
     await page.goto('/settings');

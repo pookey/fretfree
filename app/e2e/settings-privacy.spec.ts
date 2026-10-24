@@ -27,7 +27,7 @@ test.describe('Settings and Privacy', () => {
       'What stays on your device',
       'What we don’t collect',
       'Hosting',
-      'Optional sign-in (not available yet)',
+      'If you sign in (optional)',
       'Copies hosted by others',
       'Questions',
     ]) {
