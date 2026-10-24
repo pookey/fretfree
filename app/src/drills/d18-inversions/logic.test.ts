@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { SKILLS } from '../../engine/skills';
-import { DROP_D_TUNING, STANDARD_TUNING, midiAt, type Position, type Tuning } from '../../theory';
+import {
+  DROP_D_TUNING,
+  STANDARD_TUNING,
+  midiAt,
+  samePosition,
+  type Position,
+  type Tuning,
+} from '../../theory';
 import { getDrill } from '../registry';
 import type { DrillFeedback } from '../types';
 import {
@@ -27,6 +34,8 @@ import {
   d18Subject,
   d18Voicings,
   d18Window,
+  d18PortraitFirst,
+  d18CoreShapes,
   d18WrongTaps,
   type D18Answer,
   type D18Prompt,
@@ -111,13 +120,14 @@ describe('d18MakePrompt', () => {
     expect(second.cores).toEqual(['C']);
   });
 
-  it('places a triad at any of its positions, and names the CAGED shapes it sits in', () => {
+  it('places a triad where iPad portrait’s neck holds it, and names the CAGED shapes it sits in', () => {
     const vs = d18Voicings('C', 'major', 3, 2, STANDARD_TUNING);
     expect(vs.map((v) => v.notes.map((n) => n.fret))).toEqual([
       [0, 1, 0],
       [12, 13, 12],
     ]);
-    const high = d18MakePrompt(
+    // The octave up is the same shape; frets 0–12 keep the nut on iPad portrait.
+    const p = d18MakePrompt(
       { id: 'inversion:2@s3/major', skillId: 'x' },
       {
         ...ctx(),
@@ -128,8 +138,19 @@ describe('d18MakePrompt', () => {
         })(),
       },
     );
-    expect(frets(high)).toEqual(['s3f125', 's2f13R', 's1f123']);
-    expect(high.cores).toEqual(['C', 'D']);
+    expect(frets(p)).toEqual(['s3f05', 's2f1R', 's1f03']);
+    expect(p.cores).toEqual(['C']);
+    expect(d18CoreShapes(vs[1]!, 3)).toEqual(['C', 'D']);
+  });
+
+  it('prefers voicings inside frets 0–12, and keeps the only one where none fits', () => {
+    const vs = d18Voicings('C', 'major', 3, 2, STANDARD_TUNING);
+    expect(d18PortraitFirst(vs, 'name', 3)).toEqual([vs[0]]);
+    expect(d18PortraitFirst(vs, 'build', 3)).toEqual([vs[0]]);
+    // G♯ in root position on strings 3–1 is only at frets 11–13.
+    const high = d18Voicings('G#', 'major', 3, 0, STANDARD_TUNING);
+    expect(high).toHaveLength(1);
+    expect(d18PortraitFirst(high, 'name', 3)).toEqual(high);
   });
 
   it('draws minor triads with the ♭3, and their partner is the major 3rd', () => {
@@ -383,18 +404,45 @@ describe('d18Window', () => {
 
   it('slides the 12-fret portrait neck to hold the root reach or the triad', () => {
     expect(d18Window(prompt('inversion:1@s3/major'), 'regular', 5)).toEqual({ from: 0, to: 12 });
-    const high = d18MakePrompt(
-      { id: 'inversion-name:2@s3/major', skillId: 'x' },
-      {
-        ...ctx(),
-        rng: (() => {
-          const xs = [0, 0.99];
-          let i = 0;
-          return () => xs[i++] ?? 0;
-        })(),
-      },
-    );
-    expect(d18Window(high, 'regular', 5)).toEqual({ from: 1, to: 13 });
+    // G♯ (the 9th root of 12) in root position has no voicing below fret 11.
+    const g = { scopeLevel: 1, rng: () => 8.5 / 12 };
+    const name = prompt('inversion-name:0@s3/major', g);
+    expect(name.root).toBe('G#');
+    expect(d18Window(name, 'regular', 5)).toEqual({ from: 1, to: 13 });
+    expect(d18Window(prompt('inversion:0@s3/major', g), 'regular', 5)).toEqual({
+      from: 3,
+      to: 15,
+    });
+  });
+
+  it('keeps the nut on iPad portrait whenever a voicing fits frets 0–12 (M6-14)', () => {
+    const rng = seeded(5);
+    let slid = 0;
+    let total = 0;
+    for (const kind of ['inversion', 'inversion-name'] as const) {
+      for (const low of [3, 4, 5, 6] as const) {
+        for (const inv of [0, 1, 2] as const) {
+          for (const quality of ['major', 'minor'] as const) {
+            for (let i = 0; i < 12; i++) {
+              const p = prompt(`${kind}:${inv}@s${low}/${quality}`, { scopeLevel: 1, rng });
+              const all = d18Voicings(p.root, quality, low, inv, STANDARD_TUNING);
+              const preferred = d18PortraitFirst(all, p.mode, p.reach);
+              expect(
+                preferred.some((v) => v.notes.every((n, j) => samePosition(n, p.notes[j]!))),
+              ).toBe(true);
+              const w = d18Window(p, 'regular', 5);
+              expect(w.to - w.from).toBe(12);
+              total++;
+              if (w.from === 0) continue;
+              // A slid window only comes from a root with no voicing that fits.
+              slid++;
+              expect(preferred).toEqual(all);
+            }
+          }
+        }
+      }
+    }
+    expect(slid / total).toBeLessThan(0.35);
   });
 
   it('centres a compact window on the root, wide enough either way', () => {

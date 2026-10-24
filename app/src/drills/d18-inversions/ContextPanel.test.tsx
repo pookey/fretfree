@@ -5,7 +5,7 @@ import { DROP_D_TUNING, STANDARD_TUNING, type Tuning } from '../../theory';
 import { resolveView } from '../lazy-view';
 import { InversionsPanel } from './ContextPanel';
 import triadInversions from './drill';
-import { d18Check, d18MakePrompt, type D18Prompt } from './logic';
+import { d18Check, d18CoreShapes, d18MakePrompt, d18Voicings, type D18Prompt } from './logic';
 
 const prompt = (id: string, over: { tuning?: Tuning; rng?: () => number } = {}) =>
   d18MakePrompt(
@@ -79,9 +79,13 @@ describe('<InversionsPanel>', () => {
   });
 
   it('names every CAGED shape the triad sits in, on a guided rep too', () => {
-    const xs = [0, 0.99];
-    let i = 0;
-    const high = prompt('inversion:2@s3/major', { rng: () => xs[i++] ?? 0 });
+    // G–C–E at frets 12–13 sits in both; the prompt itself takes frets 0–1.
+    const [, octave] = d18Voicings('C', 'major', 3, 2, STANDARD_TUNING);
+    const high = {
+      ...prompt('inversion:2@s3/major'),
+      notes: octave!.notes,
+      cores: d18CoreShapes(octave!, 3),
+    };
     panel(high, 1, { guided: true });
     expect(screen.getByTestId('d18-core')).toHaveTextContent(
       'This triad sits inside the C and D shapes of C.',

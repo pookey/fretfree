@@ -238,6 +238,28 @@ export function d18CoreShapes(voicing: TriadVoicing, lowString: number): CagedSh
   );
 }
 
+/**
+ * The voicings whose prompt fits iPad portrait's neck at frets 0–12, with the
+ * nut and string names (M6-14), or all of them when none does. A name round
+ * needs the triad there; a build round the root's reach either side, so the
+ * window still never shows which way the shape lies. The octave above is the
+ * same shape, and iPad landscape shows it only where the low one won't fit.
+ */
+export function d18PortraitFirst(
+  voicings: readonly TriadVoicing[],
+  mode: D18Mode,
+  reach: number,
+): readonly TriadVoicing[] {
+  const fits = voicings.filter((v) => {
+    const top =
+      mode === 'build'
+        ? (v.notes.find((n) => n.degree === 'R') as ShapeNote).fret + reach
+        : Math.max(...v.notes.map((n) => n.fret));
+    return top <= D18_REGULAR_SPAN;
+  });
+  return fits.length > 0 ? fits : voicings;
+}
+
 export function d18MakePrompt(item: Item, ctx: DrillContext): D18Prompt {
   const ref = parseInversionItemId(item.id);
   const { tuning, accidentalPref } = ctx;
@@ -247,13 +269,19 @@ export function d18MakePrompt(item: Item, ctx: DrillContext): D18Prompt {
   const roots = (scope === 'naturals' ? NATURAL_PCS.map(chromaOf) : [...Array(12).keys()])
     .map((chroma) => d18SpellRoot(chroma, quality, accidentalPref))
     .filter((pc) => d18Voicings(pc, quality, lowString, inversion, tuning).length > 0);
+  const mode: D18Mode = ref.kind === 'inversion' ? 'build' : 'name';
+  const reach = d18Reach(tuning);
   const root = pick(roots, ctx.rng);
-  const voicing = root && pick(d18Voicings(root, quality, lowString, inversion, tuning), ctx.rng);
+  const voicing =
+    root &&
+    pick(
+      d18PortraitFirst(d18Voicings(root, quality, lowString, inversion, tuning), mode, reach),
+      ctx.rng,
+    );
   if (!root || !voicing) throw new Error(`D18 cannot place item ${item.id}`);
 
   const notes = [...voicing.notes];
   const anchor = notes.find((n) => n.degree === 'R') as ShapeNote;
-  const mode: D18Mode = ref.kind === 'inversion' ? 'build' : 'name';
   const third = notes.find((n) => n.degree === '3' || n.degree === 'b3') as ShapeNote;
   const partnerFret = third.fret + (quality === 'major' ? -1 : 1);
   const strings = [lowString, lowString - 1, lowString - 2];
@@ -276,7 +304,7 @@ export function d18MakePrompt(item: Item, ctx: DrillContext): D18Prompt {
     cores: standardOn(strings, tuning) ? d18CoreShapes(voicing, lowString) : [],
     scope,
     activeRange: D18_REGION,
-    reach: d18Reach(tuning),
+    reach,
     tuning,
     accidentalPref,
   };
