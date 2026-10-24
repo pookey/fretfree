@@ -137,6 +137,13 @@ describe('opensOnceText', () => {
     ).toBe(
       'Progressions opens once you’ve mastered Triads and are practising Sharp keys and Numerals.',
     );
+    // Named once, it counts once: one gate each, so "or".
+    expect(
+      opensOnceText('Keys', [
+        { master: ['A'], practise: ['A'] },
+        { master: ['B'], practise: [] },
+      ]),
+    ).toBe('Keys opens once you’ve mastered A or B.');
   });
 
   it('says "or" between openers that each wait for one thing: any one opens it (M10-21)', () => {

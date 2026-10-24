@@ -107,7 +107,7 @@ function gatesClause(
   join: (words: readonly string[]) => string,
   and: string,
 ): string {
-  // A skill to master needn't be listed again as one to be practising.
+  // A skill to master needn't be listed again as one to be practising, across merged openers too.
   const practise = all.filter((t) => !master.includes(t));
   return [
     master.length > 0 && `you’ve mastered ${join(master)}`,
@@ -130,7 +130,10 @@ function gatesClause(
  */
 export function opensOnceText(title: string, waits: readonly Waits[]): string {
   const size = (w: Waits) => w.master.length + w.practise.length;
-  const sets = waits.filter((w) => size(w) > 0);
+  // Count each skill once, as the sentence names it: a skill to master isn't one to practise too.
+  const sets = waits
+    .map((w) => ({ master: w.master, practise: w.practise.filter((t) => !w.master.includes(t)) }))
+    .filter((w) => size(w) > 0);
   if (sets.length === 0) return `${title} opens once you’ve mastered what it builds on.`;
   if (sets.length > 1 && sets.every((w) => size(w) === 1)) {
     const merged = {
