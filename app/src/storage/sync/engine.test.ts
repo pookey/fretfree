@@ -308,6 +308,19 @@ describe('createSyncApi', () => {
     expect(page).toEqual({ records: [record], cursor: '7', more: true });
   });
 
+  it('counts a pull that times out mid-body as offline', async () => {
+    const stalled = {
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: async () => {
+        throw new DOMException('The operation timed out.', 'TimeoutError');
+      },
+    } as unknown as Response;
+    const { api } = fetching(stalled);
+    await expect(api.pull('', 't')).rejects.toMatchObject({ failure: 'offline' });
+  });
+
   it('treats a pull reply it cannot read as a server failure', async () => {
     const { api } = fetching(
       json(200, { records: 'no', cursor: 1 }),
@@ -651,6 +664,26 @@ describe('rows pulled from an older schema', () => {
       ['skillStates', 'C8.numerals-a-e-f'],
       ['skillStates', 'C8.numerals-other-keys'],
     ]);
+  });
+
+  it('takes a pre-split card as evidence only for its own old skill', async () => {
+    // One C8 restage covers both old skills: a numerals card says nothing about Nashville.
+    const a = device('a');
+    const nashville = rec('skillStates', 'C8.nashville', state('C8.nashville', 'mastered'));
+    const numerals = rec(
+      'skillStates',
+      'C8.numerals-major',
+      state('C8.numerals-major', 'mastered'),
+    );
+    const out = await restagePulled(a.db, [
+      rec('cards', 'numeral:vi@key=A', card('numeral:vi@key=A', 'C8.numerals-major', at)),
+      nashville,
+      numerals,
+    ]);
+    const ids = out.records.map((r) => r.id).sort();
+    expect(ids).toContain('C8.numerals-a-e-f');
+    expect(ids.filter((id) => id.startsWith('C8.nashville'))).toEqual(['C8.nashville']);
+    expect(out.records).toContain(nashville);
   });
 
   it('doesn’t master later C8 stages when a device syncs its own stage-1 mastery', async () => {

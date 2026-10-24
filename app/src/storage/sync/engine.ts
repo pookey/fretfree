@@ -153,8 +153,12 @@ export function createSyncApi(baseUrl: string, fetchFn: typeof fetch = fetch): S
       let body: Partial<{ records: unknown; cursor: unknown; more: unknown }>;
       try {
         body = (await res.json()) as typeof body;
-      } catch {
-        throw new SyncError('server');
+      } catch (error) {
+        // The request timed out while the body was still arriving.
+        const name = (error as Error | undefined)?.name;
+        throw new SyncError(
+          name === 'TimeoutError' || name === 'AbortError' ? 'offline' : 'server',
+        );
       }
       if (!Array.isArray(body.records) || typeof body.cursor !== 'string') {
         throw new SyncError('server');
@@ -265,18 +269,29 @@ export async function restagePulled(
   const steps = await Promise.all(RESTAGES.map(([, load]) => load()));
   // The first `cards.length` cards are the pulled ones; any after them are
   // this device's, there only to say which stages the learner has started.
+  // A step restages only the states its evidence covers: those of an old
+  // skill whose pulled cards or logs it moved, and those of a skill that no
+  // longer exists. Every other state passes it untouched.
   const run = (tables: Tables) =>
     steps.reduce((t, step) => {
       const out = step.restageTables(t);
-      const pulled = (rows: unknown[] | undefined) => (rows ?? []).slice(0, cards.length);
-      const moved =
-        !sameRows(pulled(t.cards), pulled(out.cards)) ||
-        !sameRows(t.reviewLogs ?? [], out.reviewLogs);
-      const kept = new Set(out.skillStates);
-      const retired = (t.skillStates ?? []).some(
-        (s) => !kept.has(s) && !getSkill(String((s as Row).skillId)),
-      );
-      return moved || retired ? out : { ...out, skillStates: t.skillStates ?? [] };
+      const evidence = new Set<unknown>();
+      const movedFrom = (before: unknown[] = [], after: unknown[] = [], n = before.length) => {
+        for (let i = 0; i < n; i++) {
+          if (after[i] !== before[i]) evidence.add((before[i] as Row | undefined)?.skillId);
+        }
+      };
+      movedFrom(t.cards, out.cards, cards.length);
+      movedFrom(t.reviewLogs, out.reviewLogs);
+      const states = t.skillStates ?? [];
+      const covered = (s: unknown) => {
+        const id = (s as Row).skillId;
+        return evidence.has(id) || !getSkill(String(id));
+      };
+      const eligible = states.filter(covered);
+      if (eligible.length === 0) return { ...out, skillStates: states };
+      const restaged = step.restageTables({ ...t, skillStates: eligible }).skillStates ?? eligible;
+      return { ...out, skillStates: [...states.filter((s) => !covered(s)), ...restaged] };
     }, tables);
   const input = {
     cards: cards.map((r) => r.data),
