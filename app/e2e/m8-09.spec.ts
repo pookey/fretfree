@@ -87,7 +87,7 @@ async function open(page: Page, skillId = 'R1.staff') {
 
 /** Answers cards right until one asks `direction` and isn't a worked example. */
 async function reach(page: Page, direction: 'read' | 'place') {
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 40; i++) {
     const task = (await page.locator('#drill-prompt').textContent()) ?? '';
     const dir = await card(page).getAttribute('data-direction');
     if (dir === direction && !task.includes('to continue')) return;
@@ -166,6 +166,9 @@ test.describe('M8-09 name the note on the staff', () => {
   });
 
   test('a placing card takes a tap on a line or space', async ({ page }) => {
+    // Placing cards come a new-item block after the reading cards (r1.ts),
+    // so a whole block is answered first.
+    test.slow();
     await open(page);
     await reach(page, 'place');
     await expect(page.locator('#drill-prompt')).toHaveText(/^Tap .* the staff$/);
@@ -179,6 +182,9 @@ test.describe('M8-09 name the note on the staff', () => {
   });
 
   test('a miss on a placing card draws both notes', async ({ page }) => {
+    // Placing cards come a new-item block after the reading cards (r1.ts),
+    // so a whole block is answered first.
+    test.slow();
     await open(page);
     await reach(page, 'place');
     await (await answerControl(page, false)).click();

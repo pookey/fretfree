@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { staffPositions } from '../../theory';
 import { parseStaffItemId } from '../items/staff';
-import { R1_POSITIONS, skills } from './r1';
+import { ENGINE_CONFIG } from '../config';
+import { R1_POSITIONS, r1ItemIds, skills } from './r1';
 import { getSkill } from './index';
 
 const ids = (skillId: string) =>
@@ -19,11 +20,37 @@ describe('R1 skills', () => {
     const staff = ids('R1.staff');
     expect(staff).toHaveLength(22);
     // The G line first: sounding G3, written on line 2.
-    expect(staff.slice(0, 2)).toEqual(['staff:G3@treble8vb', 'staff:G3@treble8vb:place']);
+    expect(staff[0]).toBe('staff:G3@treble8vb');
     // E4, the open 1st string, sits in the top space, not on the bottom line (E3).
     expect(staff).toContain('staff:E4@treble8vb');
     expect(staff).toContain('staff:E3@treble8vb:place');
     for (const id of staff) expect(parseStaffItemId(id)?.clef).toBe('treble8vb');
+  });
+
+  it("keeps a place's placing card a new-item block after its reading card", () => {
+    const block = ENGINE_CONFIG.session.newBlockSize;
+    for (const s of skills) {
+      const list = ids(s.id);
+      expect(new Set(list).size).toBe(R1_POSITIONS[s.id]!.length * 2);
+      for (const id of list.filter((i) => i.endsWith(':place'))) {
+        const read = list.indexOf(id.replace(/:place$/, ''));
+        expect(list.indexOf(id) - read, id).toBeGreaterThanOrEqual(block);
+      }
+    }
+    expect(r1ItemIds([2, 0, 4, 6, 8, 1], 4)).toEqual([
+      'staff:G3@treble8vb',
+      'staff:E3@treble8vb',
+      'staff:B3@treble8vb',
+      'staff:D4@treble8vb',
+      'staff:G3@treble8vb:place',
+      'staff:F4@treble8vb',
+      'staff:E3@treble8vb:place',
+      'staff:F3@treble8vb',
+      'staff:B3@treble8vb:place',
+      'staff:D4@treble8vb:place',
+      'staff:F4@treble8vb:place',
+      'staff:F3@treble8vb:place',
+    ]);
   });
 
   it('opens the ledger lines below on open low E, and reaches F above the third line up', () => {

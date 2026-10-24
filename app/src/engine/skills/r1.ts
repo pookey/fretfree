@@ -1,5 +1,6 @@
 import { noteAtStaffPosition } from '../../theory';
-import { STAFF_DIRECTIONS, staffItemId } from '../items/staff';
+import { ENGINE_CONFIG } from '../config';
+import { staffItemId } from '../items/staff';
 import type { Skill } from '../model';
 import { itemsOf, memo } from './helpers';
 
@@ -67,6 +68,29 @@ export const R1_POSITIONS: Readonly<Record<string, readonly number[]>> = Object.
   SETS.map((s) => [s.id, s.positions]),
 );
 
+/**
+ * A set's cards in the order they are introduced: its reading cards lead by
+ * one new-item block, and each place's placing card follows in a later
+ * block, between new reading cards. The placing card for G never comes
+ * straight after the worked example that showed where G is, so it is
+ * recalled, not copied (research/02 rules 4 and 6), and every session that
+ * introduces cards still meets both directions.
+ */
+export function r1ItemIds(
+  positions: readonly number[],
+  lead: number = ENGINE_CONFIG.session.newBlockSize,
+): string[] {
+  const id = (p: number, d: 'read' | 'place') =>
+    staffItemId(noteAtStaffPosition(p), 'treble8vb', d);
+  const out = positions.slice(0, lead).map((p) => id(p, 'read'));
+  positions.forEach((p, i) => {
+    out.push(id(p, 'place'));
+    const next = positions[lead + i];
+    if (next !== undefined) out.push(id(next, 'read'));
+  });
+  return out;
+}
+
 export const skills: Skill[] = SETS.map((s, i) => ({
   id: s.id,
   topic: 'R1',
@@ -75,12 +99,5 @@ export const skills: Skill[] = SETS.map((s, i) => ({
   prerequisites: s.prerequisites,
   softUnlock: true,
   drillTypes: R1_DRILLS,
-  items: memo(() =>
-    itemsOf(
-      s.id,
-      s.positions.flatMap((p) =>
-        STAFF_DIRECTIONS.map((d) => staffItemId(noteAtStaffPosition(p), 'treble8vb', d)),
-      ),
-    ),
-  ),
+  items: memo(() => itemsOf(s.id, r1ItemIds(s.positions))),
 }));
