@@ -28,6 +28,7 @@ import {
   type FretRange,
   type TriadCore,
 } from '../../../theory';
+import { chordKeySpelling } from '../../../theory/key-spelling';
 import styles from '../../screens.module.css';
 import { EXPLORER_RANGE, Swatch, explorerContent, useSkillStatuses } from './fretboard-explorer';
 import css from './fretboard-explorer.module.css';
@@ -58,8 +59,10 @@ export interface ChainLink {
 }
 
 export interface CagedContent {
-  /** The root as spelled: Db, but C#m. */
+  /** The root as spelled from the chord's key: Db, but C#m; Bb whatever the setting. */
   readonly root: string;
+  /** How the chord's notes are named (`chordKeySpelling`): the setting only breaks ties. */
+  readonly spelling: AccidentalPref;
   /** "C", "C#m", "Bb7". */
   readonly name: string;
   readonly quality: CagedQuality;
@@ -69,14 +72,19 @@ export interface CagedContent {
   readonly chain: readonly ChainLink[];
 }
 
-/** A chord's CAGED chain on a root (a chroma, 0 = C), spelled as the explorer spells it. */
+/**
+ * A chord's CAGED chain on a root (a chroma, 0 = C), spelled from the chord's
+ * key as the shape drills spell it (`chordKeySpelling`): B♭, not A♯, even for
+ * a learner who prefers sharps (research/02 rule 4).
+ */
 export function cagedContent(
   rootChroma: number,
   quality: CagedQuality,
   pref: AccidentalPref = 'sharp',
 ): CagedContent {
   const known = QUALITIES.find((q) => q.quality === quality) ?? QUALITIES[0]!;
-  const content = explorerContent(rootChroma, `chord:${known.kind}`, pref);
+  const spelling = chordKeySpelling(rootChroma, known.quality, pref);
+  const content = explorerContent(rootChroma, `chord:${known.kind}`, spelling);
   const chain = cagedChain(content.root, { quality: known.quality }).map((shape): ChainLink => ({
     shape,
     core: triadCore(shape),
@@ -84,6 +92,7 @@ export function cagedContent(
   }));
   return {
     root: content.root,
+    spelling,
     name: content.name,
     quality: known.quality,
     notes: new Map(content.tones.map((t) => [t.degree as Degree, t.pc])),
@@ -403,7 +412,7 @@ export function View() {
             handedness={handedness}
             markers={markers}
             guideLevel={3}
-            accidentalPref={accidentalPref}
+            accidentalPref={content.spelling}
             label={
               link
                 ? `${link.shape.shape} shape of ${content.name}, ${frets(link.span)}`

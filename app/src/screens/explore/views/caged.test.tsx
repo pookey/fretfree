@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { SKILLS, deriveStatus, type SkillStatus } from '../../../engine';
+import { useAppStore } from '../../../app-store';
+import { DEFAULT_SETTINGS, SKILLS, deriveStatus, type SkillStatus } from '../../../engine';
 import { focusHref, noteSkillIds } from '../../../session/focus';
 import { CAGED_QUALITIES, chromaOf, midiAt, type CagedQuality } from '../../../theory';
+import { keySpelledRoot } from '../../../theory/key-spelling';
 import {
   STEP_MS,
   View,
@@ -55,6 +57,7 @@ function mockReducedMotion(matches: boolean) {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  useAppStore.setState({ settings: { ...DEFAULT_SETTINGS } });
 });
 
 const cells = (ms: { string: number; fret: number }[]) => ms.map((m) => `${m.string}:${m.fret}`);
@@ -94,6 +97,28 @@ describe('cagedContent', () => {
       ['5', 'E'],
       ['b7', 'G'],
     ]);
+  });
+
+  it("spells every chord's root from its key, the preference only breaking ties", () => {
+    for (const quality of CAGED_QUALITIES) {
+      for (const pref of ['sharp', 'flat'] as const) {
+        for (let chroma = 0; chroma < 12; chroma++) {
+          const c = cagedContent(chroma, quality, pref);
+          expect(c.root, `${chroma} ${quality} ${pref}`).toBe(
+            keySpelledRoot(chroma, quality, pref),
+          );
+          expect(c.notes.get('R')).toBe(c.root);
+        }
+      }
+    }
+    // A learner who prefers sharps sees B♭ and its D and F, never A♯.
+    const bb = cagedContent(10, 'major', 'sharp');
+    expect(bb.name).toBe('Bb');
+    expect(bb.spelling).toBe('flat');
+    expect([...bb.notes.values()]).toEqual(['Bb', 'D', 'F']);
+    expect(cagedContent(6, 'major', 'flat').name).toBe('Gb');
+    expect(cagedContent(6, 'major', 'sharp').name).toBe('F#');
+    expect(cagedContent(1, 'dominant7', 'sharp').name).toBe('Db7');
   });
 
   it('falls back to major for an unknown quality', () => {
@@ -341,6 +366,18 @@ describe('<View>', () => {
     expect(screen.getByRole('button', { name: 'Play the chain' })).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(STEP_MS * 3));
     expect(screen.getByTestId('caged-name')).toHaveTextContent('Cm: C shape');
+  });
+
+  it('names a flat-key chord with flats for a learner who prefers sharps', () => {
+    mockReducedMotion(true);
+    useAppStore.setState({ settings: { ...DEFAULT_SETTINGS, accidentalPref: 'sharp' } });
+    renderView();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Root' }), { target: { value: '10' } });
+    expect(screen.getByTestId('caged-name')).toHaveTextContent('Bb: A shape');
+    fireEvent.click(screen.getByRole('radio', { name: 'Note names' }));
+    const neck = screen.getByRole('group', { name: /^A shape of Bb/ });
+    expect(neck.querySelector('[data-testid="marker-root"] text')).toHaveTextContent('B♭');
+    expect(neck).not.toHaveTextContent(/A[#♯]/);
   });
 
   it('labels by note name and links the quiz to the shown quality', () => {
