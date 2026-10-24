@@ -23,10 +23,14 @@ describe('<AboutScreen>', () => {
     expect(approach.getByText(/almost no controlled research/)).toBeInTheDocument();
   });
 
-  it('covers privacy: no account, no analytics, local data', () => {
+  it('covers privacy: an optional account, no analytics, local data', () => {
     renderAbout();
     const privacy = within(screen.getByRole('region', { name: 'Privacy' }));
-    expect(privacy.getByText('No account.')).toBeInTheDocument();
+    expect(privacy.getByText('An account is optional.')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Privacy' })).toHaveTextContent(
+      'we store your email address and that copy on Amazon Web Services in the US (us-east-1)',
+    );
+    expect(privacy.getByRole('link', { name: 'Progress' })).toHaveAttribute('href', '/progress');
     expect(privacy.getByText('No analytics.')).toBeInTheDocument();
     expect(privacy.getByText('Your data stays here.')).toBeInTheDocument();
     expect(privacy.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');

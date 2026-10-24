@@ -24,7 +24,9 @@ export function YourData() {
 
   return (
     <>
-      <p className={styles.muted}>Everything stays on this device. Export a backup any time.</p>
+      <p className={styles.muted}>
+        Your progress is saved on this device. Export a backup any time, signed in or not.
+      </p>
       <div className={styles.toolbar}>
         <button type="button" className={styles.secondaryButton} onClick={() => void onExport()}>
           Export data

@@ -25,14 +25,32 @@ describe('<PrivacyScreen>', () => {
     expect(not.getByText('No cookies, no analytics, no ads.')).toBeInTheDocument();
   });
 
-  it('covers hosting, the planned sign-in and other copies, with a way to ask', () => {
+  it('says what the optional account stores, where, why, and how to delete it', () => {
+    renderScreen();
+    const account = screen.getByRole('region', { name: 'If you sign in (optional)' });
+    expect(account).toHaveTextContent('It’s never required');
+    expect(account).toHaveTextContent('Your email address, used only to sign you in');
+    expect(account).toHaveTextContent('a copy of your progress');
+    expect(account).toHaveTextContent(
+      'us-east-1: your email address in Amazon Cognito, and the copy of your progress in Amazon DynamoDB',
+    );
+    expect(account).toHaveTextContent('Amazon SES in the Europe (Ireland) region, eu-west-1');
+    expect(account).toHaveTextContent('only hashed forms of your address');
+    expect(account).toHaveTextContent('an anonymous marker');
+    expect(within(account).getByRole('link', { name: 'Progress' })).toHaveAttribute(
+      'href',
+      '/progress',
+    );
+    const device = screen.getByRole('region', { name: 'What stays on your device' });
+    expect(device).toHaveTextContent('this browser’s local storage');
+    expect(device).toHaveTextContent('Export works whether or not you’re signed in');
+  });
+
+  it('covers hosting and other copies, with a way to ask', () => {
     renderScreen();
     expect(screen.getByRole('region', { name: 'Hosting' })).toHaveTextContent(
       'we keep no record of who visits',
     );
-    expect(
-      screen.getByRole('region', { name: 'Optional sign-in (not available yet)' }),
-    ).toHaveTextContent('It will never be required.');
     expect(screen.getByRole('region', { name: 'Copies hosted by others' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
       'href',

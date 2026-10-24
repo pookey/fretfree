@@ -53,8 +53,8 @@ function InShort() {
       <ul className={styles.short}>
         <li>No learning styles: what works, works for everyone.</li>
         <li>Spaced, mixed, timed recall, kept at 80–90% right.</li>
-        <li>No account and no analytics.</li>
-        <li>Your data stays on this device.</li>
+        <li>No account needed, and no analytics.</li>
+        <li>Your data stays on this device unless you choose to sync.</li>
       </ul>
     </div>
   );
@@ -114,15 +114,20 @@ export function AboutScreen() {
           </h2>
           <ul className={styles.privacy}>
             <li>
-              <strong>No account.</strong> You never sign up or log in.
+              <strong>An account is optional.</strong> You never have to sign up. Sign in with your
+              email only if you want a copy of your progress to carry on from another device. Then
+              we store your email address and that copy on Amazon Web Services in the US
+              (us-east-1), and you can delete the account any time from{' '}
+              <Link to="/progress">Progress</Link>.
             </li>
             <li>
-              <strong>No analytics.</strong> No tracking, no ads, and nothing about how you practise
-              is sent anywhere.
+              <strong>No analytics.</strong> No tracking and no ads. Nothing about how you practise
+              is sent anywhere, apart from the copy of your progress if you sign in.
             </li>
             <li>
               <strong>Your data stays here.</strong> Your progress, settings and every answer are
-              stored in this browser on this device. FretFree works offline.
+              stored in this browser on this device, and FretFree works offline. Without an account,
+              they never leave it.
             </li>
             <li>
               <strong>Mic mode listens, but doesn&rsquo;t record.</strong> When you switch it on,
@@ -131,8 +136,8 @@ export function AboutScreen() {
             </li>
             <li>
               <strong>Keep a backup.</strong> Clearing this site&rsquo;s data deletes your progress.
-              Export it from <Link to="/settings">Settings</Link> → Your data, and import it on
-              another device.
+              Export it from <Link to="/settings">Settings</Link> → Your data, signed in or not, and
+              import it on another device.
             </li>
           </ul>
           <p>
