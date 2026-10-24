@@ -1954,7 +1954,7 @@ The first six WPs are `Priority: high`, in the review's order (adjusted where ve
   - Unit tests: an expert passing a later stage gets probes for the earlier ones; a probe failure leaves that stage as new cards.
 
 ### M10-21 · The test-out's "opens once" sentence says "or" when any one opener will do
-- **Status:** todo
+- **Status:** done
 - **Priority:** high (learner-facing copy must be true; follow-up from the M4-16 review)
 - **Deps:** M4-16
 - **Design:** research/02 rule 16 (honest choices); M10-01 (`openers`)
