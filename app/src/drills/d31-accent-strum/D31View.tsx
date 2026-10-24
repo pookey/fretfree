@@ -16,6 +16,7 @@ import {
 } from '../../timing/onsets';
 import type { DrillFeedback, DrillRenderProps } from '../types';
 import {
+  d31BarClickLine,
   d31ClickLine,
   d31DescribeOffset,
   d31Explain,
@@ -326,7 +327,7 @@ export function AccentDrill({
                       {counting && 'countIn' in position ? position.countIn : 'Strong'}
                     </span>
                     <span className={styles.keys} aria-hidden="true">
-                      J
+                      F
                     </span>
                   </button>
                   <button
@@ -338,7 +339,7 @@ export function AccentDrill({
                   >
                     <span aria-hidden="true">Soft</span>
                     <span className={styles.keys} aria-hidden="true">
-                      F
+                      J
                     </span>
                   </button>
                 </div>
@@ -370,8 +371,8 @@ export function AccentDrill({
           )}
           {idle && !strum && (
             <p className={styles.note}>
-              Tap Strong for a marked stroke and Soft for the rest. With a keyboard, J or Enter is
-              strong and F or Space is soft.
+              Tap Strong for a marked stroke and Soft for the rest. With a keyboard, F or Space is
+              strong and J or Enter is soft.
             </p>
           )}
           {idle && strum && (
@@ -542,7 +543,7 @@ function ResultGrid({
           <div key={bar} className={styles.resultBar}>
             <p className={styles.barLabel}>
               Bar {bar + 1}
-              {rung !== undefined && <span> · {d31ClickLine(prompt, rung)}</span>}
+              {rung !== undefined && <span> · {d31BarClickLine(prompt, rung, bar)}</span>}
             </p>
             <div className={styles.gridWrap}>
               <ol className={styles.grid} style={gridStyle(prompt)} aria-label={`Bar ${bar + 1}`}>

@@ -89,7 +89,9 @@ test.describe('M8-08 D31 accent and strum in meter', () => {
     });
     const results = drill.getByTestId('d31-results');
     await expect(results).toContainText('Bar 1 · Click: every beat');
-    await expect(results).toContainText('Bar 4 · Click: beat 1 of every 2nd bar');
+    await expect(results).toContainText('Bar 3 · Click: beat 1');
+    // Bar 4 is on "beat 1 of every 2nd bar", and isn't one of them: it had no click.
+    await expect(results).toContainText('Bar 4 · No click this bar');
     await expect(
       results.getByRole('list', { name: 'Bar 4' }).getByRole('listitem').first(),
     ).toHaveAccessibleName('1: strong, on time, 10 ms late');

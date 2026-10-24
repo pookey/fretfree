@@ -124,7 +124,7 @@ describe('<AccentDrill>', () => {
     expect(screen.getByTestId('aside')).toBeInTheDocument();
     // The rep starts with the click part-faded at level 1.
     expect(screen.getByTestId('d31-click')).toHaveTextContent('Click: beat 1 of every 2nd bar');
-    expect(screen.getByText(/J or Enter is strong/)).toBeInTheDocument();
+    expect(screen.getByText(/F or Space is strong/)).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Play by' })).not.toBeInTheDocument();
   });
 
@@ -295,7 +295,7 @@ describe('<AccentDrill>', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/stopped during the run/);
     expect(onAnswer).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('radio', { name: 'Tapping' }));
-    expect(screen.getByText(/J or Enter is strong/)).toBeInTheDocument();
+    expect(screen.getByText(/F or Space is strong/)).toBeInTheDocument();
   });
 
   it('offers the timing check while this input is unchecked', () => {
@@ -335,7 +335,9 @@ describe('<AccentDrill>', () => {
     expect(labels('Bar 2')[0]).toEqual(['1: missed', '✕']);
     expect(labels('Bar 2')[1]).toEqual(['2: strong, on time, 6 ms late', '>✓']);
     expect(results).toHaveTextContent('Bar 1 · Click: every beat');
-    expect(results).toHaveTextContent('Bar 4 · Click: beat 1 of every 2nd bar');
+    // Bar 4 (index 3) on "every 2nd bar" had no click at all, and says so.
+    expect(results).toHaveTextContent('Bar 3 · Click: beat 1');
+    expect(results).toHaveTextContent('Bar 4 · No click this bar');
     expect(screen.getByTestId('d31-explain')).toHaveTextContent(
       '1 accent played soft. 1 soft stroke played strong.',
     );

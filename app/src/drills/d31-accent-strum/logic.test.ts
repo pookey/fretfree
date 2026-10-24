@@ -14,6 +14,7 @@ import {
   d31Bar,
   d31CanTest,
   d31Check,
+  d31BarClickLine,
   d31ClickLine,
   d31ConceptOf,
   d31DescribeAnswer,
@@ -295,6 +296,20 @@ describe('D31 text', () => {
     expect(d31ClickLine(sixteenths, 0)).toBe('Click: every step');
     expect(d31ClickLine(sixteenths, 1)).toBe('Click: every beat');
     expect(d31ClickLine(sixteenths, 99)).toBe('No click: keep the pulse yourself');
+  });
+
+  it('says when a bar had no click at all', () => {
+    const p = prompt('accent:4/4:downbeat');
+    // Rung 2 keeps beat 1 of bars 0, 2, …; rung 3 of bars 0, 4, ….
+    expect([0, 1, 2, 3].map((bar) => d31BarClickLine(p, 2, bar))).toEqual([
+      'Click: beat 1 of every 2nd bar',
+      'No click this bar',
+      'Click: beat 1 of every 2nd bar',
+      'No click this bar',
+    ]);
+    expect(d31BarClickLine(p, 3, 2)).toBe('No click this bar');
+    expect(d31BarClickLine(p, 1, 3)).toBe('Click: beat 1');
+    expect(d31BarClickLine(p, 4, 1)).toBe('No click: keep the pulse yourself');
   });
 
   it('explains the timing, the accents and how far the click faded', () => {

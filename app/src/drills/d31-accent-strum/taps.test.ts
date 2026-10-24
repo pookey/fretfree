@@ -52,7 +52,7 @@ describe('createAccentTapSource', () => {
     ]);
   });
 
-  it('takes J or Enter as strong and F or Space as soft, without repeats', async () => {
+  it('takes F or Space as strong and J or Enter as soft, each on its pad’s side, without repeats', async () => {
     const { source, onsets } = setup();
     await source.start();
     source.handle(key('j', 1000));
@@ -62,7 +62,7 @@ describe('createAccentTapSource', () => {
     source.handle(key(' ', 1040, true));
     source.handle(key('x', 1050));
     source.handle({ type: 'keyup', key: 'j', timeStamp: 1060 });
-    expect(onsets.map((o) => o.strength)).toEqual([1, 1, SOFT, SOFT]);
+    expect(onsets.map((o) => o.strength)).toEqual([SOFT, SOFT, 1, 1]);
     source.stop();
     source.handle(key('j', 1100));
     expect(onsets).toHaveLength(4);
@@ -82,7 +82,7 @@ describe('createAccentTapSource', () => {
     const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
     el.strong.dispatchEvent(tab);
     expect(tab.defaultPrevented).toBe(false);
-    expect(onsets.map((o) => o.strength)).toEqual([1, SOFT, SOFT]);
+    expect(onsets.map((o) => o.strength)).toEqual([1, SOFT, 1]);
     detach();
     el.strong.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }));
     el.keys.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true }));

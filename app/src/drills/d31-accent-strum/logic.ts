@@ -6,7 +6,7 @@ import {
   type CountPattern,
 } from '../../engine/items/accent';
 import type { GuideLevel, Item, TimingWindow } from '../../engine/model';
-import { fadeLadder, type ClickFade } from '../../timing/fade';
+import { fadeLadder, isAudible, type ClickFade } from '../../timing/fade';
 import {
   alignOnsets,
   gradeTiming,
@@ -387,6 +387,25 @@ export function d31ClickLine(prompt: D31Prompt, rung: number): string {
   const fade = prompt.ladder[Math.max(0, Math.min(prompt.ladder.length - 1, rung))]!;
   const what = d31DescribeFade(prompt, fade);
   return what === 'none' ? 'No click: keep the pulse yourself' : `Click: ${what}`;
+}
+
+/**
+ * What one bar of the results had of the click: the rung's line, or "No
+ * click this bar" when the rung keeps only some bars' downbeats (every 2nd,
+ * every 4th) and this isn't one of them.
+ */
+export function d31BarClickLine(prompt: D31Prompt, rung: number, bar: number): string {
+  const fade = prompt.ladder[Math.max(0, Math.min(prompt.ladder.length - 1, rung))]!;
+  const downbeat = {
+    index: 0,
+    pulse: 0,
+    bar,
+    pulseInBar: 0,
+    accent: 'bar',
+    countIn: false,
+  } as const;
+  if (fade.keep !== 'none' && !isAudible(downbeat, fade)) return 'No click this bar';
+  return d31ClickLine(prompt, rung);
 }
 
 /** "12 ms late", "right on the click". */

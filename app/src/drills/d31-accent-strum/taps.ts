@@ -6,8 +6,8 @@
  * strum's strength is read from how loud it was.
  *
  * A pointer counts on press, on the pad it lands on. Keys count on the
- * element holding both pads, so the learner never moves focus mid-bar: J or
- * Enter for a strong tap, F or Space for a soft one. Held keys don't repeat.
+ * element holding both pads, so the learner never moves focus mid-bar: F or
+ * Space for a strong tap, J or Enter for a soft one, each on its pad's side. Held keys don't repeat.
  */
 import { ENGINE_CONFIG } from '../../engine/config';
 import type { AudioClock } from '../../timing/clock';
@@ -18,8 +18,9 @@ import {
   type TapEvent,
 } from '../../timing/onsets';
 
-export const STRONG_KEYS: readonly string[] = ['j', 'J', 'Enter'];
-export const SOFT_KEYS: readonly string[] = ['f', 'F', ' '];
+// The keys sit on the side of their pad: Strong is the left pad, Soft the right.
+export const STRONG_KEYS: readonly string[] = ['f', 'F', ' '];
+export const SOFT_KEYS: readonly string[] = ['j', 'J', 'Enter'];
 
 type Listenable = Pick<EventTarget, 'addEventListener' | 'removeEventListener'>;
 
