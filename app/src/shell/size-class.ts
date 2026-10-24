@@ -136,7 +136,7 @@ export function useSizeClass(): SizeClass {
 let insetProbe: HTMLElement | null = null;
 
 /** The left and right safe-area insets (a notched phone on its side), in CSS px. */
-function horizontalInsets(): number {
+export function horizontalInsets(): number {
   if (!insetProbe) {
     insetProbe = document.createElement('div');
     insetProbe.setAttribute('aria-hidden', 'true');

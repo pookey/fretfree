@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useAppStore } from '../../app-store';
 import { playNotes } from '../../audio/audio';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
+import { horizontalInsets, isShortLandscape } from '../../shell/size-class';
 import { noteAt, type FretRange, type Position } from '../../theory';
 import {
   d2MoveFocus,
   d2SlideWindow,
-  d2SpanWindow,
   d2WindowContaining,
   intersectRange,
 } from '../d2-find-the-note/logic';
@@ -15,10 +15,12 @@ import {
   d15Above,
   d15Explain,
   d15FeedbackPositions,
+  d15FeedbackWindow,
   d15InitialWindow,
   d15IsLive,
   d15NeckGuideLevel,
   d15PromptNotes,
+  d15SideFrets,
   type D15Answer,
   type D15Prompt,
 } from './logic';
@@ -37,6 +39,17 @@ interface ViewState {
 const WIDE: FretRange = { from: 0, to: 15 };
 const REGULAR: FretRange = { from: 0, to: 12 };
 
+function subscribeResize(cb: () => void): () => void {
+  window.addEventListener('resize', cb);
+  return () => window.removeEventListener('resize', cb);
+}
+
+/** On a phone on its side, the window that fits beside the prompt (`d15SideFrets`). */
+function sideFretsSnapshot(): number | undefined {
+  const { innerWidth: w, innerHeight: h } = window;
+  return isShortLandscape(w, h) ? d15SideFrets(w - horizontalInsets(), h) : undefined;
+}
+
 /**
  * D15 view: the open string sounds, then the note, and the learner taps the
  * note on that string (design §6 D15). A C2 `find:` card names the note; on
@@ -49,7 +62,7 @@ export function D15View({
   guided,
   handedness,
   sizeClass,
-  compactFrets,
+  compactFrets: sessionFrets,
   tuning,
   feedback,
   onAnswer,
@@ -59,6 +72,10 @@ export function D15View({
   const volume = useAppStore((s) => s.settings.volume);
   const updateSettings = useAppStore((s) => s.update);
   const compact = sizeClass === 'compact';
+  // A phone on its side puts the prompt beside the neck, so the window is
+  // narrower than the session's and the neck can take the full height.
+  const sideFrets = useSyncExternalStore(subscribeResize, sideFretsSnapshot, () => undefined);
+  const compactFrets = compact ? (sideFrets ?? sessionFrets) : sessionFrets;
   const neckRef = useRef<HTMLDivElement>(null);
   const moved = useRef(false);
   const played = useRef<D15Prompt | null>(null);
@@ -94,11 +111,12 @@ export function D15View({
   let visible: FretRange;
   if (!compact) visible = sizeClass === 'regular-wide' ? WIDE : REGULAR;
   else if (feedback && !feedback.result.correct) {
-    // Widen the window so both the tapped and the right cell are on screen.
-    visible = d2SpanWindow(
+    // Keep the prompt's window if it shows both the tapped and the right
+    // cell; widen it only when it doesn't.
+    visible = d15FeedbackWindow(
+      view.win,
       [feedback.answer.fret, prompt.target.fret],
       prompt.activeRange,
-      compactFrets,
     );
   } else visible = view.win;
   const navRange = compact ? prompt.activeRange : intersectRange(prompt.activeRange, visible);

@@ -16,6 +16,7 @@ import {
   type Position,
   type Tuning,
 } from '../../theory';
+import { computeGeometry } from '../../components/fretboard/geometry';
 import { d2SpanWindow } from '../d2-find-the-note/logic';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { D15_SCOPES, d15CardOf, d15EarConcept, d15TargetFret, type D15Scope } from './meta';
@@ -208,9 +209,69 @@ export function d15NeckGuideLevel(
 
 /**
  * The first compact window: at the nut, where the reference is, so it gives
- * nothing away. A guided rep (a worked example) opens on the note instead.
+ * nothing away. A guided rep (a worked example) opens on the note instead,
+ * still from the nut when the note fits there, so the reference shows too.
  */
 export function d15InitialWindow(prompt: D15Prompt, guided: boolean, size?: number): FretRange {
-  const fret = guided ? prompt.target.fret : prompt.activeRange.from;
-  return d2SpanWindow([fret], prompt.activeRange, size);
+  const atNut = d2SpanWindow([prompt.activeRange.from], prompt.activeRange, size);
+  if (!guided || inRange(prompt.target.fret, atNut)) return atNut;
+  return d2SpanWindow([prompt.target.fret], prompt.activeRange, size);
+}
+
+/**
+ * The compact window for a wrong answer's feedback: the prompt's window when
+ * it already shows both the tap and the note, so neither slides from where
+ * the learner saw it; otherwise one wide enough for both.
+ */
+export function d15FeedbackWindow(
+  win: FretRange,
+  frets: readonly number[],
+  bounds: FretRange,
+): FretRange {
+  if (frets.every((f) => inRange(f, win))) return win;
+  return d2SpanWindow(frets, bounds, win.to - win.from + 1);
+}
+
+/**
+ * Height a phone on its side spends beside D15's neck: the session's header
+ * row, its padding and the gaps (D15View.module.css sizes the neck to the rest).
+ */
+export const D15_SIDE_CHROME_Y = 76;
+
+/**
+ * Width a phone on its side spends beside D15's neck: the screen's side
+ * padding (2 × 1.5rem), the slide buttons and their gaps (2 × 44pt + 2 ×
+ * 0.5rem), the column gap (1rem) and the prompt's column (at least 12rem).
+ */
+export const D15_SIDE_CHROME_X = 48 + 104 + 16 + 192;
+
+/**
+ * How many frets D15's window shows on a phone on its side, where the prompt
+ * sits in a column beside the neck and the neck takes the full height (so
+ * its cells are as tall as the screen allows). The most frets whose neck, at
+ * that height, still leaves the prompt its column wherever the window sits;
+ * never fewer than the portrait window's 5. `width` excludes safe areas.
+ */
+export function d15SideFrets(width: number, height: number, strings = 6): number {
+  const tall = computeGeometry({
+    fretRange: { from: 0, to: 0 },
+    stringCount: strings,
+    handedness: 'right',
+  });
+  const scale = Math.max(0, height - D15_SIDE_CHROME_Y) / tall.height;
+  const room = width - D15_SIDE_CHROME_X;
+  const fits = (frets: number) => {
+    for (let from = 0; from + frets - 1 <= 15; from++) {
+      const g = computeGeometry({
+        fretRange: { from, to: from + frets - 1 },
+        stringCount: strings,
+        handedness: 'right',
+      });
+      if (g.width * scale > room) return false;
+    }
+    return true;
+  };
+  let frets = 5;
+  while (frets < 16 && fits(frets + 1)) frets++;
+  return frets;
 }

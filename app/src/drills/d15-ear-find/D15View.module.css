@@ -140,6 +140,12 @@
   font-size: 0.875rem;
 }
 
+/* iPad landscape: the help panel beside the prompt can be taller than the
+   prompt, so a smaller gap keeps the neck within the screen (no page scroll). */
+.drill[data-size-class='regular-wide'] {
+  gap: var(--space-3);
+}
+
 /* iPad portrait (M1-40, as M2-20): one column from the top (prompt, answers,
    neck, then help), not the neck centred in a tall empty band with help pinned
    below. */
@@ -165,4 +171,56 @@
 /* Best-effort iPhone: keep the zoomed neck within short landscape viewports. */
 .drill[data-size-class='compact'] .neckArea svg {
   max-height: calc(100dvh - 9rem);
+}
+
+/* A phone on its side: the prompt, Hear it again and the window's frets sit
+   in a column beside the neck, and the neck takes the full height, so its
+   cells are as tall as the screen allows. The window holds as many frets as
+   fit beside the column (d15SideFrets, whose D15_SIDE_CHROME_Y is the 4.75rem
+   here), and the neck is sized by its height, not stretched to a width it
+   would letterbox in. */
+@media (orientation: landscape) and (max-height: 499.98px) {
+  .drill[data-size-class='compact'] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  /* A long explanation scrolls within the column, never the page. */
+  .drill[data-size-class='compact'] .upper {
+    grid-area: 1 / 1;
+    align-self: stretch;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .drill[data-size-class='compact'] .prompt {
+    font-size: 1rem;
+  }
+
+  .drill[data-size-class='compact'] .explain {
+    font-size: 0.875rem;
+  }
+
+  .drill[data-size-class='compact'] .windowCaption {
+    grid-area: 2 / 1;
+  }
+
+  .drill[data-size-class='compact'] .neckRow {
+    grid-area: 1 / 2 / 3 / 3;
+  }
+
+  .drill[data-size-class='compact'] .neckArea {
+    padding-bottom: 0;
+  }
+
+  .drill[data-size-class='compact'] .neckArea svg {
+    width: auto;
+    /* The neck's inline min-width assumes 44pt-tall cells, which the height can't give. */
+    min-width: 0 !important;
+    height: calc(100dvh - 4.75rem);
+    max-height: none;
+  }
 }

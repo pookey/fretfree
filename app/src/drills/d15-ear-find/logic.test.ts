@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ENGINE_CONFIG } from '../../engine/config';
 import { DROP_D_TUNING, STANDARD_TUNING, type AccidentalPref, type Position } from '../../theory';
+import { computeGeometry } from '../../components/fretboard/geometry';
 import type { DrillFeedback } from '../types';
 import {
   D15_SCOPE,
@@ -13,13 +14,17 @@ import {
   d15Explain,
   d15FeedbackPositions,
   d15GradedResponseMs,
+  d15FeedbackWindow,
   d15InitialWindow,
   d15IsLive,
   d15MakePrompt,
   d15NeckGuideLevel,
   d15PromptNotes,
   d15ScopeFor,
+  d15SideFrets,
   d15Sounds,
+  D15_SIDE_CHROME_X,
+  D15_SIDE_CHROME_Y,
   type D15Prompt,
 } from './logic';
 
@@ -241,5 +246,53 @@ describe('D15 neck guides', () => {
     expect(d15InitialWindow(p, false)).toEqual({ from: 0, to: 4 });
     expect(d15InitialWindow(p, true)).toEqual({ from: 8, to: 12 });
     expect(d15InitialWindow(p, false, 7)).toEqual({ from: 0, to: 6 });
+  });
+
+  it('opens a worked example at the nut when its note fits there, so the reference shows', () => {
+    // A on string 6 is fret 5: a 10-fret window from the nut holds it.
+    const p = prompt('ear-find:A@s6');
+    expect(p.target.fret).toBe(5);
+    expect(d15InitialWindow(p, true, 10)).toEqual({ from: 0, to: 9 });
+    expect(d15InitialWindow(p, true, 5)).toEqual({ from: 3, to: 7 });
+  });
+
+  it('keeps the prompt window for feedback when it shows both cells', () => {
+    const bounds = { from: 0, to: 15 };
+    const win = { from: 1, to: 10 };
+    expect(d15FeedbackWindow(win, [3, 5], bounds)).toBe(win);
+    // A tap outside the window widens to show both, at the window's size or more.
+    expect(d15FeedbackWindow({ from: 0, to: 4 }, [2, 7], bounds)).toEqual({ from: 2, to: 7 });
+    expect(d15FeedbackWindow({ from: 0, to: 4 }, [0, 12], bounds)).toEqual({ from: 0, to: 12 });
+  });
+
+  it('sizes the window beside the prompt on a phone on its side', () => {
+    // iPhone 15 on its side in Safari (734 × 343 inside the safe areas): 8 frets.
+    expect(d15SideFrets(734, 343)).toBe(8);
+    // Installed (734 × 393): taller cells, so fewer frets fit beside the prompt.
+    expect(d15SideFrets(734, 393)).toBe(6);
+    // Each window it allows leaves the prompt its column.
+    for (const [w, h] of [
+      [734, 343],
+      [734, 393],
+      [812, 428],
+      [568, 320],
+    ] as const) {
+      const frets = d15SideFrets(w, h);
+      const scale =
+        (h - D15_SIDE_CHROME_Y) /
+        computeGeometry({ fretRange: { from: 0, to: 0 }, stringCount: 6, handedness: 'right' })
+          .height;
+      const neck = computeGeometry({
+        fretRange: { from: 0, to: frets - 1 },
+        stringCount: 6,
+        handedness: 'right',
+      });
+      if (frets > 5) expect(neck.width * scale).toBeLessThanOrEqual(w - D15_SIDE_CHROME_X);
+      expect(frets).toBeGreaterThanOrEqual(5);
+    }
+    // No room at all still gets the portrait window.
+    expect(d15SideFrets(300, 200)).toBe(5);
+    // A very wide screen tops out at the whole neck.
+    expect(d15SideFrets(4000, 499)).toBe(16);
   });
 });
