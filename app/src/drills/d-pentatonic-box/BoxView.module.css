@@ -81,6 +81,21 @@
   padding-bottom: var(--space-2);
 }
 
+/* iPad landscape: the neck takes the height the prompt row leaves, so a tall
+   panel or a two-line hint shrinks it a little instead of scrolling the
+   screen (M6-14). Its floor keeps the 15-fret neck's cells at 44pt. */
+.drill[data-size-class='regular-wide'] .neckArea {
+  flex: 1 1 0;
+  min-height: calc(21rem + var(--space-2));
+  container-type: size;
+  display: grid;
+  align-content: end;
+}
+
+.drill[data-size-class='regular-wide'] .neckArea svg {
+  max-height: 100cqh;
+}
+
 /* iPad portrait (as D1, M1-40): one column from the top (prompt, neck, then
    help), not the neck centred in a tall empty band with help pinned below. */
 .drill[data-size-class='regular'] {
