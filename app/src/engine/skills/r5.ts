@@ -7,8 +7,10 @@ import { itemsOf, memo } from './helpers';
  * R5: intervallic and pattern reading (research/03 track R, design §12):
  * see steps, skips and wider shapes between neighbouring notes instead of
  * decoding each note, which builds the read-ahead chunks skilled readers use
- * (Sloboda). The target is naming the interval between adjacent staff notes
- * in under 1.5 s. Each interval and direction has a card per way of asking
+ * (Sloboda). Research/03's target is naming the interval between adjacent
+ * staff notes in under 1.5 s; for now cards are graded on the standard
+ * personal target (rule 3), until the runner has a per-drill speed-target
+ * hook. Each interval and direction has a card per way of asking
  * (research/02 rule 1):
  *
  * - `staff-interval:+3@treble8vb`: two notes on the staff, named as an

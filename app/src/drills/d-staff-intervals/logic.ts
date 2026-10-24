@@ -42,8 +42,10 @@ export {
  * notes: the shape is the point. Feedback adds the letters, the sound and
  * the pair on the neck (rule 10).
  *
- * Speed: reading cards are graded against R5's "under 1.5 s" (config
- * `staffIntervals.targetDeltaMs`) through `siGradedResponseMs`.
+ * Speed: the standard personal target (research/02 rule 3: baseline + 2 s)
+ * grades every card, as in every drill. R5's "under 1.5 s" waits for a
+ * per-drill speed-target hook in the runner; until then the logged time is
+ * the real one, so speed statistics and the Easy band stay comparable.
  */
 
 /** The answer labels, 2nd to octave, as the buttons show them. */
@@ -253,17 +255,6 @@ export function siFeedbackPositions(
   const note = noteAtStaffPosition(given);
   const there = siPairOnNeck(prompt.fromNote, note, tuning)?.[1];
   return { expected, given: there ? [there] : lowestCell(note, tuning) };
-}
-
-/**
- * The graded time (design §3.2): a reading card's answer counts the time
- * R5's tighter target leaves out, so the usual speed bands grade it against
- * baseline + 1.5 s rather than + 2 s. Placing cards keep the usual target.
- */
-export function siGradedResponseMs(prompt: SIPrompt, _answer: SIAnswer, elapsedMs: number): number {
-  if (prompt.direction !== 'read') return elapsedMs;
-  const tighter = ENGINE_CONFIG.grading.targetDeltaMs - ENGINE_CONFIG.staffIntervals.targetDeltaMs;
-  return elapsedMs + Math.max(0, tighter);
 }
 
 // --- Words ------------------------------------------------------------------

@@ -18,7 +18,6 @@ const lazy = lazyLogic('d-staff-intervals', (l: typeof logic) => ({
   describeAnswer: l.siDescribeAnswer,
   sounds: l.siSounds,
   feedbackPositions: l.siFeedbackPositions,
-  gradedResponseMs: l.siGradedResponseMs,
 }));
 const parts = lazyParts<typeof views>('d-staff-intervals', lazy);
 

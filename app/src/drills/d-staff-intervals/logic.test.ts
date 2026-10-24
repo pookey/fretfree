@@ -9,7 +9,6 @@ import {
   siDescribeAnswer,
   siExplain,
   siFeedbackPositions,
-  siGradedResponseMs,
   siKeyToAnswer,
   siLabel,
   siMakePrompt,
@@ -242,17 +241,6 @@ describe('answers, sounds and the neck', () => {
     // D3 → E3; a 7th up is C4.
     const cells = siFeedbackPositions(p, fb(p, '7th'));
     expect(cells.given.map((c) => midiAt(c, STANDARD_TUNING))).toEqual([staffNote('C4').midi]);
-  });
-});
-
-describe('speed', () => {
-  it('grades reading cards against the tighter 1.5 s target', () => {
-    const read = make('staff-interval:+3@treble8vb');
-    const place = make('staff-interval:+3@treble8vb:place');
-    const extra = ENGINE_CONFIG.grading.targetDeltaMs - ENGINE_CONFIG.staffIntervals.targetDeltaMs;
-    expect(extra).toBe(500);
-    expect(siGradedResponseMs(read, '3rd', 1200)).toBe(1700);
-    expect(siGradedResponseMs(place, 1, 1200)).toBe(1200);
   });
 });
 

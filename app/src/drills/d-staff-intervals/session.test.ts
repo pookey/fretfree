@@ -69,11 +69,11 @@ describe('the staff-interval drill in a session', () => {
     expect(
       log.every((l) => l.drillType === STAFF_INTERVAL_ID && l.skillId === 'R5.steps-skips'),
     ).toBe(true);
-    // Graded (and logged) against the 1.5 s target: 900 ms counts as 1400 ms.
-    expect(log[0]).toMatchObject({ correct: true, responseMs: 1400, answerGiven: '2nd' });
+    // The real time is graded and logged.
+    expect(log[0]).toMatchObject({ correct: true, responseMs: 900, answerGiven: '2nd' });
   });
 
-  it('grades a reading card Hard past baseline + 1.5 s, where other drills allow 2 s', async () => {
+  it('grades a reading card on the standard target, like other drills', async () => {
     const r = await start([{ ...skill('R5.steps-skips'), prerequisites: [] }], 12);
     // Answer quickly until a reading card comes that isn't a worked example
     // (a worked example caps the rating at Hard by itself).
@@ -88,8 +88,11 @@ describe('the staff-interval drill in a session', () => {
     const prompt = cur.prompt as SIPrompt;
     expect(prompt.direction).toBe('read');
     const res = await r.answer(siLabel(prompt.size), 2200);
-    // 2200 ms is inside 500 + 2000 but past 500 + 1500.
-    expect(res.rating).toBe(Rating.Hard);
+    // 2200 ms is inside baseline + 2 s (500 + 2000) and past the fluent
+    // 500 + 1000: Good, as in any drill.
+    expect(res.rating).toBe(Rating.Good);
+    const log = await db.reviewLogs.toArray();
+    expect(log.at(-1)).toMatchObject({ responseMs: 2200 });
   });
 
   it('is the drill for every R5 skill', () => {
