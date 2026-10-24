@@ -78,10 +78,10 @@ test.describe('the tuner', () => {
     );
     await expectNoHorizontalOverflow(page);
 
-    // Leaving the tool releases the mic.
+    // Leaving the tool releases the mic. The release finishes after the view unmounts, so poll.
     await page.getByRole('link', { name: '← All tools' }).click();
     await expect(page.getByRole('link', { name: /Tuner/ })).toBeVisible();
-    expect((await fake(page)).state).toBe('idle');
+    await expect.poll(async () => (await fake(page)).state).toBe('idle');
   });
 
   test('plays reference tones without a mic, and pauses the needle while one sounds @layout', async ({
