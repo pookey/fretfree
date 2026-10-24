@@ -1365,7 +1365,7 @@ Notes for whoever picks this up:
   - iPad-first layout, a11y (Lighthouse 100), and no analytics. An e2e test runs against a mocked auth endpoint.
 
 ### M7-05 · Client sync engine, including uploading existing progress
-- **Status:** todo
+- **Status:** done
 - **Deps:** M7-01, M7-03, M7-04
 - **Owns:** `app/src/storage/sync/engine.ts`, `app/src/storage/sync/engine.test.ts`, `app/e2e/m7-05.spec.ts`
 - **Acceptance:**
