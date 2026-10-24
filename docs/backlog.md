@@ -1579,7 +1579,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - Hear a bar, then pick or build its notation from known rhythm cells.
 
 ### M8-15 · R5 intervallic and pattern-reading skills, plus drill
-- **Status:** todo
+- **Status:** done
 - **Deps:** M8-09, M2-01
 - **After:** M6-10
 - **Owns:** `app/src/engine/skills/r5.ts`, `app/src/drills/d-staff-intervals/**`, `app/e2e/m8-15.spec.ts`
