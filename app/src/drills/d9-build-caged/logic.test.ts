@@ -1,6 +1,10 @@
+import { Note } from 'tonal';
 import { describe, expect, it } from 'vitest';
 import { SKILLS } from '../../engine/skills';
+import { cagedContent } from '../../screens/explore/views/caged';
 import {
+  CAGED_ORDER,
+  CAGED_QUALITIES,
   DROP_D_TUNING,
   STANDARD_TUNING,
   chromaOf,
@@ -8,6 +12,7 @@ import {
   midiAt,
   noteAt,
   type AccidentalPref,
+  type Degree,
   type Position,
   type Tuning,
 } from '../../theory';
@@ -26,6 +31,7 @@ import {
   d9FeedbackPositions,
   d9GradedResponseMs,
   d9MakePrompt,
+  d9NoteName,
   d9Placements,
   d9Reach,
   d9RegularWindow,
@@ -415,4 +421,51 @@ describe('windows', () => {
     const w = d9Window(g, 5);
     expect(w.to - w.from + 1).toBe(11);
   });
+});
+
+describe('D9 names chord tones as the CAGED view spells them', () => {
+  it("names D♭7's ♭7 C♭, not B, for a learner set to sharps", () => {
+    const p = [...Array(48).keys()]
+      .map((i) => make('caged:A-shape@dominant7', { scopeLevel: 1, rng: () => i / 48 }))
+      .find((q) => q.root === 'Db') as D9Prompt;
+    const seventh = p.shapeNotes.find((n) => n.degree === 'b7') as Position;
+    expect(d9NoteName(p, seventh)).toBe('C♭');
+    // C♭ is named from the C above the B it sounds: an octave number up.
+    expect(d9Sounds(p, fb(p, p.targets)).expected).toContain(
+      `Cb${Math.floor(midiAt(seventh) / 12)}`,
+    );
+  });
+
+  for (const quality of CAGED_QUALITIES) {
+    for (const pref of ['sharp', 'flat'] as const) {
+      it(`agrees on every ${quality} root and shape, preferring ${pref}s`, () => {
+        const roots = new Set<number>();
+        for (const shape of CAGED_ORDER) {
+          for (let i = 0; i < 48; i++) {
+            const p = make(`caged:${shape}-shape@${quality}`, {
+              scopeLevel: 1,
+              pref,
+              rng: () => i / 48,
+            });
+            const view = cagedContent(chromaOf(p.root), quality, pref);
+            expect(p.root).toBe(view.root);
+            roots.add(chromaOf(p.root));
+            for (const n of p.shapeNotes) {
+              expect(d9NoteName(p, n), `${p.chord} ${n.degree}`).toBe(
+                d9Display(view.notes.get(n.degree) as string),
+              );
+            }
+            const degreeAt = new Map(p.shapeNotes.map((n) => [midiAt(n), n.degree]));
+            for (const name of d9Sounds(p, fb(p, p.targets)).expected) {
+              const degree = degreeAt.get(Note.midi(name) as number);
+              expect(name.replace(/\d+$/, ''), `${p.chord} ${name}`).toBe(
+                view.notes.get(degree as Degree),
+              );
+            }
+          }
+        }
+        expect(roots.size).toBe(12);
+      });
+    }
+  }
 });

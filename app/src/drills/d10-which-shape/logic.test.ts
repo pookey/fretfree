@@ -1,6 +1,10 @@
+import { Note } from 'tonal';
 import { describe, expect, it } from 'vitest';
 import { SKILLS } from '../../engine/skills';
+import { cagedContent } from '../../screens/explore/views/caged';
 import {
+  CAGED_ORDER,
+  CAGED_QUALITIES,
   DROP_D_TUNING,
   STANDARD_TUNING,
   chromaOf,
@@ -8,6 +12,7 @@ import {
   noteAt,
   type AccidentalPref,
   type CagedShapeName,
+  type Degree,
   type Position,
   type Tuning,
 } from '../../theory';
@@ -397,5 +402,48 @@ describe('d10Window', () => {
     expect(high.answer.span).toEqual({ from: 12, to: 15 });
     expect(d10Window(high, 'regular', 5)).toEqual({ from: 3, to: 15 });
     expect(d10Window(high, 'compact', 5)).toEqual({ from: 9, to: 15 });
+  });
+});
+
+describe('D10 names chord tones as the CAGED view spells them', () => {
+  for (const quality of CAGED_QUALITIES) {
+    for (const pref of ['sharp', 'flat'] as const) {
+      it(`agrees on every ${quality} root and shape, preferring ${pref}s`, () => {
+        const roots = new Set<number>();
+        for (const shape of CAGED_ORDER) {
+          for (let i = 0; i < 48; i++) {
+            const p = make(`caged:${shape}-shape@${quality}`, {
+              scopeLevel: 2,
+              pref,
+              rng: seq(NAME, i / 48),
+            });
+            const view = cagedContent(chromaOf(p.root), quality, pref);
+            expect(p.root).toBe(view.root);
+            roots.add(chromaOf(p.root));
+            const degreeAt = new Map(p.answer.notes.map((n) => [midiAt(n), n.degree]));
+            const sounds = d10Sounds(p, fb(p, p.shape)).expected;
+            expect(sounds.map((s) => Note.midi(s))).toEqual([...new Set(degreeAt.keys())]);
+            for (const name of sounds) {
+              const degree = degreeAt.get(Note.midi(name) as number);
+              expect(name.replace(/\d+$/, ''), `${p.chord} ${name}`).toBe(
+                view.notes.get(degree as Degree),
+              );
+            }
+          }
+        }
+        expect(roots.size).toBe(12);
+      });
+    }
+  }
+
+  it("sounds D♭7's ♭7 as C♭", () => {
+    const p = [...Array(48).keys()]
+      .map((i) =>
+        make('caged:E-shape@dominant7', { scopeLevel: 2, pref: 'sharp', rng: seq(NAME, i / 48) }),
+      )
+      .find((q) => q.root === 'Db') as D10Prompt;
+    const sounds = d10Sounds(p, fb(p, p.shape)).expected;
+    expect(sounds.some((s) => s.startsWith('Cb'))).toBe(true);
+    expect(sounds.some((s) => s.startsWith('B'))).toBe(false);
   });
 });

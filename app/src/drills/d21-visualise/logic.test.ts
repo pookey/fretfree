@@ -1,13 +1,20 @@
+import { Note } from 'tonal';
 import { describe, expect, it } from 'vitest';
 import { SKILLS } from '../../engine/skills';
+import { cagedContent } from '../../screens/explore/views/caged';
 import {
+  CAGED_ORDER,
+  CAGED_QUALITIES,
   DROP_D_TUNING,
   STANDARD_TUNING,
+  chromaOf,
   midiAt,
   type AccidentalPref,
+  type Degree,
   type Position,
   type Tuning,
 } from '../../theory';
+import { d9Display } from '../d9-build-caged/logic';
 import type { DrillFeedback } from '../types';
 import drill from './drill';
 import {
@@ -20,6 +27,7 @@ import {
   d21DegreeStyle,
   d21DescribeAnswer,
   d21Explain,
+  d21NoteName,
   d21FeedbackPositions,
   d21FretLine,
   d21GradedResponseMs,
@@ -347,5 +355,48 @@ describe('D21 windows and panel helpers', () => {
     expect(d21FretLine(d21OpenShape({ shape: 'A', quality: 'major' }))).toBe('x-0-2-2-2-0');
     expect(d21FretLine(d21OpenShape({ shape: 'C', quality: 'major' }))).toBe('x-3-2-0-1-0');
     expect(d21FretLine(d21OpenShape({ shape: 'C', quality: 'dominant7' }))).toBe('x-3-2-3-1-0');
+  });
+});
+
+describe('D21 names chord tones as the CAGED view spells them', () => {
+  for (const quality of CAGED_QUALITIES) {
+    for (const pref of ['sharp', 'flat'] as const) {
+      it(`agrees on every ${quality} root and shape, preferring ${pref}s`, () => {
+        const roots = new Set<number>();
+        for (const shape of CAGED_ORDER) {
+          for (let i = 0; i < 96; i++) {
+            const p = make(`caged:${shape}-shape@${quality}`, {
+              scopeLevel: 2,
+              pref,
+              rng: () => i / 96,
+            });
+            const view = cagedContent(chromaOf(p.root), quality, pref);
+            expect(p.root).toBe(view.root);
+            roots.add(chromaOf(p.root));
+            for (const n of p.shapeNotes) {
+              expect(d21NoteName(p, n), `${p.chord} ${n.degree}`).toBe(
+                d9Display(view.notes.get(n.degree) as string),
+              );
+            }
+            const degreeAt = new Map(p.shapeNotes.map((n) => [midiAt(n), n.degree]));
+            for (const name of d21Sounds(p, fb(p, p.targets)).expected) {
+              const degree = degreeAt.get(Note.midi(name) as number);
+              expect(name.replace(/\d+$/, ''), `${p.chord} ${name}`).toBe(
+                view.notes.get(degree as Degree),
+              );
+            }
+          }
+        }
+        expect(roots.size).toBe(12);
+      });
+    }
+  }
+
+  it('names a tapped ♭7 of D♭7 C♭ in the feedback', () => {
+    const p = RNGS.map((r) =>
+      make('caged:A-shape@dominant7', { scopeLevel: 1, rng: () => r }),
+    ).find((q) => q.root === 'Db') as D21Prompt;
+    const seventh = p.shapeNotes.find((n) => n.degree === 'b7') as Position;
+    expect(d21Explain(p, fb(p, [seventh]))).toMatch(/^You tapped C♭\. That's the shape's ♭7/);
   });
 });

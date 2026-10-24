@@ -4,22 +4,23 @@ import {
   CAGED_ORDER,
   CAGED_QUALITIES,
   STANDARD_TUNING,
+  chromaOf,
   chromaToPc,
   inRange,
   midiAt,
-  noteAt,
   samePosition,
   stringCount,
   type AccidentalPref,
   type CagedQuality,
   type CagedShapeName,
   type Degree,
+  type FretNote,
   type FretRange,
   type Position,
   type ShapeNote,
   type Tuning,
 } from '../../theory';
-import { chordKeySpelling } from '../../theory/key-spelling';
+import { chordKeySpelling, noteInChord } from '../../theory/key-spelling';
 import { d9ChordSymbol, d9DegreeLine, d9Display, d9StringSpan } from '../d9-build-caged/logic';
 import { d10Placements } from '../d10-which-shape/logic';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
@@ -77,7 +78,7 @@ export interface D21Prompt {
   /** The shape's lowest fret: where it is pictured. */
   position: number;
   ask: D21Ask;
-  /** The root, spelled per the accidental preference: feedback only. */
+  /** The root, spelled from the chord's key (`chordKeySpelling`): feedback only. */
   root: string;
   /** The chord symbol, e.g. `D`, `Dm`, `D7`: feedback only. */
   chord: string;
@@ -321,9 +322,20 @@ export function d21GradedResponseMs(
   return elapsedMs / Math.max(1, prompt.targets.length);
 }
 
+/** A cell's note spelled from the chord (`noteInChord`), as the CAGED view names it: D♭7's ♭7 is C♭. */
+function noteOf(prompt: D21Prompt, pos: Position): FretNote {
+  return noteInChord(
+    pos,
+    chromaOf(prompt.root),
+    prompt.quality,
+    prompt.accidentalPref,
+    prompt.tuning,
+  );
+}
+
 function names(prompt: D21Prompt, positions: readonly Position[]): string[] {
   const sorted = [...positions].sort(byPitch(prompt.tuning));
-  return [...new Set(sorted.map((p) => noteAt(p, prompt.tuning, prompt.accidentalPref).name))];
+  return [...new Set(sorted.map((p) => noteOf(prompt, p).name))];
 }
 
 /**
@@ -351,9 +363,12 @@ export function d21DegreeName(degree: Degree): string {
   return d9Display(degree);
 }
 
-/** A tapped note by name, "G♯": the blank neck shows no string names or fret numbers. */
+/**
+ * A tapped note by name, "G♯", spelled from the chord (D♭7's ♭7 is C♭): the
+ * blank neck shows no string names or fret numbers.
+ */
 export function d21NoteName(prompt: D21Prompt, pos: Position): string {
-  return d9Display(noteAt(pos, prompt.tuning, prompt.accidentalPref).pc);
+  return d9Display(noteOf(prompt, pos).pc);
 }
 
 /** One line of feedback: the shape's degrees, or what went wrong. */

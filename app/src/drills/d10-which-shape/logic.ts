@@ -11,7 +11,6 @@ import {
   inRange,
   midiAt,
   nextCagedShape,
-  noteAt,
   openStringMidi,
   previousCagedShape,
   shapeSpan,
@@ -25,7 +24,7 @@ import {
   type ShapeNote,
   type Tuning,
 } from '../../theory';
-import { chordKeySpelling } from '../../theory/key-spelling';
+import { chordKeySpelling, noteInChord } from '../../theory/key-spelling';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { D10_LEVELS, type D10Level } from './meta';
 
@@ -316,10 +315,14 @@ export function d10DescribeAnswer(answer: D10Answer): string {
   return answer;
 }
 
-/** The answer shape, low to high (sound, sight and name together, design §7). */
+/**
+ * The answer shape, low to high (sound, sight and name together, design §7),
+ * spelled from the chord (`noteInChord`) as the CAGED view names it.
+ */
 export function d10Sounds(prompt: D10Prompt, _fb: DrillFeedback<D10Answer>): DrillSounds {
+  const root = chromaOf(prompt.root);
   const names = prompt.answer.notes.map(
-    (n) => noteAt(n, prompt.tuning, prompt.accidentalPref).name,
+    (n) => noteInChord(n, root, prompt.quality, prompt.accidentalPref, prompt.tuning).name,
   );
   return { expected: [...new Set(names)] };
 }

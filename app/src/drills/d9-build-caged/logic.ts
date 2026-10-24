@@ -8,7 +8,6 @@ import {
   chromaToPc,
   inRange,
   midiAt,
-  noteAt,
   openStringMidi,
   samePosition,
   stringCount,
@@ -18,12 +17,13 @@ import {
   type CagedShape,
   type CagedShapeName,
   type Degree,
+  type FretNote,
   type FretRange,
   type Position,
   type ShapeNote,
   type Tuning,
 } from '../../theory';
-import { chordKeySpelling } from '../../theory/key-spelling';
+import { chordKeySpelling, noteInChord } from '../../theory/key-spelling';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { D9_SCOPES, type D9Scope } from './meta';
 
@@ -307,9 +307,25 @@ export function d9GradedResponseMs(prompt: D9Prompt, _taps: D9Answer, elapsedMs:
   return elapsedMs / Math.max(1, prompt.targets.length);
 }
 
+/** A cell's note spelled from the chord (`noteInChord`), as the CAGED view names it: D♭7's ♭7 is C♭. */
+export function d9NoteAt(prompt: D9Prompt, pos: Position): FretNote {
+  return noteInChord(
+    pos,
+    chromaOf(prompt.root),
+    prompt.quality,
+    prompt.accidentalPref,
+    prompt.tuning,
+  );
+}
+
+/** A tapped note by name, "C♭": the feedback label of a wrong tap. */
+export function d9NoteName(prompt: D9Prompt, pos: Position): string {
+  return d9Display(d9NoteAt(prompt, pos).pc);
+}
+
 function names(prompt: D9Prompt, positions: readonly Position[]): string[] {
   const sorted = [...positions].sort(byPitch(prompt.tuning));
-  return [...new Set(sorted.map((p) => noteAt(p, prompt.tuning, prompt.accidentalPref).name))];
+  return [...new Set(sorted.map((p) => d9NoteAt(prompt, p).name))];
 }
 
 /**

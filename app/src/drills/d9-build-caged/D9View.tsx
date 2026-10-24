@@ -8,6 +8,7 @@ import type { DrillRenderProps } from '../types';
 import {
   d9DegreeStyle,
   d9Display,
+  d9NoteName,
   d9Explain,
   d9Found,
   d9IsLive,
@@ -116,7 +117,7 @@ export function D9View({
       ...d9WrongTaps(prompt, taps).map((p): FretMarker => ({
         ...p,
         style: 'wrong',
-        label: d9Display(noteAt(p, tuning, prompt.accidentalPref).pc),
+        label: d9NoteName(prompt, p),
         forceLabel: true,
       })),
     );
