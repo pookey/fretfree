@@ -1186,6 +1186,16 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Deps:** M5-01, M5-02, M5-03, M5-04, M5-05, M5-06, M5-07
 - **Owns:** `docs/progress.md`
 
+### M4-19 · Progression player layout for short regular-wide landscape (iPad mini)
+- **Status:** todo
+- **Deps:** M4-18
+- **Design:** design §7 (iPad first; regular-wide); follow-up from the M4-18 review
+- **Owns:** `app/src/screens/explore/views/progression-player.tsx`, `app/src/screens/explore/views/progression-player.module.css`, `app/e2e/m4-19.spec.ts`
+- **Acceptance:**
+  - On iPad mini landscape (1133×744 and Playwright's 1024×768) the player's whole neck is on screen without scrolling: it currently ends 125–136pt below the fold (measured in the M4-18 review). Small CSS tweaks can't fit it (the reviewer measured them), so give short regular-wide landscape (height below about 800pt) a real layout: for example the neck beside the chart, or a compact one-row transport.
+  - The 11" and 13" iPads keep M4-18's layout; nothing letterboxes (keep M4-18's aspect checks).
+  - `@layout` e2e at both mini sizes asserts the neck's bottom is inside the viewport; screenshots in the report.
+
 ---
 
 ## M6: Intermediate
