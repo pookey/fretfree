@@ -138,6 +138,8 @@ test.describe('M7-06 delete account', () => {
     });
     expect(server.deletes).toBe(2);
     await expect(deletePanel(page)).toContainText('Your progress is still here on this device');
+    // The panel says it, so no notice repeats it.
+    await expect(page.getByTestId('deleted-notice')).toHaveCount(0);
     expect(await sessionCount(page)).toBe(3);
     expect(await page.evaluate(() => localStorage.getItem('fretwork.account'))).toBeNull();
 
@@ -157,9 +159,11 @@ test.describe('M7-06 delete account', () => {
     expect(server.pushes).toBeGreaterThan(pushes);
   });
 
-  test('deletes this device’s progress too when asked, and starts again', async ({ page }) => {
+  test('deletes this device’s progress too when asked, and restarts into onboarding', async ({
+    page,
+  }) => {
     const errors: string[] = [];
-    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('pageerror', (e) => errors.push(`${e.message}\n${e.stack}`));
     const server = await setUp(page);
     await seedFinishedSessions(page, 2);
     await signIn(page);
@@ -167,13 +171,51 @@ test.describe('M7-06 delete account', () => {
     await page.getByRole('radio', { name: /Delete it from this device too/ }).check();
     await page.getByRole('button', { name: 'Delete my account' }).click();
 
-    await expect(deletePanel(page)).toContainText('The progress on this device is deleted too');
-    expect(server.deleted).toBe(true);
-    expect(
-      await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('fretwork'))),
-    ).toEqual([]);
-    await page.getByRole('button', { name: 'Start again' }).click();
+    // Every screen would sit on the closed database, so FretFree restarts
+    // at once, and a notice says why.
     await expect(page).toHaveURL(/\/onboarding/);
+    await expect(page.getByTestId('deleted-notice')).toHaveText(
+      /Your account is deleted, and so is the progress on this device\./,
+    );
+    expect(server.deleted).toBe(true);
+    expect(await sessionCount(page)).toBe(0);
+    expect(
+      await page.evaluate(() =>
+        Object.keys(localStorage).filter((k) => k.startsWith('fretwork.account')),
+      ),
+    ).toEqual([]);
+    expect(errors).toEqual([]);
+    await page.getByRole('button', { name: 'OK' }).click();
+    await expect(page.getByTestId('deleted-notice')).toHaveCount(0);
+  });
+
+  test('a cleared delete waiting after a reload restarts into onboarding from Today', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(`${e.message}\n${e.stack}`));
+    const server = await setUp(page);
+    await seedFinishedSessions(page, 3);
+    await signIn(page);
+    await openDelete(page);
+    await page.getByRole('radio', { name: /Delete it from this device too/ }).check();
+    server.down = true;
+    await page.getByRole('button', { name: 'Delete my account' }).click();
+    await expect(page.getByTestId('deletion-status')).toContainText(
+      'or next time you open FretFree',
+    );
+
+    // A cold start on Today, then back online: the delete finishes without
+    // Progress, and the cleared device ends on a working screen.
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
+    expect(await sessionCount(page)).toBe(3);
+    server.down = false;
+    await expect(page).toHaveURL(/\/onboarding/, { timeout: 15_000 });
+    await expect(page.getByTestId('deleted-notice')).toHaveText(
+      /Your account is deleted, and so is the progress on this device\./,
+    );
+    expect(server.deleted).toBe(true);
     expect(await sessionCount(page)).toBe(0);
     expect(errors).toEqual([]);
   });
@@ -219,7 +261,10 @@ test.describe('M7-06 delete account', () => {
     await expect.poll(() => server.deleted, { timeout: 15_000 }).toBe(true);
     await expect(page).toHaveURL(/\/$/);
     expect(await page.evaluate(() => localStorage.getItem('fretwork.account.deleting'))).toBeNull();
-    // Done: the offer comes back on its own.
+    // Done: a notice says so, and the offer comes back on its own.
+    await expect(page.getByTestId('deleted-notice')).toHaveText(
+      /Your account is deleted\. Your progress is still here on this device\./,
+    );
     await expect(page.getByRole('link', { name: 'Save my progress' })).toBeVisible();
     expect(await sessionCount(page)).toBe(3);
   });
