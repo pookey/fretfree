@@ -65,8 +65,11 @@
   font-size: 0.9375rem;
 }
 
-/* The practice calendar: a week per row, Monday first. */
+/* The practice calendar: a week per row, Monday first. Positioned, so its
+   visually hidden labels are laid out inside it, not far down the screen
+   where they stretched Progress by about 840pt of blank scroll. */
 .calendar {
+  position: relative;
   justify-self: start;
   border-collapse: separate;
   border-spacing: 0.3125rem;
