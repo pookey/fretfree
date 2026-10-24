@@ -13,7 +13,9 @@ const card = (page: Page) => page.getByTestId('d25-drill');
 const staff = (page: Page) => card(page).getByRole('group', { name: /^Treble clef/ });
 const neck = (page: Page) => card(page).getByRole('group', { name: /^Fretboard/ });
 const choices = (page: Page) =>
-  card(page).getByRole('group', { name: /What is this note|to continue/ }).getByRole('button');
+  card(page)
+    .getByRole('group', { name: /What is this note|to continue/ })
+    .getByRole('button');
 const prompt = (page: Page) => page.locator('#drill-prompt');
 
 const SHARPS = 'FCGDAEB';
@@ -109,7 +111,12 @@ test.describe('M8-12 read the key signature', () => {
     const names = await choices(page).evaluateAll((els) =>
       els.map((e) => e.getAttribute('aria-label') ?? ''),
     );
-    await (await button(page, names.find((n) => n !== right)!)).click();
+    await (
+      await button(
+        page,
+        names.find((n) => n !== right)!,
+      )
+    ).click();
 
     await expect(page.getByTestId('feedback-wrong')).toBeVisible();
     await expect(card(page).locator('[data-state="wrong"]')).toHaveCount(1);
