@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { GuideLevel, Handedness } from '../../engine/model';
 import type { SizeClass } from '../../shell/size-class';
 import { STANDARD_TUNING, type Position } from '../../theory';
@@ -153,6 +153,44 @@ describe('<D23View>', () => {
     expect(document.querySelector('[data-testid="marker-wrong"]')).toHaveTextContent('A');
     expect(staff()).toHaveAttribute('data-notes', 'G3:target A3:wrong');
     expect(screen.getByTestId('d23-explain')).toHaveTextContent(/A3, on the space just above/);
+  });
+
+  it('marks both of 9th position’s cells when the other stretch is tapped', () => {
+    const p = prompt('staff→fret:F3@pos9');
+    view(p, { guideLevel: 0, feedback: fb(p, { string: 6, fret: 13 }) });
+    const correct = [...document.querySelectorAll('[data-testid="marker-correct"]')].map(
+      (m) => `s${m.getAttribute('data-string')}f${m.getAttribute('data-fret')}`,
+    );
+    expect(correct.sort()).toEqual(['s5f8', 's6f13']);
+    expect(document.querySelector('[data-testid="marker-wrong"]')).toBeNull();
+    expect(screen.getByTestId('d23-explain')).toHaveTextContent(/String 6, fret 13 plays it too/);
+  });
+
+  it('resizes the compact window when the phone turns, mid-prompt', () => {
+    const size = (w: number, h: number) => {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: w });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: h });
+    };
+    const [w, h] = [window.innerWidth, window.innerHeight];
+    try {
+      size(390, 844);
+      view(prompt('staff→fret:G3@pos7'), { sizeClass: 'compact', compactFrets: 9 });
+      const frets = () => {
+        const svg = document.querySelector('svg[data-fret-from]')!;
+        return (
+          Number(svg.getAttribute('data-fret-to')) - Number(svg.getAttribute('data-fret-from')) + 1
+        );
+      };
+      expect(frets()).toBe(9);
+      // On its side the staff takes a column, so the window narrows.
+      act(() => {
+        size(700, 390);
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(frets()).toBeLessThan(9);
+    } finally {
+      size(w, h);
+    }
   });
 
   it('answers from the keyboard, starting on the top string at the position’s first fret', () => {

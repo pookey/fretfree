@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Fretboard, type FretMarker } from '../../components/fretboard/Fretboard';
 import { Staff } from '../../components/staff';
 import { allStrings, noteAt, type FretRange, type Position } from '../../theory';
@@ -39,6 +39,13 @@ interface ViewState {
   frets: number | undefined;
 }
 
+function subscribeResize(cb: () => void): () => void {
+  window.addEventListener('resize', cb);
+  return () => window.removeEventListener('resize', cb);
+}
+
+const viewportKey = () => `${window.innerWidth}x${window.innerHeight}`;
+
 /** The root font size, which the staff column's rem width resolves against. */
 function rootFontPx(): number {
   return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
@@ -65,6 +72,9 @@ export function D23View({
   aside,
 }: DrillRenderProps<D23Prompt, D23Answer>) {
   const compact = sizeClass === 'compact';
+  // Re-render on resize: the compact window's width depends on the viewport
+  // (a phone turned on its side mid-prompt), not only on the session's frets.
+  useSyncExternalStore(subscribeResize, viewportKey, () => '');
   const compactFrets = compact
     ? d23CompactFrets(sessionFrets, window.innerWidth, window.innerHeight, rootFontPx())
     : sessionFrets;

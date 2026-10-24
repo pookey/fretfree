@@ -35,8 +35,10 @@ import { itemsOf, memo } from './helpers';
  * Only two positions need a stretch for a natural: 5th position reaches back
  * to fret 4 for B3, and 9th position back to fret 8 (C3, F3, C5) and up to
  * fret 13 (F5). Open position stays on frets 0–3, as research/03 has it, and
- * the 7th and 12th on their four frets. Every pitch has exactly one fret, so
- * a tap has one right answer (`isPositionFret`).
+ * the 7th and 12th on their four frets. Every pitch has exactly one fret
+ * (`isPositionFret`), the one D23's feedback names. 9th position's two
+ * stretches give F3, G4 and C5 a second cell in reach, which D23 also
+ * accepts.
  *
  * Order within a position: the notes on the staff first, the ledger lines
  * after, nearest the staff first, as R1 introduces them; low to high within

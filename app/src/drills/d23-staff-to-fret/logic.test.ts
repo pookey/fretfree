@@ -3,6 +3,7 @@ import { getSkill } from '../../engine/skills';
 import {
   DROP_D_TUNING,
   STANDARD_TUNING,
+  noteAt,
   readingPosition,
   type Position,
   type Tuning,
@@ -270,5 +271,68 @@ describe('D23 neck windows', () => {
     const side = d23CompactFrets(9, 844, 390)!;
     expect(side).toBeLessThanOrEqual(9);
     expect(side).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe('D23 cells in position (M8-10 review)', () => {
+  const ctx = (scopeLevel: number) => ({
+    tuning: STANDARD_TUNING,
+    accidentalPref: 'sharp' as const,
+    scopeLevel,
+    rng: () => 0,
+  });
+
+  it('accepts 9th position’s other stretch for F3, G4 and C5, at both scopes', () => {
+    for (const level of [0, 1]) {
+      for (const [id, other] of [
+        ['staff→fret:F3@pos9', { string: 6, fret: 13 }],
+        ['staff→fret:G4@pos9', { string: 2, fret: 8 }],
+        ['staff→fret:C5@pos9', { string: 2, fret: 13 }],
+      ] as const) {
+        const p = prompt(id, level);
+        expect(d23Check(p, other), `${id} ${level}`).toMatchObject({ correct: true });
+        expect(d23Check(p, other).confusedWith).toBeUndefined();
+      }
+    }
+  });
+
+  it('names the position’s own cell, and shows both, for the other stretch', () => {
+    const p = prompt('staff→fret:F3@pos9');
+    const right = fb(p, { string: 6, fret: 13 });
+    expect(d23Explain(p, right)).toBe(
+      'F3 in 9th position is string 5, fret 8, the index finger, reaching back a fret. String 6, fret 13 plays it too, the little finger, reaching up a fret.',
+    );
+    expect(d23FeedbackPositions(p, right)).toEqual({
+      expected: [
+        { string: 5, fret: 8 },
+        { string: 6, fret: 13 },
+      ],
+      given: [],
+    });
+    expect(d23Sounds(p, right)).toEqual({ expected: ['F3'] });
+  });
+
+  it('still marks the same pitch outside the position wrong', () => {
+    const p = prompt('staff→fret:G4@pos9', 1);
+    // G4 on the open G string's 12th fret is the target; the high e's 3rd fret is out of position.
+    expect(d23Check(p, { string: 1, fret: 3 })).toMatchObject({ correct: false });
+    expect(d23Miss(p, { string: 1, fret: 3 })).toBe('same-note');
+  });
+
+  it('grades every in-region cell of every R2 item by its pitch alone, at both scopes', () => {
+    for (const id of ['R2.open', 'R2.pos5', 'R2.pos7', 'R2.pos9', 'R2.pos12']) {
+      for (const item of getSkill(id)!.items()) {
+        for (const level of [0, 1]) {
+          const p = d23MakePrompt(item, ctx(level));
+          for (let string = 1; string <= 6; string += 1) {
+            for (let fret = p.region.from; fret <= p.region.to; fret += 1) {
+              const cell = { string, fret };
+              const same = noteAt(cell).name === p.note;
+              expect(d23Check(p, cell).correct, `${item.id} s${string}f${fret}`).toBe(same);
+            }
+          }
+        }
+      }
+    }
   });
 });

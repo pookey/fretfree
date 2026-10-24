@@ -40,8 +40,9 @@ export {
  * D23 "Staff → fretboard by position" (design §6, §12; research/03 R2): one
  * note on the treble 8vb staff and a reading position; the learner taps where
  * the position plays it. The pure half of the drill. In a position each pitch
- * has one fret, so only that cell is right: the same pitch elsewhere is out
- * of position.
+ * has one fret, which feedback names; a tap is right on that cell or on the
+ * same pitch elsewhere in the drawn frets (9th position's other stretch,
+ * `d23InPosition`). The same pitch outside them is out of position.
  */
 
 /** The whole neck the drill draws (design §7 regular-wide). */
@@ -135,6 +136,23 @@ function placeAt(prompt: D23Prompt, pos: Position): number {
 }
 
 /**
+ * True if the cell plays the asked pitch inside the position's drawn frets.
+ * Usually that is only the target, but 9th position's frets reach both ways
+ * (8–13), so F3, G4 and C5 each have a second cell there: s6f13, s2f8 and
+ * s2f13, the other stretch. A learner who read the staff right and stayed in
+ * the position is right either way (M8-10 review); feedback still names the
+ * position's own cell and finger.
+ */
+export function d23InPosition(prompt: D23Prompt, pos: Position): boolean {
+  return (
+    pos.string >= 1 &&
+    pos.string <= stringCount(prompt.tuning) &&
+    inRange(pos.fret, prompt.region) &&
+    midiAt(pos, prompt.tuning) === staffNote(prompt.note).midi
+  );
+}
+
+/**
  * How a wrong tap went wrong:
  * - `same-note`: the right pitch on another cell, out of position;
  * - `misread`: another natural, so the staff was misread (a line for the
@@ -152,7 +170,9 @@ export function d23Miss(prompt: D23Prompt, answer: Position): D23Miss {
 export function d23Check(prompt: D23Prompt, answer: D23Answer): DrillCheck {
   const expected = `${displayPc(prompt.note)}, string ${prompt.target.string}, fret ${prompt.target.fret}`;
   const concept = d23StaffConcept(prompt.staff);
-  if (samePosition(answer, prompt.target)) return { correct: true, expected, concept };
+  if (samePosition(answer, prompt.target) || d23InPosition(prompt, answer)) {
+    return { correct: true, expected, concept };
+  }
   // A natural on another staff place is a misread of the staff: log it
   // against that place. A miss to a sharp, or the right note out of
   // position, is a slip on the neck, not a reading confusion.
@@ -179,7 +199,12 @@ export function d23FeedbackPositions(
   prompt: D23Prompt,
   fb: DrillFeedback<D23Answer>,
 ): { expected: Position[]; given: Position[] } {
-  return { expected: [prompt.target], given: fb.result.correct ? [] : [fb.answer] };
+  if (!fb.result.correct) return { expected: [prompt.target], given: [fb.answer] };
+  // A right tap on the other stretch's cell shows both of the position's cells.
+  const expected = samePosition(fb.answer, prompt.target)
+    ? [prompt.target]
+    : [prompt.target, fb.answer];
+  return { expected, given: [] };
 }
 
 /** "open position", "5th position": the position's name inside a sentence. */
@@ -228,7 +253,11 @@ function misreadPlace(place: number, staff: number): string {
  */
 export function d23Explain(prompt: D23Prompt, fb: DrillFeedback<D23Answer>): string {
   const where = d23Where(prompt);
-  if (fb.result.correct) return where;
+  if (fb.result.correct) {
+    if (samePosition(fb.answer, prompt.target)) return where;
+    const { string, fret } = fb.answer;
+    return `${where} String ${string}, fret ${fret} plays it too, ${d23Finger(prompt.position, fret)}.`;
+  }
   const { string, fret } = fb.answer;
   const tapped = displayPc(nameAt(prompt, fb.answer));
   const head = `You tapped string ${string}, fret ${fret}`;
