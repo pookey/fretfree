@@ -933,6 +933,27 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The lane (`FRETWORK_LANE=1`) is unchanged: whole matrix on the box, with audio specs on the Mac.
   - A shell test (in `slot-lib.test.sh` or its own file) covers the decision with a fake queue: deep remote and free local → local; shallow remote → remote; no free local slot → remote queue.
 
+### M1-49 · String names stay readable when a marker sits on an open string
+- **Status:** todo
+- **Deps:** M6-14
+- **Design:** design §8 (`<Fretboard>`: string names at the nut); research/02 rule 4 (a label must never mislead or hide); follow-up from the M6-14 review
+- **Owns:** `app/src/components/fretboard/**`, `app/e2e/m1-49.spec.ts`
+- **Acceptance:**
+  - Seen in the M6-14 review: markers at fret 0 cover the nut's string names. C7's E minor box 1 puts six open markers over the names (iPad mini landscape), and D19's open E triangle and B ghost cover two names (iPad portrait). I7 avoids it only by placement.
+  - `<Fretboard>` gives the string names their own gutter left of the open-string column whenever the visible window includes the nut, so open-string markers never overlap a name. Shapes and colours of markers are unchanged.
+  - Neck cells stay ≥ 44pt on every iPad profile, and no drill's layout scrolls where it didn't before (the layout sweep stays green).
+  - Unit test on the geometry (no name box intersects an open-marker box, for every string with an open marker). `@layout` e2e on ipad-portrait and ipad-mini-landscape: a C7 open box and a D19 open shape show all six names, unobstructed. Screenshots in the report.
+
+### M1-50 · Progress scrolls in one place
+- **Status:** todo
+- **Deps:** none
+- **Design:** design §7 (iPad first; one scroll container per screen); follow-up from the M6-14 review
+- **Owns:** `app/src/screens/progress/**`, `app/e2e/m1-50.spec.ts`
+- **Acceptance:**
+  - Seen in the M6-14 review: on every profile, the Progress document scrolls by itself (`document.scrollingElement` overflows by 411–1248px) on top of `main`'s own scroll, so the page has two scrollers.
+  - Find what overflows the document (it's not the achievement toast, which is `position: fixed`) and fix it, so Progress scrolls only inside `main`, as the other screens do. If the cause is in the shell (`ScreenLayout`), say so in the report before widening Owns.
+  - `@layout` e2e on every iPad profile and the phone: the document's scroll height equals the viewport height on Progress, and the last Progress section can still be scrolled into view.
+
 ### M3-18 · Lazy-load drill views and the onboarding and placement routes
 - **Status:** done
 - **Deps:** M3-16
@@ -1309,6 +1330,17 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - D9, D10 and the CAGED Explore view spell a chord's root and tones from the chord's key, the way M6-13's `d21KeySpelling` does. They don't follow the note-name setting blindly ("A shape of A♯" becomes "A shape of B♭" where B♭ is the conventional key). The setting only breaks ties (F♯/G♭).
   - `d21KeySpelling` moves to `theory/key-spelling.ts` (pure, exhaustively tested: every root × major, minor, dominant 7 × both preferences), and D21 imports it from there. Record the moved helper as an out-of-scope edit in D21.
   - Unit tests in each drill for a sharp-preference learner seeing a flat-key root; one e2e that sets sharps and checks a flat-key shape name.
+
+
+### M6-16 · Chord tones spelled from the chord in D9, D10 and D21
+- **Status:** todo
+- **Deps:** M6-15
+- **Design:** design §8 (note names); research/02 rule 4 (a label must never mislead); follow-up from the M6-15 review
+- **Owns:** `app/src/theory/key-spelling.ts`, `app/src/theory/key-spelling.test.ts`, `app/src/drills/d9-build-caged/logic.ts`, `app/src/drills/d9-build-caged/logic.test.ts`, `app/src/drills/d10-which-shape/logic.ts`, `app/src/drills/d10-which-shape/logic.test.ts`, `app/src/drills/d21-visualise/logic.ts`, `app/src/drills/d21-visualise/logic.test.ts`
+- **Acceptance:**
+  - Found in the M6-15 review: the drills name a chord's tones with `noteAt(…, accidentalPref)`, while the CAGED view spells them from the chord (tonal's `content.notes`). The roots now agree, but D♭7's ♭7 is "C♭" in the view and "B" in D9, D10 and D21 (likewise G♭7: F♭ in the view, E in the drills, for a flat-preference learner).
+  - A pure theory helper spells each tone of a chord from the chord itself, and D9, D10 and D21 use it for every tone they name (labels, feedback and worked examples), so the drills and the view agree for every root × major, minor, dominant 7 × both preferences. An exhaustive unit test asserts that agreement.
+  - Item IDs and grading are unchanged (they don't encode spelling).
 
 ---
 
