@@ -107,7 +107,7 @@ describe('D23 prompts', () => {
 
   it('serves every R2 item', () => {
     for (const id of ['R2.open', 'R2.pos5', 'R2.pos7', 'R2.pos9', 'R2.pos12']) {
-      for (const item of getSkill(id)!.items()) {
+      for (const item of getSkill(id)!.items().filter(d23CanTest)) {
         const p = d23MakePrompt(item, {
           tuning: STANDARD_TUNING,
           accidentalPref: 'sharp',
@@ -321,7 +321,7 @@ describe('D23 cells in position (M8-10 review)', () => {
 
   it('grades every in-region cell of every R2 item by its pitch alone, at both scopes', () => {
     for (const id of ['R2.open', 'R2.pos5', 'R2.pos7', 'R2.pos9', 'R2.pos12']) {
-      for (const item of getSkill(id)!.items()) {
+      for (const item of getSkill(id)!.items().filter(d23CanTest)) {
         for (const level of [0, 1]) {
           const p = d23MakePrompt(item, ctx(level));
           for (let string = 1; string <= 6; string += 1) {

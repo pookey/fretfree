@@ -9,6 +9,8 @@ import {
   type ReadingPosition,
   type Tuning,
 } from '../../theory';
+import { ENGINE_CONFIG } from '../config';
+import { fretStaffItemId } from '../items/fret-staff';
 import { staffFretItemId } from '../items/staff-fret';
 import type { Skill } from '../model';
 import { itemsOf, memo } from './helpers';
@@ -17,7 +19,8 @@ import { itemsOf, memo } from './helpers';
  * R2: staff → fretboard by position (research/03 track R, design §12,
  * Leavitt-style position reading). An item such as `staff→fret:G3@pos5`
  * shows G3 on the staff and asks where it is played in 5th position; D23
- * takes the tap. Each position is its own skill, in research/03's order:
+ * takes the tap. Its reverse, `fret→staff:G3@pos5`, lights the fret and asks
+ * for the note's place on the staff (D24). Each position is its own skill, in research/03's order:
  * open position, then the 5th, 7th, 9th and 12th. Each soft-unlocks the
  * next once it is practising, so a new position's notes are blocked briefly
  * and then interleave with the positions already met (research/02 rule 6),
@@ -49,7 +52,7 @@ import { itemsOf, memo } from './helpers';
  * the placement test.
  */
 
-export const R2_DRILLS = ['staff-to-fret'];
+export const R2_DRILLS = ['staff-to-fret', 'fret-to-staff'];
 
 /** R1's range: notes R2 reads stay within this many ledger lines. */
 export const R2_MAX_LEDGERS = 3;
@@ -82,6 +85,29 @@ export function positionNaturals(
     .sort((a, b) => ledgerLineCount(a.staff) - ledgerLineCount(b.staff) || a.midi - b.midi);
 }
 
+/**
+ * A position's cards in the order they are introduced, both directions
+ * (research/02 rule 1): `staff→fret` (D23) reads the staff onto the neck and
+ * `fret→staff` (D24) places a lit fret on the staff. As R1 does, the reading
+ * cards lead by one new-item block and each note's reverse card follows in
+ * a later block, between new reading cards, so it is recalled rather than
+ * copied from the worked example just before it (rules 4 and 6).
+ */
+export function r2ItemIds(
+  position: ReadingPosition,
+  lead: number = ENGINE_CONFIG.session.newBlockSize,
+  tuning: Tuning = STANDARD_TUNING,
+): string[] {
+  const notes = positionNaturals(position, tuning).map((n) => n.note);
+  const out = notes.slice(0, lead).map((n) => staffFretItemId(n, position.id));
+  notes.forEach((n, i) => {
+    out.push(fretStaffItemId(n, position.id));
+    const next = notes[lead + i];
+    if (next !== undefined) out.push(staffFretItemId(next, position.id));
+  });
+  return out;
+}
+
 /** Skill IDs by position, in teaching order. IDs are literals, which e2e seeds read from this file. */
 const POSITION_SKILLS = [
   { id: 'R2.open', title: 'Read the staff in open position', reads: ['R1.ledger-below'] },
@@ -106,11 +132,6 @@ export const skills: Skill[] = POSITION_SKILLS.map((s, i): Skill => {
     softUnlock: true,
     skipPlacement: true,
     drillTypes: R2_DRILLS,
-    items: memo(() =>
-      itemsOf(
-        id,
-        positionNaturals(position).map((n) => staffFretItemId(n.note, position.id)),
-      ),
-    ),
+    items: memo(() => itemsOf(id, r2ItemIds(position))),
   };
 });

@@ -1,0 +1,159 @@
+/* D24: the lit fret and the staff to tap, both in view (design §12 screens). */
+.drill {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'position'
+    'prompt'
+    'staff'
+    'neck'
+    'explain'
+    'aside';
+  align-content: start;
+  justify-items: center;
+  row-gap: var(--space-3);
+}
+
+.drill > aside {
+  grid-area: aside;
+  justify-self: stretch;
+}
+
+.position {
+  grid-area: position;
+  margin: 0;
+  color: var(--text-muted);
+  font-weight: 650;
+  text-align: center;
+}
+
+.prompt {
+  grid-area: prompt;
+  margin: 0;
+  max-width: 44rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+/* The staff to tap: sized by height between M8-02's interactive scale
+   bounds (set inline), so lines stay at least 44pt apart. Its width follows
+   from the engraving's aspect ratio. */
+.staff {
+  --d24-staff-h: clamp(var(--d24-staff-min), 42dvh, var(--d24-staff-max));
+
+  grid-area: staff;
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.staffInner {
+  width: auto;
+  height: var(--d24-staff-h);
+}
+
+.neckArea {
+  grid-area: neck;
+  justify-self: stretch;
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+/* The neck is the question, not a tap target: capped in height so the staff
+   fits beside it, at a size whose cells still clear 44pt (22rem is a 0.88
+   scale: strings 49pt apart). */
+.neckArea svg {
+  max-height: 22rem;
+}
+
+.explain {
+  grid-area: explain;
+  margin: 0;
+  min-height: 1.5em;
+  max-width: 44rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* iPad landscape: the neck with the question and feedback on the left, the
+   staff beside it on the right, both in view. */
+.drill[data-size-class='regular-wide'] {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'position staff'
+    'prompt staff'
+    'neck staff'
+    'explain staff'
+    'aside staff';
+  grid-template-rows: auto auto auto auto 1fr;
+  column-gap: var(--space-5);
+  row-gap: var(--space-3);
+}
+
+.drill[data-size-class='regular-wide'] .staff {
+  --d24-staff-h: clamp(var(--d24-staff-min), calc(100dvh - 9rem), var(--d24-staff-max));
+
+  align-self: start;
+}
+
+.drill[data-size-class='regular-wide'] .neckArea svg {
+  max-height: 20rem;
+}
+
+.drill[data-size-class='regular-wide'] > aside {
+  align-self: start;
+}
+
+.drill[data-size-class='compact'] {
+  row-gap: var(--space-2);
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .explain {
+  font-size: 0.875rem;
+}
+
+/* A phone upright: the staff keeps 44pt between lines, wider than the
+   screen, so it scrolls sideways in its own box. */
+.drill[data-size-class='compact'] .staff {
+  width: 100%;
+  justify-content: flex-start;
+  overflow-x: auto;
+}
+
+.drill[data-size-class='compact'] .neckArea svg {
+  max-height: calc(100dvh - 12rem);
+}
+
+/* A phone on its side: as the iPad, the neck on the left and the staff on
+   the right. The staff is taller than the screen, so the page scrolls; touch
+   the neck side to scroll, as the staff takes the touch for its ghost note. */
+@media (orientation: landscape) {
+  .drill[data-size-class='compact'] {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'position staff'
+      'prompt staff'
+      'neck staff'
+      'explain staff'
+      'aside staff';
+    grid-template-rows: auto auto auto auto 1fr;
+    column-gap: var(--space-3);
+  }
+
+  .drill[data-size-class='compact'] .staff {
+    width: auto;
+    overflow-x: visible;
+  }
+
+  .drill[data-size-class='compact'] .neckArea svg {
+    max-height: calc(100dvh - 9rem);
+  }
+}

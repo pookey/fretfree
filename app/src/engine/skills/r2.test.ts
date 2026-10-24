@@ -6,14 +6,19 @@ import {
   readingPosition,
   type ReadingPosition,
 } from '../../theory';
+import { ENGINE_CONFIG } from '../config';
+import { parseFretStaffItemId } from '../items/fret-staff';
 import { parseStaffFretItemId } from '../items/staff-fret';
 import { getSkill } from './index';
-import { R2_DRILLS, R2_MAX_LEDGERS, positionNaturals, skills } from './r2';
+import { R2_DRILLS, R2_MAX_LEDGERS, positionNaturals, r2ItemIds, skills } from './r2';
 
-const ids = (skillId: string) =>
+const allIds = (skillId: string) =>
   getSkill(skillId)!
     .items()
     .map((i) => i.id);
+
+/** The staff → fret cards (D23), in order. */
+const ids = (skillId: string) => allIds(skillId).filter((id) => id.startsWith('staff→fret:'));
 
 const naturals = (fret: number) => positionNaturals(readingPosition(fret));
 
@@ -48,6 +53,29 @@ describe('R2 skills', () => {
       const position = READING_POSITIONS[i] as ReadingPosition;
       for (const id of ids(s.id)) expect(parseStaffFretItemId(id)?.position).toBe(position.id);
     });
+  });
+
+  it('has a fret → staff card (D24) for every note, each a block after its reading card', () => {
+    const lead = ENGINE_CONFIG.session.newBlockSize;
+    for (const s of skills) {
+      const all = allIds(s.id);
+      const reverse = all.filter((id) => id.startsWith('fret→staff:'));
+      expect(reverse.map((id) => parseFretStaffItemId(id)?.note)).toEqual(
+        ids(s.id).map((id) => parseStaffFretItemId(id)?.note),
+      );
+      expect(all).toHaveLength(2 * reverse.length);
+      for (const id of reverse) {
+        const ref = parseFretStaffItemId(id)!;
+        const forward = all.indexOf(`staff→fret:${ref.note}@${ref.position}`);
+        expect(all.indexOf(id) - forward, id).toBeGreaterThanOrEqual(lead);
+      }
+    }
+    expect(r2ItemIds(READING_POSITIONS[1]!, 2).slice(0, 4)).toEqual([
+      'staff→fret:D3@pos5',
+      'staff→fret:E3@pos5',
+      'fret→staff:D3@pos5',
+      'staff→fret:F3@pos5',
+    ]);
   });
 
   it('reads open position on frets 0–3, the staff first, then the ledger lines below', () => {
