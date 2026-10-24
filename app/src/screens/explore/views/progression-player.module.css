@@ -182,6 +182,21 @@
     display: contents;
   }
 
+  /* "Show" beside its segments, not above them: the row is the segments'
+     height. (Positioned, a legend no longer sits in the fieldset's border.) */
+  .player fieldset {
+    position: relative;
+    padding-left: 3rem;
+  }
+
+  .player fieldset > legend {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    margin: 0;
+    transform: translateY(-50%);
+  }
+
   /* Centred on the Show segments and the quiz button, on the row's foot. */
   .player .summary > h2 {
     display: flex;
