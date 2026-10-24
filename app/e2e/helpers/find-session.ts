@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { F1_SKILLS, F3_SKILLS, freshStart, masterSkills, noteName } from '../helpers';
 import { C4_SKILLS, I3_SKILLS } from './keys';
+import { READING_SKILLS } from './reading';
 
 // Reaching D2 "Find the note" from a fresh start (the same setup as m1-04).
 
@@ -58,8 +59,15 @@ export async function seedKnownNotes(page: Page): Promise<void> {
 export async function startFindSession(page: Page): Promise<void> {
   await freshStart(page);
   // The F1 note-wheel (D3) and F3 landmark (D39) skills lead a fresh session; skip them.
-  // Keys open with F1 and would take the goal lane's share of new items (M10-03).
-  await masterSkills(page, [...F1_SKILLS, ...F3_SKILLS, ...C4_SKILLS, ...I3_SKILLS]);
+  // Keys open with F1 and would take the goal lane's share of new items (M10-03),
+  // and key signatures on the staff (R3) open with Keys.
+  await masterSkills(page, [
+    ...F1_SKILLS,
+    ...F3_SKILLS,
+    ...C4_SKILLS,
+    ...I3_SKILLS,
+    ...READING_SKILLS,
+  ]);
   await seedKnownNotes(page);
   await page.reload();
   // New counts the open skills' unseen items (M10-02): 7 naturals to find on
