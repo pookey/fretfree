@@ -86,7 +86,31 @@ export const isOfferDismissed = (): boolean =>
   });
 export const dismissOffer = (): void => write(OFFER_DISMISSED_KEY, true);
 
-/** Calls `listener` whenever the account or pending sign-in changes, in this tab or another. */
+/**
+ * An account delete the learner asked for and the server hasn't confirmed yet
+ * (M7-06). It holds the tokens that `DELETE /account` needs, moved out of the
+ * account so this device is signed out and nothing syncs, and it survives a
+ * reload so the delete can be sent again until the server says it is done.
+ */
+export interface AccountDeletion {
+  email: string;
+  tokens: Tokens;
+  /** Keep this device's progress once the account is gone. */
+  keepLocal: boolean;
+  /** Epoch ms. */
+  requestedAt: number;
+}
+
+export const DELETION_KEY = 'fretwork.account.deleting';
+
+const isDeletion = (v: Record<string, unknown>) => isAccount(v) && typeof v.keepLocal === 'boolean';
+
+export const loadDeletion = (): AccountDeletion | null =>
+  cached(DELETION_KEY, () => read<AccountDeletion>(DELETION_KEY, isDeletion));
+export const saveDeletion = (deletion: AccountDeletion | null): void =>
+  write(DELETION_KEY, deletion);
+
+/** Calls `listener` whenever the account, pending sign-in or deletion changes, in this tab or another. */
 export function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
