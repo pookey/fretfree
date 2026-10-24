@@ -378,8 +378,11 @@ export function syncStatusText({ phase, lastSyncedAt }: SyncStatus, now: number)
       return `Offline. Your progress is saved on this device and syncs when you’re back online. ${last}`.trim();
     case 'error':
       return `Couldn’t sync just now. FretFree will try again soon. ${last}`.trim();
-    default:
+    case 'syncing':
       return last ? `${last} Syncing…` : 'Syncing your progress…';
+    default:
+      // Not running (its code didn't load): no line rather than a false "Syncing".
+      return '';
   }
 }
 
@@ -387,9 +390,11 @@ function SyncStatusLine() {
   const status = useSyncExternalStore(subscribeSyncStatus, getSyncStatus);
   // "5 minutes ago" moves on while the panel is open.
   const now = useNow(true);
+  const text = syncStatusText(status, now);
+  if (!text) return null;
   return (
     <p role="status" className={styles.muted} data-testid="sync-status">
-      {syncStatusText(status, now)}
+      {text}
     </p>
   );
 }

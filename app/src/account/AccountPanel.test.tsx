@@ -173,10 +173,11 @@ describe('AccountPanel', () => {
     expect(await db.reviewLogs.count()).toBe(1);
   });
 
-  it('shows how sync is going once signed in', () => {
+  it('shows no sync line while sync isn’t running', () => {
     saveAccount({ email: 'me@example.com', tokens: TOKENS, signedInAt: 1 });
     renderPanel();
-    expect(screen.getByTestId('sync-status')).toHaveTextContent('Syncing your progress…');
+    expect(screen.getByRole('region', { name: 'Your account' })).toBeVisible();
+    expect(screen.queryByTestId('sync-status')).toBeNull();
   });
 });
 
@@ -213,5 +214,9 @@ describe('syncStatusText', () => {
     expect(syncStatusText({ phase: 'syncing', lastSyncedAt: ago(0) }, now)).toBe(
       'Last synced just now. Syncing…',
     );
+    expect(syncStatusText({ phase: 'syncing', lastSyncedAt: null }, now)).toBe(
+      'Syncing your progress…',
+    );
+    expect(syncStatusText({ phase: 'off', lastSyncedAt: null }, now)).toBe('');
   });
 });
