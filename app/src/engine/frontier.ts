@@ -223,7 +223,8 @@ export const MODULES: readonly Module[] = [
     id: 'reading',
     title: 'Reading',
     topics: ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7'],
-    unlocksAfter: 'The natural notes on strings 6 and 5, and time signatures (Meter)',
+    unlocksAfter:
+      'The natural notes on strings 6 and 5, eighth notes (Rhythm) and time signatures (Meter)',
     track: 'future',
     summary:
       'Read standard notation on the guitar, linking each note on the staff to a fret, and sight-read simple tunes.',

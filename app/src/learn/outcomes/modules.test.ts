@@ -73,7 +73,7 @@ const BUILDS_ON: Record<string, { gates: string[]; says: RegExp | null }> = {
   // R1's natural notes, and R4's time signatures and eighths.
   reading: {
     gates: ['F2.string5-naturals', 'F2.string6-naturals', 'F4.eighths', 'T1.simple-meters'],
-    says: /strings 6 and 5, and time signatures/,
+    says: /strings 6 and 5, eighth notes \(Rhythm\) and time signatures/,
   },
   tab: { gates: ['F3.markers'], says: /fret markers/ },
 };

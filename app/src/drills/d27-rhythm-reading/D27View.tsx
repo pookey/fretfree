@@ -31,6 +31,7 @@ import {
   type D27Prompt,
   type NoteMark,
 } from './logic';
+import { markHeard } from './heard';
 import { hearOptions, runReading, type ReadingRun } from './run';
 import { eventAtPulse, spokenMeter, staffTuplets } from './staff';
 import styles from './D27View.module.css';
@@ -297,7 +298,10 @@ export function ReadingDrill({
                 metronome={metronome}
                 label="Hear the rhythm"
                 primary
-                onHeard={() => setPhase({ name: 'ready' })}
+                onHeard={() => {
+                  markHeard(prompt);
+                  setPhase({ name: 'ready' });
+                }}
               />
             </div>
           ) : (

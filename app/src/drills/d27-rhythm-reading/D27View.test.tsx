@@ -10,6 +10,7 @@ import { createFakeOnsetSource, type FakeOnsetSource } from '../../timing/onsets
 import { resolveView } from '../lazy-view';
 import { getDrill } from '../registry';
 import { ReadingPanel } from './ContextPanel';
+import { markHeard } from './heard';
 import { ReadingDrill } from './D27View';
 import { d27Check, d27MakePrompt, type D27Answer, type D27Prompt } from './logic';
 
@@ -373,7 +374,26 @@ describe('<ReadingPanel>', () => {
     show(prompt('quarter-rest'), 0);
     expect(screen.queryByTestId('d27-cell-count')).not.toBeInTheDocument();
     expect(screen.queryByTestId('d27-partner')).not.toBeInTheDocument();
-    show(prompt('quarter-rest'), 0, true);
+    const heardRest = prompt('quarter-rest');
+    markHeard(heardRest);
+    show(heardRest, 0, true);
     expect(screen.getByTestId('d27-cell-count')).toHaveTextContent('Count it “(1)”');
+  });
+
+  it('holds the count and the look-alike back on a first exposure until the bar is heard', async () => {
+    const p = prompt('dotted-8th-16th');
+    show(p, 1, true);
+    expect(screen.getByTestId('d27-listen-first')).toHaveTextContent('Hear it first');
+    expect(screen.queryByTestId('d27-cell-count')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('d27-partner')).not.toBeInTheDocument();
+
+    // The view hears the same prompt through, and the panel follows.
+    const { metronome } = setup({ p, guided: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Hear the rhythm' }));
+    await flush();
+    act(() => void metronome.tickUntil(4.1));
+    expect(screen.queryByTestId('d27-listen-first')).not.toBeInTheDocument();
+    expect(screen.getByTestId('d27-cell-count')).toHaveTextContent('Count it “1 a”');
+    expect(screen.getByTestId('d27-partner')).toBeInTheDocument();
   });
 });
