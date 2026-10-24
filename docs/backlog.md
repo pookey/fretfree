@@ -923,7 +923,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Proof in the report: `--repeat-each 10` on iphone-smoke under 5 workers, before and after.
 
 ### M1-48 · Worker checks run Playwright on the Mac when the test box's queue is deep
-- **Status:** todo
+- **Status:** done
 - **Deps:** M1-46
 - **Design:** CLAUDE.md "Remote runner"; `docs/progress.md` pipeline notes
 - **Owns:** `scripts/verify-quick.sh`, `scripts/remote-run.sh`, `scripts/slot-lib.sh`, `scripts/slot-lib.test.sh`, `CLAUDE.md` (the Remote runner row only)
