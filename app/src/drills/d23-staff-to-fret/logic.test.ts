@@ -25,13 +25,12 @@ import {
   d23MakePrompt,
   d23Miss,
   d23NeckGuideLevel,
-  d23NoteStyle,
   d23PositionCaption,
   d23Region,
   d23RegularFrets,
   d23ScopeFor,
   d23Sounds,
-  d23StaffMarks,
+  d23StaffNotes,
   d23Where,
   type D23Prompt,
 } from './logic';
@@ -221,24 +220,23 @@ describe('D23 staff and guides', () => {
   const p = prompt('staff→fret:G3@pos5');
 
   it('styles the note as asked, then correct', () => {
-    expect(d23NoteStyle(null)).toBe('target');
-    expect(d23NoteStyle(fb(p, { string: 4, fret: 5 }))).toBe('correct');
-    expect(d23NoteStyle(fb(p, { string: 4, fret: 7 }))).toBe('target');
+    const styles = (f: DrillFeedback<Position> | null) =>
+      d23StaffNotes(p, f).map((n) => `${n.pitches!.join()}:${n.style}`);
+    expect(styles(null)).toEqual(['G3:target']);
+    expect(styles(fb(p, { string: 4, fret: 5 }))).toEqual(['G3:correct']);
+    expect(d23StaffNotes(p, null)[0]).toMatchObject({ value: 'w' });
   });
 
-  it('marks a misread on its own staff place, and nothing else', () => {
-    expect(d23StaffMarks(p, null)).toEqual([]);
-    expect(d23StaffMarks(p, fb(p, { string: 4, fret: 5 }))).toEqual([]);
-    expect(d23StaffMarks(p, fb(p, { string: 4, fret: 7 }))).toEqual([
-      { position: 3, style: 'wrong', at: 0 },
-    ]);
-    // G♯3 shares G3's place.
-    expect(d23StaffMarks(p, fb(p, { string: 4, fret: 6 }))).toEqual([]);
-    // The neck's highest note, G5, still fits the staff's range.
+  it('adds a wrong tap’s note beside it, unless it is the same pitch', () => {
+    const styles = (q: D23Prompt, answer: Position) =>
+      d23StaffNotes(q, fb(q, answer)).map((n) => `${n.pitches!.join()}:${n.style}`);
+    expect(styles(p, { string: 4, fret: 7 })).toEqual(['G3:target', 'A3:wrong']);
+    // A sharp shares the place, and the staff draws its sign.
+    expect(styles(p, { string: 4, fret: 6 })).toEqual(['G3:target', 'G#3:wrong']);
     const wide = prompt('staff→fret:G3@pos5', 1);
-    expect(d23StaffMarks(wide, fb(wide, { string: 1, fret: 15 }))).toEqual([
-      { position: 16, style: 'wrong', at: 0 },
-    ]);
+    expect(styles(wide, { string: 3, fret: 0 })).toEqual(['G3:target']);
+    // The neck's highest note, G5, still fits the staff's range.
+    expect(styles(wide, { string: 1, fret: 15 })).toEqual(['G3:target', 'G5:wrong']);
   });
 
   it('draws one staff range for every prompt: R1’s ledger lines and a step', () => {

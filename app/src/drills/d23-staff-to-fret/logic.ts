@@ -20,7 +20,7 @@ import {
   type Tuning,
 } from '../../theory';
 import { displayPc } from '../../theory/pitch-display';
-import type { PositionRange, StaffMark, StaffNoteStyle } from '../../components/staff';
+import type { PositionRange, StaffNote } from '../../components/staff';
 import { compactWindowFrets, isShortLandscape } from '../../shell/size-class';
 import { d2SpanWindow } from '../d2-find-the-note/logic';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
@@ -250,22 +250,22 @@ export function d23PositionCaption(prompt: D23Prompt): string {
   return `${capitalise(d23PositionName(position))}, frets ${position.frets.from}–${position.frets.to}`;
 }
 
-/** The staff note's style: asked about while open, then correct, or still asked about on a miss. */
-export function d23NoteStyle(fb: DrillFeedback<D23Answer> | null): StaffNoteStyle {
-  return fb?.result.correct ? 'correct' : 'target';
-}
-
 /**
- * Staff marks: a wrong tap's note on its own staff place, so the misread is
- * seen beside the note (rule 10). None when it shares the note's place (the
- * same note, or its sharp). Every note on the 15-fret neck, G5 at the top,
+ * The notes on the staff: the one asked about, styled as asked while open and
+ * correct once answered. A wrong tap adds the tapped note beside it, in its
+ * own column, so the misread is seen next to the note, with any sharp it
+ * carries (rule 10). Not for the same pitch out of position: the staff can't
+ * show where it is played. Every note on the 15-fret neck, G5 at the top,
  * fits `D23_STAFF_RANGE`.
  */
-export function d23StaffMarks(prompt: D23Prompt, fb: DrillFeedback<D23Answer> | null): StaffMark[] {
-  if (!fb || fb.result.correct) return [];
-  const place = placeAt(prompt, fb.answer);
-  if (place === prompt.staff) return [];
-  return [{ position: place, style: 'wrong', at: 0 }];
+export function d23StaffNotes(prompt: D23Prompt, fb: DrillFeedback<D23Answer> | null): StaffNote[] {
+  const asked: StaffNote = {
+    pitches: [prompt.note],
+    value: 'w',
+    style: fb?.result.correct ? 'correct' : 'target',
+  };
+  if (!fb || fb.result.correct || d23Miss(prompt, fb.answer) === 'same-note') return [asked];
+  return [asked, { pitches: [nameAt(prompt, fb.answer)], value: 'w', style: 'wrong' }];
 }
 
 /**
@@ -281,9 +281,10 @@ export function d23NeckGuideLevel(guideLevel: GuideLevel, opts: { guided: boolea
 
 /**
  * Width the staff takes beside the neck on a phone on its side, in rem
- * (D23View.module.css: the staff column's width plus the column gap).
+ * (D23View.module.css: 11rem tall at one note's 100 × 138 aspect, plus the
+ * 0.75rem column gap).
  */
-export const D23_SIDE_STAFF_REM = 8 + 0.75;
+export const D23_SIDE_STAFF_REM = (11 * 100) / 138 + 0.75;
 
 /**
  * The compact window's width in frets. On a phone on its side the staff sits

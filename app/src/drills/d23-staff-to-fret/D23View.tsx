@@ -20,11 +20,10 @@ import {
   d23InitialWindow,
   d23IsLive,
   d23NeckGuideLevel,
-  d23NoteStyle,
   d23PositionCaption,
   d23PositionName,
   d23RegularFrets,
-  d23StaffMarks,
+  d23StaffNotes,
   type D23Answer,
   type D23Prompt,
 } from './logic';
@@ -204,15 +203,15 @@ export function D23View({
     >
       <div className={styles.upper}>
         <div className={styles.top}>
-          <div className={styles.staff} data-testid="d23-staff">
+          <div className={styles.staff} data-testid="d23-staff" data-place={prompt.staff}>
             <Staff
-              notes={[{ pitches: [prompt.note], value: 'w', style: d23NoteStyle(feedback) }]}
-              marks={d23StaffMarks(prompt, feedback)}
+              notes={d23StaffNotes(prompt, feedback)}
               positionRange={D23_STAFF_RANGE}
               // The note's name is the answer's first half: say where it sits
               // until it has been answered or shown.
               revealPitches={guided || Boolean(feedback)}
               label="Staff: one note"
+              className={styles.staffInner}
             />
           </div>
           <p className={styles.position} data-testid="d23-position">

@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import type { GuideLevel, Handedness } from '../../engine/model';
 import type { SizeClass } from '../../shell/size-class';
 import { STANDARD_TUNING, type Position } from '../../theory';
-import type { StaffMark, StaffNote } from '../../components/staff';
+import type { StaffNote } from '../../components/staff';
 import { resolveView } from '../lazy-view';
 import type { DrillFeedback } from '../types';
 import { PositionContextPanel } from './ContextPanel';
@@ -16,13 +16,11 @@ import { d23Check, d23MakePrompt, type D23Prompt } from './logic';
 vi.mock('../../components/staff', () => ({
   Staff: ({
     notes,
-    marks,
     positionRange,
     revealPitches,
     label,
   }: {
     notes: StaffNote[];
-    marks: StaffMark[];
     positionRange: readonly [number, number];
     revealPitches: boolean;
     label: string;
@@ -32,7 +30,6 @@ vi.mock('../../components/staff', () => ({
       role="group"
       aria-label={label}
       data-notes={notes.map((n) => `${(n.pitches ?? []).join('+')}:${n.style}`).join(' ')}
-      data-marks={marks.map((m) => `${m.position}:${m.style}`).join(' ')}
       data-range={positionRange.join(',')}
       data-reveal={String(revealPitches)}
     />
@@ -144,19 +141,17 @@ describe('<D23View>', () => {
     expect(document.querySelector('[data-testid="marker-correct"]')).toHaveTextContent('G');
     expect(staff()).toHaveAttribute('data-notes', 'G3:correct');
     expect(staff()).toHaveAttribute('data-reveal', 'true');
-    expect(staff()).toHaveAttribute('data-marks', '');
     expect(screen.getByTestId('d23-explain')).toHaveTextContent(
       'G3 in 5th position is string 4, fret 5, the index finger.',
     );
   });
 
-  it('shows both cells and the misread place on the staff on a wrong answer', () => {
+  it('shows both cells, and both notes on the staff, on a wrong answer', () => {
     const p = prompt('staff→fret:G3@pos5');
     view(p, { guideLevel: 0, feedback: fb(p, { string: 4, fret: 7 }) });
     expect(document.querySelector('[data-testid="marker-correct"]')).toHaveTextContent('G');
     expect(document.querySelector('[data-testid="marker-wrong"]')).toHaveTextContent('A');
-    expect(staff()).toHaveAttribute('data-notes', 'G3:target');
-    expect(staff()).toHaveAttribute('data-marks', '3:wrong');
+    expect(staff()).toHaveAttribute('data-notes', 'G3:target A3:wrong');
     expect(screen.getByTestId('d23-explain')).toHaveTextContent(/A3, on the space just above/);
   });
 

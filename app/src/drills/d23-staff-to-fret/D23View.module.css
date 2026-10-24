@@ -46,13 +46,20 @@
   color: var(--tone);
 }
 
-/* The staff is read, not tapped, so it is sized to leave the whole neck in
-   view below it: one note over R2's ±3 ledger lines is about 0.72 as wide as
-   it is tall, and <Staff> keeps its own minimum reading scale. */
+/* The staff is read, not tapped, so it is sized by height to leave the
+   whole neck in view below it. Its width follows from its aspect ratio
+   (inline, from <Staff>), so the tapped note added beside a wrong answer
+   widens it without moving the neck. */
 .staff {
+  --d23-staff-h: clamp(11rem, 27dvh, 16rem);
+
   grid-area: staff;
-  width: clamp(8rem, 19dvh, 12rem);
   max-width: 100%;
+}
+
+.staffInner {
+  width: auto;
+  height: var(--d23-staff-h);
 }
 
 .explain {
@@ -155,7 +162,7 @@
 }
 
 .drill[data-size-class='compact'] .staff {
-  width: 8rem;
+  --d23-staff-h: 11rem;
 }
 
 /* Best-effort iPhone: keep the zoomed neck within short landscape viewports. */
