@@ -1,0 +1,224 @@
+/* The staff-interval drill: the staff above the neck (design §12 screens), the context panel beside them. */
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+  justify-content: space-between;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.prompt {
+  grid-area: prompt;
+  margin: 0;
+  max-width: 44rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.staffBox {
+  grid-area: staff;
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
+/* A staff to tap keeps 44pt between lines and may be wider than a phone.
+   (Only here: a scroller clips the engraving's clef, which overhangs its box.) */
+.staffBox[data-placing] {
+  width: 100%;
+  max-width: 36rem;
+  overflow-x: auto;
+}
+
+/* A staff to read is sized by height, which leaves the neck room below it
+   (as D33). Its width follows from the engraving's aspect ratio. */
+.staffBox .readStaff {
+  width: auto;
+  height: clamp(8rem, 24dvh, 15rem);
+}
+
+/* iPad: the staff to read sits beside the prompt, the answers and the
+   explanation, so the whole neck fits below. */
+.drill[data-layout='beside']:not([data-size-class='compact']) .top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'staff prompt'
+    'staff choices'
+    'staff explain';
+  align-items: center;
+  align-content: center;
+  column-gap: var(--space-5);
+}
+
+.choices {
+  grid-area: choices;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  max-width: 44rem;
+}
+
+.choice {
+  min-width: 4rem;
+  min-height: 3.5rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    transform 0.08s;
+}
+
+.choice:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* "step", "skip": the readers' names under the 2nd and the 3rd. */
+.choice {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+}
+
+.nick {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: lowercase;
+  opacity: 0.8;
+}
+
+@media (hover: hover) {
+  .choice:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.choice:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.choice[data-state='correct'] {
+  background: var(--correct);
+  border-color: var(--correct);
+  color: #fff;
+  opacity: 1;
+}
+
+.choice[data-state='wrong'] {
+  background: var(--wrong);
+  border-color: var(--wrong);
+  color: #fff;
+  opacity: 1;
+}
+
+/* The right answer after a miss: a dashed edge, so it reads without colour. */
+.choice[data-state='expected'] {
+  border-color: var(--correct);
+  border-style: dashed;
+  opacity: 1;
+}
+
+.explain {
+  grid-area: explain;
+  margin: 0;
+  min-height: 1.5em;
+  max-width: 44rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.neckArea {
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choice {
+    transition: none;
+  }
+
+  .choice:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* iPad portrait: one column from the top, help below the neck. */
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .explain {
+  font-size: 0.875rem;
+}
+
+.drill[data-size-class='compact'] .staffBox .readStaff {
+  height: clamp(6rem, 30dvh, 10rem);
+}
+
+/* Room for the clef's 8, which hangs below the engraving's box. */
+.drill[data-size-class='compact'] .staffBox:not([data-placing]) {
+  padding-bottom: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .choice {
+  min-width: 2.9rem;
+  min-height: 2.9rem;
+  font-size: 1.125rem;
+}
+
+/* A phone on its side: no empty line before the answer. */
+@media (max-height: 499px) {
+  .drill[data-size-class='compact'] .explain:empty {
+    display: none;
+  }
+}
+
+/* Best-effort iPhone: keep the neck within short landscape viewports. */
+.drill[data-size-class='compact'] .neckArea svg {
+  max-height: calc(100dvh - 12rem);
+}
+
+/* iPad portrait (as D1): one column from the top, not the neck in a tall empty band. */
+.drill[data-size-class='regular'] {
+  justify-content: flex-start;
+}
