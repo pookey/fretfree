@@ -299,6 +299,7 @@ export class SessionRunner {
     const picker = createDrillPicker(deps.skills, deps.drills, {
       micEnabled: deps.settings.micEnabled,
       soundOn: deps.settings.soundOn,
+      mentalPractice: deps.settings.mentalPractice,
     });
     const inFocus = focusFilter(deps.focus);
     const serves = (item: Item) => inFocus(item) && picker.canServe(item);

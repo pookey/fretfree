@@ -117,6 +117,50 @@ describe('a drill whose prompt is a sound', () => {
   });
 });
 
+describe('a mental-practice drill', () => {
+  // M6-13: D21 is optional (research/02 rule 14), behind "Mental practice".
+  const d9 = getDrill('build-caged')!;
+  const d10 = getDrill('which-shape')!;
+  const d21 = getDrill('visualise')!;
+  const shape = { id: 'caged:A-shape@major', skillId: 'sk' };
+  const skills = [skill(['build-caged', 'which-shape', 'visualise'])];
+  const ids = (picker: ReturnType<typeof createDrillPicker>) =>
+    picker.candidates(shape).map((d) => d.id);
+
+  it('is D21', () => {
+    expect(d21.mental).toBe(true);
+    expect(d9.mental).toBeFalsy();
+    expect(d10.mental).toBeFalsy();
+  });
+
+  it('takes its turn with mental practice on, which is the default', () => {
+    for (const picker of [
+      createDrillPicker(skills, [d9, d10, d21]),
+      createDrillPicker(skills, [d9, d10, d21], { mentalPractice: true }),
+    ]) {
+      expect(ids(picker)).toEqual(['build-caged', 'which-shape', 'visualise']);
+      expect(picker.pick(shape, 'which-shape')?.id).toBe('visualise');
+    }
+  });
+
+  it('never takes a turn with mental practice off, and the item is still served', () => {
+    const picker = createDrillPicker(skills, [d9, d10, d21], { mentalPractice: false });
+    expect(ids(picker)).toEqual(['build-caged', 'which-shape']);
+    expect(picker.canServe(shape)).toBe(true);
+    let last: string | undefined;
+    for (let i = 0; i < 6; i++) {
+      last = picker.pick(shape, last)?.id;
+      expect(last).not.toBe('visualise');
+    }
+    expect(picker.pick(shape, 'visualise')?.id).toBe('build-caged');
+  });
+
+  it('is left alone by the mic and sound settings', () => {
+    const picker = createDrillPicker(skills, [d9, d10, d21], { micEnabled: false, soundOn: false });
+    expect(ids(picker)).toContain('visualise');
+  });
+});
+
 describe('an item heard by ear', () => {
   // M4-16: D15 serves both C2's named cards and I6's ear cards; only the
   // ear cards need sound, whatever drill serves them.

@@ -140,6 +140,8 @@ export interface Settings {
   startWithSound: boolean;
   /** "Use my guitar's neck in drills" (design §3.8): the neck takes the equipped board and inlays. */
   neckSkin: boolean;
+  /** "Mental practice" (research/02 rule 14): sessions may serve D21, which is pictured, not played. */
+  mentalPractice: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -160,6 +162,7 @@ export const DEFAULT_SETTINGS: Settings = {
   timingWindow: 'standard',
   startWithSound: false,
   neckSkin: true,
+  mentalPractice: true,
 };
 
 // --- Item IDs -------------------------------------------------------------

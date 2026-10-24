@@ -22,6 +22,7 @@ const visualise: DrillType<D21Prompt, D21Answer> = {
   title: 'Visualise it',
   skills: SKILLS.filter((s) => s.drillTypes.includes(D21_ID)).map((s) => s.id),
   inputModes: ['tap'],
+  mental: true,
   scope: D21_SCOPE,
   canTest: d21CanTest,
   conceptOf: d21ConceptOf,

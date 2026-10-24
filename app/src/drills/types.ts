@@ -137,6 +137,12 @@ export interface DrillType<P = unknown, A = unknown> {
    */
   requiresSound?: boolean;
   /**
+   * Mental practice: the learner pictures the neck rather than plays it
+   * (D21). Optional (research/02 rule 14), so it is served only while the
+   * "Mental practice" setting is on, which it is by default.
+   */
+  mental?: boolean;
+  /**
    * How long a right answer's feedback stays before the session moves on, in
    * ms; default the session's brief tick. D20 holds its hit-by-hit marks,
    * which are the point of the drill.

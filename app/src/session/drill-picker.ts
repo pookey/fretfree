@@ -13,7 +13,10 @@ import { chromaOf, midiAt, stringCount, type Tuning } from '../theory';
  * only while sound is on, so no guess at a sound the learner couldn't hear
  * is graded (research/02 §3.7). Some items need sound whatever drill serves
  * them (`SOUND_KINDS`): D15 serves C2's named `find:` cards with sound off,
- * but never its `ear-find:` cards, which are found by ear alone.
+ * but never its `ear-find:` cards, which are found by ear alone. A mental
+ * practice drill (D21) is optional (rule 14): a candidate only while the
+ * "Mental practice" setting is on. No skill gates on one, so with it off its
+ * items are served by the skill's other drills.
  */
 
 export interface DrillPicker {
@@ -38,6 +41,8 @@ export interface DrillPickerOptions {
   micEnabled?: boolean;
   /** `settings.soundOn`: serve drills whose prompt is a sound. On by default. */
   soundOn?: boolean;
+  /** `settings.mentalPractice`: serve mental-practice drills (D21). On by default. */
+  mentalPractice?: boolean;
 }
 
 export function createDrillPicker(
@@ -48,7 +53,9 @@ export function createDrillPicker(
   const byId = new Map(skills.map((s) => [s.id, s]));
   const usable = drills.filter(
     (d) =>
-      (options.micEnabled || !d.requiresMic) && (options.soundOn !== false || !d.requiresSound),
+      (options.micEnabled || !d.requiresMic) &&
+      (options.soundOn !== false || !d.requiresSound) &&
+      (options.mentalPractice !== false || !d.mental),
   );
   const candidates = (item: Item) => {
     const skill = byId.get(item.skillId);
