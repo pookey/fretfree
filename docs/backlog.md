@@ -1539,7 +1539,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - The target is under 2 s. Keyboard answers A–G.
 
 ### M8-10 · R2 skills, plus D23 "Staff → fretboard by position"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M8-02, M8-03, M1-04
 - **After:** M6-10
 - **Owns:** `app/src/engine/skills/r2.ts`, `app/src/drills/d23-staff-to-fret/**`, `app/e2e/m8-10.spec.ts`
