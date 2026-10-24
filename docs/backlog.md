@@ -1432,7 +1432,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - A rhythm-cell catalogue (`rhythm:dotted-8th-16th`, …) and onset-time expansion at a tempo, consumed by M8-01 grading and the drills.
 
 ### M8-05 · T1 and T2 skills, plus D32 "Simple or compound? How many felt beats?"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M8-04
 - **After:** M6-10
 - **Owns:** `app/src/engine/skills/t1.ts`, `app/src/engine/skills/t2.ts`, `app/src/drills/d32-simple-compound/**`, `app/e2e/m8-05.spec.ts`
