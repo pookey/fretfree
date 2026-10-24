@@ -115,6 +115,18 @@ describe('<FunctionView>', () => {
     );
   });
 
+  it('states the worked example’s fact once, in the feedback, once answered', () => {
+    const p = prompt();
+    renderView(p, { guided: true, feedback: fb(p, 'Em7') });
+    expect(screen.getByText('Which chord is V7 in A minor?')).toBeInTheDocument();
+    expect(screen.queryByText(/to continue/)).toBeNull();
+    expect(screen.getAllByText(/A harmonic minor raises G to G♯/)).toHaveLength(1);
+    expect(screen.getByTestId('df-feedback')).toHaveTextContent('V7 in A minor is E7.');
+    expect(screen.getByTestId('df-explanation')).toHaveTextContent(
+      'Raising G to G♯, the leading tone, makes E7.',
+    );
+  });
+
   it('marks a right answer and states the fact', () => {
     const p = prompt();
     renderView(p, { feedback: fb(p, 'E7') });

@@ -53,6 +53,12 @@ describe('<FunctionContextPanel>', () => {
     expect(screen.getByText('A major:')).toBeInTheDocument();
   });
 
+  it('names the function roles once on a function card', () => {
+    panel(prompt('function:V@major'), 3);
+    expect(screen.getAllByText(/dominant/i)).toHaveLength(1);
+    expect(screen.getByText(/^Chords in C major/)).toBeInTheDocument();
+  });
+
   it('titles each kind', () => {
     const { unmount } = panel(prompt('function:V@major'), 2);
     expect(screen.getByRole('heading', { name: 'Chord function' })).toBeInTheDocument();

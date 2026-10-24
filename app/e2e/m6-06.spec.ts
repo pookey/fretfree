@@ -145,7 +145,7 @@ test.describe('M6-06 minor-key harmony and chord function', () => {
       'expected',
     );
     await expect(page.getByTestId('df-explanation')).toContainText(
-      'Em is v, from natural minor, with G. Raising it to the leading tone makes E.',
+      'Em is v, from natural minor, with G. Raising G to G♯, the leading tone, makes E.',
     );
     await expect(page.getByTestId('df-feedback')).toContainText('V in A minor is E.');
     await expectNoHorizontalOverflow(page);

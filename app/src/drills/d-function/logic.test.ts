@@ -375,7 +375,7 @@ describe('function drill: words', () => {
   it('names the misconceptions', () => {
     const v7 = prompt('minor-chord:V7@key=Am');
     expect(dfExplain(v7, 'Em7')).toEqual([
-      'Em7 is v7, from natural minor, with G. Raising it to the leading tone makes E7.',
+      'Em7 is v7, from natural minor, with G. Raising G to G♯, the leading tone, makes E7.',
     ]);
     expect(dfExplain(v7, 'G7')[0]).toMatch(/natural 7th, G: a whole step below A/);
     const src = prompt('minor-source:v@key=Am');
@@ -452,7 +452,9 @@ describe('function drill: guides, sound and keys', () => {
       'A major',
     ]);
     expect(dfReference(prompt('tritone-sub:G7'), 2)[0]!.label).toBe('Half steps');
-    expect(dfReference(prompt('function:V@major'), 3).map((r) => r.label)[1]).toBe('Function');
+    // The hint names the roles, so the panel doesn't say them again (M6-14).
+    const fn = prompt('function:V@major');
+    expect(dfReference(fn, 3)).toEqual(dfReference(fn, 2));
     expect(dfReference(prompt('borrowed:bVII@key=C'), 3).map((r) => r.label)).toEqual([
       'Chords in C major',
       'C major scale',

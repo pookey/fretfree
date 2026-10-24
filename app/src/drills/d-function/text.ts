@@ -293,8 +293,9 @@ export function dfExplain(prompt: DfPrompt, answer: DfAnswer): string[] {
       }
       const sameRoot = given.root === parseChordSymbol(prompt.answer).root;
       if (sameRoot && chordTones(answer).map(chromaOf).includes(seventh)) {
+        const { raised } = sevenths(key);
         return [
-          `${shown} is ${roman}, from natural minor, with ${natural}. Raising it to the leading tone makes ${dfDisplay(prompt, prompt.answer)}.`,
+          `${shown} is ${roman}, from natural minor, with ${natural}. Raising ${natural} to ${raised}, the leading tone, makes ${dfDisplay(prompt, prompt.answer)}.`,
         ];
       }
       return [`${shown} is ${roman} in ${k}.`];
@@ -425,8 +426,6 @@ export function dfHint(prompt: DfPrompt): string {
   }
 }
 
-const FUNCTION_ROLE_LINE = 'Tonic rests, subdominant moves away, dominant pulls home.';
-
 /** One labelled line of the context panel's reference. */
 export interface DfReference {
   label: string;
@@ -438,7 +437,8 @@ export interface DfReference {
  * check the cue against, never the answer. Minor-key cards get the natural
  * minor scale, and at level 3 harmonic minor (and the major key, for a
  * source card); a secondary dominant or borrowed
- * card gets the key's chords; a function card the key's chords by numeral;
+ * card gets the key's chords; a function card the key's chords by numeral
+ * (its hint names the roles, so it gets no more at level 3);
  * a tritone card counts its half steps.
  */
 export function dfReference(prompt: DfPrompt, level: GuideLevel): DfReference[] {
@@ -467,11 +467,9 @@ export function dfReference(prompt: DfPrompt, level: GuideLevel): DfReference[] 
       }
       return lines;
     }
+    // The hint already says what each function does, so level 3 adds nothing.
     case 'function':
-      return [
-        { label: `Chords in ${keyOf(prompt)}`, value: strip(key) },
-        ...(level >= 3 ? [{ label: 'Function', value: FUNCTION_ROLE_LINE }] : []),
-      ];
+      return [{ label: `Chords in ${keyOf(prompt)}`, value: strip(key) }];
     case 'secondary':
     case 'secondary-of':
     case 'borrowed': {

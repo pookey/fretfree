@@ -14,6 +14,8 @@ const WIDE = new Set(['minor-source', 'function', 'two-five', 'secondary-of']);
  * progression is the row, in playing order. There is no neck. Feedback
  * marks the buttons by border style as well as colour, says why a wrong
  * choice is wrong, then states the fact, while the chords sound (rule 10).
+ * The fact is stated once: by the worked example until it is answered, then
+ * by the feedback, with the task back in the prompt line.
  */
 export function FunctionView({
   prompt,
@@ -65,7 +67,9 @@ export function FunctionView({
               </p>
             )}
             <p className={styles.prompt} id="drill-prompt">
-              {guided ? (
+              {/* Once answered, the feedback states the fact: the worked
+                  example's words would say it twice, and "Tap" is spent. */}
+              {guided && !feedback ? (
                 <>
                   {dfFact(prompt)} Tap <strong>{dfDisplay(prompt, prompt.answer)}</strong> to
                   continue.
