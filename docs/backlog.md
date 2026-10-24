@@ -1504,7 +1504,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - 6/8 vs 3/4 confusable pairing. Choice drill with keyboard answers.
 
 ### M8-06 · D29 "Complete the bar"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M8-02, M8-04, M8-05
 - **After:** M6-10
 - **Owns:** `app/src/drills/d29-complete-the-bar/**`, `app/e2e/m8-06.spec.ts`
