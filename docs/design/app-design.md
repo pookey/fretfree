@@ -31,7 +31,7 @@ Topic IDs (F1, C6, I1, …) refer to the curriculum map in research/03.
 5. **Fade the training wheels.** Visual guides (dots, labels, inlays, highlighted roots) fade as competence grows.
 6. **Use the real guitar.** An optional mic mode turns screen knowledge into playing.
 7. **Duolingo-style motivation that serves learning.** A user decision (2026-10-18). Use streaks, a daily goal, XP, achievements and celebratory moments to build a daily habit. Every reward is wired to the behaviours the evidence supports: a short daily session, doing due reviews, and genuine mastery. Nothing rewards grinding easy items or punishes mistakes. See §3.7.
-8. **Local-first and private.** No account needed. Everything works offline. Data stays on the device, with export/import.
+8. **Local-first and private.** No account needed. Everything works offline. Data stays on the device, with export/import, signed in or not. Sync is optional (M7, [sync.md](sync.md)): an email sign-in keeps a copy of the learner's progress on the server so another device can merge it in. It is offered, never required, and stores only the email address (to sign in) and that copy, in AWS us-east-1. Signing out keeps local data. Deleting the account removes the server copy and the email, and the learner chooses whether this device keeps its progress. There is still no analytics or tracking, and the Privacy page says what is stored, where and why.
 
 ## 2. Platform and tech decision
 
@@ -52,7 +52,7 @@ Topic IDs (F1, C6, I1, …) refer to the curriculum map in research/03.
 | PWA | vite-plugin-pwa (Workbox), full offline precache | — |
 | Testing | Vitest (unit). Playwright: **primary** profiles iPad Pro 11" landscape + portrait and iPad mini landscape (full e2e + visual). **Secondary**: iPhone 15 landscape, smoke e2e only (core flow works, nothing overflows). | iPad first |
 | Infra | **AWS CDK (TypeScript)**, deployed **locally** (`pnpm ship`; no GitHub Actions): S3 (private) + CloudFront (OAC) + ACM + Route53 for `fretfree.app` (`www` redirects) | AWS profile `smartthings-hp`, hosted zones looked up by name. Optional, context-gated stacks: `FretworkEmail` (SES, eu-west-1) and `FretworkBrand` |
-| Backend | **None for v1.** Optional sync (Cognito plus a small API) is a later milestone. | Keeps v1 simple and private |
+| Backend | **Optional, for sync only** (M7, [sync.md](sync.md)). The app needs no server: with `VITE_SYNC_API_URL` empty it has no account at all. The hosted build signs in with passwordless email (a code and a link) against Cognito, and syncs through an HTTP API (API Gateway + one Lambda) to a DynamoDB table partitioned by user, all in us-east-1. Sign-in mail goes through SES in eu-west-1. Pending sign-ins and rate counters hold only hashes, and expire. `DELETE /account` removes every record and the Cognito user and leaves an anonymous tombstone (the opaque `sub` and a closed flag); the app re-sends it until it answers 200, across reloads, having stopped sync and signed out the moment the learner asked. | Practice never waits on the network, and a learner who never signs in sends nothing anywhere |
 
 ## 3. Learning engine (the core)
 
@@ -495,6 +495,7 @@ User request, 2026-10-19. Utilities a guitarist reaches for while practising, ke
 - **Over time** (`engine/history.ts`): items learning and stable at the end of each day, and the median time of correct, unguided answers per day for one drill at a time, against the mastery target. Only current cards are stored, so past days are rebuilt by replaying each item's review log through FSRS with today's weights; today's point always comes from the stored cards.
 - **Coming up:** reviews due on each of the next 7 days (overdue counts as today), and the mean recall of practised items 30 days out if practice stopped today.
 - **Practice calendar:** session history and streak days, a week per row, shaded by minutes against the daily goal, with ✓ for goal days and ❄ for freezes.
+- **Account** (last, optional): "Save your progress across devices" sign-in, or the signed-in account with its sync status and Sign out. Below it, **Delete account** asks first, offers an export, and lets the learner keep or clear this device's progress (M7-06).
 - Accuracy over time is deliberately not charted: the adaptive band (§3.3 step 4) holds it at 80–90%, so a flat line would read as "not improving".
 
 ### Garage
@@ -509,7 +510,7 @@ Reached from Progress (`/progress/garage`), from the guitar avatar in the sideba
 ### Settings
 
 - Every onboarding choice, plus sound, guides and timing (including a calibration re-run). Each change saves at once, and none of them can switch off spacing or retrieval.
-- **Your data:** JSON export and import.
+- **Your data:** JSON export and import, signed in or not.
 - Links to **About** (the approach and its evidence) and **Privacy** (what's stored, where, and what isn't).
 
 ### Visual design
