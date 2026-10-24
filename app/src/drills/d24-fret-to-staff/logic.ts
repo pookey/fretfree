@@ -10,7 +10,6 @@ import {
   noteAtStaffPosition,
   parseReadingPosition,
   samePosition,
-  spellMidi,
   staffNote,
   staffPositions,
   type FretRange,
@@ -256,17 +255,4 @@ export function d24Explain(prompt: D24Prompt, fb: DrillFeedback<D24Answer>): str
  */
 export function d24NeckGuideLevel(guideLevel: GuideLevel, opts: { guided: boolean }): GuideLevel {
   return opts.guided ? 3 : (Math.max(2, guideLevel) as GuideLevel);
-}
-
-// --- Context panel ----------------------------------------------------------
-
-/** Where each open string sits on the staff: the anchors a fret is counted up from. */
-export function d24OpenStrings(tuning: Tuning): { string: number; note: string; place: number }[] {
-  return allStrings(tuning)
-    .slice()
-    .reverse()
-    .map((string) => {
-      const n = staffNote(spellMidi(midiAt({ string, fret: 0 }, tuning)));
-      return { string, note: n.name, place: n.position };
-    });
 }

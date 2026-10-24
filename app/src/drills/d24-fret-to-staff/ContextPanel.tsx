@@ -1,6 +1,4 @@
-import type { DrillContextPanelProps } from '../types';
-import { d22At } from '../d22-staff-name/logic';
-import { d24OpenStrings, type D24Answer, type D24Prompt } from './logic';
+import type { GuideLevel } from '../../engine/model';
 import styles from './ContextPanel.module.css';
 
 /**
@@ -9,45 +7,34 @@ import styles from './ContextPanel.module.css';
  *
  * | Level | Shows |
  * |---|---|
- * | 3 | the open strings' places, the lines and spaces, and how frets step |
- * | 2 | the open strings' places, and the lines and spaces |
- * | 1 | two anchors: the G string on the G line, and open low E |
+ * | 3 | the clef's G line, the lines and spaces, counting frets, and how naturals step |
+ * | 2 | the clef's G line, the lines and spaces, and counting frets |
+ * | 1 | the clef's G line |
  *
- * It names the anchors a fret is counted up from, never the lit cell's note.
+ * Every line still needs a step of recall: it never ties a string to its
+ * place on the staff (the open strings are cards in open position), and it
+ * is the same for every card, so what it shows is never a tell (rule 4).
  */
-export function FretToStaffContextPanel({
-  guideLevel,
-  tuning,
-}: DrillContextPanelProps<D24Prompt, D24Answer>) {
+export function FretToStaffContextPanel({ guideLevel }: { guideLevel: GuideLevel }) {
   return (
     <div className={styles.panel}>
       <h2>From the fret to the staff</h2>
-      {guideLevel >= 2 ? (
-        <>
-          <p>The open strings on the staff:</p>
-          <ul>
-            {d24OpenStrings(tuning).map((s) => (
-              <li key={s.string}>
-                String {s.string}, <strong>{s.note.replace(/\d+$/, '')}</strong>: {d22At(s.place)}
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : (
-        <p>
-          The open <strong>G</strong> string is the G line the clef curls round (line 2). Open low{' '}
-          <strong>E</strong> hangs under three ledger lines.
-        </p>
-      )}
+      <p>
+        The clef curls round line 2, the <strong>G line</strong>. Each line or space up or down from
+        it is the next note of the musical alphabet.
+      </p>
       {guideLevel >= 2 && (
-        <p>
-          Lines, bottom up: <strong>E G B D F</strong>. Spaces: <strong>F A C E</strong>.
-        </p>
+        <>
+          <p>
+            Lines, bottom up: <strong>E G B D F</strong>. Spaces: <strong>F A C E</strong>.
+          </p>
+          <p>Name the lit fret first: count frets up from its open string, a half step each.</p>
+        </>
       )}
       {guideLevel >= 3 && (
         <p>
-          Each fret is a half step. Naturals are two frets apart, except <strong>B–C</strong> and{' '}
-          <strong>E–F</strong>, one fret apart: one step up the staff either way.
+          Naturals are two frets apart, except <strong>B–C</strong> and <strong>E–F</strong>, one
+          fret apart: one step up the staff either way.
         </p>
       )}
       {guideLevel >= 2 && (

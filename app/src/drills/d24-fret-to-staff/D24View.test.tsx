@@ -3,7 +3,15 @@ import { Element as VexElement } from 'vexflow/bravura';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { GuideLevel } from '../../engine/model';
 import type { SizeClass } from '../../shell/size-class';
-import { STANDARD_TUNING } from '../../theory';
+import { getSkill } from '../../engine/skills';
+import {
+  STANDARD_TUNING,
+  allStrings,
+  describeStaffPosition,
+  midiAt,
+  spellMidi,
+  staffNote,
+} from '../../theory';
 import { resolveView } from '../lazy-view';
 import { getDrill } from '../registry';
 import type { DrillFeedback } from '../types';
@@ -187,37 +195,67 @@ describe('D24View', () => {
 });
 
 describe('FretToStaffContextPanel', () => {
-  const p = prompt('fret→staff:G3@pos5');
-  const panel = (guideLevel: GuideLevel) =>
-    render(
-      <FretToStaffContextPanel
-        prompt={p}
-        guideLevel={guideLevel}
-        guided={false}
-        handedness="right"
-        tuning={STANDARD_TUNING}
-        feedback={null}
-      />,
-    );
-
-  it('fades from the open strings and the staff map to two anchors', () => {
-    const { unmount } = panel(3);
-    expect(screen.getByText(/String 6/)).toHaveTextContent(
-      'String 6, E: in the space below the 3rd ledger line',
-    );
-    expect(screen.getByText(/String 3/)).toHaveTextContent('String 3, G: on the 2nd line');
-    expect(screen.getByText(/Lines, bottom up/)).toBeInTheDocument();
-    expect(screen.getByText(/Each fret is a half step/)).toBeInTheDocument();
+  const LEVELS: GuideLevel[] = [0, 1, 2, 3];
+  const panelText = (guideLevel: GuideLevel) => {
+    const { container, unmount } = render(<FretToStaffContextPanel guideLevel={guideLevel} />);
+    const text = container.textContent ?? '';
     unmount();
+    return text;
+  };
 
-    const two = panel(2);
-    expect(screen.getAllByRole('listitem')).toHaveLength(6);
-    expect(screen.queryByText(/Each fret is a half step/)).toBeNull();
-    two.unmount();
+  it('fades from the staff map and fret counting to the clef’s G line', () => {
+    expect(panelText(3)).toMatch(/the G line/);
+    expect(panelText(3)).toMatch(/Lines, bottom up: E G B D F\. Spaces: F A C E\./);
+    expect(panelText(3)).toMatch(/count frets up from its open string/);
+    expect(panelText(3)).toMatch(/except B–C and E–F/);
+    expect(panelText(2)).toMatch(/Lines, bottom up/);
+    expect(panelText(2)).not.toMatch(/except B–C/);
+    expect(panelText(1)).toMatch(/The clef curls round line 2, the G line/);
+    expect(panelText(1)).not.toMatch(/Lines, bottom up|count frets/);
+  });
 
-    panel(1);
-    expect(screen.queryByRole('listitem')).toBeNull();
-    expect(screen.queryByText(/Lines, bottom up/)).toBeNull();
-    expect(screen.getByText(/the G line the clef curls round/)).toBeInTheDocument();
+  it('never maps an open string to its place on the staff, at any guide level', () => {
+    const openPlaces = allStrings(STANDARD_TUNING).map(
+      (string) => staffNote(spellMidi(midiAt({ string, fret: 0 }))).position,
+    );
+    for (const level of LEVELS) {
+      const text = panelText(level);
+      // No string is named, by number or by its open note...
+      expect(text, `level ${level}`).not.toMatch(
+        /\bstrings? \d|\d(st|nd|rd|th) string|open (low |high )?[A-G]\b|low E/i,
+      );
+      // ...and no open string's place is spelled out.
+      for (const place of openPlaces) {
+        expect(text, `level ${level}`).not.toContain(describeStaffPosition(place));
+      }
+    }
+  });
+
+  it('is the same for every card, and never names the lit note’s place', () => {
+    const cards = ['R2.open', 'R2.pos5', 'R2.pos7', 'R2.pos9', 'R2.pos12'].flatMap((id) =>
+      getSkill(id)!
+        .items()
+        .filter((i) => i.id.startsWith('fret→staff:')),
+    );
+    expect(cards.length).toBeGreaterThan(50);
+    for (const level of LEVELS) {
+      const text = panelText(level);
+      for (const item of cards) {
+        const p = prompt(item.id);
+        const { container, unmount } = render(
+          <FretToStaffContextPanel
+            prompt={p}
+            guideLevel={level}
+            guided={false}
+            handedness="right"
+            tuning={STANDARD_TUNING}
+            feedback={null}
+          />,
+        );
+        expect(container.textContent, item.id).toBe(text);
+        expect(text, item.id).not.toContain(describeStaffPosition(p.place));
+        unmount();
+      }
+    }
   });
 });

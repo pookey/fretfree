@@ -7,7 +7,6 @@ import {
   midiAt,
   noteAtStaffPosition,
   readingPosition,
-  staffNote,
   type Position,
 } from '../../theory';
 import type { DrillContext, DrillFeedback } from '../types';
@@ -26,7 +25,6 @@ import {
   d24GivenNote,
   d24MakePrompt,
   d24NeckGuideLevel,
-  d24OpenStrings,
   d24PositionCaption,
   d24Range,
   d24ScopeFor,
@@ -268,19 +266,5 @@ describe('D24 words', () => {
     expect(d24NeckGuideLevel(1, { guided: false })).toBe(2);
     expect(d24NeckGuideLevel(3, { guided: false })).toBe(3);
     expect(d24NeckGuideLevel(0, { guided: true })).toBe(3);
-  });
-
-  it('places the open strings on the staff, low E first', () => {
-    expect(d24OpenStrings(STANDARD_TUNING)).toEqual([
-      { string: 6, note: 'E2', place: -7 },
-      { string: 5, note: 'A2', place: -4 },
-      { string: 4, note: 'D3', place: -1 },
-      { string: 3, note: 'G3', place: 2 },
-      { string: 2, note: 'B3', place: 4 },
-      { string: 1, note: 'E4', place: 7 },
-    ]);
-    for (const s of d24OpenStrings(STANDARD_TUNING)) {
-      expect(staffNote(s.note).position).toBe(s.place);
-    }
   });
 });
