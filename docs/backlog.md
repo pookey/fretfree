@@ -955,7 +955,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - `@layout` e2e on every iPad profile and the phone: the document's scroll height equals the viewport height on Progress, and the last Progress section can still be scrolled into view.
 
 ### M1-51 · Find why the ConceptCard session test stalls on the test box
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** CLAUDE.md "Remote runner"; `docs/progress.md` flake notes
 - **Owns:** `app/src/session/ConceptCard.test.tsx`, `app/src/test/**`
