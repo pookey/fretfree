@@ -91,10 +91,14 @@ async function reach(page: Page, direction: 'read' | 'place') {
     const task = (await page.locator('#drill-prompt').textContent()) ?? '';
     const dir = await card(page).getAttribute('data-direction');
     if (dir === direction && !task.includes('to continue')) return;
+    const progress = page.getByRole('progressbar', { name: 'Session progress' });
+    const at = Number(await progress.getAttribute('aria-valuenow'));
     await (await answerControl(page, true)).click();
-    await expect(page.getByTestId('feedback-correct')).toBeVisible();
-    // The session moves on by itself after a right answer.
-    await expect(page.getByTestId('feedback-correct')).toBeHidden();
+    // The session moves on by itself after a right answer (a wrong one waits
+    // for Continue). Under load the brief ✓ can come and go before a check
+    // sees it, so wait for the next card instead.
+    await expect(progress).not.toHaveAttribute('aria-valuenow', String(at));
+    await expect(page.getByTestId('feedback-bar')).not.toHaveAttribute('data-state', /./);
   }
   throw new Error(`No unguided ${direction} card`);
 }
