@@ -155,6 +155,111 @@
   }
 }
 
+/* Short iPad landscape (the mini, 744–768pt tall): the stacked layout puts
+   the neck's foot 125–136pt below the fold, and the neck can't go beside the
+   chart (its strings need the column's whole width). So the view packs what
+   sits above the neck instead, in reading order: the three pickers on a row;
+   Show, the title and the quiz on the next; one-line chart cards; a one-row
+   transport. The description and the capo note follow the neck (as do the
+   capo suggestions); the cards and the neck's heading still name the shapes
+   and what they sound as. */
+@media (min-width: 1024px) and (min-height: 500px) and (max-height: 799.98px) and (orientation: landscape) {
+  .player {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .player > * {
+    flex: 0 0 100%;
+    margin: 0;
+  }
+
+  /* Their children join the rows above. */
+  .player .settings,
+  .player .summary {
+    display: contents;
+  }
+
+  /* Centred on the Show segments and the quiz button, on the row's foot. */
+  .player .summary > h2 {
+    display: flex;
+    flex: 1 1 10rem;
+    align-items: center;
+    min-width: 0;
+    min-height: var(--tap);
+  }
+
+  .player .about {
+    flex: 0 0 100%;
+    order: 1;
+  }
+
+  .player .capoLine {
+    order: 1;
+  }
+
+  .player .suggest {
+    order: 2;
+  }
+
+  .card {
+    grid-template-columns: auto auto;
+    justify-content: center;
+    align-items: center;
+    gap: 0 var(--space-2);
+    min-height: 3rem;
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .main,
+  .sub:last-child {
+    grid-row: span 2;
+  }
+
+  /* No capo: the numeral sits on the name's baseline, "C I". */
+  .card:not(:has(.sounds)) {
+    align-items: baseline;
+  }
+
+  .sub,
+  .sounds {
+    justify-self: start;
+  }
+
+  .transport {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .transport > :not(.play) {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    white-space: nowrap;
+  }
+
+  .play {
+    min-width: 6rem;
+  }
+
+  .tempo {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+
+  .tempo input {
+    flex: 1 1 6rem;
+    min-width: 6rem;
+  }
+
+  /* The rows above take about 26rem with the screen's title and tabs. */
+  .neck svg {
+    max-width: calc(max(19rem, 100dvh - 27.5rem) * var(--neck-ratio));
+  }
+}
+
 /* Phone: two bars a row, smaller names. */
 @media (max-width: 40rem) {
   .chart,

@@ -430,8 +430,10 @@ export function View() {
   };
 
   return (
-    <>
-      <div className={css.controls}>
+    // `player`: on a short iPad landscape screen (the mini) it lays the view
+    // out again so the whole neck fits (progression-player.module.css).
+    <div className={own.player}>
+      <div className={`${css.controls} ${own.settings}`}>
         <label className={css.field}>
           <span>Progression</span>
           <select value={progressionId} onChange={(e) => changeProgression(e.target.value)}>
@@ -488,7 +490,7 @@ export function View() {
         <h2 className={css.name} data-testid="player-title">
           {pretty(progression.name)} in {keyTitle(key)}
         </h2>
-        <p className={styles.muted}>{progression.description}</p>
+        <p className={`${styles.muted} ${own.about}`}>{progression.description}</p>
         {/* Beside the title, not on a row of its own, so the neck fits an iPad landscape screen. */}
         <Link to={quizHref} className={`${styles.secondaryButton} ${css.quiz}`}>
           Quiz me on this
@@ -618,6 +620,6 @@ export function View() {
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }
