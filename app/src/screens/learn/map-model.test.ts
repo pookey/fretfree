@@ -70,7 +70,7 @@ describe('buildMap', () => {
   it('lists every module, in goal order, with the registered skills', () => {
     const map = buildMap({ skills: SKILLS, goal: 'general', stored: stored(), cards: [] });
     // Modules not built yet come last (M10-07), in their own default order.
-    const soon = ['advanced', 'reading'];
+    const soon = ['advanced'];
     expect(map.map((m) => m.module.id)).toEqual([
       ...MODULES.map((m) => m.id).filter((id) => !soon.includes(id)),
       ...soon,
@@ -221,8 +221,9 @@ describe('percent', () => {
 
 describe('coming-soon modules', () => {
   it('group after the open and locked ones, even when the goal promotes them', () => {
-    // Jazz promotes Reading, which has no skills yet.
-    const map = buildMap({ skills: SKILLS, goal: 'jazz', stored: stored(), cards: [] });
+    // Jazz promotes Reading; without its skills it is a coming-soon module.
+    const skills = SKILLS.filter((s) => s.topic !== 'R1');
+    const map = buildMap({ skills, goal: 'jazz', stored: stored(), cards: [] });
     const states = map.map((m) => m.state);
     const firstSoon = states.indexOf('soon');
     expect(firstSoon).toBeGreaterThan(0);
