@@ -52,6 +52,7 @@ export const TOPIC_TITLES: Readonly<Record<string, string>> = {
   T6: 'Pickups and repeats',
   R2: 'Reading by position',
   R3: 'Key signatures on the staff',
+  R4: 'Rhythm notation',
 };
 
 /** Card counts: all of them, those learning (stable ones included) and those stable. */
