@@ -156,6 +156,16 @@ else
       host=local
       return
     fi
+    # Anything but a number (a login banner, an empty reply) would break the
+    # arithmetic below: keep e2e on the runner, as before the split.
+    if [[ ! "$remote_depth" =~ ^[0-9]+$ ]]; then
+      echo "verify-quick: can't read the runner's e2e queue (it said \"${remote_depth:0:60}\"), so e2e runs on the runner"
+      host=remote
+      return
+    fi
+    # The local slot is checked before the local build, which waits for a CPU
+    # slot and takes about a minute: if the slot is gone by then, e2e-slot.sh
+    # queues for the Mac's next one rather than overrunning it.
     local_depth="$(source scripts/slot-lib.sh && queue_depth "$lock_base/e2e")"
     host="$(source scripts/slot-lib.sh && e2e_host "$remote_depth" "$local_depth" "$slots")"
     if [[ "$host" == local ]]; then

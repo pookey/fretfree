@@ -86,9 +86,12 @@ case "${1:-}" in
   --queue-depth)
     [[ -n "$remote" ]] || exit 1
     # The runner's slots are flock(1) locks, held from inside its containers.
+    # Sent to bash on stdin, so the runner's login shell needn't be bash.
     source "$(dirname "$0")/slot-lib.sh"
-    exec ssh "${ssh_opts[@]}" "$remote" "$(declare -f queue_depth _slot_flock _slot_alive _ticket_live _lane_waiting)
-      FRETWORK_SLOT_FLOCK=1 queue_depth ~/fretwork-locks/${2:?--queue-depth needs a kind}" 2>/dev/null ;;
+    printf '%s\n' "$(declare -f queue_depth _slot_flock _slot_alive _ticket_live _lane_waiting)" \
+      "FRETWORK_SLOT_FLOCK=1 queue_depth ~/fretwork-locks/${2:?--queue-depth needs a kind}" |
+      ssh "${ssh_opts[@]}" "$remote" 'bash -s' 2>/dev/null
+    exit ;;
   --drop)
     [[ -n "$remote" ]] || exit 0
     exec ssh "${ssh_opts[@]}" "$remote" "rm -rf ~/fretwork-runs/'${2:?--drop needs a run name}'" 2>/dev/null ;;
