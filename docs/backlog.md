@@ -1530,7 +1530,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - Timing is graded by `gradeTiming`. Counting syllables are shown at high guide levels ("1 e & a", "1 la li").
 
 ### M8-09 · R1 skills, plus D22 "Name the note on the staff"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M8-02, M8-03
 - **After:** M6-10
 - **Owns:** `app/src/engine/skills/r1.ts`, `app/src/drills/d22-staff-name/**`, `app/e2e/m8-09.spec.ts`
