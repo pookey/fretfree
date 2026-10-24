@@ -244,7 +244,8 @@ export interface FormReadingGuides {
 export const PICKUP_RULES = [
   "A pickup is the short bar before bar 1. It isn't counted: bar 1 is the first full bar.",
   // General, never a worked number: a number here could be a card's answer (rule 4).
-  'A pickup fills the end of a bar: it starts as many beats before the barline as it holds. Count the beats before it, then play.',
+  // "Counts", not beats: in 6/8 a pickup is counted in eighths, and a beat is three of them.
+  'A pickup fills the end of a bar: it starts as many counts before the barline as it holds. Count the bar up to it, then play.',
 ];
 
 export const REPEAT_RULES = [

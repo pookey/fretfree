@@ -135,6 +135,8 @@ describe('form reading words', () => {
         expect(rules, it.id).not.toContain(countIn(start).toLowerCase());
         // No worked beat at all: any one could be another card’s answer.
         expect(rules, it.id).not.toMatch(/\b(?:beat|eighth)s? \d/);
+        // One wording for 4/4 and 6/8: counted in beats or eighths, never "beats" alone.
+        expect(rules, it.id).not.toMatch(/\bbeats? before/);
       }
     }
   });
