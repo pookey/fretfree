@@ -1556,7 +1556,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - A highlighted fret; the learner taps the staff position, using M8-02 hit-testing. Wrong answers show both positions and play both notes.
 
 ### M8-12 · R3 skills, plus D25 "Read the key signature and apply it"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M8-03, M8-02, M4-01
 - **After:** M6-10
 - **Owns:** `app/src/engine/skills/r3.ts`, `app/src/drills/d25-key-signature/**`, `app/e2e/m8-12.spec.ts`
