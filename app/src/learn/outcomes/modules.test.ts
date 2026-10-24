@@ -69,7 +69,7 @@ const BUILDS_ON: Record<string, { gates: string[]; says: RegExp | null }> = {
   // From day one: its first sets need only the musical alphabet.
   ear: { gates: ['C9.pop', 'F1.alphabet', 'F2.string6-naturals'], says: null },
   // Feel a pulse before reading one (sound before symbol).
-  meter: { gates: ['F4.pulse'], says: /^Rhythm$/ },
+  meter: { gates: ['F4.eighths', 'F4.pulse'], says: /^Rhythm$/ },
   reading: { gates: [], says: /strings 6 and 5, and time signatures/ },
   tab: { gates: ['F3.markers'], says: /fret markers/ },
 };
