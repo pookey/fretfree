@@ -954,6 +954,16 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Find what overflows the document (it's not the achievement toast, which is `position: fixed`) and fix it, so Progress scrolls only inside `main`, as the other screens do. If the cause is in the shell (`ScreenLayout`), say so in the report before widening Owns.
   - `@layout` e2e on every iPad profile and the phone: the document's scroll height equals the viewport height on Progress, and the last Progress section can still be scrolled into view.
 
+### M1-51 · Find why the ConceptCard session test stalls on the test box
+- **Status:** todo
+- **Deps:** none
+- **Design:** CLAUDE.md "Remote runner"; `docs/progress.md` flake notes
+- **Owns:** `app/src/session/ConceptCard.test.tsx`, `app/src/test/**`
+- **Acceptance:**
+  - `ConceptCard.test.tsx` › "a session with a new skill (M10-04)" has failed five times on the box, under load (M8-04, M4-17 and M4-18 preflights, then the M6-15 lane run on 2026-10-24). The last failure: "opens with the intro, then the worked rep" never found `/to continue\./` within 120 s, though the whole file takes about 8 s alone and passed 4/4 on the same tree on the Mac. Raising timeouts (290f6dfc) didn't settle it, so it's probably waiting on something that never comes, not just slow.
+  - Find the cause, for example the lazy drill view's Suspense under the mocked `performance.now`, a Dexie clear racing the session load, or a fake-timer interaction. Fix the test (or the code, if it's a real race a learner could hit) without widening timeouts again.
+  - Prove it with the file run 20 times in a row inside the box's container at 6 Vitest workers, alongside a parallel e2e run to load the box. If the cause is in app code, say so in the report and add a unit test for the race.
+
 ### M3-18 · Lazy-load drill views and the onboarding and placement routes
 - **Status:** done
 - **Deps:** M3-16
