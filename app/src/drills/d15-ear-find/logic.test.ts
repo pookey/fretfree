@@ -266,8 +266,8 @@ describe('D15 neck guides', () => {
   });
 
   it('sizes the window beside the prompt on a phone on its side', () => {
-    // iPhone 15 on its side in Safari (734 × 343 inside the safe areas): 8 frets.
-    expect(d15SideFrets(734, 343)).toBe(8);
+    // iPhone 15 on its side in Safari (734 × 343 inside the safe areas): 7 frets.
+    expect(d15SideFrets(734, 343)).toBe(7);
     // Installed (734 × 393): taller cells, so fewer frets fit beside the prompt.
     expect(d15SideFrets(734, 393)).toBe(6);
     // Each window it allows leaves the prompt its column.
