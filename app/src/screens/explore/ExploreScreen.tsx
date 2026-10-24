@@ -1,4 +1,4 @@
-import { Component, Suspense, type ReactNode } from 'react';
+import { Component, Suspense, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { ScreenLayout } from '../../shell/ScreenLayout';
 import { EXPLORE_VIEWS, type ExploreView } from './registry';
@@ -12,9 +12,17 @@ import styles from '../screens.module.css';
 export function ExploreScreen({ views = EXPLORE_VIEWS }: { views?: readonly ExploreView[] }) {
   const [params] = useSearchParams();
   const active = views.find((v) => v.id === params.get('view')) ?? views[0];
+  const list = useRef<HTMLElement>(null);
+  // The tabs scroll sideways where they don't fit (iPad portrait, the mini):
+  // bring the open view's tab fully into sight rather than clip it.
+  useLayoutEffect(() => {
+    const nav = list.current;
+    const tab = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (nav && tab) nav.scrollLeft = scrollToShow(nav, tab);
+  }, [active]);
   return (
     <ScreenLayout title="Explore">
-      <nav className={styles.viewList} aria-label="Explore views">
+      <nav ref={list} className={styles.viewList} aria-label="Explore views">
         {views.map((v) => (
           <Link
             key={v.id}
@@ -44,6 +52,17 @@ export function ExploreScreen({ views = EXPLORE_VIEWS }: { views?: readonly Expl
       )}
     </ScreenLayout>
   );
+}
+
+/** The tab list's scroll offset that shows all of `tab`, moving as little as it can. */
+function scrollToShow(nav: HTMLElement, tab: HTMLElement): number {
+  const box = nav.getBoundingClientRect();
+  const at = tab.getBoundingClientRect();
+  const left = at.left - box.left + nav.scrollLeft;
+  const right = left + at.width;
+  if (left < nav.scrollLeft) return left;
+  if (right > nav.scrollLeft + nav.clientWidth) return right - nav.clientWidth;
+  return nav.scrollLeft;
 }
 
 /**

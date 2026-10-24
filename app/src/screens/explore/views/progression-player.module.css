@@ -112,7 +112,7 @@
   flex-wrap: wrap;
   gap: var(--space-2);
   align-items: center;
-  margin-bottom: var(--space-4);
+  margin-top: var(--space-4);
 }
 
 .suggest button[aria-pressed='true'] {
@@ -131,6 +131,18 @@
 .subhead {
   margin: 0;
   font-size: 1.125rem;
+}
+
+/* iPad landscape: the whole neck on screen under the chart and Play, without
+   scrolling. Its height is capped at what is left below them (they take
+   about 33rem), but never so low that the strings crowd. Sized by its
+   height, it sits at the left edge under the legend rather than centred. */
+@media (min-width: 1024px) and (min-height: 500px) {
+  .neck svg {
+    width: auto;
+    max-width: 100%;
+    height: max(19.5rem, calc(100dvh - 33rem));
+  }
 }
 
 /* Phone: two bars a row, smaller names. */

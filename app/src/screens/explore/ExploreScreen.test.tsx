@@ -35,6 +35,27 @@ describe('<ExploreScreen>', () => {
     expect(screen.queryByText('Beta view')).not.toBeInTheDocument();
   });
 
+  it("scrolls the open view's tab into sight when the tabs overflow", () => {
+    // Four 100px tabs in a 250px strip: the last one starts out of sight.
+    const list = ['a', 'b', 'c', 'd'].map((id, i) => ({ ...views[0]!, id, title: id, order: i }));
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        const i = list.findIndex((v) => v.title === this.textContent);
+        if (this.tagName === 'A')
+          return new DOMRect(i * 100 - this.parentElement!.scrollLeft, 0, 100, 44);
+        return new DOMRect(0, 0, 250, 44);
+      });
+    const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(250);
+    renderAt('/explore?view=d', list);
+    const nav = screen.getByRole('navigation', { name: 'Explore views' });
+    expect(nav.scrollLeft).toBe(150);
+    fireEvent.click(screen.getByRole('link', { name: 'a' }));
+    expect(nav.scrollLeft).toBe(0);
+    rect.mockRestore();
+    width.mockRestore();
+  });
+
   it('falls back to the first view for an unknown id', () => {
     renderAt('/explore?view=nope');
     expect(screen.getByText('Alpha view')).toBeInTheDocument();

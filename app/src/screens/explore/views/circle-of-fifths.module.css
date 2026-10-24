@@ -16,6 +16,14 @@
   gap: var(--space-3);
 }
 
+/* iPad portrait: the circle across the column, with the key's details below
+   it, rather than a small circle beside them over an empty half screen. */
+:global([data-size-class='regular']) .figure {
+  flex-basis: 100%;
+  max-width: 40rem;
+  margin-inline: auto;
+}
+
 .circle {
   display: block;
   width: 100%;

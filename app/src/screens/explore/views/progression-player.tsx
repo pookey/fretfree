@@ -463,9 +463,6 @@ export function View() {
             </label>
           ))}
         </fieldset>
-        <Link to={quizHref} className={`${styles.secondaryButton} ${css.quiz}`}>
-          Quiz me on this
-        </Link>
       </div>
 
       <div className={css.summary}>
@@ -473,6 +470,10 @@ export function View() {
           {pretty(progression.name)} in {keyTitle(key)}
         </h2>
         <p className={styles.muted}>{progression.description}</p>
+        {/* Beside the title, not on a row of its own, so the neck fits an iPad landscape screen. */}
+        <Link to={quizHref} className={`${styles.secondaryButton} ${css.quiz}`}>
+          Quiz me on this
+        </Link>
       </div>
       {capo > 0 && (
         <p className={own.capoLine} data-testid="player-capo">
@@ -543,23 +544,6 @@ export function View() {
         </label>
       </div>
 
-      {suggestions.length > 0 && (
-        <div className={own.suggest}>
-          <span className={styles.muted}>Open shapes for {keyTitle(key)}:</span>
-          {suggestions.map((o) => (
-            <button
-              key={o.capo}
-              type="button"
-              className={styles.secondaryButton}
-              aria-pressed={o.capo === capo}
-              onClick={() => setCapo(o.capo)}
-            >
-              {o.capo === 0 ? 'No capo' : `Capo ${o.capo}`}: {keyTitle(o.shape)} shapes
-            </button>
-          ))}
-        </div>
-      )}
-
       <div className={own.neckHead}>
         <h3 className={own.subhead} data-testid="player-neck-chord">
           {pretty(chord.shape.symbol)}
@@ -580,7 +564,7 @@ export function View() {
         )}
       </div>
       {chord.voicing ? (
-        <div className={styles.neckScroll}>
+        <div className={`${styles.neckScroll} ${own.neck}`}>
           <Fretboard
             tuning={tuning}
             fretRange={PLAYER_RANGE}
@@ -594,6 +578,23 @@ export function View() {
         </div>
       ) : (
         <p className={styles.muted}>No voicing of {pretty(chord.shape.symbol)} to show here.</p>
+      )}
+      {/* After the neck: the chart, Play and the neck come first on an iPad landscape screen. */}
+      {suggestions.length > 0 && (
+        <div className={own.suggest}>
+          <span className={styles.muted}>Open shapes for {keyTitle(key)}:</span>
+          {suggestions.map((o) => (
+            <button
+              key={o.capo}
+              type="button"
+              className={styles.secondaryButton}
+              aria-pressed={o.capo === capo}
+              onClick={() => setCapo(o.capo)}
+            >
+              {o.capo === 0 ? 'No capo' : `Capo ${o.capo}`}: {keyTitle(o.shape)} shapes
+            </button>
+          ))}
+        </div>
       )}
     </>
   );
