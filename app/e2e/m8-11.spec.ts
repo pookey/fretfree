@@ -97,7 +97,7 @@ test.describe('D24 "Fretboard → staff"', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('a miss marks both places and both frets', async ({ page }) => {
+  test('a miss marks both places and both frets @layout', async ({ page }) => {
     await startDue(page, 'R2.pos5', ['fret→staff:G3@pos5']);
     // The space above the line: A3, which 5th position plays on string 4, fret 7.
     await band(page, 3).click();
