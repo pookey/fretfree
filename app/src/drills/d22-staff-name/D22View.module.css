@@ -4,6 +4,7 @@
   flex-direction: column;
   gap: var(--space-4);
   height: 100%;
+  justify-content: space-between;
 }
 
 .upper {
@@ -26,6 +27,7 @@
 }
 
 .prompt {
+  grid-area: prompt;
   margin: 0;
   max-width: 44rem;
   font-family: var(--font-display);
@@ -34,21 +36,44 @@
   text-align: center;
 }
 
-/* A reading staff grows with the room, up to its own largest scale. */
 .staffBox {
+  grid-area: staff;
   display: flex;
   justify-content: center;
+  max-width: 100%;
+}
+
+/* A staff to tap keeps 44pt between lines and may be wider than a phone.
+   (Only here: a scroller clips the engraving's clef, which overhangs its box.) */
+.staffBox[data-placing] {
   width: 100%;
-  max-width: 20rem;
-  /* An interactive staff keeps 44pt between lines and may be wider than a phone. */
+  max-width: 36rem;
   overflow-x: auto;
 }
 
-.staffBox[data-placing] {
-  max-width: 36rem;
+/* A staff to read is sized by height, which leaves the neck room below it
+   (as D33). Its width follows from the engraving's aspect ratio. */
+.staffBox .readStaff {
+  width: auto;
+  height: clamp(8rem, 24dvh, 15rem);
+}
+
+/* iPad: the staff to read sits beside the prompt, the answers and the
+   explanation, so the whole neck fits below. */
+.drill[data-layout='beside']:not([data-size-class='compact']) .top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'staff prompt'
+    'staff choices'
+    'staff explain';
+  align-items: center;
+  align-content: center;
+  column-gap: var(--space-5);
 }
 
 .choices {
+  grid-area: choices;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -110,6 +135,7 @@
 }
 
 .explain {
+  grid-area: explain;
   margin: 0;
   min-height: 1.5em;
   max-width: 44rem;
@@ -149,12 +175,13 @@
   font-size: 0.875rem;
 }
 
-.drill[data-size-class='compact'] .staffBox {
-  max-width: 12rem;
+.drill[data-size-class='compact'] .staffBox .readStaff {
+  height: clamp(6rem, 30dvh, 10rem);
 }
 
-.drill[data-size-class='compact'] .staffBox[data-placing] {
-  max-width: 100%;
+/* Room for the clef's 8, which hangs below the engraving's box. */
+.drill[data-size-class='compact'] .staffBox:not([data-placing]) {
+  padding-bottom: var(--space-3);
 }
 
 .drill[data-size-class='compact'] .choice {
@@ -173,4 +200,9 @@
 /* Best-effort iPhone: keep the neck within short landscape viewports. */
 .drill[data-size-class='compact'] .neckArea svg {
   max-height: calc(100dvh - 12rem);
+}
+
+/* iPad portrait (as D1): one column from the top, not the neck in a tall empty band. */
+.drill[data-size-class='regular'] {
+  justify-content: flex-start;
 }

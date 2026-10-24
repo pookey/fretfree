@@ -90,6 +90,9 @@ export function D22View({
       className={styles.drill}
       data-size-class={sizeClass}
       data-direction={prompt.direction}
+      // A staff to read sits beside the prompt on iPad, so the neck fits below;
+      // a staff to tap needs the width.
+      data-layout={reading || feedback ? 'beside' : 'stacked'}
       data-testid="d22-drill"
     >
       <div className={styles.upper}>
@@ -181,6 +184,7 @@ function StaffArea({
       <div className={styles.staffBox} data-testid="d22-staff">
         <Staff
           notes={notes}
+          className={styles.readStaff}
           label={
             notes.length > 1
               ? `Staff: ${prompt.letter}, and the note you gave beside it`
@@ -195,6 +199,7 @@ function StaffArea({
       <div className={styles.staffBox} data-testid="d22-staff">
         <Staff
           notes={[{ pitches: [prompt.note], value: 'w', style: 'target' }]}
+          className={styles.readStaff}
           // The name is the answer: VoiceOver hears the place, as a sighted learner sees it.
           revealPitches={guided}
           label="Staff: the note to name"
