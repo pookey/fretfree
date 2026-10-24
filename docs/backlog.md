@@ -1449,7 +1449,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - Drag or tap note values to fill a bar in the given time signature. Pointer and keyboard paths both work on iPad. Wrong fills are explained ("6/8 groups in dotted quarters").
 
 ### M8-07 · T4 and T7 skills, plus D30 "Hear the meter"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M8-01, M8-04
 - **After:** M6-10
 - **Owns:** `app/src/engine/skills/t4.ts`, `app/src/engine/skills/t7.ts`, `app/src/drills/d30-hear-the-meter/**`, `app/e2e/m8-07.spec.ts`
