@@ -85,7 +85,8 @@ describe('fretboard geometry', () => {
       }));
 
     it('gives the names their own column beyond the open strings, either hand', () => {
-      expect(g.names).toEqual({ x: 0, w: NAME_W, cx: NAME_W / 2 });
+      expect(g.names).toEqual({ x: 1, w: NAME_W - 1, cx: NAME_W / 2 });
+      expect(g.names!.x + g.names!.w).toBe(g.cell(0)!.x);
       expect(g.cell(0)!.x).toBe(NAME_W);
       const l = computeGeometry({
         fretRange: { from: 0, to: 15 },
@@ -93,7 +94,7 @@ describe('fretboard geometry', () => {
         handedness: 'left',
       });
       expect(l.width).toBe(g.width);
-      expect(l.names!.x).toBe(l.width - NAME_W);
+      expect(l.names!.x + l.names!.w).toBe(l.width - 1);
       expect(l.cell(0)!.x + l.cell(0)!.w).toBe(l.names!.x);
     });
 

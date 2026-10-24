@@ -99,7 +99,10 @@ export function computeGeometry(opts: {
     inlays,
     neckTop,
     neckBottom,
-    names: withNames ? { x: mirror(0, NAME_W), w: NAME_W, cx: mirror(NAME_W / 2) } : undefined,
+    // Inset by half the wood's 2-unit edge, so the viewBox doesn't clip it.
+    names: withNames
+      ? { x: mirror(1, NAME_W - 1), w: NAME_W - 1, cx: mirror(NAME_W / 2) }
+      : undefined,
   };
 }
 
