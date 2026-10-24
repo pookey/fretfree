@@ -133,15 +133,25 @@
   font-size: 1.125rem;
 }
 
+/* The description gives way to "Quiz me on this" (wrapping onto a second
+   line) rather than pushing the link onto a row of its own. */
+.summary > p {
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+}
+
 /* iPad landscape: the whole neck on screen under the chart and Play, without
    scrolling. Its height is capped at what is left below them (they take
-   about 33rem), but never so low that the strings crowd. Sized by its
-   height, it sits at the left edge under the legend rather than centred. */
-@media (min-width: 1024px) and (min-height: 500px) {
+   about 33rem), but never so low that the strings crowd. The cap is on the
+   width (times the neck's own --neck-ratio), so the neck keeps its shape at
+   the left edge under the legend and is never letterboxed in a taller box.
+   Portrait (even a 12.9" iPad, regular-wide at 1024pt) has the height. */
+@media (min-width: 1024px) and (min-height: 500px) and (orientation: landscape) {
   .neck svg {
-    width: auto;
-    max-width: 100%;
-    height: max(19.5rem, calc(100dvh - 33rem));
+    max-width: calc(max(19.5rem, 100dvh - 33rem) * var(--neck-ratio));
+    /* Its inline min-width keeps tap cells at 44pt; nothing on this neck is tapped. */
+    min-width: 0 !important;
   }
 }
 

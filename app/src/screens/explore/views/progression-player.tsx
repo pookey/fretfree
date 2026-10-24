@@ -1,4 +1,12 @@
-import { useEffect, useEffectEvent, useId, useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useEffectEvent,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import { Link } from 'react-router';
 import { useAppStore } from '../../../app-store';
 import { AUDIO } from '../../../audio/config';
@@ -8,6 +16,7 @@ import {
   type FretMarker,
   type MarkerStyle,
 } from '../../../components/fretboard/Fretboard';
+import { computeGeometry } from '../../../components/fretboard/geometry';
 import {
   SKILLS,
   isFrontier,
@@ -30,6 +39,7 @@ import {
   relativeKey,
   shapeKey,
   standardKeyTonic,
+  stringCount,
   type ChordDegree,
   type ChordKind,
   type ChordQuality,
@@ -313,6 +323,15 @@ export function View() {
       : Math.min(picked, chart.length - 1);
   const chord = chart[shown] as PlayerChord;
   const markers = chordMarkers(chord, capo, tuning);
+  // The neck's width over its height, so CSS can cap its height by capping its width.
+  const neckRatio = useMemo(() => {
+    const g = computeGeometry({
+      fretRange: PLAYER_RANGE,
+      stringCount: stringCount(tuning),
+      handedness: 'right',
+    });
+    return g.width / g.height;
+  }, [tuning]);
   const legend = (['root', 'third', 'fifth', 'seventh'] as const).filter((s) =>
     markers.some((m) => m.style === s),
   );
@@ -465,7 +484,7 @@ export function View() {
         </fieldset>
       </div>
 
-      <div className={css.summary}>
+      <div className={`${css.summary} ${own.summary}`}>
         <h2 className={css.name} data-testid="player-title">
           {pretty(progression.name)} in {keyTitle(key)}
         </h2>
@@ -564,7 +583,10 @@ export function View() {
         )}
       </div>
       {chord.voicing ? (
-        <div className={`${styles.neckScroll} ${own.neck}`}>
+        <div
+          className={`${styles.neckScroll} ${own.neck}`}
+          style={{ '--neck-ratio': neckRatio } as CSSProperties}
+        >
           <Fretboard
             tuning={tuning}
             fretRange={PLAYER_RANGE}

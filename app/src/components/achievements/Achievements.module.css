@@ -129,7 +129,8 @@
   }
 }
 
-/* A narrow phone: above the tab bar (or a session's feedback bar), not over the title. */
+/* A narrow phone: above the tab bar, not over the title. (Sessions are
+   full-screen routes outside the shell, so the toast never covers a drill.) */
 @media (max-width: 39.99rem) {
   .toast {
     top: auto;

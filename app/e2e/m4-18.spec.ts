@@ -175,5 +175,23 @@ test.describe('M4-18 layout fixes', () => {
     }
     // Its strings stay apart: the neck keeps at least 19.5rem of height.
     expect(neck.height).toBeGreaterThanOrEqual(300);
+
+    // At this size and on a 12.9" iPad either way up (regular-wide in
+    // portrait too), the neck keeps its own shape right under its legend:
+    // never letterboxed in a taller box, with a blank band above it.
+    for (const size of [null, { width: 1024, height: 1366 }, { width: 1366, height: 1024 }]) {
+      if (size) await page.setViewportSize(size);
+      const svg = player.locator('svg[data-fret-from]');
+      await expect(svg).toBeVisible();
+      const shape = await svg.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const v = (el as SVGSVGElement).viewBox.baseVal;
+        return { box: r.width / r.height, natural: v.width / v.height };
+      });
+      expect(Math.abs(shape.box / shape.natural - 1), JSON.stringify(size)).toBeLessThan(0.02);
+      const legend = await box(player.getByRole('list', { name: 'Legend' }));
+      const at = await box(svg);
+      expect(at.y - (legend.y + legend.height), JSON.stringify(size)).toBeLessThanOrEqual(40);
+    }
   });
 });
