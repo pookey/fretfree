@@ -55,12 +55,22 @@
 #    (E2E_QUIET_WORKERS, see e2e-slot.sh): under full load their notes can
 #    stay silent.
 #
+# Two commands in one run directory (verify-quick.sh runs its static gates,
+# then decides where Playwright runs): REMOTE_RUN=<name> names the run, and
+# REMOTE_KEEP=1 keeps its directory (node_modules, the build) afterwards. A
+# later command with the same REMOTE_RUN reuses it without syncing again, and
+# removes it unless kept; `--drop <name>` removes it otherwise.
+#
 # Configuration (never committed: the repo is public):
 #   FRETWORK_REMOTE=user@host, or the first line of
 #   "$(git rev-parse --git-common-dir)/fretwork-remote", shared by all worktrees.
 #   FRETWORK_REMOTE=off (or an empty file) disables it.
 # Usage: remote-run.sh <command...>
 #        remote-run.sh --enabled    (exit 0 if a runner is configured)
+#        remote-run.sh --queue-depth <kind>   (print the depth of the runner's
+#                                   <kind> slot queue, e.g. e2e: holders plus
+#                                   waiters; fails if it is unreachable)
+#        remote-run.sh --drop <name>          (remove a kept run's directory)
 set -euo pipefail
 
 remote="${FRETWORK_REMOTE-}"
@@ -71,9 +81,20 @@ fi
 [[ "$remote" == off ]] && remote=""
 
 if [[ "${1:-}" == --enabled ]]; then [[ -n "$remote" ]]; exit; fi
+ssh_opts=(-o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=6)
+case "${1:-}" in
+  --queue-depth)
+    [[ -n "$remote" ]] || exit 1
+    # The runner's slots are flock(1) locks, held from inside its containers.
+    source "$(dirname "$0")/slot-lib.sh"
+    exec ssh "${ssh_opts[@]}" "$remote" "$(declare -f queue_depth _slot_flock _slot_alive _ticket_live _lane_waiting)
+      FRETWORK_SLOT_FLOCK=1 queue_depth ~/fretwork-locks/${2:?--queue-depth needs a kind}" 2>/dev/null ;;
+  --drop)
+    [[ -n "$remote" ]] || exit 0
+    exec ssh "${ssh_opts[@]}" "$remote" "rm -rf ~/fretwork-runs/'${2:?--drop needs a run name}'" 2>/dev/null ;;
+esac
 [[ -n "$remote" ]] || exec "$@"
 
-ssh_opts=(-o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=6)
 if ! ssh "${ssh_opts[@]}" "$remote" true 2>/dev/null; then
   echo "remote-run: $remote is unreachable; running here instead" >&2
   exec "$@"
@@ -81,7 +102,7 @@ fi
 
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
-run="run-$(date +%s)-$$-$RANDOM"
+run="${REMOTE_RUN:-run-$(date +%s)-$$-$RANDOM}"
 dir="fretwork-runs/$run"
 
 # The audio pass runs here, alongside the runner. Specs that listen to real
@@ -122,17 +143,23 @@ else
   workers="VITEST_MAX_WORKERS=8 $pw"
 fi
 
-echo "remote-run: $(basename "$root") → $remote:$dir" >&2
-git ls-files -co --exclude-standard -z |
-  while IFS= read -r -d '' f; do [[ -e "$f" ]] && printf '%s\0' "$f"; done |
-  COPYFILE_DISABLE=1 tar --no-xattrs --null -T - -czf - |
-  ssh "${ssh_opts[@]}" "$remote" "
-    find ~/fretwork-runs -mindepth 1 -maxdepth 1 -mmin +360 -exec rm -rf {} + 2>/dev/null
-    mkdir -p '$dir' && tar -xzf - -C '$dir'"
+if [[ -n "${REMOTE_RUN:-}" ]] && ssh "${ssh_opts[@]}" "$remote" "test -d '$dir'" 2>/dev/null; then
+  echo "remote-run: $(basename "$root") → $remote:$dir (reused)" >&2
+else
+  echo "remote-run: $(basename "$root") → $remote:$dir" >&2
+  git ls-files -co --exclude-standard -z |
+    while IFS= read -r -d '' f; do [[ -e "$f" ]] && printf '%s\0' "$f"; done |
+    COPYFILE_DISABLE=1 tar --no-xattrs --null -T - -czf - |
+    ssh "${ssh_opts[@]}" "$remote" "
+      find ~/fretwork-runs -mindepth 1 -maxdepth 1 -mmin +360 -exec rm -rf {} + 2>/dev/null
+      mkdir -p '$dir' && tar -xzf - -C '$dir'"
+fi
 
 cleanup() {
   stop_quiet
-  ssh "${ssh_opts[@]}" "$remote" "podman rm -f -t 2 '$run' >/dev/null 2>&1; rm -rf '$dir'" 2>/dev/null || true
+  local drop="rm -rf '$dir'"
+  [[ "${REMOTE_KEEP:-}" == 1 ]] && drop=true
+  ssh "${ssh_opts[@]}" "$remote" "podman rm -f -t 2 '$run' >/dev/null 2>&1; $drop" 2>/dev/null || true
 }
 trap cleanup EXIT
 

@@ -8,6 +8,8 @@
 #              smoke tests (a third of the matrix), when the change reaches
 #              shared code or registers a new drill;
 #       full   the whole matrix, only with --full.
+# With a remote test runner, the static gates run there, and Playwright runs
+# there or on this Mac, whichever has the shorter queue when it starts (below).
 # The integration lane runs the whole matrix (`pnpm verify`) once per batch,
 # and is the only full gate. Nothing else should run it: at 2 Playwright slots
 # a full matrix per worker check kept 8 runs queued and the lane starved.
@@ -101,28 +103,91 @@ elif [[ -z "$local_only" ]]; then
   fi
 fi
 
-# Decide what runs, then run it as one command: on the remote test runner when
-# one is configured (scripts/remote-run.sh), so it syncs and builds once.
+# Decide what runs.
 static="./scripts/cpu-slot.sh pnpm verify:static"
+e2e=""
 case "$level" in
-  full) steps="$static && pnpm --filter app e2e:only"; summary="static + full e2e matrix" ;;
-  fast) steps="$static && pnpm --filter app e2e:fast"; summary="static + fast e2e" ;;
+  full) e2e="pnpm --filter app e2e:only"; summary="static + full e2e matrix" ;;
+  fast) e2e="pnpm --filter app e2e:fast"; summary="static + fast e2e" ;;
   own)
     if ((${#specs[@]} == 0)); then
-      steps="$static"; summary="static; no e2e spec touches this change"
+      summary="static; no e2e spec touches this change"
     else
       echo "verify-quick: e2e on own specs: ${specs[*]}"
-      steps="$static && pnpm --filter app e2e:only $(printf '%q ' "${specs[@]}")"
+      e2e="pnpm --filter app e2e:only $(printf '%q ' "${specs[@]}")"
       summary="static + ${#specs[@]} own spec(s)"
     fi ;;
 esac
 
-echo "verify-quick: static gates (base ${base:0:8})"
-if [[ -n "$dry" ]]; then
-  echo "would run: ./scripts/remote-run.sh bash -c \"$steps\""
-  exit 0
+# With a remote test runner (scripts/remote-run.sh), a worker check runs its
+# static gates there, then decides where Playwright runs when it gets to it:
+# the runner has one e2e slot, and with five or six checks queued for it, runs
+# waited 20-26 minutes while this Mac's two sat idle. When the runner's e2e
+# queue is E2E_OFFLOAD_DEPTH (2) or more deep and a local slot is free, it
+# runs here, against a local build of the same tree (e2e_host, slot-lib.sh).
+# The lane, and a check with no e2e, run as one command on the runner.
+split=""
+if [[ -n "$e2e" && "${FRETWORK_LANE:-}" != 1 && -d app/node_modules ]] && ./scripts/remote-run.sh --enabled; then
+  split=1
 fi
-./scripts/remote-run.sh bash -c "$steps"
+
+if [[ -z "$split" ]]; then
+  steps="$static${e2e:+ && $e2e}"
+  echo "verify-quick: static gates (base ${base:0:8})"
+  if [[ -n "$dry" ]]; then
+    echo "would run: ./scripts/remote-run.sh bash -c \"$steps\""
+    exit 0
+  fi
+  # One command, so the runner syncs and builds once.
+  ./scripts/remote-run.sh bash -c "$steps"
+else
+  # Both steps share one run directory on the runner. The static step marks
+  # its build, so the e2e step builds again only where that build isn't (here,
+  # or on the runner if the static step fell back to this Mac).
+  run="quick-$(date +%s)-$$-$RANDOM"
+  built="app/dist/.built-by-$run"
+  e2e_step="{ [[ -e $built ]] || ./scripts/cpu-slot.sh pnpm --filter app build; } && $e2e"
+
+  # Sets host to local or remote, and says why.
+  choose_host() {
+    local remote_depth local_depth slots="${E2E_SLOTS:-2}"
+    if ! remote_depth="$(./scripts/remote-run.sh --queue-depth e2e)"; then
+      echo "verify-quick: the test runner is unreachable, so e2e runs on this Mac"
+      host=local
+      return
+    fi
+    local_depth="$(source scripts/slot-lib.sh && queue_depth "$lock_base/e2e")"
+    host="$(source scripts/slot-lib.sh && e2e_host "$remote_depth" "$local_depth" "$slots")"
+    if [[ "$host" == local ]]; then
+      echo "verify-quick: e2e on this Mac, against a local build: the runner's e2e queue is $remote_depth deep, and $local_depth of $slots e2e slots here are taken"
+    elif ((remote_depth >= ${E2E_OFFLOAD_DEPTH:-2})); then
+      echo "verify-quick: e2e on the runner: its e2e queue is $remote_depth deep, but no e2e slot here is free ($local_depth queued for $slots)"
+    else
+      echo "verify-quick: e2e on the runner: its e2e queue is $remote_depth deep"
+    fi
+  }
+
+  echo "verify-quick: static gates on the runner (base ${base:0:8}), then e2e on the runner or this Mac, whichever is free"
+  if [[ -n "$dry" ]]; then
+    echo "would run: REMOTE_RUN=$run REMOTE_KEEP=1 ./scripts/remote-run.sh bash -c \"$static && touch $built\""
+    choose_host
+    if [[ "$host" == local ]]; then
+      echo "would run: bash -c \"$e2e_step\""
+    else
+      echo "would run: REMOTE_RUN=$run ./scripts/remote-run.sh bash -c \"$e2e_step\""
+    fi
+    exit 0
+  fi
+  trap './scripts/remote-run.sh --drop "$run" || true' EXIT
+  REMOTE_RUN="$run" REMOTE_KEEP=1 ./scripts/remote-run.sh bash -c "$static && touch $built"
+  choose_host
+  if [[ "$host" == local ]]; then
+    ./scripts/remote-run.sh --drop "$run" || true
+    bash -c "$e2e_step"
+  else
+    REMOTE_RUN="$run" ./scripts/remote-run.sh bash -c "$e2e_step"
+  fi
+fi
 # A passing fast or full run covers drift up to this base: a later --preflight
 # on the same base skips to own specs.
 [[ "$level" != own ]] && echo "$merge_base" >"$stamp"
