@@ -1311,7 +1311,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Unit tests for the picker with the setting on and off; e2e: switch it off, and a C6 whole-shape session never serves D21.
 
 ### M6-14 · M6 drill polish: D18 portrait window, function-drill repeats, small layout points
-- **Status:** todo
+- **Status:** done
 - **Deps:** M6-10
 - **Design:** `docs/progress.md` "M6 definition of done" findings 4, 5 and 9
 - **Owns:** `app/src/drills/d-function/**`, `app/src/screens/progress/ProgressScreen.tsx`, `app/e2e/m6-14.spec.ts`
