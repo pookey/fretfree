@@ -61,7 +61,7 @@ test.describe('M6-14 function drill', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('the I5 panel names the function roles once', async ({ page }) => {
+  test('the I5 panel names the function roles once @layout', async ({ page }) => {
     await freshStart(page);
     await masterSkills(page, ['C9.pop']);
     await focusSession(page, 'I5.function-major');
