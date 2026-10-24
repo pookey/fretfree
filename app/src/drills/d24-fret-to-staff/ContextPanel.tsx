@@ -1,4 +1,5 @@
-import type { GuideLevel } from '../../engine/model';
+import type { DrillContextPanelProps } from '../types';
+import type { D24Answer, D24Prompt } from './logic';
 import styles from './ContextPanel.module.css';
 
 /**
@@ -15,7 +16,10 @@ import styles from './ContextPanel.module.css';
  * place on the staff (the open strings are cards in open position), and it
  * is the same for every card, so what it shows is never a tell (rule 4).
  */
-export function FretToStaffContextPanel({ guideLevel }: { guideLevel: GuideLevel }) {
+export function FretToStaffContextPanel({
+  guideLevel,
+}: Pick<DrillContextPanelProps<D24Prompt, D24Answer>, 'guideLevel'> &
+  Partial<DrillContextPanelProps<D24Prompt, D24Answer>>) {
   return (
     <div className={styles.panel}>
       <h2>From the fret to the staff</h2>
