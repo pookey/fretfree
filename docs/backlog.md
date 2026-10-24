@@ -1258,7 +1258,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Feedback marks where the click was and shows early/late with a glyph that doesn't read as a play button.
 
 ### M6-13 · D21 becomes optional mental practice, with clearer feedback
-- **Status:** todo
+- **Status:** done
 - **Note:** research/02 rule 14
 - **Deps:** M6-10
 - **Design:** §6 D21; research/02 rules 12 and 14; `docs/progress.md` "M6 definition of done" "For the PM" and finding 6
