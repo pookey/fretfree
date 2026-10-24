@@ -83,7 +83,7 @@ describe('<InversionsPanel>', () => {
     const [, octave] = d18Voicings('C', 'major', 3, 2, STANDARD_TUNING);
     const high = {
       ...prompt('inversion:2@s3/major'),
-      notes: octave!.notes,
+      notes: [...octave!.notes],
       cores: d18CoreShapes(octave!, 3),
     };
     panel(high, 1, { guided: true });
