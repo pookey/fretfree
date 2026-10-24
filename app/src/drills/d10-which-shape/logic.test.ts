@@ -158,11 +158,36 @@ describe('d10MakePrompt', () => {
     expect(p.choices).toEqual(['C', 'A', 'E']);
   });
 
-  it('spells minor and dominant-7 chords, and flats on request', () => {
+  it('spells minor and dominant-7 chords', () => {
     expect(make('caged:E-shape@minor').chord).toBe('Cm');
     expect(make('caged:E-shape@dominant7').chord).toBe('C7');
-    const flat = make('caged:E-shape@major', { scopeLevel: 2, rng: seq(NAME, 0.1), pref: 'flat' });
-    expect(flat.root).toBe('Db');
+  });
+
+  it("spells the root from the chord's key, the preference breaking ties", () => {
+    const roots = (id: string, pref: AccidentalPref) =>
+      Array.from({ length: 24 }, (_, i) =>
+        make(id, { scopeLevel: 2, rng: seq(NAME, i / 24), pref }),
+      ).map((p) => p.root);
+    for (const pref of ['sharp', 'flat'] as const) {
+      expect(roots('caged:E-shape@major', pref)).toEqual(
+        expect.arrayContaining(['Db', 'Eb', 'Ab', 'Bb']),
+      );
+      expect(roots('caged:E-shape@minor', pref)).toEqual(expect.arrayContaining(['C#', 'G#']));
+    }
+    expect(roots('caged:E-shape@major', 'sharp')).toContain('F#');
+    expect(roots('caged:E-shape@major', 'flat')).toContain('Gb');
+    expect(roots('caged:E-shape@major', 'sharp').some((r) => /^(C|D|G|A)#$/.test(r))).toBe(false);
+  });
+
+  it('names a flat-key chord with flats for a learner who prefers sharps', () => {
+    const bb = Array.from({ length: 24 }, (_, i) =>
+      make('caged:A-shape@major', { scopeLevel: 2, rng: seq(NAME, i / 24), pref: 'sharp' }),
+    ).find((p) => chromaOf(p.root) === 10);
+    expect(bb?.root).toBe('Bb');
+    expect(bb?.accidentalPref).toBe('flat');
+    expect(d10Subject(bb!)).toBe('the A shape of B♭');
+    const names = d10Sounds(bb!, fb(bb!, 'A')).expected.map((n) => n.replace(/\d+$/, ''));
+    expect(new Set(names)).toEqual(new Set(['Bb', 'D', 'F']));
   });
 
   it('offers all five shapes once the scope widens', () => {

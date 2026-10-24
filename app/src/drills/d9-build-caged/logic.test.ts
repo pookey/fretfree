@@ -33,6 +33,7 @@ import {
   d9ShowsCount,
   d9Sounds,
   d9StringSpan,
+  d9Subject,
   d9Window,
   type D9Answer,
   type D9Prompt,
@@ -162,12 +163,43 @@ describe('d9MakePrompt', () => {
     }
   });
 
-  it('uses sharps and flats per the preference once the scope widens', () => {
+  it("spells roots from the chord's key once the scope widens, the preference breaking ties", () => {
     const roots = (pref: AccidentalPref) =>
       RNGS.map((r) => make('caged:E-shape@major', { scopeLevel: 1, rng: () => r, pref }).root);
-    expect(roots('sharp').some((r) => r.includes('#'))).toBe(true);
-    expect(roots('flat').some((r) => r.includes('b'))).toBe(true);
-    expect(roots('flat').some((r) => r.includes('#'))).toBe(false);
+    // F♯/G♭ follows the preference; every other key has its own spelling.
+    expect(roots('sharp')).toContain('F#');
+    expect(roots('sharp')).not.toContain('Gb');
+    expect(roots('flat')).toContain('Gb');
+    expect(roots('flat')).not.toContain('F#');
+    for (const pref of ['sharp', 'flat'] as const) {
+      expect(roots(pref)).toContain('Bb');
+      expect(roots(pref)).not.toContain('A#');
+    }
+  });
+
+  it('names a flat-key chord with flats for a learner who prefers sharps', () => {
+    const prompts = RNGS.map((r) =>
+      make('caged:A-shape@major', { scopeLevel: 1, rng: () => r, pref: 'sharp' }),
+    );
+    const bb = prompts.find((p) => chromaOf(p.root) === 10);
+    expect(bb?.root).toBe('Bb');
+    expect(bb?.chord).toBe('Bb');
+    expect(bb?.accidentalPref).toBe('flat');
+    expect(d9Subject(bb!)).toBe('the A shape of B♭');
+    // Its tones too: B♭, D, F, never A♯.
+    const names = d9Sounds(bb!, fb(bb!, [])).expected.map((n) => n.replace(/\d+$/, ''));
+    expect(new Set(names)).toEqual(new Set(['Bb', 'D', 'F']));
+    // A sharp key keeps sharps: the A shape of E has G♯.
+    const e = prompts.find((p) => p.root === 'E');
+    expect(e?.accidentalPref).toBe('sharp');
+  });
+
+  it('spells a minor chord from its relative major: Dm has F, C♯m has G♯', () => {
+    const prompts = (pref: AccidentalPref) =>
+      RNGS.map((r) => make('caged:E-shape@minor', { scopeLevel: 1, rng: () => r, pref }));
+    expect(prompts('flat').map((p) => p.root)).toContain('C#');
+    expect(prompts('sharp').map((p) => p.root)).not.toContain('Db');
+    expect(prompts('sharp').find((p) => p.root === 'G')?.accidentalPref).toBe('flat');
   });
 
   it('keeps every pitch in drop D, moving string-6 notes up two frets', () => {

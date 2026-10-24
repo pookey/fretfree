@@ -23,6 +23,7 @@ import {
   type ShapeNote,
   type Tuning,
 } from '../../theory';
+import { chordKeySpelling } from '../../theory/key-spelling';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { D9_SCOPES, type D9Scope } from './meta';
 
@@ -72,7 +73,7 @@ export interface D9Prompt {
   part: 'core' | 'shape';
   shape: CagedShapeName;
   quality: CagedQuality;
-  /** The root, spelled per the accidental preference. */
+  /** The root, spelled from the chord's key (`chordKeySpelling`): B♭, never A♯. */
   root: string;
   /** The chord symbol, e.g. `C`, `Cm`, `C7`. */
   chord: string;
@@ -99,6 +100,7 @@ export interface D9Prompt {
    */
   reach: number;
   tuning: Tuning;
+  /** How notes are named: the chord's key spelling (`chordKeySpelling`), not just the setting. */
   accidentalPref: AccidentalPref;
 }
 
@@ -205,11 +207,15 @@ export function d9MakePrompt(item: Item, ctx: DrillContext): D9Prompt {
   if (!ref || stringCount(tuning) !== 6) throw new Error(`D9 cannot test item ${item.id}`);
   const scope = d9ScopeFor(ctx.scopeLevel);
   const roots = (scope === 'naturals' ? NATURAL_PCS.map(chromaOf) : [...Array(12).keys()])
-    .map((chroma) => chromaToPc(chroma, accidentalPref))
-    .filter((pc) => d9Placements(ref.shape, ref.quality, pc, tuning).length > 0);
-  const root = pick(roots, ctx.rng);
+    .map((chroma) => {
+      const spelling = chordKeySpelling(chroma, ref.quality, accidentalPref);
+      return { pc: chromaToPc(chroma, spelling), spelling };
+    })
+    .filter((r) => d9Placements(ref.shape, ref.quality, r.pc, tuning).length > 0);
+  const picked = pick(roots, ctx.rng);
+  const root = picked?.pc;
   const placement = root && pick(d9Placements(ref.shape, ref.quality, root, tuning), ctx.rng);
-  if (!root || !placement) throw new Error(`D9 cannot place item ${item.id}`);
+  if (!picked || !root || !placement) throw new Error(`D9 cannot place item ${item.id}`);
 
   const placed = placement.shape;
   const tuned = (ns: readonly ShapeNote[]) => retune(ns, tuning).sort(byPitch(tuning));
@@ -236,7 +242,7 @@ export function d9MakePrompt(item: Item, ctx: DrillContext): D9Prompt {
     activeRange: D9_REGION,
     reach: d9Reach(tuning),
     tuning,
-    accidentalPref,
+    accidentalPref: picked.spelling,
   };
 }
 

@@ -25,6 +25,7 @@ import {
   type ShapeNote,
   type Tuning,
 } from '../../theory';
+import { chordKeySpelling } from '../../theory/key-spelling';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
 import { D10_LEVELS, type D10Level } from './meta';
 
@@ -92,7 +93,7 @@ export interface D10Prompt {
   /** The answer: the card's shape. */
   shape: CagedShapeName;
   quality: CagedQuality;
-  /** The root, spelled per the accidental preference. */
+  /** The root, spelled from the chord's key (`chordKeySpelling`): B♭, never A♯. */
   root: string;
   /** The chord symbol, e.g. `C`, `Cm`, `C7`. */
   chord: string;
@@ -106,6 +107,7 @@ export interface D10Prompt {
   /** Frets that are live; the neck dims the rest (design §7). */
   activeRange: FretRange;
   tuning: Tuning;
+  /** How notes are named: the chord's key spelling (`chordKeySpelling`), not just the setting. */
   accidentalPref: AccidentalPref;
 }
 
@@ -253,11 +255,14 @@ export function d10MakePrompt(item: Item, ctx: DrillContext): D10Prompt {
   const level = d10LevelFor(ctx.scopeLevel);
   const roots = (
     level.roots === 'naturals' ? NATURAL_PCS.map(chromaOf) : [...Array(12).keys()]
-  ).map((chroma) => chromaToPc(chroma, accidentalPref));
+  ).map((chroma) => {
+    const spelling = chordKeySpelling(chroma, ref.quality, accidentalPref);
+    return { root: chromaToPc(chroma, spelling), spelling };
+  });
   const byAsk = D10_ASKS.map((ask) => ({
     ask,
     roots: roots
-      .map((root) => ({ root, options: optionsFor(ask, ref.shape, ref.quality, root, tuning) }))
+      .map((r) => ({ ...r, options: optionsFor(ask, ref.shape, ref.quality, r.root, tuning) }))
       .filter((r) => r.options.length > 0),
   })).filter((a) => a.roots.length > 0);
   const ask = d10PickAsk(
@@ -281,7 +286,7 @@ export function d10MakePrompt(item: Item, ctx: DrillContext): D10Prompt {
     level: D10_LEVELS.indexOf(level),
     activeRange: D10_REGION,
     tuning,
-    accidentalPref,
+    accidentalPref: at.spelling,
   };
 }
 
