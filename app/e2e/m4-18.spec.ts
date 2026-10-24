@@ -35,13 +35,19 @@ test.describe('M4-18 layout fixes', () => {
   test('Progress has no blank scroll, and a badge toast leaves the title clear @smoke @layout', async ({
     page,
   }) => {
-    await freshStart(page, '/progress');
-    // Mastering string 6 earns "String 6 master" as the page loads.
+    await freshStart(page);
+    // Seed from a static file on the same origin, where the app isn't running
+    // to unlock the badge (and toast it) before Progress opens. Mastering
+    // string 6 then earns "String 6 master" as Progress loads.
+    await page.goto('/favicon.svg');
     await masterSkills(page, ['F2.string6-naturals']);
+    await page.goto('/progress');
     const h1 = page.getByRole('heading', { name: 'Progress', level: 1 });
     await expect(h1).toBeVisible();
     const toast = page.getByTestId('achievement-toast');
     await expect(toast).toBeVisible();
+    // Measured at once: it dismisses itself after 8s.
+    const t = await box(toast);
 
     // The calendar's visually hidden labels stay inside it, so the document
     // isn't stretched by about 840pt of blank space below the shell.
@@ -66,7 +72,6 @@ test.describe('M4-18 layout fixes', () => {
       const r = range.getBoundingClientRect();
       return { x: r.left, y: r.top, width: r.width, height: r.height };
     });
-    const t = await box(toast);
     const overlaps =
       t.x < title.x + title.width &&
       title.x < t.x + t.width &&
@@ -132,10 +137,19 @@ test.describe('M4-18 layout fixes', () => {
     ] as const) {
       await page.goto(`/explore?view=${view}`);
       await expect(page.getByRole('region', { name: region })).toBeVisible();
-      const strip = await box(nav);
-      const tab = await box(nav.getByRole('link', { name: region }));
-      expect(tab.x).toBeGreaterThanOrEqual(strip.x - 1);
-      expect(tab.x + tab.width).toBeLessThanOrEqual(strip.x + strip.width + 1);
+      // Polled: the web font arriving can still widen the tabs after load,
+      // and the strip scrolls again when it does.
+      const tab = nav.getByRole('link', { name: region });
+      await expect
+        .poll(
+          async () => {
+            const strip = await box(nav);
+            const t = await box(tab);
+            return t.x >= strip.x - 1 && t.x + t.width <= strip.x + strip.width + 1;
+          },
+          { message: `${region} tab within the strip` },
+        )
+        .toBe(true);
     }
 
     // The circle: across the column in portrait, beside the key's details on

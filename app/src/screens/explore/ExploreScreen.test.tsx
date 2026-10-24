@@ -56,6 +56,41 @@ describe('<ExploreScreen>', () => {
     width.mockRestore();
   });
 
+  it('scrolls the tab into sight again when the strip or the tab resizes', () => {
+    // A tab that grows once the web font arrives moves after the first pass.
+    const list = ['a', 'b', 'c', 'd'].map((id, i) => ({ ...views[0]!, id, title: id, order: i }));
+    let tabWidth = 100;
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        const i = list.findIndex((v) => v.title === this.textContent);
+        if (this.tagName === 'A')
+          return new DOMRect(i * tabWidth - this.parentElement!.scrollLeft, 0, tabWidth, 44);
+        return new DOMRect(0, 0, 250, 44);
+      });
+    const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(250);
+    const observers: (() => void)[] = [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(cb: () => void) {
+          observers.push(cb);
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    renderAt('/explore?view=d', list);
+    const nav = screen.getByRole('navigation', { name: 'Explore views' });
+    expect(nav.scrollLeft).toBe(150);
+    tabWidth = 120;
+    for (const cb of observers) cb();
+    expect(nav.scrollLeft).toBe(230);
+    vi.unstubAllGlobals();
+    rect.mockRestore();
+    width.mockRestore();
+  });
+
   it('falls back to the first view for an unknown id', () => {
     renderAt('/explore?view=nope');
     expect(screen.getByText('Alpha view')).toBeInTheDocument();

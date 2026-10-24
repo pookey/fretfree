@@ -14,11 +14,22 @@ export function ExploreScreen({ views = EXPLORE_VIEWS }: { views?: readonly Expl
   const active = views.find((v) => v.id === params.get('view')) ?? views[0];
   const list = useRef<HTMLElement>(null);
   // The tabs scroll sideways where they don't fit (iPad portrait, the mini):
-  // bring the open view's tab fully into sight rather than clip it.
+  // bring the open view's tab fully into sight rather than clip it. Again
+  // whenever the strip or the tab resizes (the web font arriving, a rotation),
+  // since that moves the tab after the first pass.
   useLayoutEffect(() => {
     const nav = list.current;
     const tab = nav?.querySelector<HTMLElement>('[aria-current="page"]');
-    if (nav && tab) nav.scrollLeft = scrollToShow(nav, tab);
+    if (!nav || !tab) return;
+    const show = () => {
+      nav.scrollLeft = scrollToShow(nav, tab);
+    };
+    show();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(show);
+    ro.observe(nav);
+    ro.observe(tab);
+    return () => ro.disconnect();
   }, [active]);
   return (
     <ScreenLayout title="Explore">
