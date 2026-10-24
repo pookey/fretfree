@@ -24,10 +24,12 @@ import {
   d25KeysFor,
   d25MakePrompt,
   d25NeckPositions,
+  d25Places,
   d25Positions,
   d25Sounds,
   givenNote,
   nearestSignature,
+  placePosition,
   positionFor,
   pretty,
   type D25Prompt,
@@ -106,19 +108,49 @@ describe('D25 read the key signature', () => {
     }
     const low = prompt('E', 4, 2, 0);
     const high = prompt('E', 4, 2, 0.999);
-    expect(low.note).toBe('E2');
+    // Low E (three ledger lines down) is left out: its E♭ is below the low string.
+    expect(low.note).toBe('E3');
     expect(staffPosition(high.note)).toBe(14);
     expect(high.note).toBe('E5');
     expect(noteAtStaffPosition(staffPosition(prompt('A', 3, 1, 0.5).note))).toMatch(/^A/);
   });
 
-  it('places the note in the lowest reading position that plays it', () => {
+  it('places the note in the lowest reading position that plays every spelling', () => {
     expect(prompt('E', 4, 2, 0).position?.id).toBe('open');
+    // E♭5, E5 and F5 are frets 11–13 on string 1: 9th position, with a stretch.
     expect(prompt('E', 4, 2, 0.999).position?.id).toBe('pos9');
+    // A4: A♭ is in open position, but A and A♯ need the 5th.
+    expect(placePosition(10)?.id).toBe('pos5');
+    // F5: F♯5 (fret 14) needs the 12th, so F♮ is shown there too.
+    expect(placePosition(15)?.id).toBe('pos12');
+    // Off the neck either way: no position.
+    expect(placePosition(-20)).toBeNull();
     expect(positionFor(midiAt({ string: 1, fret: 7 }))?.id).toBe('pos5');
     // Nothing plays below low E in standard tuning, or far above the neck.
     expect(positionFor(30)).toBeNull();
     expect(positionFor(100)).toBeNull();
+  });
+
+  it('shows the same staff spots and positions whatever the signature (no clue before the answer)', () => {
+    for (const letter of 'ABCDEFG') {
+      for (let level = 0; level <= 2; level++) {
+        const spots = d25Places(letter, level);
+        spots.forEach((spot, i) => {
+          const r = (i + 0.5) / spots.length;
+          const shown = new Set<string>();
+          for (let a = -7; a <= 7; a++) {
+            const p = d25MakePrompt(item(letter, a), ctx(level, r));
+            expect(staffPosition(p.note), `${letter}@${a}`).toBe(spot);
+            shown.add(p.position?.id ?? 'none');
+          }
+          expect([...shown], `${letter} at ${spot}`).toHaveLength(1);
+          expect(shown.has('none'), `${letter} at ${spot}`).toBe(false);
+        });
+      }
+    }
+    // Low E is left out for every signature, not only where it would be E♭.
+    expect(d25Places('E', 2)).toEqual([0, 7, 14]);
+    expect(d25Places('E', 2, DROP_D_TUNING)).toEqual([-7, 0, 7, 14]);
   });
 
   it('grades the spelling and keys a wrong one by the signature that would make it right', () => {
@@ -198,6 +230,7 @@ describe('D25 read the key signature', () => {
     // The top of the range, the space above three ledger lines: F5, fret 13.
     expect(prompt('F', 0, 2, 0.999).note).toBe('F5');
     expect(prompt('F', 1, 2, 0.999).position?.id).toBe('pos12');
+    expect(prompt('F', 0, 2, 0.999).position?.id).toBe('pos12');
     // Drop D reaches E♭2.
     const drop = d25MakePrompt(item('E', -2), ctx(2, 0, DROP_D_TUNING));
     expect(drop.note).toBe('Eb2');
@@ -212,8 +245,7 @@ describe('D25 read the key signature', () => {
       given: [{ string: 6, fret: 0 }],
     });
     // Out of the prompt's position, the chosen spelling's own is found.
-    const low = { ...prompt('E', 4, 2, 0), position: READING_POSITIONS[1]! };
-    expect(low.note).toBe('E2');
+    const low = { ...prompt('E', 4), note: 'E2', position: READING_POSITIONS[1]! };
     expect(d25NeckPositions(low, 'E#', STANDARD_TUNING)).toEqual({
       expected: [{ string: 6, fret: 0 }],
       given: [{ string: 6, fret: 1 }],

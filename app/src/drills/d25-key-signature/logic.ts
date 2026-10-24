@@ -51,7 +51,10 @@ export interface D25Prompt {
   answer: string;
   /** The buttons, flat to sharp: `Fb`, `F`, `F#`. */
   choices: string[];
-  /** The reading position whose fret the neck shows; null if no position reaches it. */
+  /**
+   * The reading position the neck shows, from the staff spot alone (never
+   * the spelling, which would give the answer away); null if none reaches it.
+   */
   position: ReadingPosition | null;
 }
 
@@ -106,18 +109,50 @@ export function positionFor(midi: number, tuning?: Tuning): ReadingPosition | nu
   );
 }
 
+/** The sounding MIDI pitches of a staff spot's three spellings, flat to sharp. */
+function spellingsAt(at: number): number[] {
+  const natural = Note.midi(noteAtStaffPosition(at)) as number;
+  return [natural - 1, natural, natural + 1];
+}
+
+/**
+ * Where a staff spot is played, chosen without the signature (rule 4: the
+ * neck before the answer must not tell ♯ from ♮): the lowest reading position
+ * that reaches all three spellings, else the one that reaches the natural.
+ * Null when neither is on the neck.
+ */
+export function placePosition(at: number, tuning?: Tuning): ReadingPosition | null {
+  const midis = spellingsAt(at);
+  const all = READING_POSITIONS.find((p) =>
+    midis.every((m) => {
+      const pos = fretInPosition(m, p, { tuning });
+      return pos !== null && pos.fret <= TOP_FRET;
+    }),
+  );
+  return all ?? positionFor(midis[1] as number, tuning);
+}
+
+/**
+ * The staff spots a card can show: those where every spelling is on the
+ * neck, so which spots appear never depends on the signature either (low E
+ * is left out in standard tuning: its E♭ is below the low string).
+ */
+export function d25Places(letter: string, scopeLevel: number, tuning?: Tuning): number[] {
+  const spots = d25Positions(letter, scopeLevel);
+  const playable = spots.filter((at) =>
+    spellingsAt(at).every((m) => positionFor(m, tuning) !== null),
+  );
+  return playable.length > 0 ? playable : spots;
+}
+
 export function d25MakePrompt(item: Item, ctx: DrillContext): D25Prompt {
   const ref = parse(item);
   if (!ref || !d25CanTest(item)) throw new Error(`D25 cannot test item ${item.id}`);
   const { letter, alteration } = ref;
   const tonic = keyWith(alteration);
-  // Only notes the neck can play: E♭ under the low E string is no guitar note.
-  const all = d25Positions(letter, ctx.scopeLevel).map((at) =>
-    applyKeySignature(noteAtStaffPosition(at), majorKey(tonic)),
-  );
-  const playable = all.filter((n) => positionFor(Note.midi(n) as number, ctx.tuning) !== null);
-  const places = playable.length > 0 ? playable : all;
-  const note = places[pick(places.length, ctx.rng)] as string;
+  const places = d25Places(letter, ctx.scopeLevel, ctx.tuning);
+  const at = places[pick(places.length, ctx.rng)] as number;
+  const note = applyKeySignature(noteAtStaffPosition(at), majorKey(tonic));
   return {
     itemId: item.id,
     letter,
@@ -126,7 +161,7 @@ export function d25MakePrompt(item: Item, ctx: DrillContext): D25Prompt {
     note,
     answer: note.replace(/-?\d+$/, ''),
     choices: [`${letter}b`, letter, `${letter}#`],
-    position: positionFor(Note.midi(note) as number, ctx.tuning),
+    position: placePosition(at, ctx.tuning),
   };
 }
 
