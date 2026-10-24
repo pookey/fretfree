@@ -1279,6 +1279,16 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - The function drill doesn't repeat its guided fact in feedback, the prompt doesn't still say "Tap E to continue" after answering, and the I5 panel states the function roles once (finding 5). PM decision: the "IV in C major" cue line stays (the card tests numeral → function).
   - Finding 9: no needless scroll on iPad landscape and mini for the relative-minor, I7 and D19 prompts; I7's open-string markers don't cover the nut names; Progress's achievement toast doesn't cover the h1, and fret ranges use a non-breaking dash.
 
+### M6-15 · Chord roots spelled from their key in the shape drills and the CAGED view
+- **Status:** todo
+- **Deps:** M6-13
+- **Design:** design §8 (note names); research/02 rule 4 (a label must never mislead); follow-up from the M6-13 review
+- **Owns:** `app/src/theory/key-spelling.ts`, `app/src/theory/key-spelling.test.ts`, `app/src/drills/d9-build-caged/**`, `app/src/drills/d10-which-shape/**`, `app/src/screens/explore/views/caged.tsx`, `app/src/screens/explore/views/caged.test.tsx`, `app/e2e/m6-15.spec.ts`
+- **Acceptance:**
+  - D9, D10 and the CAGED Explore view spell a chord's root and tones from the chord's key, the way M6-13's `d21KeySpelling` does. They don't follow the note-name setting blindly ("A shape of A♯" becomes "A shape of B♭" where B♭ is the conventional key). The setting only breaks ties (F♯/G♭).
+  - `d21KeySpelling` moves to `theory/key-spelling.ts` (pure, exhaustively tested: every root × major, minor, dominant 7 × both preferences), and D21 imports it from there. Record the moved helper as an out-of-scope edit in D21.
+  - Unit tests in each drill for a sharp-preference learner seeing a flat-key root; one e2e that sets sharps and checks a flat-key shape name.
+
 ---
 
 ## M7: Accounts and sync (deferred)
