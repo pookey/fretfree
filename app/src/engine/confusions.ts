@@ -1,5 +1,6 @@
 import { ENGINE_CONFIG } from './config';
 import { STAFF_NEIGHBOUR_CONFUSIONS } from './items/staff';
+import { STAFF_INTERVAL_CONFUSIONS } from './items/staff-interval';
 import type { ConfusionRecord } from './model';
 import type { SessionEntry } from './session';
 
@@ -57,6 +58,8 @@ export const SEED_CONFUSIONS: readonly (readonly [string, string])[] = [
   ['rhythm:dotted-8th-16th', 'rhythm:two-8ths'],
   ['rhythm:dotted-quarter-8th', 'rhythm:two-quarters'],
   ['rhythm:siciliano', 'rhythm:three-8ths'],
+  // Staff intervals (R5, `staff-interval:<size>`): each size with the next, a place apart.
+  ...STAFF_INTERVAL_CONFUSIONS,
 ];
 
 /** Pair weights by unordered concept pair. Read it with `weightOf`. */
