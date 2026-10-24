@@ -179,8 +179,10 @@ describe('D24View', () => {
   it('is the registered drill’s view', async () => {
     const drill = getDrill(D24_ID)!;
     expect(drill.title).toBe('Fretboard → staff');
-    const View = await resolveView(drill);
-    expect(View).toBeDefined();
+    expect(drill.inputModes).toEqual(['tap', 'keyboard']);
+    await drill.logic.preload();
+    expect(await resolveView(drill.render)).toBe(D24View);
+    expect(await resolveView(drill.contextPanel!)).toBe(FretToStaffContextPanel);
   });
 });
 
