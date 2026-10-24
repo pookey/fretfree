@@ -35,6 +35,7 @@ import {
   dpsInKey,
   dpsMakePrompt,
   dpsMissed,
+  dpsFretted,
   dpsPlacements,
   dpsStartAt,
   dpsSubject,
@@ -179,11 +180,25 @@ describe('position prompts (scale-position)', () => {
     for (const n of p.neighbours) {
       for (const c of n.notes) expect(cells(p.notes)).not.toContain(cells([c])[0]);
     }
-    // In open position there is no room for the one below.
-    const open = make('scale-position:1', { rng: () => 3 / 7 }); // F
-    expect(open.tonic).toBe('F');
-    expect(open.span.from).toBe(0);
-    expect(open.neighbours.map((n) => n.position)).toEqual([2]);
+    // F's position 1 is asked at the 12th fret, so both neighbours fit.
+    const f = make('scale-position:1', { rng: () => 3 / 7 });
+    expect(f.tonic).toBe('F');
+    expect(f.span).toEqual({ from: 12, to: 15 });
+    expect(f.neighbours.map((n) => n.position)).toEqual([5, 2]);
+  });
+
+  it('asks each position fretted, never with an open string under the nut’s names (M6-14)', () => {
+    expect(dpsFretted('F', 1, STANDARD_TUNING).map((p) => p.from)).toEqual([12]);
+    // E♭ position 2 only fits in open position, so E♭ sits that card out.
+    expect(dpsPlacements('Eb', 2, STANDARD_TUNING)).toHaveLength(1);
+    expect(dpsFretted('Eb', 2, STANDARD_TUNING)).toEqual([]);
+    for (const id of ['scale-position:2', 'scale-run:2@1']) {
+      for (let i = 0; i < 40; i++) {
+        const p = make(id, { scopeLevel: 1, rng: () => i / 40 });
+        expect(p.tonic).not.toBe('Eb');
+        expect(p.span.from, `${id} ${p.tonic}`).toBeGreaterThan(0);
+      }
+    }
   });
 
   it('grades the whole position, ignoring taps on the box', () => {

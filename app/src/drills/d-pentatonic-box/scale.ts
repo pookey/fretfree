@@ -173,6 +173,16 @@ export function dpsPlacements(
   return out;
 }
 
+/**
+ * The placements with no open string. A position is a movable fretted shape,
+ * and a marker at fret 0 would cover the string's name at the nut (M6-14):
+ * F major position 1 is asked at frets 12–15, not 0–3. Keys whose position
+ * only fits in open position (E♭ position 2) are left out of that card.
+ */
+export function dpsFretted(tonic: string, position: BoxNumber, tuning: Tuning): Placement[] {
+  return dpsPlacements(tonic, position, tuning).filter((p) => p.notes.every((n) => n.fret > 0));
+}
+
 /** The positions either side of a placed one, as positions this one lacks. */
 function neighboursOf(
   tonic: string,
@@ -209,11 +219,19 @@ export function dpsMakePrompt(item: Item, ctx: DrillContext): DpsPrompt {
   if (!ref || stringCount(tuning) !== 6) throw new Error(`Scale positions cannot test ${item.id}`);
   const { position } = ref;
   const scope = dpbScopeFor(ctx.scopeLevel);
-  const tonics = (scope === 'naturals' ? NATURAL_PCS.map(chromaOf) : [...Array(12).keys()])
-    .map((chroma) => dpsTonic(chroma, accidentalPref))
-    .filter((t) => dpsPlacements(t, position, tuning).length > 0);
+  const keys = (scope === 'naturals' ? NATURAL_PCS.map(chromaOf) : [...Array(12).keys()]).map(
+    (chroma) => dpsTonic(chroma, accidentalPref),
+  );
+  const fretted = keys.filter((t) => dpsFretted(t, position, tuning).length > 0);
+  const tonics =
+    fretted.length > 0
+      ? fretted
+      : keys.filter((t) => dpsPlacements(t, position, tuning).length > 0);
   const tonic = pick(tonics, ctx.rng);
-  const placement = tonic && pick(dpsPlacements(tonic, position, tuning), ctx.rng);
+  const placements = tonic ? dpsFretted(tonic, position, tuning) : [];
+  const placement =
+    tonic &&
+    pick(placements.length > 0 ? placements : dpsPlacements(tonic, position, tuning), ctx.rng);
   if (!tonic || !placement) throw new Error(`Scale positions cannot place ${item.id}`);
 
   const notes = [...placement.notes].sort(byPitch(tuning));
