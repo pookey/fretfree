@@ -1603,7 +1603,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
 - **Owns:** `app/src/engine/skills/r7.ts`, `app/src/drills/d-tab-staff/**`, `app/e2e/m8-17.spec.ts`
 
 ### M8-18 · T6 pickups, repeats and endings
-- **Status:** todo
+- **Status:** done
 - **Deps:** M8-02, M8-04
 - **After:** M6-10
 - **Owns:** `app/src/engine/skills/t6.ts`, `app/src/drills/d-form-reading/**`, `app/e2e/m8-18.spec.ts`
