@@ -24,6 +24,12 @@ export function masteryAchievement(
   };
 }
 
+/**
+ * "frets 0–12" with word joiners round the dash, so a line never breaks
+ * after it and strands "12." on its own (M6-14).
+ */
+export const FRETS_0_12 = 'frets 0\u2060–\u206012';
+
 /** "String N master": every natural on a C2 string mastered (M10-12). */
 export function stringMasterAchievement(
   string: number,
@@ -33,7 +39,7 @@ export function stringMasterAchievement(
   return masteryAchievement({
     id: `string-${string}-master`,
     title: `String ${string} master`,
-    description: `You know every natural note on the ${name} string, frets 0–12.`,
+    description: `You know every natural note on the ${name} string, ${FRETS_0_12}.`,
     order,
     skillId: `C2.string${string}-naturals`,
   });
