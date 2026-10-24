@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { AccountApiError } from './api';
@@ -44,7 +44,9 @@ describe('<VerifyScreen>', () => {
     expect(
       await screen.findByRole('heading', { name: 'Your account is being deleted' }),
     ).toHaveFocus();
-    expect(screen.getByRole('status')).toHaveTextContent('open the link from the email again');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'open the link from the email again, or send yourself a new one if it has expired',
+    );
     expect(screen.getByRole('link', { name: 'Go to Progress' })).toHaveAttribute(
       'href',
       '/progress',
@@ -52,6 +54,13 @@ describe('<VerifyScreen>', () => {
     expect(server.cognito.begin).not.toHaveBeenCalled();
     expect(loadAccount()).toBeNull();
     expect(location.hash).toBe('');
+
+    // The delete finishes while the screen is open: it says so, and offers a new email.
+    act(() => saveDeletion(null));
+    expect(await screen.findByRole('heading', { name: 'The delete has finished' })).toHaveFocus();
+    expect(screen.getByLabelText('Email address')).toHaveValue('me@example.com');
+    expect(server.cognito.begin).not.toHaveBeenCalled();
+    expect(loadAccount()).toBeNull();
   });
 
   it('signs this browser in and wipes the token from the address bar', async () => {

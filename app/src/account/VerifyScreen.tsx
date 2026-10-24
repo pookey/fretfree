@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router';
 import { ScreenLayout } from '../shell/ScreenLayout';
 import { AccountPanel } from './AccountPanel';
 import { getSignIn } from './client';
 import { linkError } from './copy';
 import type { LinkOutcome, SignIn } from './flow';
-import { loadDeletion } from './store';
+import { loadDeletion, subscribe } from './store';
 import styles from './account.module.css';
 
 /** The address and token from an emailed link's fragment (`#email=…&token=…`). */
@@ -25,6 +25,8 @@ type View =
   | { kind: 'unavailable' }
   /** An account delete is still waiting for the server: no signing in until it ends. */
   | { kind: 'deleting' }
+  /** That delete has finished while this screen was open: the link can be used now. */
+  | { kind: 'delete-finished' }
   | LinkOutcome;
 
 /**
@@ -45,6 +47,12 @@ export function VerifyScreen({ signIn = getSignIn() }: { signIn?: SignIn | null 
           : { kind: 'incomplete' },
   );
   const [attempt, setAttempt] = useState(0);
+  const deleting = useSyncExternalStore(
+    subscribe,
+    () => loadDeletion() !== null,
+    () => false,
+  );
+  if (view.kind === 'deleting' && !deleting) setView({ kind: 'delete-finished' });
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -94,7 +102,9 @@ export function VerifyScreen({ signIn = getSignIn() }: { signIn?: SignIn | null 
             ? 'Sign-in isn’t available here'
             : view.kind === 'deleting'
               ? 'Your account is being deleted'
-              : 'That link didn’t work';
+              : view.kind === 'delete-finished'
+                ? 'The delete has finished'
+                : 'That link didn’t work';
 
   return (
     <ScreenLayout title="Sign in">
@@ -137,8 +147,8 @@ export function VerifyScreen({ signIn = getSignIn() }: { signIn?: SignIn | null 
               <>
                 <p>
                   FretFree is still deleting an account on this device, so this link hasn&rsquo;t
-                  signed you in. Once the delete has finished (Progress shows it), open the link
-                  from the email again.
+                  signed you in. Once it has finished, open the link from the email again, or send
+                  yourself a new one if it has expired.
                 </p>
                 <p>
                   <Link to="/progress" className={styles.primary}>
@@ -146,6 +156,12 @@ export function VerifyScreen({ signIn = getSignIn() }: { signIn?: SignIn | null 
                   </Link>
                 </p>
               </>
+            )}
+            {view.kind === 'delete-finished' && (
+              <p>
+                Open the sign-in link from the email again now. If it has expired, send yourself a
+                new email below.
+              </p>
             )}
             {(view.kind === 'link-failed' || view.kind === 'error') && <p>{linkError(view)}</p>}
           </div>
@@ -162,9 +178,9 @@ export function VerifyScreen({ signIn = getSignIn() }: { signIn?: SignIn | null 
             </button>
           )}
         </div>
-        {(view.kind === 'incomplete' || view.kind === 'link-failed') && (
-          <AccountPanel signIn={signIn} email={link?.email} />
-        )}
+        {(view.kind === 'incomplete' ||
+          view.kind === 'link-failed' ||
+          view.kind === 'delete-finished') && <AccountPanel signIn={signIn} email={link?.email} />}
       </div>
     </ScreenLayout>
   );
