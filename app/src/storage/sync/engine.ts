@@ -10,6 +10,7 @@ import {
   type LocalDate,
 } from '../../engine/gamification/local-date';
 import { applyDay } from '../../engine/gamification/streak';
+import { getSkill } from '../../engine/skills';
 import { getDb, type FretworkDB } from '../db';
 import { RESTAGES } from '../export-import';
 import type {
@@ -59,6 +60,8 @@ export const SYNC_TIMING = {
   maxRetryMs: 15 * 60_000,
   /** Push passes in one round, so a learner editing during it can't keep it going for ever. */
   maxPushPasses: 100,
+  /** A request that takes longer counts as offline, so a stalled one can't hold the round's lock. */
+  requestTimeoutMs: 30_000,
 } as const;
 
 // --- The sync API ------------------------------------------------------------
@@ -117,6 +120,7 @@ export function createSyncApi(baseUrl: string, fetchFn: typeof fetch = fetch): S
         credentials: 'omit',
         referrerPolicy: 'no-referrer',
         cache: 'no-store',
+        signal: timeoutSignal(SYNC_TIMING.requestTimeoutMs),
       });
     } catch {
       throw new SyncError('offline');
@@ -170,6 +174,11 @@ export function createSyncApi(baseUrl: string, fetchFn: typeof fetch = fetch): S
   };
 }
 
+/** Aborts after `ms`, where the browser can (Safari 16 and later). */
+function timeoutSignal(ms: number): AbortSignal | undefined {
+  return typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(ms) : undefined;
+}
+
 const pushBody = (records: readonly SyncRecord[]) =>
   JSON.stringify({ records: records.map(encodeSyncRecord) });
 
@@ -219,14 +228,25 @@ type Tables = Record<string, unknown[]>;
  * later version split into stages (`C5.tones-triads`, the C8 harmony skills,
  * `C2.all-notes`). Each restage of `RESTAGES` runs on them in schema-version
  * order, as `importData` does with an old export file, so they land on their
- * stage before they merge. A record carries no schema version, but a restage
- * leaves current rows alone, so every pulled row goes through all of them.
+ * stage before they merge. A record carries no schema version, so cards and
+ * logs, which say what they are, go through every restage: one leaves a
+ * current row alone.
+ *
+ * Skill states need evidence. C8 and C2 kept their old ID as a live stage, so
+ * a current `C8.numerals-major` or `C2.all-notes` state looks exactly like a
+ * pre-split one. A restage changes states only when it also moved one of the
+ * pulled cards or logs, or when it retired a state whose skill no longer
+ * exists (`C5.tones-triads`). Otherwise restaging a learner's own current
+ * state would master stages they never practised, or drop a state.
  *
  * A moved card or review log keeps its ID and gets `updatedAt + 1`, so it
  * beats the old version on the server. A retired skill's state becomes a
  * tombstone, and the stage states it stands for are added unless this device
  * already has them. Every restaged record is queued to push (`changed`), so
  * the server holds the restaged version from then on.
+ *
+ * A new `RESTAGES` entry whose old skill ID stays live must keep this
+ * contract: its states move only on the evidence of its cards and logs.
  */
 export async function restagePulled(
   db: FretworkDB,
@@ -243,7 +263,21 @@ export async function restagePulled(
   if (cards.length + logs.length + states.length === 0) return unchanged;
 
   const steps = await Promise.all(RESTAGES.map(([, load]) => load()));
-  const run = (tables: Tables) => steps.reduce((t, step) => step.restageTables(t), tables);
+  // The first `cards.length` cards are the pulled ones; any after them are
+  // this device's, there only to say which stages the learner has started.
+  const run = (tables: Tables) =>
+    steps.reduce((t, step) => {
+      const out = step.restageTables(t);
+      const pulled = (rows: unknown[] | undefined) => (rows ?? []).slice(0, cards.length);
+      const moved =
+        !sameRows(pulled(t.cards), pulled(out.cards)) ||
+        !sameRows(t.reviewLogs ?? [], out.reviewLogs);
+      const kept = new Set(out.skillStates);
+      const retired = (t.skillStates ?? []).some(
+        (s) => !kept.has(s) && !getSkill(String((s as Row).skillId)),
+      );
+      return moved || retired ? out : { ...out, skillStates: t.skillStates ?? [] };
+    }, tables);
   const input = {
     cards: cards.map((r) => r.data),
     reviewLogs: logs.map((r) => r.data),
@@ -379,6 +413,9 @@ export function deriveGamification(input: DerivationInput): Derivation {
         if (typeof data.questId === 'string') day.quests.push(data.questId);
       }
     } else if (event.type === 'session-complete') {
+      // On the finish date, though each answer's minutes were stored on its
+      // own date: a session across midnight can lift (and meet) the later
+      // day. Rare, and only ever generous.
       const day = on(data.date);
       if (day) day.minutes += finite(data.minutes);
     } else if (event.type === 'goal-met') {
@@ -576,10 +613,12 @@ export async function syncRound(deps: RoundDeps): Promise<RoundResult> {
     const page = await deps.api.pull(cursor, await token());
     if (page.records.length > 0) {
       const staged = await restagePulled(db, page.records);
+      // Echoes of this device's own pushes change nothing, so they don't call
+      // for a re-derivation, which reads every logged answer.
+      derive ||= await changesDerived(db, staged.records);
       const queued = await mergeIntoLocal(db, staged.records);
       await requeue(db, staged.changed, queued);
       result.pulled += page.records.length;
-      derive ||= page.records.some((r) => DERIVED_TABLES.includes(r.table));
     }
     const moved = page.cursor !== cursor;
     cursor = page.cursor;
@@ -592,6 +631,16 @@ export async function syncRound(deps: RoundDeps): Promise<RoundResult> {
   await pushOutbox(deps, token, result);
   await saveState(deps, { lastSyncedAt: deps.now() });
   return result;
+}
+
+/** Whether any pulled record of a derived table differs from this device's version. */
+async function changesDerived(db: FretworkDB, records: readonly SyncRecord[]): Promise<boolean> {
+  for (const r of records) {
+    if (!DERIVED_TABLES.includes(r.table)) continue;
+    const local = await readSyncRecord(db, r.table, r.id);
+    if (!local || canonical(local) !== canonical(r)) return true;
+  }
+  return false;
 }
 
 /**
@@ -856,6 +905,8 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
   return {
     request() {
       if (stopped) return;
+      // Signed in a moment ago: say so at once, not after the debounce.
+      if (status.phase === 'off' && deps.auth.account()) set({ phase: 'syncing' });
       clearTimeout(debounce);
       debounce = setTimeout(() => void syncNow(), timing.debounceMs);
     },

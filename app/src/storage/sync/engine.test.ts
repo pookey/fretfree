@@ -262,6 +262,8 @@ describe('createSyncApi', () => {
     expect(call?.url).toBe('https://api.example/sync/push');
     expect(call?.init.method).toBe('POST');
     expect(call?.init.credentials).toBe('omit');
+    // A stalled request gives up, so it can't hold the round's lock.
+    expect(call?.init.signal).toBeInstanceOf(AbortSignal);
     expect(call?.init.headers).toMatchObject({ authorization: 'Bearer tok' });
     expect(JSON.parse(call?.init.body as string)).toEqual({ records: [encodeSyncRecord(record)] });
   });
@@ -625,6 +627,44 @@ describe('rows pulled from an older schema', () => {
     expect(changed).toHaveLength(1);
   });
 
+  it('leaves a current state alone when an old skill ID is still a live stage', async () => {
+    // C8 stage 1 kept the old skill ID, and so did C2's last stage.
+    const a = device('a');
+    const pulled = [
+      rec('skillStates', 'C8.numerals-major', state('C8.numerals-major', 'mastered')),
+      rec('skillStates', 'C8.nashville', state('C8.nashville', 'mastered')),
+      rec('skillStates', 'C2.all-notes', state('C2.all-notes', 'practising')),
+    ];
+    const out = await restagePulled(a.db, pulled);
+    expect(out.changed).toEqual([]);
+    expect(out.records).toEqual(pulled);
+  });
+
+  it('restages a live old ID’s state only alongside its own pre-split cards', async () => {
+    const a = device('a');
+    const out = await restagePulled(a.db, [
+      rec('cards', 'numeral:vi@key=A', card('numeral:vi@key=A', 'C8.numerals-major', at)),
+      rec('skillStates', 'C8.numerals-major', state('C8.numerals-major', 'mastered')),
+    ]);
+    expect(out.changed.map((r) => [r.table, r.id]).sort()).toEqual([
+      ['cards', 'numeral:vi@key=A'],
+      ['skillStates', 'C8.numerals-a-e-f'],
+      ['skillStates', 'C8.numerals-other-keys'],
+    ]);
+  });
+
+  it('doesn’t master later C8 stages when a device syncs its own stage-1 mastery', async () => {
+    const server = new FakeServer();
+    const a = device('a');
+    await a.db.skillStates.put(state('C8.numerals-major', 'mastered') as never);
+    await a.db.cards.put(card('numeral:I@key=C', 'C8.numerals-major', at) as never);
+    await converge(server, a);
+    const states = (await a.db.skillStates.toArray()).map((s) => s.skillId);
+    expect(states).toEqual(['C8.numerals-major']);
+    expect(server.get(ACCOUNT, 'skillStates', 'C8.numerals-a-e-f')).toBeUndefined();
+    expect(server.get(ACCOUNT, 'skillStates', 'C8.numerals-other-keys')).toBeUndefined();
+  });
+
   it('passes current rows, tombstones and other tables through untouched', async () => {
     const a = device('a');
     const current = [
@@ -750,6 +790,18 @@ describe('createSyncEngine', () => {
     for (let i = 0; i < 200 && !(await check()); i++) await new Promise((r) => setTimeout(r, 5));
     expect(await check()).toBe(true);
   };
+
+  it('says it is syncing as soon as a signed-in learner asks', async () => {
+    const server = new FakeServer();
+    const ctx = engineFor(server);
+    ctx.signOut();
+    await ctx.engine.syncNow();
+    expect(ctx.engine.status().phase).toBe('off');
+    ctx.auth.account = () => ACCOUNT;
+    ctx.engine.request();
+    expect(ctx.engine.status().phase).toBe('syncing');
+    ctx.engine.stop();
+  });
 
   it('syncs on request and reports when', async () => {
     const server = new FakeServer();
@@ -987,6 +1039,31 @@ describe('installSync', () => {
 
 // Settings and gamification writes the derivation relies on, as tracked rows.
 describe('derived rows', () => {
+  it('doesn’t re-derive from the echoes of its own push', async () => {
+    const server = new FakeServer();
+    const a = device('a');
+    // An answer's XP that the total doesn't hold yet: only a derivation adds it.
+    await logEvent(
+      a.db,
+      {
+        type: 'answer',
+        itemId: 'x',
+        skillId: 'y',
+        correct: true,
+        rating: Rating.Good,
+        kind: 'new',
+        xp: 7,
+      },
+      day(1),
+    );
+    await round(a, server);
+    expect((await getGamification(a.db)).xpTotal).toBe(0);
+    // Another device's pull is news, so it derives.
+    const b = device('b');
+    await round(b, server);
+    expect((await getGamification(b.db)).xpTotal).toBe(7);
+  });
+
   it('re-derives only after pulling gamification records', async () => {
     const server = new FakeServer();
     const a = device('a');
