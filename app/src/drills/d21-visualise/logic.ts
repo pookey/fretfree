@@ -130,7 +130,9 @@ const MAJOR_KEY_SIGN = [0, -1, 1, -1, 1, -1, 0, 1, -1, 1, -1, 1] as const;
  * How the chord's key is spelled: with flats in a flat key (B♭, not A♯; Dm
  * names its notes with flats), with sharps in a sharp key (C♯m, not D♭m),
  * and by the learner's preference in C, Am, F♯/G♭ and D♯m/E♭m. A minor
- * chord takes its relative major's key; a 7 chord, its root's major key.
+ * chord takes its relative major's key; a 7 chord, its root's major key,
+ * or where that has none (C7, F♯7) the key it is V of, a 4th up (C7's ♭7
+ * is B♭, from F).
  */
 export function d21KeySpelling(
   rootChroma: number,
@@ -138,7 +140,8 @@ export function d21KeySpelling(
   accidentalPref: AccidentalPref,
 ): AccidentalPref {
   const tonic = quality === 'minor' ? rootChroma + 3 : rootChroma;
-  const sign = MAJOR_KEY_SIGN[tonic % 12];
+  let sign: number | undefined = MAJOR_KEY_SIGN[tonic % 12];
+  if (!sign && quality === 'dominant7') sign = MAJOR_KEY_SIGN[(rootChroma + 5) % 12];
   if (!sign) return accidentalPref;
   return sign > 0 ? 'sharp' : 'flat';
 }

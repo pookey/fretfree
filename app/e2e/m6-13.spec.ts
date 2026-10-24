@@ -126,7 +126,8 @@ test.describe('M6-13 mental practice is optional', () => {
       await page.getByRole('button', { name: 'Continue' }).click();
       await expect(page.getByTestId('feedback-wrong')).toBeHidden();
     }
-    // Every seeded card was served at least once, none by D21.
+    // At least as many prompts as seeded cards (a card ended with Done comes
+    // back, so not necessarily one each), and none of them D21.
     expect(served).toBeGreaterThanOrEqual(SHAPES.length);
     if (await end.isVisible()) await end.click();
     await expect(visualiseDrill(page)).toHaveCount(0);

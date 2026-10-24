@@ -355,6 +355,10 @@ describe('d21KeySpelling', () => {
   it('spells flat keys with flats and sharp keys with sharps', () => {
     expect(d21KeySpelling(10, 'major', 'sharp')).toBe('flat'); // B♭
     expect(d21KeySpelling(5, 'dominant7', 'sharp')).toBe('flat'); // F7
+    expect(d21KeySpelling(1, 'dominant7', 'sharp')).toBe('flat'); // D♭7, its own key
+    // C7 and F♯7 take the key they are V of: C7's ♭7 is B♭, from F; F♯7's is E, from B.
+    expect(d21KeySpelling(0, 'dominant7', 'sharp')).toBe('flat');
+    expect(d21KeySpelling(6, 'dominant7', 'flat')).toBe('sharp');
     expect(d21KeySpelling(2, 'minor', 'sharp')).toBe('flat'); // Dm, from F
     expect(d21KeySpelling(1, 'minor', 'flat')).toBe('sharp'); // C♯m, from E
     expect(d21KeySpelling(4, 'major', 'flat')).toBe('sharp'); // E
