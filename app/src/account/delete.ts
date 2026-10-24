@@ -31,9 +31,17 @@ export type DeletionStatus =
       /** Why the last try failed, or null before the first answer. */
       trouble: DeleteTrouble | null;
     }
-  | { phase: 'deleted'; email: string; keepLocal: boolean }
-  /** This device's sign-in ran out before the server said it was done. */
-  | { phase: 'sign-in-again'; email: string };
+  | {
+      phase: 'deleted';
+      email: string;
+      keepLocal: boolean;
+      /**
+       * False when the server never answered 200 but Cognito no longer knows
+       * the sign-in: the server deletes the user only after every record, so
+       * the account is gone, though its reply was lost.
+       */
+      confirmed: boolean;
+    };
 
 export interface DeletionDeps {
   /** `DELETE /account`: resolves on a 200, and throws an `AccountApiError` otherwise. */
@@ -44,6 +52,8 @@ export interface DeletionDeps {
   now(): number;
   /** Ends syncing on this device at once (`storage/sync/engine.ts`). */
   stopSync(): void;
+  /** Syncs again once the delete is done, so signing in again syncs the new account. */
+  restartSync(): void;
   /** Deletes this device's progress and preferences. */
   clearLocal(): Promise<void>;
   /** Resolves after `ms`, or sooner when the device comes back online. */
@@ -62,7 +72,7 @@ export interface AccountDeletionFlow {
   request(keepLocal: boolean): Promise<void>;
   /** Carries on with a delete asked for before a reload, or in another tab. */
   resume(): Promise<void>;
-  /** Clears the "deleted" or "sign in again" message. */
+  /** Clears the "deleted" message. */
   dismiss(): void;
 }
 
@@ -106,7 +116,7 @@ export function createAccountDeletion(deps: DeletionDeps): AccountDeletionFlow {
     listeners.forEach((l) => l());
   };
 
-  /** A current access token, or null when the sign-in can't be refreshed. */
+  /** A current access token, or null when Cognito refuses the sign-in: the user is gone. */
   async function token(deletion: AccountDeletion): Promise<string | null> {
     const { tokens } = deletion;
     if (tokens.expiresAt - DELETE_TIMING.refreshEarlyMs > deps.now()) return tokens.accessToken;
@@ -134,22 +144,25 @@ export function createAccountDeletion(deps: DeletionDeps): AccountDeletionFlow {
       // Finished in another tab: this one has nothing left to send.
       if (!deletion) {
         if (status.phase === 'deleting') {
-          set({ phase: 'deleted', email: status.email, keepLocal: status.keepLocal });
+          if (status.keepLocal) deps.restartSync();
+          const { email, keepLocal } = status;
+          set({ phase: 'deleted', email, keepLocal, confirmed: true });
         }
         return;
       }
       const { email, keepLocal } = deletion;
       if (status.phase !== 'deleting') set({ phase: 'deleting', email, keepLocal, trouble: null });
       try {
+        // Refresh tokens last a year and nothing here revokes them, so a
+        // refused one means the server deleted the Cognito user, which it
+        // does only after every record: an earlier try finished, but its
+        // reply never arrived. The learner's choice for this device stands.
         const access = await token(deletion);
-        if (!access) {
-          saveDeletion(null);
-          return set({ phase: 'sign-in-again', email });
-        }
-        await deps.deleteAccount(access);
-        if (!keepLocal) await deps.clearLocal();
+        if (access) await deps.deleteAccount(access);
+        if (keepLocal) deps.restartSync();
+        else await deps.clearLocal();
         saveDeletion(null);
-        return set({ phase: 'deleted', email, keepLocal });
+        return set({ phase: 'deleted', email, keepLocal, confirmed: access !== null });
       } catch (error) {
         // A refused token is refreshed on the next try.
         if (error instanceof AccountApiError && error.status === 401) {
@@ -197,7 +210,7 @@ export function createAccountDeletion(deps: DeletionDeps): AccountDeletionFlow {
     },
     resume,
     dismiss() {
-      if (status.phase === 'deleted' || status.phase === 'sign-in-again') set({ phase: 'idle' });
+      if (status.phase === 'deleted') set({ phase: 'idle' });
     },
   };
 }

@@ -25,6 +25,7 @@ function fakeDeletion(answer: () => Promise<void> = async () => undefined) {
     cognito: vi.fn(),
     now: Date.now,
     stopSync: vi.fn(),
+    restartSync: vi.fn(),
     clearLocal: vi.fn(async () => undefined),
     wait: () => new Promise(() => undefined),
   };
@@ -67,6 +68,14 @@ describe('ManageAccount', () => {
     expect(screen.getByRole('heading', { name: `Delete the account for ${EMAIL}?` })).toHaveFocus();
     const choice = screen.getByRole('group', { name: 'Your progress on this device' });
     expect(within(choice).getByRole('radio', { name: /Keep it on this device/ })).toBeChecked();
+    // Cancel comes before the irreversible button, which is last.
+    const buttons = within(region)
+      .getAllByRole('button')
+      .map((b) => b.textContent);
+    expect(buttons.slice(-2)).toEqual(['Cancel', 'Delete my account']);
+    expect(region).toHaveTextContent(
+      'Amazon SES, which sends the sign-in emails, keeps the address',
+    );
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.getByRole('button', { name: 'Delete account…' })).toHaveFocus();
@@ -141,7 +150,7 @@ describe('ManageAccount', () => {
     expect(loadDeletion()).toBeNull();
   });
 
-  it('asks to sign in again when the sign-in ran out first', async () => {
+  it('says the account is gone when Cognito no longer knows the sign-in', async () => {
     saveDeletion({
       email: EMAIL,
       tokens: { ...TOKENS, expiresAt: 0 },
@@ -158,25 +167,23 @@ describe('ManageAccount', () => {
       },
     });
     const { user } = renderPanel(flow);
-    expect(await screen.findByRole('alert')).toHaveTextContent(`Sign in again as ${EMAIL}`);
-    await user.click(screen.getByRole('button', { name: 'OK' }));
+    expect(await screen.findByRole('heading', { name: 'Account deleted' })).toBeVisible();
+    expect(panel()).toHaveTextContent('Your account is gone from FretFree’s server');
+    expect(panel()).toHaveTextContent('If the account ever shows up again');
+    expect(panel()).toHaveTextContent('Your progress is still here on this device');
+    expect(deps.clearLocal).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Done' }));
     expect(screen.queryByTestId('manage-account')).toBeNull();
   });
 });
 
 describe('viewOf', () => {
   it('shows a finished delete first, then one in flight, then the offer', () => {
-    expect(viewOf({ phase: 'deleted', email: EMAIL, keepLocal: true }, null, EMAIL)).toEqual({
-      kind: 'deleted',
-      keepLocal: true,
-    });
+    expect(
+      viewOf({ phase: 'deleted', email: EMAIL, keepLocal: true, confirmed: true }, null, EMAIL),
+    ).toEqual({ kind: 'deleted', keepLocal: true, confirmed: true });
     expect(viewOf({ phase: 'idle' }, EMAIL, null)).toMatchObject({ kind: 'deleting' });
     expect(viewOf({ phase: 'idle' }, null, EMAIL)).toEqual({ kind: 'signed-in', email: EMAIL });
     expect(viewOf({ phase: 'idle' }, null, null)).toBeNull();
-    // Signed in again after "sign in again": the offer, not the old message.
-    expect(viewOf({ phase: 'sign-in-again', email: EMAIL }, null, EMAIL)).toEqual({
-      kind: 'signed-in',
-      email: EMAIL,
-    });
   });
 });

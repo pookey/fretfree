@@ -93,12 +93,18 @@ function Manage({
           {heading('Account deleted')}
           <div className={styles.copy}>
             <p role="status">
-              Your email address and the copy of your progress are gone from FretFree&rsquo;s
-              server.{' '}
+              {view.confirmed
+                ? 'Your account, with its email address and the copy of your progress, is deleted from FretFree’s server.'
+                : 'Your account is gone from FretFree’s server: its sign-in no longer exists, so an earlier try finished even though the reply never reached this device.'}{' '}
               {view.keepLocal
                 ? 'Your progress is still here on this device, and FretFree works just as before, without an account.'
                 : 'The progress on this device is deleted too, so FretFree will start again from the beginning.'}
             </p>
+            {!view.confirmed && (
+              <p className={styles.muted}>
+                If the account ever shows up again, sign in and delete it once more.
+              </p>
+            )}
             <div className={styles.actions}>
               {view.keepLocal ? (
                 <button
@@ -117,23 +123,6 @@ function Manage({
           </div>
         </>
       )}
-      {view.kind === 'sign-in-again' && (
-        <>
-          {heading('The account isn’t deleted yet')}
-          <div className={styles.copy}>
-            <p role="alert">
-              This device&rsquo;s sign-in ran out before FretFree&rsquo;s server confirmed the
-              delete. Sign in again as <strong className={styles.email}>{view.email}</strong>, then
-              delete your account once more. Your progress on this device is untouched.
-            </p>
-            <div className={styles.actions}>
-              <button type="button" className={styles.secondary} onClick={() => deletion.dismiss()}>
-                OK
-              </button>
-            </div>
-          </div>
-        </>
-      )}
     </section>
   );
 }
@@ -145,8 +134,7 @@ type View =
       email: string;
       status: Extract<DeletionStatus, { phase: 'deleting' }> | null;
     }
-  | { kind: 'deleted'; keepLocal: boolean }
-  | { kind: 'sign-in-again'; email: string };
+  | { kind: 'deleted'; keepLocal: boolean; confirmed: boolean };
 
 /** What the panel shows: a finished delete's message first, then one in flight, then the offer. */
 export function viewOf(
@@ -154,9 +142,8 @@ export function viewOf(
   pendingEmail: string | null,
   accountEmail: string | null,
 ): View | null {
-  if (status.phase === 'deleted') return { kind: 'deleted', keepLocal: status.keepLocal };
-  if (status.phase === 'sign-in-again' && !accountEmail) {
-    return { kind: 'sign-in-again', email: status.email };
+  if (status.phase === 'deleted') {
+    return { kind: 'deleted', keepLocal: status.keepLocal, confirmed: status.confirmed };
   }
   if (status.phase === 'deleting') return { kind: 'deleting', email: status.email, status };
   if (pendingEmail) return { kind: 'deleting', email: pendingEmail, status: null };
@@ -204,7 +191,9 @@ function DeleteStep({
           have.
         </p>
         <p className={styles.muted}>
-          You choose what happens to your progress on this device.{' '}
+          You choose what happens to your progress on this device. If an email to your address ever
+          bounced as undeliverable or was marked as spam, Amazon SES, which sends the sign-in
+          emails, keeps the address on a do-not-send list, apart from the account.{' '}
           <Link to="/privacy">Privacy</Link>
         </p>
       </div>
@@ -249,14 +238,8 @@ function DeleteStep({
             </button>
           </div>
           {exported && <p role="status">{exported}</p>}
-          <div className={styles.actions}>
-            <button
-              type="button"
-              className={`${styles.secondary} ${manage.destructive}`}
-              onClick={() => onDelete(keepLocal)}
-            >
-              Delete my account
-            </button>
+          {/* Cancel first; the irreversible button last, set apart from it. */}
+          <div className={`${styles.actions} ${manage.decide}`}>
             <button
               type="button"
               className={styles.secondary}
@@ -267,6 +250,13 @@ function DeleteStep({
               }}
             >
               Cancel
+            </button>
+            <button
+              type="button"
+              className={`${styles.secondary} ${manage.destructive}`}
+              onClick={() => onDelete(keepLocal)}
+            >
+              Delete my account
             </button>
           </div>
         </div>

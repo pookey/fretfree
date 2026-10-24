@@ -8,7 +8,7 @@ import {
 } from './delete';
 import { syncApiUrl } from './endpoint';
 import { getDb, type FretworkDB } from '../storage';
-import { stopSync } from '../storage/sync/engine';
+import { restartSync, stopSync } from '../storage/sync/engine';
 
 /**
  * Deletes everything FretFree keeps in this browser: the database, and every
@@ -39,6 +39,7 @@ export function getAccountDeletion(): AccountDeletionFlow | null {
             cognito: async () => createCognito(await api.config()),
             now: Date.now,
             stopSync,
+            restartSync,
             clearLocal: () => clearThisDevice(),
             wait: (ms) => waitOrOnline(ms),
           })

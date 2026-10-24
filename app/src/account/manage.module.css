@@ -50,3 +50,11 @@
   border: 2px solid var(--text);
   font-weight: 700;
 }
+
+/* Cancel and the delete, divided from the rest of the step, with the delete
+   pushed to the far end (or onto its own line when the row wraps). */
+.decide {
+  justify-content: space-between;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}

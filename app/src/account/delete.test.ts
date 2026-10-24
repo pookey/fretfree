@@ -55,6 +55,7 @@ function fakeDeps(answers: (Error | 'ok')[] = ['ok'], over: Partial<DeletionDeps
     cognito: async () => cognito,
     now: () => NOW,
     stopSync: vi.fn(),
+    restartSync: vi.fn(),
     clearLocal: vi.fn(async () => undefined),
     wait: vi.fn(async (ms: number) => {
       waits.push(ms);
@@ -85,9 +86,16 @@ describe('createAccountDeletion', () => {
     });
     await done;
     expect(sent).toEqual(['access']);
-    expect(flow.status()).toEqual({ phase: 'deleted', email: EMAIL, keepLocal: true });
+    expect(flow.status()).toEqual({
+      phase: 'deleted',
+      email: EMAIL,
+      keepLocal: true,
+      confirmed: true,
+    });
     expect(loadDeletion()).toBeNull();
     expect(deps.clearLocal).not.toHaveBeenCalled();
+    // Signing in again without a reload syncs the new account.
+    expect(deps.restartSync).toHaveBeenCalledOnce();
   });
 
   it('never revokes the tokens the delete still needs', async () => {
@@ -107,7 +115,14 @@ describe('createAccountDeletion', () => {
     const flow = createAccountDeletion(deps);
     await flow.request(false);
     expect(order).toEqual(['delete', 'clear']);
-    expect(flow.status()).toEqual({ phase: 'deleted', email: EMAIL, keepLocal: false });
+    // The database is gone: nothing restarts sync on it before the reload.
+    expect(deps.restartSync).not.toHaveBeenCalled();
+    expect(flow.status()).toEqual({
+      phase: 'deleted',
+      email: EMAIL,
+      keepLocal: false,
+      confirmed: true,
+    });
   });
 
   it('sends the delete again after each failure, backing off, until it gets a 200', async () => {
@@ -137,7 +152,12 @@ describe('createAccountDeletion', () => {
     await flow.resume();
     expect(sent).toEqual(['access']);
     expect(deps.clearLocal).toHaveBeenCalledOnce();
-    expect(flow.status()).toEqual({ phase: 'deleted', email: EMAIL, keepLocal: false });
+    expect(flow.status()).toEqual({
+      phase: 'deleted',
+      email: EMAIL,
+      keepLocal: false,
+      confirmed: true,
+    });
   });
 
   it('runs one loop however often it is resumed', async () => {
@@ -175,17 +195,47 @@ describe('createAccountDeletion', () => {
     expect(sent).toEqual(['access', 'access2']);
   });
 
-  it('asks to sign in again when the sign-in can no longer be refreshed', async () => {
-    signIn({ ...TOKENS, expiresAt: 0 });
+  it('counts a refused refresh as done: the server deletes the user only after every record', async () => {
+    // A delete that finished on the server while its reply was lost, resumed
+    // after the hour-long access token ran out.
+    saveDeletion({
+      email: EMAIL,
+      tokens: { ...TOKENS, expiresAt: 0 },
+      keepLocal: true,
+      requestedAt: NOW,
+    });
     const { deps, sent, cognito } = fakeDeps();
     vi.mocked(cognito.refresh).mockRejectedValue(new AccountApiError('NotAuthorizedException'));
     const flow = createAccountDeletion(deps);
-    await flow.request(true);
+    await flow.resume();
     expect(sent).toEqual([]);
-    expect(flow.status()).toEqual({ phase: 'sign-in-again', email: EMAIL });
+    expect(flow.status()).toEqual({
+      phase: 'deleted',
+      email: EMAIL,
+      keepLocal: true,
+      confirmed: false,
+    });
     expect(loadDeletion()).toBeNull();
+    expect(deps.clearLocal).not.toHaveBeenCalled();
+    expect(deps.restartSync).toHaveBeenCalledOnce();
     flow.dismiss();
     expect(flow.status()).toEqual({ phase: 'idle' });
+  });
+
+  it('still clears this device after a refused refresh when the learner asked', async () => {
+    saveDeletion({
+      email: EMAIL,
+      tokens: { ...TOKENS, expiresAt: 0 },
+      keepLocal: false,
+      requestedAt: NOW,
+    });
+    const { deps, cognito } = fakeDeps();
+    vi.mocked(cognito.refresh).mockRejectedValue(new AccountApiError('NotAuthorizedException'));
+    const flow = createAccountDeletion(deps);
+    await flow.resume();
+    expect(deps.clearLocal).toHaveBeenCalledOnce();
+    expect(deps.restartSync).not.toHaveBeenCalled();
+    expect(flow.status()).toMatchObject({ phase: 'deleted', keepLocal: false, confirmed: false });
   });
 
   it('treats any other refresh failure as trouble to retry', async () => {
@@ -205,7 +255,12 @@ describe('createAccountDeletion', () => {
     });
     const flow = createAccountDeletion(deps);
     await flow.request(false);
-    expect(flow.status()).toEqual({ phase: 'deleted', email: EMAIL, keepLocal: false });
+    expect(flow.status()).toEqual({
+      phase: 'deleted',
+      email: EMAIL,
+      keepLocal: false,
+      confirmed: true,
+    });
     expect(deps.clearLocal).not.toHaveBeenCalled();
   });
 
