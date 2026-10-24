@@ -158,6 +158,7 @@ export function D29View({
   );
   const dragged = useRef(false);
   const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const paletteRef = useRef<HTMLDivElement>(null);
 
   const given = useMemo(() => rhythmOf(prompt.given), [prompt.given]);
   const placed = feedback ? feedback.answer.placed : edit.placed;
@@ -268,9 +269,16 @@ export function D29View({
     press.current = { ...c, x: e.clientX, y: e.clientY, id: e.pointerId, prompt };
   };
 
-  /** A click that ends a drag (on the element it started from) is not a tap. */
-  const tapped = () => {
-    if (!dragged.current) return true;
+  /**
+   * A click that ends a drag (on the element it started from) is not a tap.
+   * A keyboard click (`detail` 0) always is: a mouse drag that ended
+   * elsewhere sends no click to clear the flag (M8-06 review).
+   */
+  const tapped = (e: { detail: number }) => {
+    if (!dragged.current || e.detail === 0) {
+      dragged.current = false;
+      return true;
+    }
     dragged.current = false;
     return false;
   };
@@ -294,7 +302,14 @@ export function D29View({
         if (e.key === 'Delete' || e.key === 'Backspace') {
           e.preventDefault();
           remove(i);
-          window.setTimeout(() => chipRefs.current[Math.min(i, edit.placed.length - 2)]?.focus());
+          // Focus the value that took its place, else (none left) the first tile.
+          const next = Math.min(i, edit.placed.length - 2);
+          window.setTimeout(() =>
+            (next >= 0
+              ? chipRefs.current[next]
+              : paletteRef.current?.querySelector('button')
+            )?.focus(),
+          );
           return;
         }
       }
@@ -429,8 +444,8 @@ export function D29View({
                     aria-label={placedLabel(code, i, placed.length)}
                     aria-describedby={feedback ? undefined : 'd29-chip-how'}
                     onPointerDown={(e) => startPress(e, { code, from: i })}
-                    onClick={() => {
-                      if (tapped()) remove(i);
+                    onClick={(e) => {
+                      if (tapped(e)) remove(i);
                     }}
                   >
                     <NoteGlyph code={code} className={styles.glyph} />
@@ -477,6 +492,7 @@ export function D29View({
             Drag a value onto the bar, or tap it to add it at the end.
           </p>
           <div
+            ref={paletteRef}
             className={styles.palette}
             role="group"
             aria-label="Note values"
@@ -493,8 +509,8 @@ export function D29View({
                 aria-label={capitalise(valueName(code))}
                 aria-keyshortcuts={String(i + 1)}
                 onPointerDown={(e) => startPress(e, { code, from: null })}
-                onClick={() => {
-                  if (tapped()) add(code);
+                onClick={(e) => {
+                  if (tapped(e)) add(code);
                 }}
               >
                 <NoteGlyph code={code} className={styles.glyph} />

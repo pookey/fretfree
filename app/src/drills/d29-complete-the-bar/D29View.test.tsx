@@ -180,6 +180,26 @@ describe('<D29View>', () => {
     await waitFor(() => expect(placed()[1]).toHaveFocus());
   });
 
+  it('takes a keyboard click after a mouse drag that ended off the tile as a tap', () => {
+    renderView(prompt({ given: '' }));
+    document.elementFromPoint = vi.fn(() => document.body);
+    fireEvent.pointerDown(tile('Half'), { pointerId: 6, clientX: 10, clientY: 300 });
+    fireEvent.pointerMove(window, { pointerId: 6, clientX: 90, clientY: 400 });
+    fireEvent.pointerUp(window, { pointerId: 6, clientX: 90, clientY: 400 });
+    expect(placed()).toHaveLength(0);
+    // Space on a focused tile: a click with detail 0.
+    fireEvent.click(tile('Quarter'), { detail: 0 });
+    expect(placed()).toHaveLength(1);
+  });
+
+  it('focuses the first tile when Delete takes out the last value', async () => {
+    renderView(prompt());
+    fireEvent.click(tile('Quarter'));
+    fireEvent.keyDown(placed()[0]!, { key: 'Delete' });
+    expect(placed()).toHaveLength(0);
+    await waitFor(() => expect(tile('Half')).toHaveFocus());
+  });
+
   it('drops a dragged value on the bar, before the value it lands on', () => {
     renderView(prompt({ given: '' }));
     fireEvent.click(tile('Eighth'));
@@ -191,8 +211,8 @@ describe('<D29View>', () => {
     expect(bar).toHaveAttribute('data-target', 'true');
     expect(tile('Half')).toHaveAttribute('data-grabbed', 'true');
     fireEvent.pointerUp(window, { pointerId: 1, clientX: 40, clientY: 100 });
-    // The click after a drag isn't a tap.
-    fireEvent.click(tile('Half'));
+    // The pointer's click after a drag isn't a tap.
+    fireEvent.click(tile('Half'), { detail: 1 });
     expect(placed().map((b) => b.getAttribute('aria-label'))).toEqual([
       'Eighth, value 1 of 2',
       'Half, value 2 of 2',

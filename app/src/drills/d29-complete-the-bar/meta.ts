@@ -12,7 +12,7 @@ export const D29_ID = 'complete-the-bar';
 /**
  * Scope levels (research/02 rule 5): at 0 the learner fills the last two
  * beats of a bar from four note values, at 1 all but its first beat from
- * seven, at 2 an empty bar.
+ * six, at 2 an empty bar.
  */
 export const D29_SCOPE = { minLevel: 0, maxLevel: 2 };
 

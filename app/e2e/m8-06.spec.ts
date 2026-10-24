@@ -4,7 +4,7 @@ import { focusSession } from './helpers/focus';
 import { press } from './helpers/keyboard';
 
 // M8-06: D29 "Complete the bar". A time signature and the start of a bar;
-// note values are dragged or tapped in (or typed, 1–7) to fill it, then
+// note values are dragged or tapped in (or typed, 1–6) to fill it, then
 // checked. A wrong fill is explained ("6/8 groups in dotted quarters") and
 // shown filled one right way. D29 serves T1's and T2's felt-beats cards,
 // taking turns with D32, so a session reaches it once a card comes back.

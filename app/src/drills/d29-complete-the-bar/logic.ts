@@ -49,8 +49,10 @@ export { D29_ID, D29_METERS, D29_SCOPE, d29CanTest, d29ConceptOf } from './meta'
  *   per prompt. Any fill that `checkBar` passes is right.
  * - **Scope** (rule 5) widens how much is left to fill (the last two beats,
  *   all but beat 1, then the whole bar) and the palette (four values, then
- *   seven). The palette is the same for every meter at a
- *   level, so it carries no clue: the dotted quarter is always there.
+ *   six). The palette is the same for every meter at a level, so it carries
+ *   no clue: the dotted quarter is always there. Nothing is as long as a
+ *   bar's two beats (no dotted half, no whole), so a bar is built beat by
+ *   beat: one long note would fill 6/8 and 3/4 alike (M8-06 review).
  * - **Wrong fills are explained** from `checkBar`: short or over by how
  *   much, and a note that hides a beat ("6/8 groups in dotted quarters").
  *   A bar that is right in the meter with the same length felt the other
@@ -76,7 +78,7 @@ export interface D29Answer {
 }
 
 /** Every value a palette offers, long to short. */
-export const FULL_PALETTE: readonly string[] = ['1', '2.', '2', '4.', '4', '8', '16'];
+export const FULL_PALETTE: readonly string[] = ['2', '4.', '4', '8.', '8', '16'];
 /** Level 0's palette: the half, both quarters and the eighth, for every meter. */
 export const SMALL_PALETTE: readonly string[] = ['2', '4.', '4', '8'];
 
@@ -399,7 +401,7 @@ export function d29HearOptions(rhythm: string, meter: string): MetronomeOptions 
 export type D29KeyAction = { type: 'add'; index: number } | { type: 'undo' } | { type: 'check' };
 
 /**
- * Hardware-keyboard answers (design §7): 1–7 place a palette value,
+ * Hardware-keyboard answers (design §7): 1–6 place a palette value,
  * Backspace undoes, and Enter checks.
  */
 export function d29KeyAction(key: string, paletteSize: number): D29KeyAction | null {

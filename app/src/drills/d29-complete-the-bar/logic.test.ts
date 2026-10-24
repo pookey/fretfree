@@ -10,6 +10,7 @@ import {
   feltBeats,
   frac,
   fracEq,
+  meterKind,
   parseRhythm,
   rhythmLength,
 } from '../../theory';
@@ -118,7 +119,7 @@ describe('D29 meta', () => {
 });
 
 describe('scope', () => {
-  it('offers four values at level 0 and seven above, the same for every meter', () => {
+  it('offers four values at level 0 and six above, the same for every meter', () => {
     expect(d29Palette(0)).toEqual(SMALL_PALETTE);
     expect(d29Palette(1)).toEqual(FULL_PALETTE);
     expect(d29Palette(2)).toEqual(FULL_PALETTE);
@@ -127,6 +128,20 @@ describe('scope', () => {
     expect(d29Palette(9)).toEqual(FULL_PALETTE);
     // Both quarters are always there, so the palette gives no clue to the meter.
     expect(SMALL_PALETTE).toEqual(expect.arrayContaining(['4', '4.']));
+  });
+
+  it('offers no value that alone fills what a compound bar leaves (M8-06 review)', () => {
+    // One long note would fill 6/8 and 3/4 alike, and grade the card on length alone.
+    for (const m of D29_METERS.filter((x) => meterKind(signatureOf(x)) === 'compound')) {
+      const ts = signatureOf(m);
+      const beat = beats(ts)[0]!.length;
+      for (const lvl of [0, 1, 2]) {
+        const left = frac(beatsToFill(m, lvl) * beat.n, beat.d);
+        for (const code of d29Palette(lvl)) {
+          expect(fracEq(rhythmLength([eventOf(code)]), left), `${m} ${lvl} ${code}`).toBe(false);
+        }
+      }
+    }
   });
 
   it('leaves two beats, then all but beat 1, then the whole bar', () => {
