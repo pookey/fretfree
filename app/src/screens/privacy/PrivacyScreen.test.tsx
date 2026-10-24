@@ -37,6 +37,10 @@ describe('<PrivacyScreen>', () => {
     expect(account).toHaveTextContent('Amazon SES in the Europe (Ireland) region, eu-west-1');
     expect(account).toHaveTextContent('only hashed forms of your address');
     expect(account).toHaveTextContent('an anonymous marker');
+    expect(account).toHaveTextContent(
+      'They stop working after 15 minutes and are deleted automatically',
+    );
+    expect(account).toHaveTextContent('Amazon SES keeps the address on a do-not-send list');
     expect(within(account).getByRole('link', { name: 'Progress' })).toHaveAttribute(
       'href',
       '/progress',

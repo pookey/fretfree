@@ -83,9 +83,10 @@ export function PrivacyScreen() {
             </li>
             <li>
               <strong>Signing in.</strong> There&rsquo;s no password. While a sign-in waits, the
-              server keeps only hashed forms of your address and of the emailed code and link, and
-              they expire after 15 minutes. Counts that limit how many emails can be sent are hashed
-              too, and expire within an hour.
+              server keeps only hashed forms of your address and of the emailed code and link. They
+              stop working after 15 minutes and are deleted automatically after that, usually within
+              a few days. Counts that limit how many emails can be sent are hashed too: they stop
+              counting within an hour and are deleted automatically in the same way.
             </li>
             <li>
               <strong>Backups and logs.</strong> The progress copy has AWS point-in-time backups for
@@ -96,9 +97,12 @@ export function PrivacyScreen() {
               <strong>Deleting your account.</strong> In <Link to="/progress">Progress</Link>,
               choose &ldquo;Delete account&rdquo;. That removes your email address and the copy of
               your progress from the server, and you choose whether this device keeps its progress.
-              All that remains is an anonymous marker: the account&rsquo;s random ID and a
+              All the live server keeps is an anonymous marker: the account&rsquo;s random ID and a
               &ldquo;closed&rdquo; flag, with no email and no learning data, so a device that was
-              offline can&rsquo;t bring the account back.
+              offline can&rsquo;t bring the account back. The backups above still hold the deleted
+              copy until they run out, after 35 days. And if an email to your address ever bounced
+              as undeliverable or was marked as spam, Amazon SES keeps the address on a do-not-send
+              list, which deleting the account doesn&rsquo;t clear.
             </li>
           </ul>
         </section>
