@@ -1,0 +1,203 @@
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+  justify-content: space-between;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.position {
+  grid-area: position;
+  margin: 0;
+  color: var(--text-muted);
+  font-weight: 650;
+  text-align: center;
+}
+
+.prompt {
+  grid-area: prompt;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.prompt strong {
+  color: var(--tone);
+}
+
+/* The staff is read, not tapped, so it is sized to leave the whole neck in
+   view below it: one note over R2's ±3 ledger lines is about 0.72 as wide as
+   it is tall, and <Staff> keeps its own minimum reading scale. */
+.staff {
+  grid-area: staff;
+  width: clamp(8rem, 19dvh, 12rem);
+  max-width: 100%;
+}
+
+.explain {
+  grid-area: explain;
+  margin: 0;
+  min-height: 1.5em;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.neckRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.neckArea {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.slide {
+  flex: 0 0 auto;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.slide:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+@media (hover: hover) {
+  .slide:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.windowCaption {
+  margin: 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* iPad: the staff sits beside the position, the prompt and the feedback
+   line, so the whole neck fits below it (design §12 Screens). */
+.drill:not([data-size-class='compact']) .top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'staff position'
+    'staff prompt'
+    'staff explain';
+  align-items: center;
+  align-content: center;
+  column-gap: var(--space-5);
+  row-gap: var(--space-2);
+}
+
+.drill:not([data-size-class='compact']) .position,
+.drill:not([data-size-class='compact']) .prompt,
+.drill:not([data-size-class='compact']) .explain {
+  text-align: start;
+}
+
+.drill:not([data-size-class='compact']) .position {
+  align-self: end;
+}
+
+.drill:not([data-size-class='compact']) .explain {
+  align-self: start;
+}
+
+/* iPad portrait (as D2): one column from the top (staff, neck, then help),
+   not the neck centred in a tall empty band. */
+.drill[data-size-class='regular'] {
+  justify-content: flex-start;
+}
+
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-2);
+  justify-content: flex-start;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .staff {
+  width: 8rem;
+}
+
+/* Best-effort iPhone: keep the zoomed neck within short landscape viewports. */
+.drill[data-size-class='compact'] .neckArea svg {
+  max-height: calc(100dvh - 9rem);
+}
+
+/* iPhone on its side: too short for the staff above the neck, so the staff
+   takes the left column and the prompt, neck and feedback stack beside it. */
+@media (orientation: landscape) {
+  .drill[data-size-class='compact'] {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'staff position'
+      'staff prompt'
+      'staff neck'
+      'staff caption'
+      'staff explain'
+      'aside aside';
+    align-items: center;
+    column-gap: var(--space-3);
+  }
+
+  .drill[data-size-class='compact'] .upper,
+  .drill[data-size-class='compact'] .top {
+    display: contents;
+  }
+
+  .drill[data-size-class='compact'] .neckRow {
+    grid-area: neck;
+  }
+
+  .drill[data-size-class='compact'] .windowCaption {
+    grid-area: caption;
+  }
+
+  .drill[data-size-class='compact'] > aside {
+    grid-area: aside;
+  }
+
+  .drill[data-size-class='compact'] .neckArea svg {
+    max-height: calc(100dvh - 8rem);
+  }
+}
