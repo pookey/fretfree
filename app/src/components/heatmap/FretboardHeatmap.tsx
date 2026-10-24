@@ -66,7 +66,13 @@ export function FretboardHeatmap({
   label = 'Fretboard mastery map',
 }: FretboardHeatmapProps) {
   const g = useMemo(
-    () => computeGeometry({ fretRange, stringCount: stringCount(tuning), handedness }),
+    () =>
+      computeGeometry({
+        fretRange,
+        stringCount: stringCount(tuning),
+        handedness,
+        nameGutter: false,
+      }),
     [fretRange, tuning, handedness],
   );
   const byKey = useMemo(() => new Map(cells.map((c) => [`${c.string}:${c.fret}`, c])), [cells]);

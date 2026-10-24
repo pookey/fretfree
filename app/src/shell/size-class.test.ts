@@ -74,9 +74,10 @@ describe('compactWindowFrets', () => {
   });
 
   it('widens the window on a phone on its side, more on bigger phones', () => {
-    expect(compactWindowFrets(568, 320)).toBe(7); // iPhone SE (1st gen)
+    // The string names' column at the nut (M1-49) costs the SE and the Pro Max a fret.
+    expect(compactWindowFrets(568, 320)).toBe(6); // iPhone SE (1st gen)
     expect(compactWindowFrets(734, 343)).toBe(10); // iPhone 15
-    expect(compactWindowFrets(814, 380)).toBe(12); // iPhone 15 Pro Max
+    expect(compactWindowFrets(814, 380)).toBe(11); // iPhone 15 Pro Max
   });
 
   it('never shows less than 5 frets or more than the neck', () => {

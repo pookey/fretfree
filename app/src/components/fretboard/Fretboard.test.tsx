@@ -295,6 +295,45 @@ describe('<Fretboard>', () => {
     for (const name of names) expect(name).toHaveClass(styles.stringNameDimmed!);
   });
 
+  it('puts the string names in their own column, clear of open-string markers (M1-49)', () => {
+    const open: FretMarker[] = [1, 2, 3, 4, 5, 6].map((string) => ({
+      string,
+      fret: 0,
+      style: string === 6 ? 'root' : 'fifth',
+    }));
+    for (const handedness of ['right', 'left'] as const) {
+      const { container, unmount } = render(
+        <Fretboard fretRange={{ from: 0, to: 12 }} handedness={handedness} markers={open} />,
+      );
+      const width = Number(container.querySelector('svg')!.getAttribute('viewBox')!.split(' ')[2]);
+      const openCell = container.querySelector('[data-cell="s1f0"]')!;
+      const x = Number(openCell.getAttribute('x'));
+      const w = Number(openCell.getAttribute('width'));
+      const names = screen.getAllByTestId('string-name');
+      expect(names).toHaveLength(6);
+      for (const name of names) {
+        const nx = Number(name.getAttribute('x'));
+        // Beyond the open-string column, on the side away from the nut.
+        if (handedness === 'right') expect(nx).toBeLessThan(x);
+        else expect(nx).toBeGreaterThan(x + w);
+        expect(nx).toBeGreaterThan(0);
+        expect(nx).toBeLessThan(width);
+      }
+      unmount();
+    }
+  });
+
+  it('runs the wood under the names, and dims their column with a dimmed nut', () => {
+    const { container } = render(
+      <Fretboard fretRange={{ from: 0, to: 12 }} activeRange={{ from: 3, to: 12 }} />,
+    );
+    const wood = container.querySelector(`.${styles.wood}`)!;
+    const nameX = Number(screen.getAllByTestId('string-name')[0]!.getAttribute('x'));
+    expect(Number(wood.getAttribute('x'))).toBeLessThan(nameX);
+    const nutDim = screen.getAllByTestId('dimmed-fret')[0]!;
+    expect(Number(nutDim.getAttribute('x'))).toBe(Number(wood.getAttribute('x')));
+  });
+
   it('outlines each marker group from guide level 2, round its visible cells', () => {
     const shape = [
       { string: 5, fret: 3, style: 'root', group: 'a' },

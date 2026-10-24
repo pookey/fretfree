@@ -14,6 +14,8 @@ import {
 } from '../../theory';
 import { useInlayStyle } from '../guitar/skin';
 import {
+  MARKER,
+  MARKER_SHAPE,
   NUT_W,
   STRING_GAP,
   computeGeometry,
@@ -160,14 +162,17 @@ export function Fretboard({
       .map((m) => m.string),
   );
 
-  const openCell = g.cell(0);
+  const names = g.names;
+  const nutDimmed = Boolean(activeRange && names && !inRange(0, activeRange));
   // The names' wood halo would ring them with undimmed wood on a dimmed nut.
-  const nameClass =
-    activeRange && openCell && !inRange(openCell.fret, activeRange)
-      ? `${styles.stringName} ${styles.stringNameDimmed}`
-      : styles.stringName;
-  const neckLeft = Math.min(...g.cells.map((c) => c.x));
-  const neckRight = Math.max(...g.cells.map((c) => c.x + c.w));
+  const nameClass = nutDimmed
+    ? `${styles.stringName} ${styles.stringNameDimmed}`
+    : styles.stringName;
+  // The wood and strings run on under the names' column, beyond the open strings.
+  const edges = g.cells.flatMap((c) => [c.x, c.x + c.w]);
+  if (names) edges.push(names.x, names.x + names.w);
+  const neckLeft = Math.min(...edges);
+  const neckRight = Math.max(...edges);
   const outlines = guideLevel >= 2 ? shapeOutlines(markers, g) : [];
 
   return (
@@ -232,17 +237,22 @@ export function Fretboard({
       {activeRange &&
         g.cells
           .filter((c) => !inRange(c.fret, activeRange))
-          .map((c) => (
-            <rect
-              key={`dim${c.fret}`}
-              className={styles.dim}
-              x={c.x}
-              y={g.neckTop}
-              width={c.w}
-              height={g.neckBottom - g.neckTop}
-              data-testid="dimmed-fret"
-            />
-          ))}
+          .map((c) => {
+            // A dimmed nut dims its string names' column with it.
+            const x = c.fret === 0 && names ? Math.min(c.x, names.x) : c.x;
+            const w = c.fret === 0 && names ? c.w + names.w : c.w;
+            return (
+              <rect
+                key={`dim${c.fret}`}
+                className={styles.dim}
+                x={x}
+                y={g.neckTop}
+                width={w}
+                height={g.neckBottom - g.neckTop}
+                data-testid="dimmed-fret"
+              />
+            );
+          })}
 
       {showNumbers &&
         g.cells
@@ -254,7 +264,7 @@ export function Fretboard({
           ))}
 
       {showStringNames &&
-        openCell &&
+        names &&
         strings
           .filter((s) => !hiddenStringNames.has(s))
           .map((s) => {
@@ -264,7 +274,7 @@ export function Fretboard({
               <text
                 key={`sn${s}`}
                 className={nameClass}
-                x={openCell.cx}
+                x={names.cx}
                 y={g.stringY(s)}
                 dy="0.35em"
                 role={spoken ? 'img' : undefined}
@@ -297,24 +307,27 @@ export function Fretboard({
         const cy = g.stringY(m.string);
         const text = labelFor(m);
         const spoken = text && (m.spokenLabel ?? spokenNeckText(text));
+        const kind = MARKER_SHAPE[m.style];
+        const sq = MARKER.squareHalf;
+        const dia = MARKER.diamondHalf;
         const shape =
-          m.style === 'root' ? (
-            <rect x={cell.cx - 17} y={cy - 17} width={34} height={34} rx={7} />
-          ) : m.style === 'wrong' ? (
+          kind === 'square' ? (
+            <rect x={cell.cx - sq} y={cy - sq} width={2 * sq} height={2 * sq} rx={7} />
+          ) : kind === 'diamond' ? (
             <rect
-              x={cell.cx - 16}
-              y={cy - 16}
-              width={32}
-              height={32}
+              x={cell.cx - dia}
+              y={cy - dia}
+              width={2 * dia}
+              height={2 * dia}
               rx={4}
               transform={`rotate(45 ${cell.cx} ${cy})`}
             />
-          ) : m.style === 'fifth' ? (
+          ) : kind === 'triangle' ? (
             <polygon points={trianglePoints(cell.cx, cy)} />
-          ) : m.style === 'seventh' ? (
+          ) : kind === 'hexagon' ? (
             <polygon points={hexagonPoints(cell.cx, cy)} />
           ) : (
-            <circle cx={cell.cx} cy={cy} r={18} />
+            <circle cx={cell.cx} cy={cy} r={MARKER.circleR} />
           );
         return (
           <g
@@ -469,7 +482,8 @@ function shapeOutlines(markers: readonly FretMarker[], g: NeckGeometry): Outline
 
 /** An upward triangle around a marker centre, wide enough at mid-height for a label. */
 function trianglePoints(cx: number, cy: number): string {
-  return `${cx},${cy - 24} ${cx + 26},${cy + 17} ${cx - 26},${cy + 17}`;
+  const { up, down, half } = MARKER.triangle;
+  return `${cx},${cy - up} ${cx + half},${cy + down} ${cx - half},${cy + down}`;
 }
 
 /** A flat-sided hexagon around a marker centre. */
@@ -477,7 +491,8 @@ function hexagonPoints(cx: number, cy: number): string {
   return [0, 60, 120, 180, 240, 300]
     .map((deg) => {
       const a = (deg * Math.PI) / 180;
-      return `${(cx + 20 * Math.cos(a)).toFixed(1)},${(cy + 20 * Math.sin(a)).toFixed(1)}`;
+      const r = MARKER.hexagonR;
+      return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
     })
     .join(' ');
 }
