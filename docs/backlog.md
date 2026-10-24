@@ -1218,7 +1218,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 - **Owns:** `docs/progress.md`
 
 ### M4-19 · Progression player layout for short regular-wide landscape (iPad mini)
-- **Status:** todo
+- **Status:** done
 - **Deps:** M4-18
 - **Design:** design §7 (iPad first; regular-wide); follow-up from the M4-18 review
 - **Owns:** `app/src/screens/explore/views/progression-player.tsx`, `app/src/screens/explore/views/progression-player.module.css`, `app/e2e/m4-19.spec.ts`
