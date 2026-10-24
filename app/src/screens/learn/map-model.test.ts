@@ -222,7 +222,7 @@ describe('percent', () => {
 describe('coming-soon modules', () => {
   it('group after the open and locked ones, even when the goal promotes them', () => {
     // Jazz promotes Reading; without its skills it is a coming-soon module.
-    const skills = SKILLS.filter((s) => s.topic !== 'R1');
+    const skills = SKILLS.filter((s) => !/^R\d/.test(s.topic));
     const map = buildMap({ skills, goal: 'jazz', stored: stored(), cards: [] });
     const states = map.map((m) => m.state);
     const firstSoon = states.indexOf('soon');
