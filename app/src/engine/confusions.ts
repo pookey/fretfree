@@ -1,4 +1,5 @@
 import { ENGINE_CONFIG } from './config';
+import { STAFF_NEIGHBOUR_CONFUSIONS } from './items/staff';
 import type { ConfusionRecord } from './model';
 import type { SessionEntry } from './session';
 
@@ -50,6 +51,8 @@ export const SEED_CONFUSIONS: readonly (readonly [string, string])[] = [
   ['meter:6/8', 'meter:3/4'],
   ['meter:2/2', 'meter:4/4'],
   ['meter:12/8', 'meter:4/4'],
+  // Staff places (D22, `staff@<position>`): each line with the spaces either side.
+  ...STAFF_NEIGHBOUR_CONFUSIONS,
 ];
 
 /** Pair weights by unordered concept pair. Read it with `weightOf`. */
