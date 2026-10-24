@@ -1093,7 +1093,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Un-fixme the sound-off test in `app/e2e/m4-11.spec.ts` so it asserts the fixed behaviour.
 
 ### M4-17 · M4 QA copy and picture fixes
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** design §8; research/02 rule 4
 - **Owns:** `app/src/drills/d14-ear-identify/**`, `app/src/drills/d13-capo/**`, `app/src/screens/explore/views/progression-player.tsx`, `app/src/screens/explore/views/progression-player.module.css`, `app/src/screens/learn/**` (prerequisite sentence only), `app/e2e/m4-17.spec.ts`
