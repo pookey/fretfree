@@ -113,7 +113,8 @@ test.describe('M4-17 M4 QA fixes', () => {
     await expect(paragraph).toBeVisible();
     // The gate sentence only: the offer then lists what the test covers.
     const text = (await paragraph.innerText()).split(' Already there?')[0]!;
-    expect(text).toMatch(/mastered .* and are practising /);
+    // Its nearest first skill, capo keys, needs only practising (M10-21).
+    expect(text).toMatch(/^Progressions opens once you’re practising .+ and .+\.$/);
     expect(text.match(/Spell major and minor triads/g)).toHaveLength(1);
   });
 });
