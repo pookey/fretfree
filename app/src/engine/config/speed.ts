@@ -6,8 +6,8 @@
  * leave its reviews out.
  */
 export const speed = {
-  /** Drill IDs graded on onset timing: D20 "Tap and strum rhythm". */
-  timingDrills: ['tap-strum-rhythm'] as readonly string[],
+  /** Drill IDs graded on onset timing: D20 "Tap and strum rhythm", D31 "Accent and strum in meter". */
+  timingDrills: ['tap-strum-rhythm', 'accent-strum'] as readonly string[],
 } as const;
 
 declare module './index' {
