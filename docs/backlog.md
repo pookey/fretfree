@@ -1343,7 +1343,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
 
 
 ### M6-16 · Chord tones spelled from the chord in D9, D10 and D21
-- **Status:** todo
+- **Status:** done
 - **Deps:** M6-15
 - **Design:** design §8 (note names); research/02 rule 4 (a label must never mislead); follow-up from the M6-15 review
 - **Owns:** `app/src/theory/key-spelling.ts`, `app/src/theory/key-spelling.test.ts`, `app/src/drills/d9-build-caged/logic.ts`, `app/src/drills/d9-build-caged/logic.test.ts`, `app/src/drills/d10-which-shape/logic.ts`, `app/src/drills/d10-which-shape/logic.test.ts`, `app/src/drills/d21-visualise/logic.ts`, `app/src/drills/d21-visualise/logic.test.ts`
