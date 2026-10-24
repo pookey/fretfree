@@ -17,7 +17,7 @@ describe('screen registries', () => {
     for (const c of TODAY_CARDS) expect(typeof c.Card).toBe('function');
   });
 
-  it('composes Progress from the mastery map, the over-time charts, topics, stats, the calendar, your guitar, achievements, then the account', () => {
+  it('composes Progress from the mastery map, the over-time charts, topics, stats, the calendar, your guitar, achievements, then the account and deleting it', () => {
     expect(PROGRESS_PANELS.map((p) => [p.id, p.title])).toEqual([
       ['heatmap', 'Mastery map'],
       ['over-time', 'Over time'],
@@ -28,6 +28,7 @@ describe('screen registries', () => {
       ['guitar', 'Your guitar'],
       ['achievements', 'Achievements'],
       ['account', undefined],
+      ['account-manage', undefined],
     ]);
   });
 
