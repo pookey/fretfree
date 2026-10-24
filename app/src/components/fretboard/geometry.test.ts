@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { DROP_D_TUNING, STANDARD_TUNING, noteAt, type Tuning } from '../../theory';
-import type { MarkerStyle } from './Fretboard';
 import {
   MARKER_SHAPE,
   MIN_HIT,
@@ -8,6 +7,7 @@ import {
   PAD_X,
   STRING_GAP,
   computeGeometry,
+  type MarkerStyle,
   fretWidth,
   markerBox,
   minScale,

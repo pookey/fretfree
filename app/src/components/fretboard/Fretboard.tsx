@@ -21,22 +21,13 @@ import {
   computeGeometry,
   minScale,
   type Cell,
+  type MarkerStyle,
   type NeckGeometry,
 } from './geometry';
 import { cellName, neckText, spokenNeckText } from './labels';
 import styles from './Fretboard.module.css';
 
-export type MarkerStyle =
-  | 'target'
-  | 'root'
-  | 'tone'
-  | 'correct'
-  | 'wrong'
-  | 'ghost'
-  // Chord tones by degree: the 3rd a circle, the 5th a triangle, the 7th a hexagon.
-  | 'third'
-  | 'fifth'
-  | 'seventh';
+export type { MarkerStyle };
 
 export interface FretMarker extends Position {
   style: MarkerStyle;

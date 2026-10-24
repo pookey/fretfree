@@ -1,6 +1,5 @@
 import type { Handedness } from '../../engine/model';
 import { DOUBLE_INLAY_FRETS, INLAY_FRETS, type FretRange } from '../../theory';
-import type { MarkerStyle } from './Fretboard';
 
 /**
  * Pure layout maths for the <Fretboard> SVG. Units are CSS px at the design
@@ -125,6 +124,19 @@ export interface Box {
 export function overlaps(a: Box, b: Box): boolean {
   return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 }
+
+/** What a <Fretboard> marker means; its shape and colour follow from it. */
+export type MarkerStyle =
+  | 'target'
+  | 'root'
+  | 'tone'
+  | 'correct'
+  | 'wrong'
+  | 'ghost'
+  // Chord tones by degree: the 3rd a circle, the 5th a triangle, the 7th a hexagon.
+  | 'third'
+  | 'fifth'
+  | 'seventh';
 
 /** Marker outlines, drawn by <Fretboard>: shape and colour together tell markers apart. */
 export type MarkerShape = 'circle' | 'square' | 'diamond' | 'triangle' | 'hexagon';

@@ -55,7 +55,9 @@
 
 /* The names sit on the wood, which doesn't change with the theme, so they use
    a neck token, not page text. A wood halo keeps the string line out of the
-   glyphs (4.5:1, Fretboard.contrast.test.ts). */
+   glyphs (4.5:1, Fretboard.contrast.test.ts). Its size and halo width are
+   NAME_FONT and NAME_HALO in geometry.ts, which keep names clear of open
+   markers (M1-49): change them together. */
 .stringName {
   fill: var(--inlay);
   font-weight: 600;
