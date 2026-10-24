@@ -942,7 +942,9 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
 
 let appStatus: SyncStatus = { phase: 'off', lastSyncedAt: null };
 const listeners = new Set<() => void>();
-let appEngine: SyncEngine | null = null;
+
+/** The installed sync: where it runs, and how to tear it down (null while stopped). */
+let installed: { db: FretworkDB; win: Window; teardown: (() => void) | null } | null = null;
 
 /** The app's sync status, for the account panel. The same object until it changes. */
 export function getSyncStatus(): SyncStatus {
@@ -961,11 +963,22 @@ function publish(status: SyncStatus): void {
 
 /**
  * Stop syncing on this device now, e.g. when the learner asks to delete their
- * account (M7-06): nothing more is pushed for it.
+ * account (M7-06): nothing more is pushed for it, and the status says so.
  */
 export function stopSync(): void {
-  appEngine?.stop();
-  appEngine = null;
+  if (installed?.teardown) {
+    installed.teardown();
+    installed.teardown = null;
+  }
+  publish({ phase: 'off', lastSyncedAt: null });
+}
+
+/**
+ * Sync again after `stopSync()`, e.g. once an account delete has finished, so
+ * a learner who signs in again without reloading syncs the new account.
+ */
+export function restartSync(): void {
+  if (installed && !installed.teardown) installed.teardown = start(installed.db, installed.win);
 }
 
 /**
@@ -996,8 +1009,20 @@ const webLock = <T>(run: () => Promise<T>): Promise<T> =>
  * no sync API. Returns a cleanup function.
  */
 export function installSync(db: FretworkDB = getDb(), win: Window = window): () => void {
-  const url = syncApiUrl();
-  if (!url) return () => undefined;
+  if (!syncApiUrl()) return () => undefined;
+  const mine = { db, win, teardown: start(db, win) as (() => void) | null };
+  installed = mine;
+  return () => {
+    mine.teardown?.();
+    mine.teardown = null;
+    if (installed === mine) installed = null;
+  };
+}
+
+/** Starts the engine and its triggers. Returns a function that stops them all. */
+function start(db: FretworkDB, win: Window): () => void {
+  const url = syncApiUrl()!;
+  let torn = false;
   let signIn: Promise<SignIn | null> | undefined;
   const loadSignIn = () =>
     (signIn ??= import('../../account/client')
@@ -1030,10 +1055,12 @@ export function installSync(db: FretworkDB = getDb(), win: Window = window): () 
     api: createSyncApi(url),
     auth,
     isOnline: () => win.navigator.onLine !== false,
-    onStatus: publish,
+    // A round that ends after the teardown mustn't overwrite the status that followed it.
+    onStatus: (status) => {
+      if (!torn) publish(status);
+    },
     lock: webLock,
   });
-  appEngine = engine;
   publish(engine.status());
 
   let account = auth.account();
@@ -1067,8 +1094,8 @@ export function installSync(db: FretworkDB = getDb(), win: Window = window): () 
 
   engine.request();
   return () => {
+    torn = true;
     engine.stop();
-    if (appEngine === engine) appEngine = null;
     unsubscribe();
     watch.unsubscribe();
     win.removeEventListener('focus', request);

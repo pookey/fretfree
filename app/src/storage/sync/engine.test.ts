@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Rating, State } from 'ts-fsrs';
+import { createAccountDeletion } from '../../account/delete';
 import { saveAccount } from '../../account/store';
 import { emptyDailyProgress } from '../../engine/gamification/daily';
 import { toLocalDate } from '../../engine/gamification/local-date';
@@ -21,6 +22,7 @@ import {
   deriveGamification,
   getSyncStatus,
   installSync,
+  restartSync,
   pushBatches,
   restagePulled,
   stopSync,
@@ -1047,6 +1049,53 @@ describe('installSync', () => {
     cleanup();
     unsubscribe();
     expect(seen).toContain('synced');
+  });
+
+  it('stops at once for an account delete, says so, and syncs a new sign-in once it is done', async () => {
+    const server = new FakeServer();
+    const calls = http(server);
+    const dev = device('a');
+    await practise(dev, day(1), 5);
+    const cleanup = installSync(dev.db, fakeWindow());
+    signIn();
+    await vi.waitFor(() => expect(getSyncStatus().phase).toBe('synced'), { timeout: 5000 });
+
+    const deletion = createAccountDeletion({
+      deleteAccount: async () => undefined,
+      cognito: vi.fn(),
+      now: Date.now,
+      stopSync,
+      restartSync,
+      clearLocal: vi.fn(),
+      wait: async () => undefined,
+    });
+    const done = deletion.request(true);
+    // No stale "Synced 2 minutes ago" for an account that is going.
+    expect(getSyncStatus()).toEqual({ phase: 'off', lastSyncedAt: null });
+    await done;
+    expect(deletion.status().phase).toBe('deleted');
+
+    // Signed in again without a reload: the new account syncs, and its
+    // status is its own.
+    const before = calls.length;
+    const signedInAt = Date.now();
+    signIn('again@example.com');
+    await vi.waitFor(() => expect(getSyncStatus().phase).toBe('synced'), { timeout: 5000 });
+    expect(calls.length).toBeGreaterThan(before);
+    expect(getSyncStatus().lastSyncedAt!.getTime()).toBeGreaterThanOrEqual(signedInAt);
+    cleanup();
+  });
+
+  it('restarts only a sync that was stopped, and only once', () => {
+    const cleanup = installSync(device('a').db, fakeWindow());
+    restartSync();
+    stopSync();
+    restartSync();
+    restartSync();
+    cleanup();
+    // Torn down: a restart after the cleanup starts nothing.
+    restartSync();
+    expect(getSyncStatus().phase).toBe('off');
   });
 
   it('names an account by its token’s sub, or else its email', () => {
