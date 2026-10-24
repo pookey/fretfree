@@ -60,10 +60,27 @@ async function open(page: Page, skillId: string, mastered: readonly string[]) {
   await expect(card(page)).toBeVisible();
 }
 
+/**
+ * Gets past a D29 "Complete the bar" card (M8-06), which takes turns with
+ * D32 on felt-beats cards: one eighth never fills a bar, so it's wrong.
+ */
+async function skipD29(page: Page) {
+  const d29 = page.getByTestId('d29-drill');
+  await d29.getByRole('button', { name: 'Eighth', exact: true }).click();
+  await d29.getByRole('button', { name: 'Check' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByTestId('feedback-wrong')).toBeHidden();
+}
+
 /** Answers cards right until one isn't a worked example; returns with it on screen. */
 async function reachUnguidedCard(page: Page) {
-  for (let i = 0; i < 12; i++) {
-    await expect(card(page)).toBeVisible();
+  for (let i = 0; i < 16; i++) {
+    const d29 = page.getByTestId('d29-drill');
+    await expect(card(page).or(d29)).toBeVisible();
+    if (await d29.isVisible()) {
+      await skipD29(page);
+      continue;
+    }
     const prompt = page.locator('#drill-prompt');
     if (!((await prompt.textContent()) ?? '').includes('to continue')) return;
     await card(page)
