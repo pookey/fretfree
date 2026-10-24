@@ -1,0 +1,163 @@
+/* D25: the staff and answers in the upper band beside the context panel,
+   the neck spanning the full width below (design §12: staff above the neck). */
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+  justify-content: space-between;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.staff {
+  margin-inline: auto;
+}
+
+.prompt {
+  margin: 0;
+  max-width: 44rem;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.choice {
+  min-width: 5rem;
+  min-height: 3.5rem;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.5rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.choice:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .choice:hover:not(:disabled) {
+    border-color: var(--tone);
+  }
+}
+
+.choice:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+
+.choice:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.choice[data-state='correct'] {
+  background: var(--correct);
+  border-color: var(--correct);
+  color: #fff;
+  opacity: 1;
+}
+
+.choice[data-state='wrong'] {
+  background: var(--wrong);
+  border-color: var(--wrong);
+  color: #fff;
+  opacity: 1;
+}
+
+/* The answer missed: a dashed edge, so it reads without colour. */
+.choice[data-state='expected'] {
+  border-color: var(--correct);
+  border-style: dashed;
+  opacity: 1;
+}
+
+.feedback {
+  max-width: 40rem;
+  text-align: center;
+}
+
+.feedback p {
+  margin: 0 0 var(--space-2);
+  font-size: 1.0625rem;
+}
+
+.neckArea {
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .choice {
+    transition:
+      background 0.12s,
+      transform 0.08s;
+  }
+}
+
+/* iPad portrait: one column from the top (staff, answers, neck, then help). */
+.drill[data-size-class='regular'] {
+  justify-content: flex-start;
+}
+
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
+.drill[data-size-class='compact'] {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .top {
+  gap: var(--space-2);
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.125rem;
+}
+
+.drill[data-size-class='compact'] .choice {
+  min-width: 3.5rem;
+  min-height: 3rem;
+  font-size: 1.25rem;
+}
+
+.drill[data-size-class='compact'] .feedback p {
+  font-size: 0.9375rem;
+}
+
+/* Best-effort iPhone: keep the neck within short landscape viewports. Answers
+   are buttons here, so the neck may letterbox below the 44pt cell size. */
+.drill[data-size-class='compact'] .neckArea svg {
+  max-height: calc(100dvh - 12rem);
+}
