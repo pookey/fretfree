@@ -76,8 +76,8 @@ describe('R3 key-signature skills', () => {
     }
   });
 
-  it('opens with I3’s signatures, in the reading module', () => {
-    expect(getSkill('R3.sharps-few')!.prerequisites).toEqual(['I3.sharp-signatures']);
+  it('opens with R1’s staff and I3’s signatures, in the reading module', () => {
+    expect(getSkill('R3.sharps-few')!.prerequisites).toEqual(['R1.staff', 'I3.sharp-signatures']);
     expect(getSkill('R3.flats-few')!.prerequisites).toEqual([
       'R3.sharps-few',
       'I3.flat-signatures',

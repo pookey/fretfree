@@ -17,9 +17,9 @@ import { itemsOf, memo } from './helpers';
  * fifteen, so no answer needs a double sharp or flat.
  *
  * The signatures come in as I3 teaches them, sharps first, a few at a time:
- * up to 3, then 4 to 7. Each opens once the learner is practising I3's cards
- * for those signatures (links to I3), and the reading track is optional, so
- * R3 stays out of the placement test (its topic isn't probed).
+ * up to 3, then 4 to 7. They open once the learner is practising R1's staff
+ * and I3's cards for those signatures (links to I3). The reading track is
+ * optional, so R3 stays out of the placement test (its topic isn't probed).
  */
 
 export const R3_DRILLS = ['key-signature-apply'];
@@ -54,7 +54,8 @@ const GROUPS: readonly Group[] = [
   {
     id: 'R3.sharps-few',
     title: 'Apply a key signature: up to 3 sharps',
-    prerequisites: ['I3.sharp-signatures'],
+    // Read the staff (R1) before its signatures, and know the signatures (I3).
+    prerequisites: ['R1.staff', 'I3.sharp-signatures'],
     ids: () => ['key-apply:F@0', ...cards([1, 2, 3])],
   },
   {

@@ -60,7 +60,7 @@ export async function startFindSession(page: Page): Promise<void> {
   await freshStart(page);
   // The F1 note-wheel (D3) and F3 landmark (D39) skills lead a fresh session; skip them.
   // Keys open with F1 and would take the goal lane's share of new items (M10-03),
-  // and key signatures on the staff (R3) open with Keys.
+  // and Reading's key signatures (R3) build on Keys: keep their cards out too.
   await masterSkills(page, [
     ...F1_SKILLS,
     ...F3_SKILLS,

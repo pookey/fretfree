@@ -36,10 +36,16 @@ async function button(page: Page, name: string): Promise<Locator> {
   return card(page).getByRole('button', { name, exact: true });
 }
 
-/** Opens a focused session on an R3 skill, with I3's signatures mastered. */
+/** Opens a focused session on an R3 skill, with R1's staff and I3's signatures mastered. */
 async function open(page: Page, skillId: string, mastered: readonly string[] = []) {
   await freshStart(page);
-  await masterSkills(page, ['C4.sharp-keys', 'C4.flat-keys', 'I3.sharp-signatures', ...mastered]);
+  await masterSkills(page, [
+    'C4.sharp-keys',
+    'C4.flat-keys',
+    'I3.sharp-signatures',
+    'R1.staff',
+    ...mastered,
+  ]);
   await focusSession(page, skillId);
   await expect(card(page)).toBeVisible();
   await expect(staff(page)).toHaveAttribute('data-ready', 'true');

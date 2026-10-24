@@ -175,9 +175,9 @@ test.describe('M1-12 session celebrations', () => {
 
   test('confetti fires for a milestone and never blocks the summary', async ({ page }) => {
     await freshStart(page);
-    // C4 and I6 open once F1 is mastered, I3 once C4 is, R3 once I3 is, TAB
-    // once F3 is, and F4 is open from the start (and opens Meter): keep their
-    // new cards out of this one-item session.
+    // C4 and I6 open once F1 is mastered, I3 once C4 is, Reading once Meter
+    // and Keys are, TAB once F3 is, and F4 is open from the start (and opens
+    // Meter): keep their new cards out of this one-item session.
     await masterSkills(page, [
       ...F1_SKILLS,
       ...F3_SKILLS,
@@ -207,9 +207,9 @@ test.describe('M1-12 session celebrations', () => {
   test('confetti is off under reduced motion; the milestone copy stays', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await freshStart(page);
-    // C4 and I6 open once F1 is mastered, I3 once C4 is, R3 once I3 is, TAB
-    // once F3 is, and F4 is open from the start (and opens Meter): keep their
-    // new cards out of this one-item session.
+    // C4 and I6 open once F1 is mastered, I3 once C4 is, Reading once Meter
+    // and Keys are, TAB once F3 is, and F4 is open from the start (and opens
+    // Meter): keep their new cards out of this one-item session.
     await masterSkills(page, [
       ...F1_SKILLS,
       ...F3_SKILLS,
