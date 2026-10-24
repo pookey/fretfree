@@ -156,7 +156,9 @@ test.describe('M8-06 complete the bar', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('a finger drags values onto the bar, reorders one and drags it off', async ({ page }) => {
+  test('a finger drags values onto the bar, reorders one and drags it off @layout', async ({
+    page,
+  }) => {
     await open(page, 'T1.simple-meters', ['F4.pulse']);
     await reachD29(page);
     const bar = d29(page).getByTestId('d29-bar');
