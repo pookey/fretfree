@@ -23,7 +23,6 @@ import {
   d21FeedbackPositions,
   d21FretLine,
   d21GradedResponseMs,
-  d21KeySpelling,
   d21LevelFor,
   d21MakePrompt,
   d21Noun,
@@ -348,28 +347,5 @@ describe('D21 windows and panel helpers', () => {
     expect(d21FretLine(d21OpenShape({ shape: 'A', quality: 'major' }))).toBe('x-0-2-2-2-0');
     expect(d21FretLine(d21OpenShape({ shape: 'C', quality: 'major' }))).toBe('x-3-2-0-1-0');
     expect(d21FretLine(d21OpenShape({ shape: 'C', quality: 'dominant7' }))).toBe('x-3-2-3-1-0');
-  });
-});
-
-describe('d21KeySpelling', () => {
-  it('spells flat keys with flats and sharp keys with sharps', () => {
-    expect(d21KeySpelling(10, 'major', 'sharp')).toBe('flat'); // B♭
-    expect(d21KeySpelling(5, 'dominant7', 'sharp')).toBe('flat'); // F7
-    expect(d21KeySpelling(1, 'dominant7', 'sharp')).toBe('flat'); // D♭7, its own key
-    // C7 and F♯7 take the key they are V of: C7's ♭7 is B♭, from F; F♯7's is E, from B.
-    expect(d21KeySpelling(0, 'dominant7', 'sharp')).toBe('flat');
-    expect(d21KeySpelling(6, 'dominant7', 'flat')).toBe('sharp');
-    expect(d21KeySpelling(2, 'minor', 'sharp')).toBe('flat'); // Dm, from F
-    expect(d21KeySpelling(1, 'minor', 'flat')).toBe('sharp'); // C♯m, from E
-    expect(d21KeySpelling(4, 'major', 'flat')).toBe('sharp'); // E
-  });
-
-  it('follows the preference in C, Am, F♯/G♭ and D♯m/E♭m', () => {
-    for (const pref of ['sharp', 'flat'] as const) {
-      expect(d21KeySpelling(0, 'major', pref)).toBe(pref);
-      expect(d21KeySpelling(9, 'minor', pref)).toBe(pref);
-      expect(d21KeySpelling(6, 'major', pref)).toBe(pref);
-      expect(d21KeySpelling(3, 'minor', pref)).toBe(pref);
-    }
   });
 });

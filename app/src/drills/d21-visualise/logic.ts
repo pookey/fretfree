@@ -19,6 +19,7 @@ import {
   type ShapeNote,
   type Tuning,
 } from '../../theory';
+import { chordKeySpelling } from '../../theory/key-spelling';
 import { d9ChordSymbol, d9DegreeLine, d9Display, d9StringSpan } from '../d9-build-caged/logic';
 import { d10Placements } from '../d10-which-shape/logic';
 import type { DrillCheck, DrillContext, DrillFeedback, DrillSounds } from '../types';
@@ -99,7 +100,7 @@ export interface D21Prompt {
    */
   span: number;
   tuning: Tuning;
-  /** How notes are named: the chord's key spelling (`d21KeySpelling`), not just the setting. */
+  /** How notes are named: the chord's key spelling (`chordKeySpelling`), not just the setting. */
   accidentalPref: AccidentalPref;
 }
 
@@ -120,35 +121,9 @@ const byPitch = (tuning: Tuning) => (a: Position, b: Position) =>
 
 const lowestFret = (notes: readonly Position[]) => Math.min(...notes.map((n) => n.fret));
 
-/**
- * Each major key's signature direction by its tonic's chroma: 1 sharps,
- * -1 flats, 0 for C and for F♯/G♭, which have six either way.
- */
-const MAJOR_KEY_SIGN = [0, -1, 1, -1, 1, -1, 0, 1, -1, 1, -1, 1] as const;
-
-/**
- * How the chord's key is spelled: with flats in a flat key (B♭, not A♯; Dm
- * names its notes with flats), with sharps in a sharp key (C♯m, not D♭m),
- * and by the learner's preference in C, Am, F♯/G♭ and D♯m/E♭m. A minor
- * chord takes its relative major's key; a 7 chord, its root's major key,
- * or where that has none (C7, F♯7) the key it is V of, a 4th up (C7's ♭7
- * is B♭, from F).
- */
-export function d21KeySpelling(
-  rootChroma: number,
-  quality: CagedQuality,
-  accidentalPref: AccidentalPref,
-): AccidentalPref {
-  const tonic = quality === 'minor' ? rootChroma + 3 : rootChroma;
-  let sign: number | undefined = MAJOR_KEY_SIGN[tonic % 12];
-  if (!sign && quality === 'dominant7') sign = MAJOR_KEY_SIGN[(rootChroma + 5) % 12];
-  if (!sign) return accidentalPref;
-  return sign > 0 ? 'sharp' : 'flat';
-}
-
 interface Placed {
   root: string;
-  /** How the chord's notes are spelled (`d21KeySpelling`). */
+  /** How the chord's notes are spelled (`chordKeySpelling`). */
   spelling: AccidentalPref;
   notes: ShapeNote[];
   position: number;
@@ -162,7 +137,7 @@ export function d21Placements(
   accidentalPref: AccidentalPref,
 ): Placed[] {
   return [...Array(12).keys()].flatMap((chroma) => {
-    const spelling = d21KeySpelling(chroma, quality, accidentalPref);
+    const spelling = chordKeySpelling(chroma, quality, accidentalPref);
     const root = chromaToPc(chroma, spelling);
     return d10Placements(shape, quality, root, tuning, D21_REGION).map((p) => ({
       root,
