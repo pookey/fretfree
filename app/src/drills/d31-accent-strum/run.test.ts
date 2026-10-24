@@ -48,7 +48,7 @@ function playAll(metronome: FakeMetronome, source: FakeOnsetSource, strength = 1
 
 describe('runAccents', () => {
   it('counts in, then hands back targets, onsets with strengths and each bar’s rung', async () => {
-    const onBar = vi.fn();
+    const onBar = vi.fn<NonNullable<AccentRunOptions['onBar']>>();
     const { metronome, source, run } = setup({ settleMs: 200, onBar });
     await flush();
     expect(source.state).toBe('running');
@@ -96,7 +96,7 @@ describe('runAccents', () => {
   });
 
   it('scores each bar from its own targets and the onsets so far', async () => {
-    const rateBar = vi.fn(() => 0.8);
+    const rateBar = vi.fn<AccentRunOptions['rateBar']>(() => 0.8);
     const { metronome, source, run } = setup({ rateBar });
     await flush();
     playAll(metronome, source);
@@ -105,7 +105,7 @@ describe('runAccents', () => {
     expect(rateBar).toHaveBeenCalledTimes(3);
     expect(rateBar.mock.calls[1]![0]).toBe(1);
     expect(rateBar.mock.calls[1]![1]).toEqual([5000, 5500, 6000, 6500]);
-    expect((rateBar.mock.calls[1]![2] as unknown[]).length).toBeGreaterThanOrEqual(8);
+    expect(rateBar.mock.calls[1]![2].length).toBeGreaterThanOrEqual(8);
   });
 
   it('waits for the last stroke’s onset past the latency before it ends', async () => {
