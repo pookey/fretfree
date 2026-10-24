@@ -17,13 +17,14 @@ import { itemsOf, memo } from './helpers';
  * queue and be answered by reflex (M8-05 review). The beat notes that
  * differ (dotted quarter, half) are T2's.
  *
- * D32 asks them as choice cards. Sound comes before symbol (design §12):
+ * D32 asks them as choice cards, and D29 has the felt-beats cards built as
+ * bars, taking turns with D32. Sound comes before symbol (design §12):
  * the meter opens once the learner is tapping a pulse (F4), and every card's
  * feedback can play its bar on the click. Meter is a future track, so it
  * stays out of the placement test (its topics aren't probed).
  */
 
-export const T1_DRILLS = ['simple-compound'];
+export const T1_DRILLS = ['simple-compound', 'complete-the-bar'];
 
 /** The simple meters T1 reads; IDs are literals, which e2e seeds read from this file. */
 export const T1_METERS: readonly string[] = ['4/4', '3/4', '2/4'];

@@ -1,0 +1,516 @@
+/* D29: no neck, so the bar sits in the upper band with the context panel beside it. */
+.drill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+/* A printed time signature: the numbers stacked, tight. */
+.signature {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 0.95;
+}
+
+.prompt {
+  margin: 0;
+  max-width: 36rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* The bar: the drop target for a dragged value. */
+.bar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-3);
+  width: min(100%, 42rem);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-l);
+  border: 2px dashed var(--border);
+  background: var(--bg-sunken);
+}
+
+/* Where a drag will land: solid and thick, so it differs by shape too. */
+.bar[data-target='true'] {
+  border: 3px solid var(--tone);
+}
+
+/* The staff at a reading size; in feedback, the learner's bar and one right way side by side. */
+.staves {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3) var(--space-5);
+}
+
+.stave {
+  flex: 1 1 15rem;
+  max-width: 24rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.stave figcaption {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.staffBox {
+  width: 100%;
+}
+
+/* The two bars' buttons line up, whatever each staff's height. */
+.stave > .hear {
+  margin-top: auto;
+}
+
+/* The bar to scale: a guide that fades (guide level 1+). */
+.ruler {
+  position: relative;
+  height: 1.75rem;
+  margin-top: 1.25rem;
+  border-radius: var(--radius-s);
+  background: var(--bg-raised);
+}
+
+.segment,
+.roomLeft {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  border-radius: var(--radius-s);
+}
+
+.segment {
+  border: 2px solid var(--tone);
+  background: var(--surface);
+}
+
+.segment[data-given] {
+  border-color: var(--text-muted);
+}
+
+.segment[data-rest] {
+  border-style: dotted;
+  background: transparent;
+}
+
+.segment[data-mark='correct'] {
+  border-color: var(--correct);
+  border-width: 3px;
+}
+
+/* Wrong: hatched and dashed, so it reads without colour. */
+.segment[data-mark='wrong'] {
+  border: 3px dashed var(--wrong);
+  background: repeating-linear-gradient(
+    45deg,
+    transparent 0 0.3rem,
+    color-mix(in srgb, var(--wrong) 45%, transparent) 0.3rem 0.5rem
+  );
+}
+
+.roomLeft {
+  border: 2px dashed var(--text-muted);
+  background: transparent;
+}
+
+.beatLine {
+  position: absolute;
+  top: -1.25rem;
+  bottom: -0.25rem;
+  border-left: 2px solid var(--text-muted);
+  z-index: 1;
+}
+
+.beatNumber {
+  position: absolute;
+  top: -0.125rem;
+  left: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.barline {
+  position: absolute;
+  top: -0.5rem;
+  bottom: -0.5rem;
+  border-left: 4px solid var(--text);
+  z-index: 1;
+}
+
+/* The values in the bar, given then placed, as tappable chips. */
+.values {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chip,
+.slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 3.25rem;
+  height: 3.75rem;
+  border-radius: var(--radius-m);
+}
+
+.chip {
+  border: 2px solid var(--tone);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.chip[data-given] {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.chip:disabled {
+  cursor: default;
+}
+
+.chip[data-target='true'] {
+  border-width: 4px;
+  transform: translateX(0.25rem);
+}
+
+.chip[data-mark='correct'] {
+  border-color: var(--correct);
+}
+
+.chip[data-mark='wrong'] {
+  border: 3px dashed var(--wrong);
+}
+
+.chip:focus-visible,
+.tile:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+
+.mark {
+  position: absolute;
+  top: 0;
+  right: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.chip[data-mark='correct'] .mark {
+  color: var(--correct);
+}
+
+.chip[data-mark='wrong'] .mark {
+  color: var(--wrong);
+}
+
+.slot {
+  border: 2px dashed var(--border);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.glyph {
+  width: 1.5rem;
+  height: 2.25rem;
+}
+
+.room {
+  margin: 0;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-align: center;
+}
+
+.feedback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 42rem;
+  text-align: center;
+}
+
+.feedback p {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.explanation {
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-6);
+  border-left: 3px solid var(--wrong);
+  border-radius: var(--radius-s);
+  background: var(--bg-raised);
+  line-height: 1.45;
+  text-align: left;
+}
+
+.explanation li + li {
+  margin-top: var(--space-2);
+}
+
+.hear {
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.hear[aria-pressed='true'] {
+  border-color: var(--tone);
+}
+
+/* The palette and its actions. */
+.answer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  text-align: center;
+}
+
+.palette,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.palette {
+  max-width: 48rem;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  width: 5.5rem;
+  min-height: 5rem;
+  padding: var(--space-1);
+  border-radius: var(--radius-m);
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tileName {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+/* The worked example's values: a dashed tone edge. */
+.tile[data-hint='true'] {
+  border: 3px dashed var(--tone);
+}
+
+.tile[data-grabbed='true'] {
+  border: 4px solid var(--tone);
+  transform: translateY(-0.25rem);
+}
+
+@media (hover: hover) {
+  .tile:hover,
+  .chip:hover:not(:disabled, [data-given]) {
+    border-color: var(--tone);
+  }
+}
+
+.dragGhost {
+  position: fixed;
+  z-index: 10;
+  display: flex;
+  padding: var(--space-2) var(--space-3);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  border-radius: var(--radius-m);
+  border: 3px solid var(--tone);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.35);
+}
+
+.primary,
+.secondary {
+  min-height: 3rem;
+  min-width: 7rem;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-m);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary {
+  border: none;
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.secondary {
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tile,
+  .chip {
+    transition:
+      border-color 0.12s,
+      transform 0.08s;
+  }
+
+  .tile:active {
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile[data-grabbed='true'],
+  .chip[data-target='true'] {
+    transform: none;
+  }
+}
+
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
+/* Phone: tighter, with 44pt targets kept. */
+.drill[data-size-class='compact'] {
+  gap: var(--space-3);
+}
+
+.drill[data-size-class='compact'] .top,
+.drill[data-size-class='compact'] .answer {
+  gap: var(--space-2);
+}
+
+.drill[data-size-class='compact'] .signature {
+  font-size: 2rem;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1rem;
+}
+
+.drill[data-size-class='compact'] .bar {
+  padding: var(--space-2);
+  gap: var(--space-2);
+}
+
+.drill[data-size-class='compact'] .hint {
+  display: none;
+}
+
+.drill[data-size-class='compact'] .chip,
+.drill[data-size-class='compact'] .slot {
+  width: 2.75rem;
+  height: 3rem;
+}
+
+.drill[data-size-class='compact'] .glyph {
+  width: 1.125rem;
+  height: 1.75rem;
+}
+
+.drill[data-size-class='compact'] .tile {
+  width: 4.25rem;
+  min-height: 3.5rem;
+}
+
+.drill[data-size-class='compact'] .tileName {
+  font-size: 0.6875rem;
+}
+
+.drill[data-size-class='compact'] .primary,
+.drill[data-size-class='compact'] .secondary {
+  min-height: var(--tap);
+}
+
+.drill[data-size-class='compact'] .explanation {
+  font-size: 0.875rem;
+  padding-left: var(--space-5);
+}
