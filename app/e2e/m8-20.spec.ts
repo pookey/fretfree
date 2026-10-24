@@ -95,12 +95,15 @@ test.describe('the metronome', () => {
 
   test('sets the tempo by tapping, and clicks an odd meter', async ({ page }) => {
     await openMetronome(page);
-    const tap = page.getByRole('button', { name: 'Tap tempo' });
-    for (let i = 0; i < 4; i += 1) {
-      await tap.click();
-      await page.waitForTimeout(400);
-    }
-    // 400 ms apart, plus the click's own time: about 140–150 BPM.
+    // Tap from inside the page: under load, Playwright's own click latency
+    // stretched the gaps (the lane once read under 110 BPM).
+    await page.getByRole('button', { name: 'Tap tempo' }).evaluate(async (button: HTMLElement) => {
+      for (let i = 0; i < 4; i += 1) {
+        button.click();
+        await new Promise((resolve) => setTimeout(resolve, 400));
+      }
+    });
+    // 400 ms apart, plus timer slack: about 140–150 BPM.
     const bpm = Number(await page.getByTestId('metronome-bpm').textContent());
     expect(bpm).toBeGreaterThan(110);
     expect(bpm).toBeLessThanOrEqual(150);
