@@ -53,6 +53,10 @@ export const SEED_CONFUSIONS: readonly (readonly [string, string])[] = [
   ['meter:12/8', 'meter:4/4'],
   // Staff places (D22, `staff@<position>`): each line with the spaces either side.
   ...STAFF_NEIGHBOUR_CONFUSIONS,
+  // Rhythm cells (D27, `rhythm:<cell>`): dotted vs straight (design §12).
+  ['rhythm:dotted-8th-16th', 'rhythm:two-8ths'],
+  ['rhythm:dotted-quarter-8th', 'rhythm:two-quarters'],
+  ['rhythm:siciliano', 'rhythm:three-8ths'],
 ];
 
 /** Pair weights by unordered concept pair. Read it with `weightOf`. */
