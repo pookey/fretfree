@@ -81,6 +81,16 @@
   padding-bottom: var(--space-2);
 }
 
+/* iPad portrait (as D1, M1-40): one column from the top (prompt, neck, then
+   help), not the neck centred in a tall empty band with help pinned below. */
+.drill[data-size-class='regular'] {
+  justify-content: flex-start;
+}
+
+.drill[data-size-class='regular'] > aside {
+  align-self: stretch;
+}
+
 .drill[data-size-class='compact'] {
   gap: var(--space-2);
   justify-content: flex-start;
