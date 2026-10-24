@@ -934,7 +934,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - A shell test (in `slot-lib.test.sh` or its own file) covers the decision with a fake queue: deep remote and free local → local; shallow remote → remote; no free local slot → remote queue.
 
 ### M1-49 · String names stay readable when a marker sits on an open string
-- **Status:** todo
+- **Status:** done
 - **Deps:** M6-14
 - **Design:** design §8 (`<Fretboard>`: string names at the nut); research/02 rule 4 (a label must never mislead or hide); follow-up from the M6-14 review
 - **Owns:** `app/src/components/fretboard/**`, `app/e2e/m1-49.spec.ts`
@@ -1521,7 +1521,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - Sound before symbol: answers are meter names first, with notation shown only after answering. Confusable pairing for 6/8 vs 3/4 and 12/8 vs 4/4 shuffle.
 
 ### M8-08 · T3 and T5 skills, plus D31 "Accent and strum in meter"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M8-01, M8-04
 - **After:** M6-10
 - **Owns:** `app/src/engine/skills/t3.ts`, `app/src/engine/skills/t5.ts`, `app/src/drills/d31-accent-strum/**`, `app/e2e/m8-08.spec.ts`
