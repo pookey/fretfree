@@ -1,0 +1,442 @@
+/* D31 (design §7, iPad first): the prompt, the bar with its accents and,
+   under them, Start or the two pads, beside the context panel. */
+.drill {
+  /* The largest a box gets; a bar of many steps shrinks every box alike. */
+  --cell-max: 3.5rem;
+  --step-gap: var(--space-1);
+  --beat-gap: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+}
+
+.upper {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.upper > aside {
+  flex: 0 0 var(--context-w);
+}
+
+.top {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.prompt {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.prompt strong {
+  color: var(--tone);
+}
+
+.tempo {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.explain {
+  margin: 0;
+  min-height: 1.5em;
+  max-width: 40rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* The bar: as wide as the column allows, each box square and the same size,
+   a felt beat's steps grouped by a wider gap outside the boxes. */
+.gridWrap {
+  width: 100%;
+  container-type: inline-size;
+}
+
+.grid {
+  --cell: min(
+    var(--cell-max),
+    calc(
+      (
+          100cqi - (var(--steps) - var(--beats)) * var(--step-gap) - (var(--beats) - 1) *
+            var(--beat-gap)
+        ) /
+        var(--steps)
+    )
+  );
+  display: flex;
+  justify-content: center;
+  column-gap: var(--step-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cell {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  width: var(--cell);
+}
+
+.cell[data-beat='true']:not(:first-child) {
+  margin-left: calc(var(--beat-gap) - var(--step-gap));
+}
+
+/* The accent mark over a strong stroke, as in notation. */
+.mark {
+  height: 1.25rem;
+  font-size: 1.125rem;
+  font-weight: 800;
+  line-height: 1.25rem;
+  color: var(--text);
+}
+
+.box {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--cell);
+  height: var(--cell);
+  box-sizing: border-box;
+  border-radius: var(--radius-s);
+  border: 2px dashed var(--border);
+  font-size: min(1.5rem, calc(var(--cell) * 0.5));
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cell[data-hit='true'] .box {
+  border: 2px solid var(--tone);
+  background: color-mix(in srgb, var(--tone) 15%, transparent);
+}
+
+/* A strong stroke: a heavier border and a fuller fill, as well as the mark. */
+.cell[data-hit='true'][data-strong='true'] .box {
+  border-width: 4px;
+  background: color-mix(in srgb, var(--tone) 45%, transparent);
+}
+
+/* The playhead: a thick outline as well as the fill, not colour alone. */
+.cell[aria-current='step'] .box {
+  outline: 4px solid var(--text);
+  outline-offset: 2px;
+}
+
+.cell[data-verdict='on'] .box {
+  border-color: var(--correct);
+  background: color-mix(in srgb, var(--correct) 25%, transparent);
+  color: var(--correct);
+}
+
+.cell[data-verdict='early'] .box,
+.cell[data-verdict='late'] .box,
+.cell[data-verdict='miss'] .box,
+.cell[data-verdict='soft'] .box,
+.cell[data-verdict='loud'] .box {
+  border-color: var(--wrong);
+  background: color-mix(in srgb, var(--wrong) 20%, transparent);
+  color: var(--text);
+}
+
+.count {
+  color: var(--text-muted);
+  font-size: min(1rem, calc(var(--cell) * 0.45));
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cell[data-beat='true'] .count {
+  color: var(--text);
+}
+
+.results {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.resultBar {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.barLabel {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.key {
+  margin: 0;
+  max-width: 40rem;
+  justify-self: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.inputs legend {
+  float: left;
+  margin-right: var(--space-2);
+  line-height: var(--tap);
+  color: var(--text-muted);
+}
+
+.inputs label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.inputs input {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--tone);
+}
+
+.note {
+  margin: 0;
+  max-width: 40rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.window {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 40rem;
+}
+
+.windowRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap);
+}
+
+.select {
+  /* WebKit ignores min-height on a select, so set the tap height outright. */
+  height: var(--tap);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-s);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.calibrate {
+  width: 100%;
+  max-width: 40rem;
+}
+
+.link {
+  min-height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.play {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 48rem;
+  align-self: center;
+}
+
+.status {
+  min-height: 1.5em;
+  text-align: center;
+  font-weight: 650;
+}
+
+.status p {
+  margin: 0;
+}
+
+.click {
+  margin: 0;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* The message is the signal, not just its colour: it is also an alert. */
+.error {
+  color: var(--text);
+  border-left: 0.25rem solid var(--wrong);
+  padding-left: var(--space-3);
+  text-align: left;
+  font-weight: 400;
+}
+
+/* Two pads side by side, big enough to hit without looking: strong on the
+   left, soft on the right, so each hand can own one. */
+.pads {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.pad,
+.listen {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: var(--space-2);
+  min-height: 14rem;
+  padding: var(--space-4);
+  border-radius: var(--radius-l);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pad {
+  cursor: pointer;
+}
+
+/* The strong pad: a heavier border and a filled face, not colour alone. */
+.pad[data-strength='strong'] {
+  border-width: 4px;
+  border-color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 18%, var(--surface));
+  font-weight: 800;
+}
+
+.pad[data-strength='soft'] {
+  font-weight: 500;
+}
+
+.pad:focus-visible {
+  outline: 3px solid var(--tone);
+  outline-offset: 2px;
+}
+
+.keys {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* The beat light: a ring, filled on each audible click; the bar's first click is bigger. */
+.light {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 3px solid var(--tone);
+  transition:
+    background-color 80ms ease-out,
+    transform 80ms ease-out;
+}
+
+.light[data-on='true'] {
+  background: var(--tone);
+}
+
+.light[data-accent='bar'] {
+  transform: scale(1.4);
+}
+
+.light[data-accent='sub'] {
+  transform: scale(0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .light {
+    transition: none;
+  }
+
+  .light[data-accent='bar'],
+  .light[data-accent='sub'] {
+    transform: none;
+  }
+
+  .light[data-accent='bar'] {
+    border-width: 5px;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.button,
+.primary {
+  min-height: var(--tap);
+  min-width: 8rem;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary {
+  border-color: transparent;
+  background: var(--accent-fill);
+  color: var(--accent-text);
+}
+
+.drill[data-size-class='compact'] {
+  --cell-max: 2.25rem;
+  --beat-gap: var(--space-2);
+  --step-gap: 2px;
+}
+
+.drill[data-size-class='compact'] .pad,
+.drill[data-size-class='compact'] .listen {
+  min-height: 9rem;
+}
+
+.drill[data-size-class='compact'] .prompt {
+  font-size: 1.25rem;
+}

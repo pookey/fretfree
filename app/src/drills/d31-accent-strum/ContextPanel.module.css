@@ -1,0 +1,17 @@
+.panel {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.panel p {
+  margin: 0;
+}
+
+.count {
+  font-weight: 650;
+}
