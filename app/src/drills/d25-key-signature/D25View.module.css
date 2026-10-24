@@ -18,17 +18,28 @@
   flex: 0 0 var(--context-w);
 }
 
+/* iPad: the staff beside the question, so the upper band stays short and
+   the neck below stays on screen through feedback. */
 .top {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: var(--space-5);
+  align-items: center;
+  justify-content: center;
+}
+
+.staff {
+  flex: 0 1 auto;
+}
+
+.ask {
+  flex: 0 1 30rem;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   align-items: center;
-}
-
-.staff {
-  margin-inline: auto;
 }
 
 .prompt {
@@ -139,7 +150,12 @@
 }
 
 .drill[data-size-class='compact'] .top {
+  flex-direction: column;
   gap: var(--space-2);
+}
+
+.drill[data-size-class='compact'] .ask {
+  flex: none;
 }
 
 .drill[data-size-class='compact'] .prompt {

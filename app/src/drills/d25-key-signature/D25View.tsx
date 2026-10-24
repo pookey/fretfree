@@ -91,6 +91,7 @@ export function D25View({
     <div className={styles.drill} data-size-class={sizeClass} data-testid="d25-drill">
       <div className={styles.upper}>
         <div className={styles.top}>
+          {/* The staff beside the question, so feedback never pushes the neck off screen. */}
           <Staff
             notes={notes}
             keySignature={prompt.tonic}
@@ -98,48 +99,50 @@ export function D25View({
             className={styles.staff}
             label={d25StaffLabel(prompt)}
           />
-          <p className={styles.prompt} id="drill-prompt">
-            {guided ? (
-              <>
-                {d25Fact(prompt)} Tap <strong>{answer}</strong> to continue.
-              </>
-            ) : (
-              D25_TASK
-            )}
-          </p>
-          <div className={styles.choices} role="group" aria-labelledby="drill-prompt">
-            {choices.map((c, i) => {
-              const state = !feedback
-                ? undefined
-                : c === feedback.answer
-                  ? feedback.result.correct
-                    ? 'correct'
-                    : 'wrong'
-                  : c === prompt.answer && !feedback.result.correct
-                    ? 'expected'
-                    : undefined;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  className={styles.choice}
-                  data-state={state}
-                  disabled={Boolean(feedback)}
-                  onClick={() => onAnswer(c)}
-                  aria-label={spoken(c)}
-                  aria-keyshortcuts={d25KeysFor(i)}
-                >
-                  {pretty(c)}
-                </button>
-              );
-            })}
-          </div>
-          {feedback && (
-            <div className={styles.feedback} data-testid="d25-feedback">
-              {explanation && <p>{explanation}</p>}
-              <p>{d25Fact(prompt)}</p>
+          <div className={styles.ask}>
+            <p className={styles.prompt} id="drill-prompt">
+              {guided ? (
+                <>
+                  {d25Fact(prompt)} Tap <strong>{answer}</strong> to continue.
+                </>
+              ) : (
+                D25_TASK
+              )}
+            </p>
+            <div className={styles.choices} role="group" aria-labelledby="drill-prompt">
+              {choices.map((c, i) => {
+                const state = !feedback
+                  ? undefined
+                  : c === feedback.answer
+                    ? feedback.result.correct
+                      ? 'correct'
+                      : 'wrong'
+                    : c === prompt.answer && !feedback.result.correct
+                      ? 'expected'
+                      : undefined;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    className={styles.choice}
+                    data-state={state}
+                    disabled={Boolean(feedback)}
+                    onClick={() => onAnswer(c)}
+                    aria-label={spoken(c)}
+                    aria-keyshortcuts={d25KeysFor(i)}
+                  >
+                    {pretty(c)}
+                  </button>
+                );
+              })}
             </div>
-          )}
+            {feedback && (
+              <div className={styles.feedback} data-testid="d25-feedback">
+                {explanation && <p>{explanation}</p>}
+                <p>{d25Fact(prompt)}</p>
+              </div>
+            )}
+          </div>
         </div>
         {sizeClass === 'regular-wide' && aside}
       </div>
