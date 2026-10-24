@@ -26,6 +26,9 @@
 #    nothing across runs), and the kernel drops the lock when the holder dies,
 #    container and all.
 #
+# queue_depth and e2e_host (at the end) let verify-quick.sh choose between the
+# remote runner's e2e queue and this Mac's.
+#
 # FRETWORK_SLOT_POLL sets the seconds between tries (default 2).
 # Test: scripts/slot-lib.test.sh (part of `pnpm verify:static`).
 lock_base="${FRETWORK_LOCK_DIR:-${TMPDIR:-/tmp}/fretwork-locks}"
@@ -242,4 +245,33 @@ _release_slot() {
   if [[ -n "${SLOT_FD:-}" ]]; then exec {SLOT_FD}>&-; SLOT_FD=""; fi
   if [[ "${FRETWORK_LANE:-}" == 1 && -n "${SLOT_KIND_ROOT:-}" ]]; then _release_lane_marker; fi
   return 0
+}
+
+# How deep the queue under <root> is: slots held plus live waiters (tickets,
+# and a waiting lane). Counts every slot it finds, so it needs no slot count:
+# remote-run.sh sends this function to the runner over SSH to read its queue.
+queue_depth() {
+  local root="$1" f n=0 pid
+  for f in "$root"/slot-*; do
+    [[ -e "$f" ]] || continue
+    if _slot_flock; then
+      [[ "$f" == *.lock ]] && ! flock -n "$f" true && n=$((n + 1))
+    elif [[ -d "$f" ]]; then
+      pid="$(cat "$f/pid" 2>/dev/null || true)"
+      if [[ -z "$pid" ]] || _slot_alive "$pid"; then n=$((n + 1)); fi
+    fi
+  done
+  for f in "$root/tickets"/[0-9]*; do
+    [[ -e "$f" ]] && _ticket_live "$f" && n=$((n + 1))
+  done
+  [[ -f "$root/lane-waiting" ]] && _lane_waiting "$root/lane-waiting" && n=$((n + 1))
+  echo "$n"
+}
+
+# Where a worker check's Playwright should run: prints "local" when the remote
+# runner's e2e queue is at least E2E_OFFLOAD_DEPTH (default 2) deep and this
+# Mac has a free e2e slot (its queue is shorter than its slots), else "remote".
+# Usage: e2e_host <remote depth> <local depth> <local slots>
+e2e_host() {
+  if (($1 >= ${E2E_OFFLOAD_DEPTH:-2} && $2 < $3)); then echo local; else echo remote; fi
 }

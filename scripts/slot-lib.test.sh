@@ -2,7 +2,9 @@
 # Tests slot-lib.sh's queue: fake waiters on one slot, started one after
 # another, get it in arrival order; the lane jumps the queue; a killed
 # waiter's ticket doesn't block the one behind it. Each case runs in lock-dir
-# mode and in flock mode (FRETWORK_SLOT_FLOCK=1). macOS has no flock(1), so
+# mode and in flock mode (FRETWORK_SLOT_FLOCK=1). Then, with a fake runner
+# queue (flock mode) and a fake Mac one (lock-dir mode), where verify-quick.sh
+# runs Playwright: queue_depth and e2e_host. macOS has no flock(1), so
 # there a small Perl stand-in for the two forms slot-lib.sh uses takes its place.
 # Usage: scripts/slot-lib.test.sh (part of `pnpm verify:static`).
 set -euo pipefail
@@ -56,7 +58,7 @@ cat >"$work/waiter.sh" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 source "$SLOT_LIB"
-acquire_slot test 1
+acquire_slot test "${SLOTS:-1}"
 echo "$1" >>"$CASE_DIR/order"
 if [[ "${2:-}" == hold ]]; then
   until [[ -e "$CASE_DIR/release-$1" ]]; do sleep 0.05; done
@@ -65,7 +67,7 @@ else
 fi
 SH
 
-unset FRETWORK_LANE FRETWORK_SLOT_FLOCK
+unset FRETWORK_LANE FRETWORK_SLOT_FLOCK E2E_OFFLOAD_DEPTH
 export SLOT_LIB="$lib" FRETWORK_SLOT_POLL=0.1
 timeout_s=$((30 * ${TEST_TIMEOUT_SCALE:-1}))
 failures=0
@@ -156,6 +158,38 @@ for mode in lock-dir flock; do
   left=("$FRETWORK_LOCK_DIR/test/tickets"/[0-9]*)
   [[ ! -e "${left[0]}" ]] || fail "dead ticket not cleared: ${left[*]}"
 done
+
+# Where e2e runs: a fake runner queue in flock mode (as on the box) and a fake
+# Mac queue with two slots in lock-dir mode (as here).
+CASE_DIR="$work/where-e2e-runs"
+mkdir -p "$CASE_DIR"
+export CASE_DIR
+echo "slot-lib: where e2e runs"
+remote_locks="$CASE_DIR/remote" local_locks="$CASE_DIR/local"
+# runner <name> [hold] / mac <name>: a fake waiter in that queue.
+runner() { FRETWORK_SLOT_FLOCK=1 FRETWORK_LOCK_DIR="$remote_locks" start "$@"; }
+mac() { FRETWORK_LOCK_DIR="$local_locks" SLOTS=2 start "$1" hold; }
+depth() { (source "$lib" && FRETWORK_SLOT_FLOCK="$2" queue_depth "$1/test"); }
+# expect_host <description> <want>: reads both queues and decides.
+expect_host() {
+  local r l got
+  r="$(depth "$remote_locks" 1)" l="$(depth "$local_locks" "")"
+  got="$(source "$lib" && e2e_host "$r" "$l" 2)"
+  [[ "$got" == "$2" ]] || fail "$1: runner queue $r deep, Mac queue $l of 2: chose $got, expected $2"
+}
+unset FRETWORK_SLOT_FLOCK
+runner R1 hold && expect_log R1 "acquired slot-0"
+expect_host "shallow runner queue" remote
+runner R2 && expect_log R2 "1st in line"
+[[ "$(depth "$remote_locks" 1)" == 2 ]] || fail "runner queue depth was $(depth "$remote_locks" 1), expected 2 (1 holder + 1 waiter)"
+expect_host "deep runner queue, free Mac slot" local
+mac M1 && expect_log M1 "acquired slot-0"
+expect_host "deep runner queue, one Mac slot free" local
+mac M2 && expect_log M2 "acquired slot-1"
+expect_host "deep runner queue, no free Mac slot" remote
+touch "$CASE_DIR/release-R1" "$CASE_DIR/release-M1" "$CASE_DIR/release-M2"
+finish_case R1 R2 M1 M2
+[[ "$(depth "$remote_locks" 1) $(depth "$local_locks" "")" == "0 0" ]] || fail "queues not empty after the waiters left"
 
 if ((failures)); then
   echo "slot-lib: $failures failure(s)" >&2
