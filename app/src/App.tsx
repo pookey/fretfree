@@ -4,6 +4,7 @@ import { useAppStore } from './app-store';
 import { guardLoader, ROUTES, type RouteModule } from './routes/registry';
 import { NeckSkinProvider } from './components/guitar/skin';
 import { installStreakSettle } from './session/gamification-bridge';
+import { resumeAccountDeletion } from './account/resume';
 import { AppShell } from './shell/AppShell';
 import { UpdateToast } from './shell/UpdateToast';
 import { DevUnlockBadge } from './screens/settings/DeveloperTools';
@@ -46,6 +47,9 @@ export function App() {
         if (!gone) uninstall = m.installSync();
       })
       .catch(() => undefined);
+    // An account delete from before this page load carries on from start,
+    // until the server confirms it (M7-06).
+    void resumeAccountDeletion();
     return () => {
       gone = true;
       uninstall?.();

@@ -2,7 +2,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router';
 import { getDb } from '../storage';
 import { OFFER_AFTER_SESSIONS } from './limits';
-import { dismissOffer, isOfferDismissed, loadAccount, subscribe } from './store';
+import { dismissOffer, isOfferDismissed, loadAccount, loadDeletion, subscribe } from './store';
 import styles from './today-card.module.css';
 
 /** Sessions the learner has finished on this device. */
@@ -19,9 +19,11 @@ export async function finishedSessions(): Promise<number> {
  */
 export function AccountOfferCard() {
   const signedIn = useSyncExternalStore(subscribe, () => loadAccount() !== null);
+  // Signed out by an account delete that hasn't finished: no offer to sign in until it has.
+  const deleting = useSyncExternalStore(subscribe, () => loadDeletion() !== null);
   const dismissed = useSyncExternalStore(subscribe, isOfferDismissed);
   const [sessions, setSessions] = useState<number | null>(null);
-  const wanted = !signedIn && !dismissed;
+  const wanted = !signedIn && !dismissed && !deleting;
 
   useEffect(() => {
     if (!wanted) return;

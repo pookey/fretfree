@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { getDb } from '../storage';
-import { saveAccount } from './store';
+import { saveAccount, saveDeletion } from './store';
 import { TOKENS } from './test-fakes';
 import { AccountOfferCard } from './TodayCard';
 
@@ -36,7 +36,10 @@ beforeEach(async () => {
 
 afterEach(() => {
   saveAccount(null);
+  saveDeletion(null);
   localStorage.clear();
+  // Drop the store's cached values too, as a clear in another tab would.
+  window.dispatchEvent(new StorageEvent('storage', { key: null }));
 });
 
 describe('Today’s account offer', () => {
@@ -76,5 +79,15 @@ describe('Today’s account offer', () => {
     const { container } = renderCard();
     await new Promise((r) => setTimeout(r, 50));
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('stays away while an account delete is waiting to finish, then comes back', async () => {
+    await sessions(3);
+    saveDeletion({ email: 'a@b.co', tokens: TOKENS, keepLocal: true, requestedAt: 1 });
+    const { container } = renderCard();
+    await new Promise((r) => setTimeout(r, 50));
+    expect(container).toBeEmptyDOMElement();
+    act(() => saveDeletion(null));
+    expect(await offer()).toBeVisible();
   });
 });
