@@ -922,6 +922,17 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Find the cause from traces under load (`--repeat-each 10`, 5 workers, iphone-smoke): the session end with 1,000 seeded reviews (refit + persist + achievement watch) on a phone. If it is the spec (a wait that doesn't cover the refit), fix the wait on a real signal; no longer timeouts as the fix. If it's app code (session end slow or racing on the phone), report it to the PM with the evidence rather than editing outside Owns.
   - Proof in the report: `--repeat-each 10` on iphone-smoke under 5 workers, before and after.
 
+### M1-48 · Worker checks run Playwright on the Mac when the test box's queue is deep
+- **Status:** todo
+- **Deps:** M1-46
+- **Design:** CLAUDE.md "Remote runner"; `docs/progress.md` pipeline notes
+- **Owns:** `scripts/verify-quick.sh`, `scripts/remote-run.sh`, `scripts/slot-lib.sh`, `scripts/slot-lib.test.sh`, `CLAUDE.md` (the Remote runner row only)
+- **Acceptance:**
+  - Found by the PM, 2026-10-24: the box has one e2e slot. With five or six worker checks queued, runs waited 20–26 minutes in FIFO order while the Mac's two local e2e slots sat idle. The PM had to stop remote containers by hand and re-run them with `FRETWORK_REMOTE=off`.
+  - A non-lane `verify:quick` decides where its Playwright half runs when it reaches the e2e step, not at the start. If the box's e2e queue (holders plus waiters, read over SSH from its lock dir) is at least 2 deep and a local e2e slot is free, it runs Playwright on the Mac, against a local build of the same tree, and prints which it chose. Static gates may stay remote.
+  - The lane (`FRETWORK_LANE=1`) is unchanged: whole matrix on the box, with audio specs on the Mac.
+  - A shell test (in `slot-lib.test.sh` or its own file) covers the decision with a fake queue: deep remote and free local → local; shallow remote → remote; no free local slot → remote queue.
+
 ### M3-18 · Lazy-load drill views and the onboarding and placement routes
 - **Status:** done
 - **Deps:** M3-16
@@ -1651,6 +1662,16 @@ A short track for learners who want to read tab. Tab maps straight onto skills F
 - **Acceptance:**
   - An end-to-end test: onboarding with "learn tab" → a tab session using D33, D34 and D35 → mastery progress on Learn.
   - A production screenshot pass on the iPad profiles and iPhone, plus a progress update.
+
+### M8-24 · D30's level-2 meter row follows what the learner has been taught
+- **Status:** todo
+- **Deps:** M8-07
+- **Design:** research/02 rule 5 (distractors are taught, plausible confusions); PM decision (progress.md, 2026-10-24)
+- **Owns:** `app/src/drills/d30-hear-the-meter/**`, `app/e2e/m8-24.spec.ts`
+- **Acceptance:**
+  - From the M8-07 review: at scope level 2 every T4 card offers all six meters, so a learner who hasn't opened T7.odd sees 5/4 and 7/8, names nobody has taught. Six buttons only on T7 cards would instead give the answer away.
+  - The row at level 2 depends on whether T7.odd is open for this learner, not on the card. Closed: every card at level 2 offers the four common meters. Open: every card (T4 and T7) offers all six. Use whatever the drill API already passes about statuses (or a scope the session sets); if neither exists, propose the smallest contract change in the report and ask the PM before editing shared files.
+  - Unit tests: the row never depends on the answer (keep "never gives the answer away"), and 5/4 and 7/8 never appear while T7 is closed.
 
 ---
 
