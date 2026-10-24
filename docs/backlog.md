@@ -1548,7 +1548,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
   - On iPad landscape the staff sits above the full neck, with the active position region shown and everything outside it dimmed.
 
 ### M8-11 · D24 "Fretboard → staff"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M8-09
 - **After:** M6-10
 - **Owns:** `app/src/drills/d24-fret-to-staff/**`, `app/e2e/m8-11.spec.ts`
