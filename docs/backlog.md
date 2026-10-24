@@ -1146,7 +1146,7 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Finding 9: the copy nits listed in the QA.
 
 ### M4-18 · M4 QA layout fixes
-- **Status:** todo
+- **Status:** done
 - **Deps:** none
 - **Design:** design §7 (iPad first), §8
 - **Owns:** `app/src/screens/progress/history/History.module.css`, `app/src/drills/d15-ear-find/D15View.module.css`, `app/src/screens/explore/ExploreScreen.tsx`, `app/src/screens/explore/views/circle-of-fifths.module.css`, `app/e2e/m4-18.spec.ts`
