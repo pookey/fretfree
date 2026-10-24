@@ -4,11 +4,11 @@ Optional account sync for FretFree. Design §1 principle 8 still holds: everythi
 
 The contract lives in `app/src/storage/sync/`:
 
-| File          | What it is                                                                            | Used by                     |
-| ------------- | ------------------------------------------------------------------------------------- | --------------------------- |
-| `model.ts`    | Which tables sync, how records are identified, the wire format. Pure, no Dexie        | client, sync Lambda (M7-03) |
-| `merge.ts`    | One merge rule per table. Pure, property-tested                                       | client, sync Lambda (M7-03) |
-| `tracking.ts` | The Dexie middleware that records local changes, plus the local read/apply primitives | client sync engine (M7-05)  |
+| File | What it is | Used by |
+|---|---|---|
+| `model.ts` | Which tables sync, how records are identified, the wire format. Pure, no Dexie | client, sync Lambda (M7-03) |
+| `merge.ts` | One merge rule per table. Pure, property-tested | client, sync Lambda (M7-03) |
+| `tracking.ts` | The Dexie middleware that records local changes, plus the local read/apply primitives | client sync engine (M7-05) |
 
 ## 1. Principles
 
@@ -24,11 +24,11 @@ A record is one row of one syncable table, identified by `(table, id)`:
 ```ts
 interface SyncRecord {
   table: SyncTableName;
-  id: string; // stable across devices
-  updatedAt: number; // ms, the writer's clock
-  deleted: boolean; // a tombstone; data is null
+  id: string;                       // stable across devices
+  updatedAt: number;                // ms, the writer's clock
+  deleted: boolean;                 // a tombstone; data is null
   data: Record<string, unknown> | null;
-  fields?: Record<string, number>; // field-merged tables: each lww field's own timestamp
+  fields?: Record<string, number>;  // field-merged tables: each lww field's own timestamp
 }
 ```
 
@@ -38,17 +38,17 @@ interface SyncRecord {
 
 ## 3. Merge rules
 
-| Table                              | Merge               | Rule                                                                                                                                                                                                                                                 |
-| ---------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `reviewLogs`, `gamificationEvents` | record, append-only | Union by ID. Live beats tombstone; otherwise later `updatedAt`                                                                                                                                                                                       |
-| `sessionLogs`                      | record, append-only | As above. A session is updated once, when it finishes                                                                                                                                                                                                |
-| `cards`                            | record              | Later `updatedAt` wins; a tombstone wins a tie                                                                                                                                                                                                       |
-| `skillStates`                      | record              | Later `updatedAt` wins; a tombstone wins a tie                                                                                                                                                                                                       |
-| `settings`                         | fields              | Each field last-writer-wins on its own timestamp                                                                                                                                                                                                     |
-| `gamification`                     | fields              | `xpTotal`, `streakLongest`: max. The streak state (`streakCurrent`, `lastGoalMetDate`, `freezesHeld`, `streakRepairDeadline`, `streakBeforeBreak`) moves as one group on one timestamp. Preferences (`dailyGoalMinutes`, `weekendAmulet`): per field |
-| `dailyProgress`                    | fields              | `xp`, `minutes`: max. `goalMet`, `freezeUsed`: or. `questsCompleted`: union                                                                                                                                                                          |
-| `achievements`                     | fields              | `unlockedAt`: the earliest                                                                                                                                                                                                                           |
-| `confusions`                       | fields              | `count`: max. `weight` and `lastAt` move together                                                                                                                                                                                                    |
+| Table | Merge | Rule |
+|---|---|---|
+| `reviewLogs`, `gamificationEvents` | record, append-only | Union by ID. Live beats tombstone; otherwise later `updatedAt` |
+| `sessionLogs` | record, append-only | As above. A session is updated once, when it finishes |
+| `cards` | record | Later `updatedAt` wins; a tombstone wins a tie |
+| `skillStates` | record | Later `updatedAt` wins; a tombstone wins a tie |
+| `settings` | fields | Each field last-writer-wins on its own timestamp |
+| `gamification` | fields | `xpTotal`, `streakLongest`: max. The streak state (`streakCurrent`, `lastGoalMetDate`, `freezesHeld`, `streakRepairDeadline`, `streakBeforeBreak`) moves as one group on one timestamp. Preferences (`dailyGoalMinutes`, `weekendAmulet`): per field |
+| `dailyProgress` | fields | `xp`, `minutes`: max. `goalMet`, `freezeUsed`: or. `questsCompleted`: union |
+| `achievements` | fields | `unlockedAt`: the earliest |
+| `confusions` | fields | `count`: max. `weight` and `lastAt` move together |
 
 Every tie that timestamps leave open is broken by comparing canonical JSON, so the result never depends on argument order.
 
@@ -62,11 +62,11 @@ Every tie that timestamps leave open is broken by comparing canonical JSON, so t
 
 `db.ts` version 2 adds a unique `uid` index to the three append-only tables and three stores. None of them syncs, exports or imports (`TABLE_NAMES` leaves them out).
 
-| Store       | Key           | Holds                                                                                   |
-| ----------- | ------------- | --------------------------------------------------------------------------------------- |
-| `syncMeta`  | `[table+id]`  | `updatedAt`, `fields`, `deleted` (1 = tombstone) for every record this device has had   |
-| `outbox`    | `[table+id]`  | Records changed locally since their last push, with the `updatedAt` they were queued at |
-| `syncState` | `'singleton'` | `account`, the server `cursor`, `lastSyncedAt` (M7-05)                                  |
+| Store | Key | Holds |
+|---|---|---|
+| `syncMeta` | `[table+id]` | `updatedAt`, `fields`, `deleted` (1 = tombstone) for every record this device has had |
+| `outbox` | `[table+id]` | Records changed locally since their last push, with the `updatedAt` they were queued at |
+| `syncState` | `'singleton'` | `account`, the server `cursor`, `lastSyncedAt` (M7-05) |
 
 **Tracking.** The `syncTracking` middleware sees every write to a syncable table: add, put, update, delete and clear. In the same transaction it stamps `syncMeta` and queues the record in `outbox`, widening the transaction to include them. A rewrite that changes nothing is skipped. A delete leaves a tombstone. `updatedAt` is `max(now, previous + 1)`, so it rises even if the clock steps back. Field-merged tables stamp only the fields or groups that changed. The repositories need no changes.
 
@@ -115,7 +115,7 @@ Push the outbox in batches, then pull to the end, then push whatever the pull qu
 
 - **Account.** `syncState.account` holds the access token's `sub` (the email if the token can't be read), so a deleted and re-created account with the same email counts as a new one.
 - **Batches.** The outbox is pushed in batches within `SYNC_LIMITS`. A 400 or 413 refuses a whole batch, so the engine splits it in half until the record the server can't take is alone. That record leaves the outbox, and the rest go through. A later local change queues it again.
-- **Errors.** No network, or a request still unanswered after 30 s, is _offline_. A 503 waits for its `retry-after`. Anything else is an _error_, retried with backoff (30 s, doubling, at most 15 min). A 410 (`account-closing`) signs out on this device and keeps local data. `stopSync()` ends syncing at once, for an account delete (M7-06).
+- **Errors.** No network, or a request still unanswered after 30 s, is *offline*. A 503 waits for its `retry-after`. Anything else is an *error*, retried with backoff (30 s, doubling, at most 15 min). A 410 (`account-closing`) signs out on this device and keeps local data. `stopSync()` ends syncing at once, for an account delete (M7-06).
 - **Restaging.** Pulled cards, review logs and skill states go through `RESTAGES` (`export-import.ts`), in schema-version order, before they merge. A record carries no schema version. Cards and logs show for themselves whether they are pre-split, so every restage runs on them. A state needs evidence, because C8 and C2 kept their old skill ID as a live stage. So a restage changes states only when it also moved one of the pulled cards or logs, or when it retired a state whose skill no longer exists (`C5.tones-triads`). Any future restage that keeps its old ID as a stage must follow the same rule. A moved row keeps its ID and gets `updatedAt + 1`. A retired skill's state becomes a tombstone, and its stages' states are added unless this device has them. Every restaged record is queued, so the server ends up holding the restaged version.
 - **Re-derivation.** After a pull brings a gamification record that differs from this device's (its own echoes don't count), `deriveGamification` works from the merged logs. `xpTotal` is at least the sum of the logged answer and quest XP. A day's XP and minutes are at least the sums logged for that date, and a day whose combined minutes reach the goal counts as met. The streak is the more generous of two settlements: the merged state settled forward, and a replay of every day from the first goal met. The replay restores a streak that a stale device broke without practising (§3.7). The forward settlement keeps a streak the replay can't see. Re-derivation logs no events. The events behind most results were logged on the device that settled them. One gap remains: when the derived settlement covers past dates (a freeze, a break, a milestone) that no device logged, this device's next settle on open finds nothing left to do, so no event is ever logged for those dates. Logging them would mean deterministic event IDs, so that two devices deriving the same day don't each add a copy. That is left for later. Rule 17's retention checks should read streak history from `dailyProgress` as well as from the log.
 - **Status.** The account panel shows `getSyncStatus()`: last synced, offline, or an error.
@@ -124,15 +124,14 @@ Push the outbox in batches, then pull to the end, then push whatever the pull qu
 
 - The table is partitioned by user ID, taken from the JWT and never from the body. A record's sort key is `table#id`. Pulls are served by a **local secondary index** on the sequence number (partition key user ID, sort key `seq`), queried with `ConsistentRead: true`. Don't use a GSI: GSIs replicate asynchronously and can't be read consistently. A pull could then see seq 11 before seq 10 has arrived, move its cursor past 10 and never fetch that record. That is the same gap the atomic write closes.
 - **Sequence numbers and writes commit together, in order.** A separate atomic counter is not enough, for two reasons:
-  - _Cursor gap._ Push A takes seq 10 and push B takes seq 11, but B commits first. A pull in between returns 11 and moves the cursor past 10, so that device never pulls A's record.
-  - _Lost update._ Two concurrent pushes of the same record both load the stored version and each write their own merge. The later write drops the other's change.
+  - *Cursor gap.* Push A takes seq 10 and push B takes seq 11, but B commits first. A pull in between returns 11 and moves the cursor past 10, so that device never pulls A's record.
+  - *Lost update.* Two concurrent pushes of the same record both load the stored version and each write their own merge. The later write drops the other's change.
 
   So each write is one DynamoDB `TransactWriteItems`:
   1. update the per-user counter item from `S` to `S + k`, conditioned on it still being `S`;
   2. put each changed record with its new seq (`S + 1` … `S + k`), conditioned on its stored seq being the one read in step 1, or on `attribute_not_exists` for a new record.
 
   One transaction holds the counter plus at most 99 records, so the server splits a push (up to 500 records) into chunks of up to 99. Each chunk is its own counter-conditioned transaction. The reply is `ok` only after every chunk has committed. If a later chunk fails, the client keeps its outbox and re-pushes the whole batch, which is safe: merges are idempotent, so the chunks that already committed change nothing the second time. On `TransactionCanceledException` (a `ConditionalCheckFailed` or a conflict), re-read and re-merge, then retry. The counter condition serialises each user's writes, so commit order equals sequence order, and a pull that reads `seq > cursor` can never skip a record. Contention is per user only, which is small.
-
 - Optionally, a pull serves records only up to the counter value read when the pull began. That gives each page a consistent end even while pushes land.
 - The server never trusts client timestamps for authorisation. It only uses them to merge.
 - `DELETE /account` removes every record and the Cognito user, and leaves the counter as an anonymous tombstone (the opaque `sub` and a closed flag, no sequence or record data), so a device still holding a valid token gets 410 and can't start a new partition. The app re-sends it until it answers 200 (M7-06).
