@@ -288,7 +288,7 @@ function Deleting({
 }) {
   const text =
     status?.trouble === 'offline'
-      ? 'You’re offline. FretFree will finish deleting your account when you’re back online, while this page is open.'
+      ? 'You’re offline. FretFree will finish deleting your account when you’re back online, or next time you open FretFree.'
       : status?.trouble === 'server'
         ? 'FretFree’s server hasn’t finished yet. It keeps trying until the delete is done.'
         : 'Deleting your email address and the copy of your progress from FretFree’s server…';

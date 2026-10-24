@@ -5,6 +5,7 @@ import { AccountPanel } from './AccountPanel';
 import { getSignIn } from './client';
 import { linkError } from './copy';
 import type { LinkOutcome, SignIn } from './flow';
+import { loadDeletion } from './store';
 import styles from './account.module.css';
 
 /** The address and token from an emailed link's fragment (`#email=…&token=…`). */
@@ -18,7 +19,13 @@ export function readLinkFragment(hash: string): { email: string; token: string }
 // One answer per token, however often the screen mounts (StrictMode mounts twice).
 const answers = new Map<string, Promise<LinkOutcome>>();
 
-type View = { kind: 'checking' } | { kind: 'incomplete' } | { kind: 'unavailable' } | LinkOutcome;
+type View =
+  | { kind: 'checking' }
+  | { kind: 'incomplete' }
+  | { kind: 'unavailable' }
+  /** An account delete is still waiting for the server: no signing in until it ends. */
+  | { kind: 'deleting' }
+  | LinkOutcome;
 
 /**
  * `/account/verify` (M7-04): where an emailed sign-in link lands. It signs in
@@ -29,14 +36,21 @@ type View = { kind: 'checking' } | { kind: 'incomplete' } | { kind: 'unavailable
 export function VerifyScreen({ signIn = getSignIn() }: { signIn?: SignIn | null }) {
   const [link, setLink] = useState(() => readLinkFragment(location.hash));
   const [view, setView] = useState<View>(() =>
-    !signIn ? { kind: 'unavailable' } : link ? { kind: 'checking' } : { kind: 'incomplete' },
+    !signIn
+      ? { kind: 'unavailable' }
+      : loadDeletion()
+        ? { kind: 'deleting' }
+        : link
+          ? { kind: 'checking' }
+          : { kind: 'incomplete' },
   );
   const [attempt, setAttempt] = useState(0);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     if (location.hash) history.replaceState(history.state, '', location.pathname);
-    if (!link || !signIn) return;
+    // The link isn't answered, so it still works once the delete is done.
+    if (!link || !signIn || loadDeletion()) return;
     let live = true;
     let answer = answers.get(link.token);
     if (!answer) {
@@ -59,7 +73,7 @@ export function VerifyScreen({ signIn = getSignIn() }: { signIn?: SignIn | null 
       const next = readLinkFragment(location.hash);
       if (!next || !signIn) return;
       setLink(next);
-      setView({ kind: 'checking' });
+      setView(loadDeletion() ? { kind: 'deleting' } : { kind: 'checking' });
     };
     addEventListener('hashchange', onHashChange);
     return () => removeEventListener('hashchange', onHashChange);
@@ -78,7 +92,9 @@ export function VerifyScreen({ signIn = getSignIn() }: { signIn?: SignIn | null 
           ? 'This link is incomplete'
           : view.kind === 'unavailable'
             ? 'Sign-in isn’t available here'
-            : 'That link didn’t work';
+            : view.kind === 'deleting'
+              ? 'Your account is being deleted'
+              : 'That link didn’t work';
 
   return (
     <ScreenLayout title="Sign in">
@@ -116,6 +132,20 @@ export function VerifyScreen({ signIn = getSignIn() }: { signIn?: SignIn | null 
               <p>
                 This copy of FretFree has no account server. Everything still works on this device.
               </p>
+            )}
+            {view.kind === 'deleting' && (
+              <>
+                <p>
+                  FretFree is still deleting an account on this device, so this link hasn&rsquo;t
+                  signed you in. Once the delete has finished (Progress shows it), open the link
+                  from the email again.
+                </p>
+                <p>
+                  <Link to="/progress" className={styles.primary}>
+                    Go to Progress
+                  </Link>
+                </p>
+              </>
             )}
             {(view.kind === 'link-failed' || view.kind === 'error') && <p>{linkError(view)}</p>}
           </div>

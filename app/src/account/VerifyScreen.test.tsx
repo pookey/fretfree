@@ -4,13 +4,14 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { AccountApiError } from './api';
 import type { SignIn } from './flow';
-import { loadAccount, saveAccount, savePending } from './store';
-import { fakeServer, fakeSignIn } from './test-fakes';
+import { loadAccount, saveAccount, saveDeletion, savePending } from './store';
+import { fakeServer, fakeSignIn, TOKENS } from './test-fakes';
 import { readLinkFragment, VerifyScreen } from './VerifyScreen';
 
 afterEach(() => {
   saveAccount(null);
   savePending(null);
+  saveDeletion(null);
   localStorage.clear();
   history.replaceState(null, '', '/');
 });
@@ -36,6 +37,23 @@ describe('readLinkFragment', () => {
 });
 
 describe('<VerifyScreen>', () => {
+  it('doesn’t sign in while an account delete is waiting, and keeps the link unspent', async () => {
+    saveDeletion({ email: 'me@example.com', tokens: TOKENS, keepLocal: true, requestedAt: 0 });
+    const server = fakeServer();
+    open('#email=me%40example.com&token=while-deleting', fakeSignIn(server));
+    expect(
+      await screen.findByRole('heading', { name: 'Your account is being deleted' }),
+    ).toHaveFocus();
+    expect(screen.getByRole('status')).toHaveTextContent('open the link from the email again');
+    expect(screen.getByRole('link', { name: 'Go to Progress' })).toHaveAttribute(
+      'href',
+      '/progress',
+    );
+    expect(server.cognito.begin).not.toHaveBeenCalled();
+    expect(loadAccount()).toBeNull();
+    expect(location.hash).toBe('');
+  });
+
   it('signs this browser in and wipes the token from the address bar', async () => {
     open(LINK);
     expect(location.hash).toBe('');
