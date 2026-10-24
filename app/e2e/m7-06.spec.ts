@@ -25,6 +25,7 @@ class AccountServer {
   deleted = false;
   failNext = 0;
   down = false;
+  pushes = 0;
 
   async attach(page: Page): Promise<void> {
     // Registered after mockAuth's, so they answer these routes first.
@@ -45,7 +46,10 @@ class AccountServer {
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
     if (this.down) return route.abort('internetdisconnected');
     if (this.deleted) return this.reply(route, 410, { error: 'account-closing' });
-    if (req.method() === 'POST') return this.reply(route, 200, { ok: true });
+    if (req.method() === 'POST') {
+      this.pushes++;
+      return this.reply(route, 200, { ok: true });
+    }
     return this.reply(route, 200, { records: [], cursor: '0', more: false });
   }
 
@@ -143,6 +147,14 @@ test.describe('M7-06 delete account', () => {
     ).toBeVisible();
     await expect(deletePanel(page)).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
+
+    // Signing in again without a reload syncs the new account (a new
+    // partition on the server), with a status of its own.
+    server.deleted = false;
+    const pushes = server.pushes;
+    await signIn(page);
+    await expect(page.getByTestId('sync-status')).toHaveText('Last synced just now.');
+    expect(server.pushes).toBeGreaterThan(pushes);
   });
 
   test('deletes this device’s progress too when asked, and starts again', async ({ page }) => {
@@ -186,6 +198,30 @@ test.describe('M7-06 delete account', () => {
       timeout: 15_000,
     });
     expect(server.deleted).toBe(true);
+  });
+
+  test('a delete waiting after a reload finishes from Today, without opening Progress', async ({
+    page,
+  }) => {
+    const server = await setUp(page);
+    await seedFinishedSessions(page, 3);
+    await signIn(page);
+    await openDelete(page);
+    server.down = true;
+    await page.getByRole('button', { name: 'Delete my account' }).click();
+    await expect(page.getByTestId('deletion-status')).toContainText('You’re offline');
+
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
+    // Signed out, but no offer to sign in while the delete is waiting.
+    await expect(page.getByRole('link', { name: 'Save my progress' })).toHaveCount(0);
+    server.down = false;
+    await expect.poll(() => server.deleted, { timeout: 15_000 }).toBe(true);
+    await expect(page).toHaveURL(/\/$/);
+    expect(await page.evaluate(() => localStorage.getItem('fretwork.account.deleting'))).toBeNull();
+    // Done: the offer comes back on its own.
+    await expect(page.getByRole('link', { name: 'Save my progress' })).toBeVisible();
+    expect(await sessionCount(page)).toBe(3);
   });
 
   test('cancel keeps the account, and export works from the delete step and from Settings', async ({
