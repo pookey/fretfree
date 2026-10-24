@@ -149,6 +149,21 @@ describe('<SettingsGroups>', () => {
     });
   });
 
+  it('has mental practice on by default, and saves it switched off and on', async () => {
+    renderPanel();
+    const mental = within(group('Practice')).getByRole('checkbox', { name: 'Mental practice' });
+    expect(mental).toBeChecked();
+    expect(mental).toHaveAccessibleDescription(/picture a chord shape on a blank neck/);
+
+    await userEvent.click(mental);
+    await waitFor(() => expect(mental).not.toBeChecked());
+    expect((await getSettings(db)).mentalPractice).toBe(false);
+
+    await userEvent.click(mental);
+    await waitFor(() => expect(mental).toBeChecked());
+    expect((await getSettings(db)).mentalPractice).toBe(true);
+  });
+
   it('turns blind mode on and off, and saves it', async () => {
     renderPanel();
     const blind = screen.getByRole('checkbox', { name: 'Blind mode' });

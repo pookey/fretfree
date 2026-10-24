@@ -126,6 +126,7 @@ function GuitarSettings({ settings, update }: SettingsProps) {
 function PracticeSettings({ settings, update }: SettingsProps) {
   const [gamification, save] = useGamification();
   const amuletHint = useId();
+  const mentalHint = useId();
   return (
     <Group title="Practice">
       <label className={local.row}>
@@ -143,6 +144,20 @@ function PracticeSettings({ settings, update }: SettingsProps) {
           ))}
         </select>
       </label>
+      {/* Optional (research/02 rule 14); on by default, as another context for the same shapes (rule 12). */}
+      <label className={`${styles.toggle} ${local.row}`}>
+        <input
+          type="checkbox"
+          checked={settings.mentalPractice}
+          aria-describedby={mentalHint}
+          onChange={(e) => void update({ mentalPractice: e.target.checked })}
+        />
+        <span className={local.grow}>Mental practice</span>
+      </label>
+      <Hint id={mentalHint}>
+        Sometimes picture a chord shape on a blank neck and tap its notes, for practice away from
+        the guitar. Off, sessions only ask what you can see or play.
+      </Hint>
       {gamification && (
         <>
           <label className={local.row}>
