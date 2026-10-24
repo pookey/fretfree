@@ -154,17 +154,19 @@
   color: var(--tone);
 }
 
+/* The flash scales the whole mark: on the ellipse, `transform-box` would
+   move the pivot of its own rotate(), drawing it off its place. */
 .mark.correct {
   color: var(--correct);
+  animation: flash 0.35s ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 .mark.correct ellipse {
   stroke: var(--correct);
   stroke-width: 6;
   stroke-opacity: 0.35;
-  animation: flash 0.35s ease-out;
-  transform-box: fill-box;
-  transform-origin: center;
 }
 
 .mark.wrong {
