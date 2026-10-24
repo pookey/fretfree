@@ -191,3 +191,19 @@ test.describe('M6-14 Progress', () => {
     await expectNoHorizontalOverflow(page);
   });
 });
+
+test.describe('M6-14 toast in a session', () => {
+  test('a badge earned mid-session waits for the shell, clear of the session header', async ({
+    page,
+  }) => {
+    // Sessions are a fullscreen route, outside the shell that mounts the
+    // toast, so the top-right corner (help, time left) is never covered.
+    await freshStart(page);
+    await focusSession(page, 'F1.alphabet');
+    await masterSkills(page, ['F2.string6-naturals']);
+    await page.waitForTimeout(1500);
+    await expect(page.getByTestId('achievement-toast')).toHaveCount(0);
+    await page.goto('/progress');
+    await expect(page.getByTestId('achievement-toast')).toContainText('String 6 master');
+  });
+});
