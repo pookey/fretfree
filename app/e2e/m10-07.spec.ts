@@ -42,13 +42,14 @@ test('a module reads as an outcome, with plain "Builds on" and a callout to you'
 
 test('modules not built yet come after the open and locked ones', async ({ page }) => {
   await openModule(page, 'notes-1');
-  // Jazz promotes Reading, which is still coming soon.
+  // Jazz promotes Reading, which is built now (M8-09); Advanced is still coming soon.
   await page.getByRole('combobox', { name: 'Ordered for your goal' }).selectOption('jazz');
   const cards = page.getByRole('region', { name: 'Modules' }).getByRole('link');
   await expect(cards.first()).toHaveAttribute('data-testid', 'module-harmony');
   const states = await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-state')));
   const firstSoon = states.indexOf('soon');
   expect(firstSoon).toBeGreaterThan(0);
-  expect(states.slice(firstSoon)).toEqual(['soon', 'soon']);
+  expect(states.slice(firstSoon)).toEqual(['soon']);
+  await expect(page.getByTestId('module-reading')).not.toHaveAttribute('data-state', 'soon');
   await expect(cards.last()).toContainText('Coming soon');
 });
