@@ -1,0 +1,30 @@
+/* The form-reading panel: the rules, and the signs drawn and named. The
+   session's panel supplies the box and the heading colour. */
+.panel p {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sign {
+  flex: none;
+  width: 3rem;
+  height: 2rem;
+  color: var(--text);
+}

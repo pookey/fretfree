@@ -1,0 +1,152 @@
+/* The tune: bars on one rhythm staff, wrapping onto new lines as music does. */
+/* Bar height: `--sheet-h` from the view, 6.5rem by default. */
+.sheet {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  border-radius: var(--radius-s);
+  color: var(--text);
+}
+
+.bar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  margin: 0;
+  padding: 0 0 var(--space-1);
+  /* Marks are outlines inside the bar, so the staff line runs on unbroken. */
+  border: none;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  border-radius: var(--radius-s);
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+button.bar {
+  cursor: pointer;
+}
+
+button.bar:focus-visible {
+  outline: 3px solid var(--tone);
+  outline-offset: 1px;
+}
+
+@media (hover: hover) {
+  button.bar:hover:not(:disabled) {
+    outline-color: var(--tone);
+  }
+}
+
+button.bar:disabled {
+  cursor: default;
+}
+
+.drawing {
+  display: block;
+  height: var(--sheet-h, 6.5rem);
+  width: calc(var(--sheet-h, 6.5rem) * var(--bar-w));
+  overflow: visible;
+}
+
+.time {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.volta {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.caption,
+.count {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.count {
+  font-weight: 500;
+  font-size: 0.8125rem;
+}
+
+.badges {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: 1.5rem;
+}
+
+/* A tapped step: a numbered disc, so the order reads without colour. */
+.badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: var(--tone);
+  color: var(--marker-text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+/* The bar a "which bar next?" card asks about: a ring, and its number bold. */
+.item[data-state='asked'] .bar {
+  outline: 3px solid var(--tone);
+  outline-offset: -3px;
+}
+
+.item[data-state='asked'] .caption {
+  color: var(--text);
+}
+
+.item[data-state='correct'] .bar {
+  background: var(--correct);
+  outline-color: var(--correct);
+  color: #fff;
+}
+
+.item[data-state='wrong'] .bar {
+  background: var(--wrong);
+  outline-color: var(--wrong);
+  color: #fff;
+}
+
+.item[data-state='correct'] .caption,
+.item[data-state='wrong'] .caption,
+.item[data-state='correct'] .count,
+.item[data-state='wrong'] .count {
+  color: #fff;
+}
+
+/* The answer missed: a dashed edge, so it reads without colour. */
+.item[data-state='expected'] .bar {
+  outline: 3px dashed var(--correct);
+  outline-offset: -3px;
+}
+
+/* The bar sounding as the tune plays: a sky-blue band under the staff. */
+.item[data-playing] .bar {
+  background: color-mix(in srgb, var(--tone) 22%, transparent);
+  box-shadow: inset 0 -4px 0 var(--tone);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bar {
+    transition: background 0.12s;
+  }
+}
