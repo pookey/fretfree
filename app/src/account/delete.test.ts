@@ -17,6 +17,7 @@ import {
   saveAccount,
   saveDeletion,
   savePending,
+  subscribe,
 } from './store';
 import { TOKENS } from './test-fakes';
 
@@ -56,6 +57,7 @@ function fakeDeps(answers: (Error | 'ok')[] = ['ok'], over: Partial<DeletionDeps
     now: () => NOW,
     stopSync: vi.fn(),
     restartSync: vi.fn(),
+    finished: vi.fn(),
     clearLocal: vi.fn(async () => undefined),
     wait: vi.fn(async (ms: number) => {
       waits.push(ms);
@@ -96,6 +98,52 @@ describe('createAccountDeletion', () => {
     expect(deps.clearLocal).not.toHaveBeenCalled();
     // Signing in again without a reload syncs the new account.
     expect(deps.restartSync).toHaveBeenCalledOnce();
+    // Nothing showed the status, so the app is told to say it's done.
+    expect(deps.finished).toHaveBeenCalledWith(flow.status(), false);
+  });
+
+  it('tells finished whether the status is on screen', async () => {
+    signIn();
+    const { deps } = fakeDeps();
+    const flow = createAccountDeletion(deps);
+    const stop = flow.subscribe(() => undefined);
+    await flow.request(false);
+    expect(deps.finished).toHaveBeenCalledOnce();
+    expect(deps.finished).toHaveBeenCalledWith(
+      { phase: 'deleted', email: EMAIL, keepLocal: false, confirmed: true },
+      true,
+    );
+    stop();
+  });
+
+  it('never calls finished while the delete is still being sent', async () => {
+    signIn();
+    const { deps } = fakeDeps([new AccountApiError('network'), 'ok']);
+    deps.wait = async () => expect(deps.finished).not.toHaveBeenCalled();
+    await createAccountDeletion(deps).request(true);
+    expect(deps.finished).toHaveBeenCalledOnce();
+  });
+
+  it('wakes nothing that reads the store between a clear and the restart', async () => {
+    signIn();
+    let heard = 0;
+    const { deps } = fakeDeps(['ok'], {
+      clearLocal: async () => {
+        // As clearThisDevice does: the stored deletion goes with everything else.
+        localStorage.removeItem(DELETION_KEY);
+      },
+    });
+    const flow = createAccountDeletion(deps);
+    const requested = flow.request(false);
+    const stop = subscribe(() => heard++);
+    await requested;
+    stop();
+    expect(heard).toBe(0);
+    expect(localStorage.getItem(DELETION_KEY)).toBeNull();
+    expect(deps.finished).toHaveBeenCalledWith(
+      expect.objectContaining({ phase: 'deleted', keepLocal: false }),
+      false,
+    );
   });
 
   it('never revokes the tokens the delete still needs', async () => {
@@ -236,6 +284,8 @@ describe('createAccountDeletion', () => {
     expect(deps.clearLocal).toHaveBeenCalledOnce();
     expect(deps.restartSync).not.toHaveBeenCalled();
     expect(flow.status()).toMatchObject({ phase: 'deleted', keepLocal: false, confirmed: false });
+    // The app restarts a cleared device wherever the learner is.
+    expect(deps.finished).toHaveBeenCalledWith(flow.status(), false);
   });
 
   it('treats any other refresh failure as trouble to retry', async () => {
@@ -262,6 +312,8 @@ describe('createAccountDeletion', () => {
       confirmed: true,
     });
     expect(deps.clearLocal).not.toHaveBeenCalled();
+    // The other tab cleared the database this one has open: it must restart too.
+    expect(deps.finished).toHaveBeenCalledWith(flow.status(), false);
   });
 
   it('keeps a delete stored by another version of the page only when it is well formed', () => {
@@ -322,6 +374,18 @@ describe('waitOrOnline', () => {
     await vi.advanceTimersByTimeAsync(999);
     expect(done).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1);
+    expect(done).toHaveBeenCalled();
+  });
+
+  it('resolves when another tab changes the delete, and not for other keys', async () => {
+    vi.useFakeTimers();
+    const done = vi.fn();
+    void waitOrOnline(60_000).then(done);
+    window.dispatchEvent(new StorageEvent('storage', { key: 'fretwork.other' }));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(done).not.toHaveBeenCalled();
+    window.dispatchEvent(new StorageEvent('storage', { key: DELETION_KEY }));
+    await vi.advanceTimersByTimeAsync(0);
     expect(done).toHaveBeenCalled();
   });
 

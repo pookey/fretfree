@@ -5,7 +5,9 @@ import {
   createDeleteAccount,
   waitOrOnline,
   type AccountDeletionFlow,
+  type DeletionStatus,
 } from './delete';
+import { saveDeletedNotice } from './deleted-notice';
 import { syncApiUrl } from './endpoint';
 import { getDb, type FretworkDB } from '../storage';
 import { restartSync, stopSync } from '../storage/sync/engine';
@@ -22,6 +24,25 @@ export async function clearThisDevice(
   await db.delete({ disableAutoOpen: true });
   for (const key of Object.keys(storage)) {
     if (key.startsWith('fretwork')) storage.removeItem(key);
+  }
+}
+
+/**
+ * What a finished delete leaves on screen. A cleared device always restarts
+ * into onboarding: every screen would otherwise sit on the closed database.
+ * A notice says why, after the restart. When progress is kept, the Progress
+ * panel says it's done if it is open; anywhere else, the notice does.
+ */
+export function afterDeletion(
+  { keepLocal }: Extract<DeletionStatus, { phase: 'deleted' }>,
+  shown: boolean,
+  restart: () => void = () => location.replace('/'),
+): void {
+  if (!keepLocal) {
+    saveDeletedNotice('cleared');
+    restart();
+  } else if (!shown) {
+    saveDeletedNotice('kept');
   }
 }
 
@@ -42,6 +63,7 @@ export function getAccountDeletion(): AccountDeletionFlow | null {
             restartSync,
             clearLocal: () => clearThisDevice(),
             wait: (ms) => waitOrOnline(ms),
+            finished: (status, shown) => afterDeletion(status, shown),
           })
         : null;
   }

@@ -26,6 +26,7 @@ function fakeDeletion(answer: () => Promise<void> = async () => undefined) {
     now: Date.now,
     stopSync: vi.fn(),
     restartSync: vi.fn(),
+    finished: vi.fn(),
     clearLocal: vi.fn(async () => undefined),
     wait: () => new Promise(() => undefined),
   };

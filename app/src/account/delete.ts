@@ -1,6 +1,7 @@
 import { AccountApiError } from './api';
 import type { Cognito } from './cognito';
 import {
+  DELETION_KEY,
   loadAccount,
   loadDeletion,
   saveAccount,
@@ -54,10 +55,19 @@ export interface DeletionDeps {
   stopSync(): void;
   /** Syncs again once the delete is done, so signing in again syncs the new account. */
   restartSync(): void;
-  /** Deletes this device's progress and preferences. */
+  /**
+   * Deletes this device's progress and preferences, the stored deletion
+   * among them. A restart must follow (`finished`): the database is closed.
+   */
   clearLocal(): Promise<void>;
   /** Resolves after `ms`, or sooner when the device comes back online. */
   wait(ms: number): Promise<void>;
+  /**
+   * The delete is done. `shown` says whether anything (the Progress panel)
+   * is showing the status; otherwise the learner still needs telling, and a
+   * cleared device needs a restart, wherever they are.
+   */
+  finished(status: Extract<DeletionStatus, { phase: 'deleted' }>, shown: boolean): void;
 }
 
 export interface AccountDeletionFlow {
@@ -115,6 +125,10 @@ export function createAccountDeletion(deps: DeletionDeps): AccountDeletionFlow {
     status = next;
     listeners.forEach((l) => l());
   };
+  const done = (next: Extract<DeletionStatus, { phase: 'deleted' }>) => {
+    set(next);
+    deps.finished(next, listeners.size > 0);
+  };
 
   /** A current access token, or null when Cognito refuses the sign-in: the user is gone. */
   async function token(deletion: AccountDeletion): Promise<string | null> {
@@ -146,7 +160,7 @@ export function createAccountDeletion(deps: DeletionDeps): AccountDeletionFlow {
         if (status.phase === 'deleting') {
           if (status.keepLocal) deps.restartSync();
           const { email, keepLocal } = status;
-          set({ phase: 'deleted', email, keepLocal, confirmed: true });
+          done({ phase: 'deleted', email, keepLocal, confirmed: true });
         }
         return;
       }
@@ -159,10 +173,16 @@ export function createAccountDeletion(deps: DeletionDeps): AccountDeletionFlow {
         // reply never arrived. The learner's choice for this device stands.
         const access = await token(deletion);
         if (access) await deps.deleteAccount(access);
-        if (keepLocal) deps.restartSync();
-        else await deps.clearLocal();
-        saveDeletion(null);
-        return set({ phase: 'deleted', email, keepLocal, confirmed: access !== null });
+        if (keepLocal) {
+          deps.restartSync();
+          saveDeletion(null);
+        } else {
+          // The clear took the stored deletion with it. Telling the store
+          // would wake screens that query the closed database before the
+          // restart, so nothing hears of it until then.
+          await deps.clearLocal();
+        }
+        return done({ phase: 'deleted', email, keepLocal, confirmed: access !== null });
       } catch (error) {
         // A refused token is refreshed on the next try.
         if (error instanceof AccountApiError && error.status === 401) {
@@ -215,15 +235,23 @@ export function createAccountDeletion(deps: DeletionDeps): AccountDeletionFlow {
   };
 }
 
-/** Waits `ms`, or until the browser says it is back online. */
+/**
+ * Waits `ms`, or until the browser says it is back online, or another tab
+ * finishes or changes the delete.
+ */
 export function waitOrOnline(ms: number, win: Window = window): Promise<void> {
   return new Promise((resolve) => {
     const done = () => {
       clearTimeout(timer);
       win.removeEventListener('online', done);
+      win.removeEventListener('storage', onStorage);
       resolve();
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || e.key === DELETION_KEY) done();
     };
     const timer = setTimeout(done, ms);
     win.addEventListener('online', done);
+    win.addEventListener('storage', onStorage);
   });
 }

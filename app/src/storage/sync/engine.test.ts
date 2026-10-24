@@ -1067,6 +1067,7 @@ describe('installSync', () => {
       stopSync,
       restartSync,
       clearLocal: vi.fn(),
+      finished: vi.fn(),
       wait: async () => undefined,
     });
     const done = deletion.request(true);
