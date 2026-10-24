@@ -1562,7 +1562,7 @@ Every M8 view follows the iPad landscape rule: **the staff sits above the neck, 
 - **Owns:** `app/src/engine/skills/r3.ts`, `app/src/drills/d25-key-signature/**`, `app/e2e/m8-12.spec.ts`
 
 ### M8-13 · R4 rhythm-cell skills, plus D27 "Rhythm reading"
-- **Status:** todo
+- **Status:** done
 - **Deps:** M8-01, M8-02, M8-04
 - **After:** M6-10
 - **Owns:** `app/src/engine/skills/r4.ts`, `app/src/drills/d27-rhythm-reading/**`, `app/e2e/m8-13.spec.ts`
