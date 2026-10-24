@@ -1418,7 +1418,7 @@ Notes for whoever picks this up:
   - From the 2026-10-20 review's verification: M10-02 and M10-12 move rows to new skill IDs with a schema migration (the `storage/migrations/c5-tone-stages.ts` pattern). Rows pulled from a device on an older schema are restaged the same way before they are merged.
 
 ### M7-06 · Account management and privacy
-- **Status:** todo
+- **Status:** done
 - **Deps:** M7-04, M7-05
 - **Owns:** `app/src/screens/progress/panels/account-manage.tsx`, `app/src/routes/about.route.tsx`, `docs/design/app-design.md`, `app/e2e/m7-06.spec.ts`
 - **Acceptance:**
