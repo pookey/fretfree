@@ -157,9 +157,9 @@ test.describe('M6-09 D21 pictures a CAGED shape and taps its roots', () => {
         expect(box!.height).toBeGreaterThanOrEqual(44);
       }
 
-      // Each root is marked as it is found, as a square.
+      // Each root turns green as it is found (M6-13).
       await cellAt(page, cells[0]!).click();
-      await expect(neck(page).getByTestId('marker-root')).toHaveCount(1);
+      await expect(neck(page).getByTestId('marker-correct')).toHaveCount(1);
       for (const c of cells.slice(1)) await cellAt(page, c).click();
 
       const correct = page.getByTestId('feedback-correct');
@@ -210,7 +210,8 @@ test.describe('M6-09 D21 pictures a CAGED shape and taps its roots', () => {
       `That's a root of the C shape ${task.position === 0 ? 'in open position' : `at fret ${task.position}`}.`,
     );
     await expect(neck(page).getByTestId('marker-wrong')).toHaveCount(1);
-    await expect(neck(page).getByTestId('marker-ghost')).toHaveCount(1);
+    // The missed root at full strength, a ringed root square (M6-13).
+    await expect(neck(page).locator('[data-testid="marker-root"][data-emphasis]')).toHaveCount(1);
     await expectNoHorizontalOverflow(page);
 
     const confusions = await page.evaluate(async () => {

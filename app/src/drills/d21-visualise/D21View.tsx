@@ -12,6 +12,7 @@ import {
   d21Found,
   d21IsLive,
   d21Missed,
+  d21NoteName,
   d21Noun,
   d21PositionHint,
   d21Question,
@@ -38,9 +39,9 @@ const WIDE: FretRange = { from: 0, to: 15 };
 /**
  * D21 view (design §6 D21, §7). The prompt names a shape and a position and
  * the neck stays blank: the learner pictures the shape there and taps every
- * root (or 3rd, or ♭7). Each tap is marked at once by its degree, in shape
- * as well as colour; the round answers at the last target, on the first
- * wrong tap, or on "Done". Feedback draws the whole shape by degree. The
+ * root (or 3rd, or ♭7). Each found note turns green at once; the round
+ * answers at the last target, on the first wrong tap, or on "Done".
+ * Feedback draws the whole shape by degree, the missed notes ringed. The
  * worked example draws the shape first, so the learner copies it once.
  */
 export function D21View({
@@ -102,18 +103,22 @@ export function D21View({
   });
   const isTarget = (n: ShapeNote) => Boolean(d21TargetAt(prompt, n));
   const missed = d21Missed(prompt, taps);
-  const markers: FretMarker[] = d21Found(prompt, taps).map((n) => degree(n));
+  // Found notes turn green, as in the pentatonic-box drill: a circle, so they
+  // differ from a missed root's square in shape as well as colour.
+  const markers: FretMarker[] = d21Found(prompt, taps).map((n) => degree(n, 'correct'));
   if (feedback || guided) {
     // The rest of the shape, by degree: the picture the learner was asked for.
     markers.push(...prompt.shapeNotes.filter((n) => !isTarget(n)).map((n) => degree(n)));
   }
   if (feedback) {
-    markers.push(...missed.map((n) => degree(n, 'ghost')));
+    // The missed notes at full strength in their own shape (a root square),
+    // ringed: the answer the learner most needs to see.
+    markers.push(...missed.map((n) => ({ ...degree(n), emphasis: true })));
     markers.push(
       ...d21WrongTaps(prompt, taps).map((p): FretMarker => ({
         ...p,
         style: 'wrong',
-        label: d9Display(noteAt(p, tuning, prompt.accidentalPref).pc),
+        label: d21NoteName(prompt, p),
         forceLabel: true,
       })),
     );

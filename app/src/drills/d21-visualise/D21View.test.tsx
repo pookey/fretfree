@@ -5,7 +5,7 @@ import type { SizeClass } from '../../shell/size-class';
 import { STANDARD_TUNING, type Position } from '../../theory';
 import type { DrillFeedback } from '../types';
 import { D21View } from './D21View';
-import { d21Check, d21MakePrompt, type D21Answer, type D21Prompt } from './logic';
+import { d21Check, d21MakePrompt, d21Placements, type D21Answer, type D21Prompt } from './logic';
 
 // rng 0 at scope 0: the A shape of C, at fret 3 (x-3-5-5-5-3), roots at s5f3 and s3f5.
 const prompt = (id = 'caged:A-shape@major') =>
@@ -77,13 +77,14 @@ describe('<D21View>', () => {
     expect(neck()).toHaveAttribute('data-fret-to', '15');
   });
 
-  it('marks each found root by shape, and answers at the last one', () => {
+  it('turns each found root green, and answers at the last one', () => {
     const p = prompt();
     const { onAnswer } = view(p, { guideLevel: 2 });
     expect(screen.getByTestId('d21-count')).toHaveTextContent('Found 0 of 2');
     tap(at(5, 3));
     tap(at(5, 3)); // a second tap on a found root does nothing
-    expect(markers('root')).toEqual([{ string: 5, fret: 3, label: 'R' }]);
+    expect(markers('correct')).toEqual([{ string: 5, fret: 3, label: 'R' }]);
+    expect(markers('root')).toEqual([]);
     expect(screen.getByTestId('d21-count')).toHaveTextContent('Found 1 of 2');
     expect(onAnswer).not.toHaveBeenCalled();
     tap(at(3, 5));
@@ -117,21 +118,52 @@ describe('<D21View>', () => {
     expect(screen.getByTestId('d21-count')).toHaveTextContent('Found 0 of 2');
   });
 
-  it('shows the whole shape by degree in feedback, ringing what was missed', () => {
+  it('shows the whole shape by degree in feedback, the missed root a ringed square', () => {
     const p = prompt();
     // The C shape at fret 3 roots at string 2, fret 4.
     view(p, { feedback: fb(p, [at(5, 3), at(2, 4)]) });
-    expect(markers('root')).toEqual([{ string: 5, fret: 3, label: 'R' }]);
-    expect(markers('ghost')).toEqual([{ string: 3, fret: 5, label: 'R' }]);
+    expect(markers('correct')).toEqual([{ string: 5, fret: 3, label: 'R' }]);
+    // The missed root at full strength, in the root's square, ringed (not a faint ghost).
+    expect(markers('root')).toEqual([{ string: 3, fret: 5, label: 'R' }]);
+    const missed = neck().querySelector('[data-testid="marker-root"]');
+    expect(missed).toHaveAttribute('data-emphasis', 'true');
+    expect(missed?.querySelector('rect')).not.toBeNull();
+    expect(markers('ghost')).toEqual([]);
     expect(markers('wrong')).toEqual([{ string: 2, fret: 4, label: 'D♯' }]);
     expect(markers('fifth')).toHaveLength(2);
+    // The note by name: the blank neck shows no string names or fret numbers.
     expect(screen.getByTestId('d21-explain')).toHaveTextContent(
-      "You tapped string 2, fret 4. That's a root of the C shape at fret 3.",
+      "You tapped D♯. That's a root of the C shape at fret 3.",
     );
     expect(screen.queryByRole('button', { name: 'Done' })).toBeNull();
     // A tap after the answer does nothing.
     tap(at(3, 5));
-    expect(markers('ghost')).toHaveLength(1);
+    expect(markers('root')).toHaveLength(1);
+  });
+
+  it('names notes with flats in a flat key', () => {
+    // The A shape of B♭ at fret 1, with the setting on sharps.
+    const near = d21Placements('A', 'major', STANDARD_TUNING, 'sharp').filter(
+      (pl) => pl.position <= 5,
+    );
+    const i = near.findIndex((pl) => pl.root === 'Bb');
+    const p = d21MakePrompt(
+      { id: 'caged:A-shape@major', skillId: 'C6.major-shapes' },
+      {
+        tuning: STANDARD_TUNING,
+        accidentalPref: 'sharp',
+        scopeLevel: 0,
+        rng: () => (i + 0.5) / near.length,
+      },
+    );
+    expect(p.root).toBe('Bb');
+    // A wrong tap a fret above the low root: B.
+    const low = p.targets[0] as Position;
+    view(p, { feedback: fb(p, [{ string: low.string, fret: low.fret + 1 }]) });
+    expect(markers('wrong')[0]?.label).toBe('B');
+    expect(screen.getByTestId('d21-explain')).toHaveTextContent(
+      /^You tapped B\. It's the A shape of B♭/,
+    );
   });
 
   it('follows the position on iPad portrait and phones', () => {
@@ -151,7 +183,7 @@ describe('<D21View>', () => {
     const p = prompt();
     const { rerender, props } = view(p);
     tap(at(5, 3));
-    expect(markers('root')).toHaveLength(1);
+    expect(markers('correct')).toHaveLength(1);
     rerender(<D21View {...props} prompt={prompt('caged:E-shape@major')} />);
     expect(allMarkers()).toHaveLength(0);
   });

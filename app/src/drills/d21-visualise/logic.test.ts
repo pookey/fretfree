@@ -23,6 +23,7 @@ import {
   d21FeedbackPositions,
   d21FretLine,
   d21GradedResponseMs,
+  d21KeySpelling,
   d21LevelFor,
   d21MakePrompt,
   d21Noun,
@@ -192,11 +193,20 @@ describe('D21 prompts', () => {
     }
   });
 
-  it('spells the root per the accidental preference', () => {
-    const sharp = makeAt('caged:A-shape@major', 1);
-    const flat = makeAt('caged:A-shape@major', 1, { pref: 'flat' });
-    expect([sharp.root, flat.root]).toEqual(['A#', 'Bb']);
-    expect(d21Subject(flat)).toBe('the A shape of B♭ at fret 1');
+  it('spells the root as its key does: B♭, not A♯, whatever the preference', () => {
+    for (const pref of ['sharp', 'flat'] as const) {
+      const p = makeAt('caged:A-shape@major', 1, { pref });
+      expect(p.root).toBe('Bb');
+      expect(p.accidentalPref).toBe('flat');
+      expect(d21Subject(p)).toBe('the A shape of B♭ at fret 1');
+      // A sharp key keeps its sharps: G♯m, not A♭m.
+      expect(makeAt('caged:E-shape@minor', 4, { pref }).root).toBe('G#');
+    }
+  });
+
+  it('leaves a key with six either way to the preference', () => {
+    expect(makeAt('caged:E-shape@major', 2).root).toBe('F#');
+    expect(makeAt('caged:E-shape@major', 2, { pref: 'flat' }).root).toBe('Gb');
   });
 
   it('keeps every pitch in drop D, and the position is still the lowest fret', () => {
@@ -247,7 +257,7 @@ describe('D21 grading', () => {
     const r = d21Check(a(), [at(5, 5), at(2, 6)]);
     expect(r).toMatchObject({ correct: false, confusedWith: 'caged:C', concept: 'caged:A' });
     expect(d21Explain(a(), fb(a(), [at(5, 5), at(2, 6)]))).toBe(
-      "You tapped string 2, fret 6. That's a root of the C shape at fret 5. " +
+      "You tapped F. That's a root of the C shape at fret 5. " +
         "It's the A shape of D at fret 5: R 5 R 3 5 from strings 5–1.",
     );
   });
@@ -256,9 +266,9 @@ describe('D21 grading', () => {
     const p = a();
     expect(d21Check(p, [at(4, 7)])).toEqual({ correct: false, expected: d21Subject(p) });
     expect(d21Explain(p, fb(p, [at(4, 7)]))).toMatch(
-      /^You tapped string 4, fret 7\. That's the shape's 5th, not a root\./,
+      /^You tapped A\. That's the shape's 5th, not a root\./,
     );
-    expect(d21Explain(p, fb(p, [at(6, 1)]))).toMatch(/^You tapped string 6, fret 1\. It's the A/);
+    expect(d21Explain(p, fb(p, [at(6, 1)]))).toMatch(/^You tapped F\. It's the A/);
   });
 
   it('explains a right answer and a short one', () => {
@@ -338,5 +348,24 @@ describe('D21 windows and panel helpers', () => {
     expect(d21FretLine(d21OpenShape({ shape: 'A', quality: 'major' }))).toBe('x-0-2-2-2-0');
     expect(d21FretLine(d21OpenShape({ shape: 'C', quality: 'major' }))).toBe('x-3-2-0-1-0');
     expect(d21FretLine(d21OpenShape({ shape: 'C', quality: 'dominant7' }))).toBe('x-3-2-3-1-0');
+  });
+});
+
+describe('d21KeySpelling', () => {
+  it('spells flat keys with flats and sharp keys with sharps', () => {
+    expect(d21KeySpelling(10, 'major', 'sharp')).toBe('flat'); // B♭
+    expect(d21KeySpelling(5, 'dominant7', 'sharp')).toBe('flat'); // F7
+    expect(d21KeySpelling(2, 'minor', 'sharp')).toBe('flat'); // Dm, from F
+    expect(d21KeySpelling(1, 'minor', 'flat')).toBe('sharp'); // C♯m, from E
+    expect(d21KeySpelling(4, 'major', 'flat')).toBe('sharp'); // E
+  });
+
+  it('follows the preference in C, Am, F♯/G♭ and D♯m/E♭m', () => {
+    for (const pref of ['sharp', 'flat'] as const) {
+      expect(d21KeySpelling(0, 'major', pref)).toBe(pref);
+      expect(d21KeySpelling(9, 'minor', pref)).toBe(pref);
+      expect(d21KeySpelling(6, 'major', pref)).toBe(pref);
+      expect(d21KeySpelling(3, 'minor', pref)).toBe(pref);
+    }
   });
 });
