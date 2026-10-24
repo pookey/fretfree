@@ -964,6 +964,25 @@ Milestones group features; they are **not** release gates. Every merged WP ships
   - Find the cause, for example the lazy drill view's Suspense under the mocked `performance.now`, a Dexie clear racing the session load, or a fake-timer interaction. Fix the test (or the code, if it's a real race a learner could hit) without widening timeouts again.
   - Prove it with the file run 20 times in a row inside the box's container at 6 Vitest workers, alongside a parallel e2e run to load the box. If the cause is in app code, say so in the report and add a unit test for the race.
 
+### M1-52 · A per-drill speed target in the runner
+- **Status:** todo
+- **Deps:** none
+- **Design:** research/02 rule 3 (personal speed targets); research/03 R5 ("under 1.5 s"); found in the M8-15 review
+- **Owns:** `app/src/session/runner.ts` (hotspot: additive), `app/src/drills/types.ts` (contract hub: additive only), `app/src/engine/grading.ts`, `app/src/engine/grading.test.ts`, `app/src/drills/d-staff-intervals/**`
+- **Acceptance:**
+  - Some skills set a tighter fluency target than the standard baseline + 2 s (R5 reading intervals: under 1.5 s). M8-15 first reached it by adding 500 ms to the logged time, which made speed statistics untrue and tightened the Easy band too. The PM had that removed, so R5 currently grades on the standard target.
+  - Add an optional per-drill (or per-skill) speed-target hook, for example `DrillLogic.speedTargets?(base)`, that the runner passes to grading. The logged `responseMs` is always the real time.
+  - R5's reading cards use it for baseline + 1.5 s. Every other drill is unchanged (a test sweeps the registry).
+
+### M1-53 · Settle three e2e tests that pass only on retry
+- **Status:** todo
+- **Deps:** none
+- **Design:** `.orchestrator/flaky.log`
+- **Owns:** `app/e2e/m10-20.spec.ts`, `app/e2e/m8-06.spec.ts`, `app/e2e/m2-09.spec.ts`, `app/e2e/helpers/**`
+- **Acceptance:**
+  - These specs passed on retry in lane runs on 2026-10-24: `m10-20.spec.ts:104` "placement probes the C2 stages it skips…" on ipad-landscape (3 sightings), `m8-06.spec.ts:124` "fills a bar by tapping and checks it" on iphone-smoke (4 sightings), and `m2-09.spec.ts:155` "an expert answers fluently…" on ipad-landscape (1 sighting, the same placement flow as m10-20).
+  - Find each cause (wait for settled state rather than widening timeouts) and fix it. Prove it with `--repeat-each 10 --retries 0` on the remote runner under load.
+
 ### M3-18 · Lazy-load drill views and the onboarding and placement routes
 - **Status:** done
 - **Deps:** M3-16
@@ -1434,6 +1453,17 @@ Notes for whoever picks this up:
   - An end-to-end test in production with two browser contexts: sign in by code on one and by link on the other, practise offline on both, reconnect, and see identical progress.
   - Abuse checks: code brute-force limits, email rate limits, cross-user access denied.
 
+
+### M7-08 · Account delete also clears the address from SES, and confirms a finished delete
+- **Status:** todo
+- **Deps:** M7-06
+- **Design:** design §2 Backend; follow-up from the M7-06 reviews (three rounds)
+- **Owns:** `infra/lambda/sync/**`, `infra/lib/sync-stack.ts`, `infra/test/**`, `app/src/screens/privacy/PrivacyScreen.tsx`, `app/src/screens/privacy/PrivacyScreen.test.tsx`, `app/src/account/ManageAccount.tsx`
+- **Acceptance:**
+  - `DELETE /account` removes the account's address from the SES account-level suppression list, if it's there (FretworkEmail's configuration set adds bounced and complaining addresses). The Privacy page and the delete step then drop the "stays on a do-not-send list" caveat.
+  - A delete whose reply was lost can be confirmed without valid tokens: "Cognito user missing + closing mark present" counts as done.
+  - Infra tests cover both. The IAM change is the narrowest that works (`ses:DeleteSuppressedDestination`). FretworkSync is the only stack touched.
+
 ---
 
 ## M8: Reading and meter (future)
@@ -1724,6 +1754,41 @@ A short track for learners who want to read tab. Tab maps straight onto skills F
   - From the M8-07 review: at scope level 2 every T4 card offers all six meters, so a learner who hasn't opened T7.odd sees 5/4 and 7/8, names nobody has taught. Six buttons only on T7 cards would instead give the answer away.
   - The row at level 2 depends on whether T7.odd is open for this learner, not on the card. Closed: every card at level 2 offers the four common meters. Open: every card (T4 and T7) offers all six. Use whatever the drill API already passes about statuses (or a scope the session sets); if neither exists, propose the smallest contract change in the report and ask the PM before editing shared files.
   - Unit tests: the row never depends on the answer (keep "never gives the answer away"), and 5/4 and 7/8 never appear while T7 is closed.
+
+### M8-25 · Sharps and flats on the staff (R1 follow-up)
+- **Status:** todo
+- **Deps:** M8-09
+- **Design:** research/03 R1 (accidentals and naturals); follow-up from the M8-09 review
+- **Owns:** `app/src/engine/skills/r1.ts`, `app/src/drills/d22-staff-name/**`, `app/e2e/m8-25.spec.ts`
+- **Acceptance:**
+  - R1 covers naturals only. Add ♯ and ♭ notes in open position as their own cards, with ♯/♭ answers, and confusion keys that separate the accidental from the place (`staff.ts` already parses `F#3`/`Bb2`; `d22Parse` rejects `alt !== 0` today).
+  - Both directions, as R1's naturals. New cards are spaced as M8-09 spaces them (never placing right after reading).
+
+### M8-26 · The staff reserves room for its clef, and the 8vb intro card
+- **Status:** todo
+- **Deps:** M8-09
+- **Design:** design §8 notation; follow-ups from the M8-09 review
+- **Owns:** `app/src/components/notation/**`, `app/src/drills/d22-staff-name/D22View.module.css`, `app/src/learn/intros/**`
+- **Acceptance:**
+  - `<Staff>` reserves room for the treble-8vb clef's "8" itself, so D22's compact padding workaround can go and later drills don't repeat it.
+  - A concept intro card for `R1.staff`: guitar music is written an octave above how it sounds (the "8" under the clef). Today only the context panel says this, at guide level 2 and above.
+
+### M8-27 · D22's panel never answers a card
+- **Status:** todo
+- **Deps:** M8-09
+- **Design:** research/02 rule 4 (recall before reveal); found in the M8-11 review (D24 had the same leak, fixed there)
+- **Owns:** `app/src/drills/d22-staff-name/**`
+- **Acceptance:**
+  - D22's level-1 panel ties anchors to strings ("the open G string is the G line", "open low E hangs under three ledger lines"), which answers the open-string cards outright. Keep the clef anchor without tying it to a string, as D24 now does.
+  - A test asserts that at every guide level the panel holds no open-string-to-staff-place mapping.
+
+### M8-28 · "Complete the bar" serves R4's rhythm cells
+- **Status:** todo
+- **Deps:** M8-13
+- **Design:** design §6 (D29 under R4); downstream notes from the M8-06 and M8-13 reviews
+- **Owns:** `app/src/drills/d29-complete-the-bar/**`, `app/src/engine/skills/r4.ts`
+- **Acceptance:**
+  - Widen `d29Parse`/`d29CanTest` to `rhythm:<cell>` items ("complete the bar with this cell") and add `'complete-the-bar'` to `R4_DRILLS`. Reuse D27's `buildBar` and `partnerOf`; never offer a cell the learner hasn't been taught.
 
 ---
 

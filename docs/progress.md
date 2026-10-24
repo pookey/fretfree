@@ -2,6 +2,43 @@
 
 ## Current status
 
+**Eleventh shift report (2026-10-24 03:35 → ~09:40, PM session fretwork-pm-11). 18 work packages shipped, each one emailed to the user when it changed what a learner sees. At the user's request ("finish all WIP then just stop, do not hand off"), every package in flight was drained to production and orchestration stopped. No PM is running. Production = origin/main = the docs commit after `a2db764c` (M8-11).** Shifts eight to ten are in `.orchestrator/pm-notes.md` (git-ignored): M11 (the Garage) is complete, and M7-05 sync shipped.
+
+Shipped this shift:
+- **Reading and meter (M8):**
+  - **M8-06:** D29 "Complete the bar". Compound bars are built beat by beat; no single long note fills both 6/8 and 3/4.
+  - **M8-08:** D31 accent strumming against a fading click (T3 counting, T5 accents). The keys match the pads' sides.
+  - **M8-09:** R1 plus D22 "Name the note on the staff". A placing card comes at least one new-item block after its reading card.
+  - **M8-10:** R2 plus D23 "Staff → fretboard by position". 9th position's same-pitch double cells both count.
+  - **M8-11:** D24 "Fretboard → staff". The panel never maps an open string to its staff place.
+  - **M8-12:** R3 plus D25 key signatures. The neck's position is chosen without the answer's spelling.
+  - **M8-13:** R4 plus D27 rhythm reading. You hear a new cell before you see it.
+  - **M8-15:** R5 reading intervals.
+  - **M8-18:** T6 pickups, repeats and endings.
+- **M6 polish:** **M6-14** drill layout and copy; **M6-15** chord roots spelled from their key (B♭, not A♯); **M6-16** chord tones spelled from the chord in D9, D10 and D21.
+- **M4 layout:** **M4-18** the ear drills and Explore on iPad (the lane caught a font-swap race in the Explore tabs); **M4-19** the progression player on the iPad mini in landscape.
+- **Accounts:** **M7-06** account delete and the Privacy page. It took three review rounds: resume from app start, sync restarts after signing in again, a cold-start clear lands on onboarding, and the copy is literally true.
+- **Platform:** **M1-48** worker e2e moves to the Mac when the box's queue is deep; **M1-49** a string-name column at the nut; **M1-51** the ConceptCard test race (Enter before the card's listener).
+
+PM decisions this shift (curriculum is delegated to the PM):
+- **R5 speed:** M8-15 had reached R5's "under 1.5 s" by adding 500 ms to the logged time. The PM had that removed. Logged times stay true, and R5 grades on the standard rule-3 target until a per-drill hook exists (filed as M1-52).
+- **D29:** a single half note can fill two beats of 2/4 or 4/4. That is musically right, and D32 covers 4/4 against 2/2, so it was accepted.
+- **Reviewer should-fixes:** where they touch learning or the truth of learner copy, the PM made them required (M8-06, M8-08, M8-09, M8-13, M8-18, M7-06, M6-15).
+
+Incidents:
+- **Lane failures:**
+  - M4-18's own spec on the box: a web-font swap widened the Explore tabs after their one-time scroll, fixed with a ResizeObserver.
+  - M6-15 hit a ConceptCard flake (its fifth), fixed by M1-51.
+  - Both shipped on their next run.
+- **Shared Reading files:** `topics.tsx`, `map-model.test.ts`, `frontier.ts` and the outcomes tests made the R1 to R5 packages conflict pairwise. They shipped one at a time, each rebasing on the PM's go.
+- **Apple Mail:** one send timed out (AppleEvent -1712) without sending. It was resent after a check of the Sent mailbox.
+
+Filed for later: M1-49, M1-50, M1-51, M6-16 (all but M1-50 shipped), plus M1-52 (per-drill speed target), M1-53 (three retry-only e2e tests), M7-08 (SES suppression cleanup on account delete), M8-25 (staff ♯/♭), M8-26 (clef room and the 8vb intro), M8-27 (D22's panel answer leak) and M8-28 (D29 for R4).
+
+Open user asks, carried over: retest sound on a real iPhone and iPad (M4-13); real guitar and mic checks (M5-08).
+
+### Seventh shift report
+
 **Seventh shift report (2026-10-21 01:20 → ~20:45, PM session fretfree-pm-7). 16 work packages shipped; at the user's request every package in flight was drained to production before stopping. 135 done, 38 todo, none blocked. Production = origin/main = the docs commit after `581ae67d` (M10-12).** Next: M10-09 and M10-15 to M10-20 (all `Priority: high`), then M6-11 to M6-14, M7-05 and M8.
 
 Shipped this shift:
